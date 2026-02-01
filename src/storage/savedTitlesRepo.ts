@@ -74,3 +74,10 @@ export async function deleteSavedTitle(id: string): Promise<void> {
   const db = await initDb();
   await db.runAsync(`DELETE FROM saved_titles WHERE id = ?`, id);
 }
+
+export async function getSavedTitleById(id: string): Promise<SavedTitle | null> {
+  const db = await initDb();
+  const rows = await db.getAllAsync(`SELECT * FROM saved_titles WHERE id = ? LIMIT 1`, id);
+  if (!rows.length) return null;
+  return rowToSavedTitle(rows[0]);
+}

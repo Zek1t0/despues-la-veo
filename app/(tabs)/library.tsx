@@ -2,6 +2,9 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Alert, FlatList, Pressable, Text, View } from "react-native";
 import { deleteSavedTitle, listSavedTitles, upsertSavedTitle } from "../../src/storage/savedTitlesRepo";
 import type { SavedTitle } from "../../src/core/savedTitle";
+import { useRouter } from "expo-router";
+
+const router = useRouter();
 
 function uuid() {
   // Simple UUID v4-ish (suficiente para MVP local)
@@ -94,48 +97,50 @@ export default function LibraryScreen() {
           keyExtractor={(x) => x.id}
           contentContainerStyle={{ gap: 10, paddingBottom: 24 }}
           renderItem={({ item }) => (
-            <View
-              style={{
-                padding: 12,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: "#333",
-                gap: 6,
-              }}
-            >
-              <Text style={{ fontSize: 16, fontWeight: "700" }}>{item.title}</Text>
-              <Text style={{ opacity: 0.7 }}>
-                Estado: {item.status} • Tags: {item.tags.length}
-              </Text>
+            <Pressable onPress={() => router.push(`/title/${item.id}`)}>
+              <View
+                style={{
+                  padding: 12,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: "#333",
+                  gap: 6,
+                }}
+              >
+                <Text style={{ fontSize: 16, fontWeight: "700" }}>{item.title}</Text>
+                <Text style={{ opacity: 0.7 }}>
+                  Estado: {item.status} • Tags: {item.tags.length}
+                </Text>
 
-              <View style={{ flexDirection: "row", gap: 10 }}>
-                <Pressable
-                  onPress={() => toggleDone(item)}
-                  style={{
-                    paddingVertical: 8,
-                    paddingHorizontal: 10,
-                    borderRadius: 10,
-                    backgroundColor: "#333",
-                  }}
-                >
-                  <Text style={{ color: "white" }}>
-                    {item.status === "done" ? "Marcar pendiente" : "Marcar visto"}
-                  </Text>
-                </Pressable>
+                <View style={{ flexDirection: "row", gap: 10 }}>
+                  <Pressable
+                    onPress={() => toggleDone(item)}
+                    style={{
+                      paddingVertical: 8,
+                      paddingHorizontal: 10,
+                      borderRadius: 10,
+                      backgroundColor: "#333",
+                    }}
+                  >
+                    <Text style={{ color: "white" }}>
+                      {item.status === "done" ? "Marcar pendiente" : "Marcar visto"}
+                    </Text>
+                  </Pressable>
 
-                <Pressable
-                  onPress={() => remove(item.id)}
-                  style={{
-                    paddingVertical: 8,
-                    paddingHorizontal: 10,
-                    borderRadius: 10,
-                    backgroundColor: "#4a1f1f",
-                  }}
-                >
-                  <Text style={{ color: "white" }}>Borrar</Text>
-                </Pressable>
+                  <Pressable
+                    onPress={() => remove(item.id)}
+                    style={{
+                      paddingVertical: 8,
+                      paddingHorizontal: 10,
+                      borderRadius: 10,
+                      backgroundColor: "#4a1f1f",
+                    }}
+                  >
+                    <Text style={{ color: "white" }}>Borrar</Text>
+                  </Pressable>
+                </View>
               </View>
-            </View>
+            </Pressable>
           )}
         />
       )}
