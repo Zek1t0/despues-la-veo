@@ -3,6 +3,7 @@ import { Alert, FlatList, Pressable, Text, View } from "react-native";
 import { deleteSavedTitle, listSavedTitles, upsertSavedTitle } from "../../src/storage/savedTitlesRepo";
 import type { SavedTitle } from "../../src/core/savedTitle";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 
 const router = useRouter();
 
@@ -29,9 +30,11 @@ export default function LibraryScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  useFocusEffect(
+    React.useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
 
   async function addMock() {
     const now = Date.now();

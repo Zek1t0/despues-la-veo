@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, TextInput, View, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import type { SavedTitle, TitleStatus } from "../../src/core/savedTitle";
 import { deleteSavedTitle, getSavedTitleById, upsertSavedTitle } from "../../src/storage/savedTitlesRepo";
@@ -55,7 +55,8 @@ export default function TitleDetailScreen() {
 
   async function saveNotes() {
     await save({ notes });
-  }
+    router.back();
+}
 
   function addTag() {
     if (!item) return;
@@ -74,19 +75,19 @@ export default function TitleDetailScreen() {
     save({ tags: tags.filter((x) => x !== tag) });
   }
 
-  function confirmDelete() {
-    if (!item) return;
-    Alert.alert("Borrar", "¿Seguro que querés borrar este ítem?", [
+  async function doDelete() {
+  if (!item) return;
+  await deleteSavedTitle(item.id);
+  router.back();
+  }    function confirmDelete() {
+  if (!item) return;   if (Platform.OS === "web") {
+      const ok = window.confirm("¿Seguro que querés borrar este ítem?");
+      if (ok) void doDelete();
+      return;
+  }    Alert.alert("Borrar", "¿Seguro que querés borrar este ítem?", [
       { text: "Cancelar", style: "cancel" },
-      {
-        text: "Borrar",
-        style: "destructive",
-        onPress: async () => {
-          await deleteSavedTitle(item.id);
-          router.back();
-        },
-      },
-    ]);
+      { text: "Borrar", style: "destructive", onPress: () => void doDelete() },
+  ]);
   }
 
   if (loading) {
@@ -150,14 +151,15 @@ export default function TitleDetailScreen() {
             value={newTag}
             onChangeText={setNewTag}
             placeholder="Ej: Con: Martina"
-            placeholderTextColor="#777"
+            placeholderTextColor="#666"
             style={{
-              flex: 1,
-              padding: 12,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: "#333",
-              color: "white",
+                flex: 1,
+                padding: 12,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: "#ccc",
+                backgroundColor: "white",
+                color: "black",
             }}
           />
           <Pressable
@@ -199,17 +201,18 @@ export default function TitleDetailScreen() {
           value={notes}
           onChangeText={setNotes}
           placeholder="Escribí una nota…"
-          placeholderTextColor="#777"
+          placeholderTextColor="#666"
           multiline
           style={{
             minHeight: 120,
             padding: 12,
             borderRadius: 12,
             borderWidth: 1,
-            borderColor: "#333",
-            color: "white",
+            borderColor: "#ccc",
+            backgroundColor: "white",
+            color: "black",
             textAlignVertical: "top",
-          }}
+        }}
         />
         <Pressable
           onPress={saveNotes}
