@@ -81,3 +81,13 @@ export async function getSavedTitleById(id: string): Promise<SavedTitle | null> 
   if (!rows.length) return null;
   return rowToSavedTitle(rows[0]);
 }
+
+export async function getByProviderExternal(provider: string, externalId: string) {
+  const db = await initDb();
+  const rows = await db.getAllAsync(
+    `SELECT * FROM saved_titles WHERE provider = ? AND external_id = ? LIMIT 1`,
+    provider,
+    externalId
+  );
+  return rows.length ? rowToSavedTitle(rows[0]) : null;
+}

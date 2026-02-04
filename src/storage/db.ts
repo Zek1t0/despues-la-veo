@@ -37,6 +37,8 @@ export async function initDb() {
 
     CREATE INDEX IF NOT EXISTS idx_saved_titles_status ON saved_titles(status);
     CREATE INDEX IF NOT EXISTS idx_saved_titles_title  ON saved_titles(title);
+    CREATE UNIQUE INDEX IF NOT EXISTS uniq_provider_external ON saved_titles(provider, external_id);
+
   `);
 
   return db;

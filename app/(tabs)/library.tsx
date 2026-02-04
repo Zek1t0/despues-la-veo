@@ -25,6 +25,8 @@ export default function LibraryScreen() {
     try {
       const data = await listSavedTitles();
       setItems(data);
+    } catch (e) {
+      console.error("SQLite web error:", e);
     } finally {
       setLoading(false);
     }

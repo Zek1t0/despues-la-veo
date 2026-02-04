@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View, Image } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { getMovieDetails, getTvDetails, posterUrl } from "../../../src/providers/tmdb/tmdbApi";
 import type { SavedTitle } from "../../../src/core/savedTitle";
-import { upsertSavedTitle } from "../../../src/storage/savedTitlesRepo";
+import { getByProviderExternal, upsertSavedTitle } from "../../../src/storage/savedTitlesRepo";
 
 function uuid() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -51,9 +51,10 @@ export default function TmdbDetailScreen() {
     const title = type === "movie" ? data.title : data.name;
     const date = type === "movie" ? data.release_date : data.first_air_date;
     const year = date ? Number(String(date).slice(0, 4)) : null;
+    const existing = await getByProviderExternal("tmdb", String(id));
 
     const item: SavedTitle = {
-      id: uuid(),
+      id: existing?.id ?? uuid(),
       provider: "tmdb",
       externalId: String(id),
       type,
@@ -68,7 +69,7 @@ export default function TmdbDetailScreen() {
     };
 
     await upsertSavedTitle(item);
-    router.push("/(tabs)/library");
+    router.push(`/title/${item.id}`);
   }
 
   return (

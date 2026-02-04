@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { FlatList, Pressable, Text, TextInput, View } from "react-native";
+import { FlatList, Pressable, Text, TextInput, View, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { posterUrl, searchMulti } from "../../src/providers/tmdb/tmdbApi";
 import type { TmdbSearchItem } from "../../src/providers/tmdb/tmdbTypes";
@@ -61,6 +61,9 @@ export default function ExploreScreen() {
       />
 
       {loading && <Text>Buscando…</Text>}
+      {!loading && debounced.length > 0 && items.length === 0 && (
+        <Text style={{ opacity: 0.7 }}>No encontré resultados.</Text>
+      )}
 
       <FlatList
         data={items}
@@ -70,30 +73,54 @@ export default function ExploreScreen() {
           const title = item.media_type === "movie" ? item.title ?? "Sin título" : item.name ?? "Sin nombre";
           const date = item.media_type === "movie" ? item.release_date : item.first_air_date;
           const year = date?.slice(0, 4) ?? "";
-
+          const img = posterUrl(item.poster_path);
+          
           return (
             <Pressable
               onPress={() => router.push(`/tmdb/${item.media_type}/${item.id}`)}
               style={{
+                flexDirection: "row",
+                gap: 12,
                 padding: 12,
                 borderRadius: 12,
                 borderWidth: 1,
                 borderColor: "#333",
-                gap: 6,
+                alignItems: "flex-start",
               }}
             >
-              <Text style={{ fontSize: 16, fontWeight: "700" }}>
-                {title} {year ? `(${year})` : ""}
-              </Text>
-              <Text style={{ opacity: 0.7 }}>{item.media_type.toUpperCase()}</Text>
-              <Text style={{ opacity: 0.8 }} numberOfLines={3}>
-                {item.overview || "Sin descripción."}
-              </Text>
-              <Text style={{ opacity: 0.6, fontSize: 12 }}>
-                Poster: {posterUrl(item.poster_path) ? "sí" : "no"}
-              </Text>
+              {img ? (
+                <Image
+                  source={{ uri: img }}
+                  style={{ width: 80, height: 120, borderRadius: 10 }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View
+                  style={{
+                    width: 80,
+                    height: 120,
+                    borderRadius: 10,
+                    backgroundColor: "#222",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text style={{ color: "white", fontSize: 12, opacity: 0.8 }}>Sin póster</Text>
+                </View>
+              )}
+
+              <View style={{ flex: 1, gap: 4 }}>
+                <Text style={{ fontSize: 16, fontWeight: "700" }}>
+                  {title} {year ? `(${year})` : ""}
+                </Text>
+                <Text style={{ opacity: 0.7 }}>{item.media_type.toUpperCase()}</Text>
+                <Text style={{ opacity: 0.8 }} numberOfLines={4}>
+                  {item.overview || "Sin descripción."}
+                </Text>
+              </View>
             </Pressable>
           );
+
         }}
       />
     </View>
