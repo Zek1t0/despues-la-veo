@@ -5,6 +5,7 @@ import { getMovieDetails, getTvDetails, posterUrl } from "../../../src/providers
 import type { SavedTitle } from "../../../src/core/savedTitle";
 import { getByProviderExternal, upsertSavedTitle } from "../../../src/storage/savedTitlesRepo";
 
+
 function uuid() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
@@ -51,12 +52,13 @@ export default function TmdbDetailScreen() {
     const title = type === "movie" ? data.title : data.name;
     const date = type === "movie" ? data.release_date : data.first_air_date;
     const year = date ? Number(String(date).slice(0, 4)) : null;
-    const existing = await getByProviderExternal("tmdb", String(id));
-
+    const externalId = String(id);
+    const existing = await getByProviderExternal("tmdb", externalId);
+    
     const item: SavedTitle = {
       id: existing?.id ?? uuid(),
       provider: "tmdb",
-      externalId: String(id),
+      externalId,
       type,
       title: title ?? "Sin título",
       year,
@@ -64,7 +66,7 @@ export default function TmdbDetailScreen() {
       status: "planned",
       tags: [],
       notes: null,
-      createdAt: now,
+      createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     };
 

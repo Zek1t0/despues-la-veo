@@ -1,25 +1,19 @@
 import * as SQLite from "expo-sqlite";
 
 const DB_NAME = "despueslaveo.db";
-
-// Usamos un singleton para no abrir 20 veces la DB
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 export async function getDb() {
-  if (!dbPromise) {
-    dbPromise = SQLite.openDatabaseAsync(DB_NAME);
-  }
+  if (!dbPromise) dbPromise = SQLite.openDatabaseAsync(DB_NAME);
   return dbPromise;
 }
 
 export async function initDb() {
   const db = await getDb();
 
-  // WAL mejora durabilidad y performance
-  // execAsync sirve para ejecutar varias sentencias juntas (no parametriza).
-  await db.execAsync(`
-    PRAGMA journal_mode = WAL;
+  await db.execAsync(`PRAGMA journal_mode = WAL;`);
 
+  await db.execAsync(`
     CREATE TABLE IF NOT EXISTS saved_titles (
       id TEXT PRIMARY KEY NOT NULL,
       provider TEXT NOT NULL,
@@ -34,11 +28,25 @@ export async function initDb() {
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
+  `);
 
-    CREATE INDEX IF NOT EXISTS idx_saved_titles_status ON saved_titles(status);
-    CREATE INDEX IF NOT EXISTS idx_saved_titles_title  ON saved_titles(title);
-    CREATE UNIQUE INDEX IF NOT EXISTS uniq_provider_external ON saved_titles(provider, external_id);
+  await db.execAsync(`CREATE INDEX IF NOT EXISTS idx_saved_titles_status ON saved_titles(status);`);
+  await db.execAsync(`CREATE INDEX IF NOT EXISTS idx_saved_titles_title  ON saved_titles(title);`);
 
+  // 1) Deduplicar (nos quedamos con el más viejo por provider+external_id)
+  await db.execAsync(`
+    DELETE FROM saved_titles
+    WHERE rowid NOT IN (
+      SELECT MIN(rowid)
+      FROM saved_titles
+      GROUP BY provider, external_id
+    );
+  `);
+
+  // 2) índice único
+  await db.execAsync(`
+    CREATE UNIQUE INDEX IF NOT EXISTS uniq_provider_external
+    ON saved_titles(provider, external_id);
   `);
 
   return db;

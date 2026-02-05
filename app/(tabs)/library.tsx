@@ -1,11 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Alert, FlatList, Pressable, Text, View } from "react-native";
+import { Alert, FlatList, Platform, Pressable, Text, View } from "react-native";
 import { deleteSavedTitle, listSavedTitles, upsertSavedTitle } from "../../src/storage/savedTitlesRepo";
 import type { SavedTitle } from "../../src/core/savedTitle";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 
-const router = useRouter();
 
 function uuid() {
   // Simple UUID v4-ish (suficiente para MVP local)
@@ -17,6 +16,7 @@ function uuid() {
 }
 
 export default function LibraryScreen() {
+  const router = useRouter();
   const [items, setItems] = useState<SavedTitle[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,27 +39,42 @@ export default function LibraryScreen() {
   );
 
   async function addMock() {
-    const now = Date.now();
-    const newItem: SavedTitle = {
-      id: uuid(),
-      provider: "manual",
-      externalId: "",
-      type: "movie",
-      title: `Recomendación ${items.length + 1}`,
-      year: null,
-      posterUrl: null,
-      status: "planned",
-      tags: ["Recomendó: (alguien)", "Con: (nombre)"],
-      notes: "Nota rápida…",
-      createdAt: now,
-      updatedAt: now,
-    };
+    try {
+      const now = Date.now();
+      const id = uuid();
 
-    await upsertSavedTitle(newItem);
-    await refresh();
+      const newItem: SavedTitle = {
+        id,
+        provider: "manual",
+        externalId: id, // <- CLAVE: único, nunca vacío
+        type: "movie",
+        title: `Recomendación ${items.length + 1}`,
+        year: null,
+        posterUrl: null,
+        status: "planned",
+        tags: ["Recomendó: (alguien)", "Con: (nombre)"],
+        notes: "Nota rápida…",
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      await upsertSavedTitle(newItem);
+      await refresh();
+    } catch (e) {
+      console.error("addMock error:", e);
+    }
   }
 
+
   async function remove(id: string) {
+    if (Platform.OS === "web") {
+      const ok = window.confirm("¿Seguro que querés borrar este ítem?");
+      if (!ok) return;
+      await deleteSavedTitle(id);
+      await refresh();
+      return;
+    }
+
     Alert.alert("Borrar", "¿Seguro que querés borrar este ítem?", [
       { text: "Cancelar", style: "cancel" },
       {
@@ -72,6 +87,7 @@ export default function LibraryScreen() {
       },
     ]);
   }
+
 
   async function toggleDone(item: SavedTitle) {
     const now = Date.now();
