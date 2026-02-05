@@ -70,8 +70,8 @@ export default function TmdbDetailScreen() {
       updatedAt: now,
     };
 
-    await upsertSavedTitle(item);
-    router.push(`/title/${item.id}`);
+    const savedId = await upsertSavedTitle(item);
+    router.push(`/title/${savedId}`);
   }
 
   return (
