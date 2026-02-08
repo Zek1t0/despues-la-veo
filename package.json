@@ -11,7 +11,10 @@
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
     "expo": "~54.0.32",
+    "expo-document-picker": "~14.0.8",
+    "expo-file-system": "~19.0.21",
     "expo-router": "~6.0.22",
+    "expo-sharing": "~14.0.8",
     "expo-sqlite": "~16.0.10",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",

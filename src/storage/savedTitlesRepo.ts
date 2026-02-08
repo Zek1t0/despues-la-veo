@@ -1,23 +1,6 @@
 import { initDb } from "./db";
 import type { SavedTitle } from "../core/savedTitle";
 
-function rowToSavedTitle(row: any): SavedTitle {
-  return {
-    id: row.id,
-    provider: row.provider,
-    externalId: row.external_id,
-    type: row.type,
-    title: row.title,
-    year: row.year ?? null,
-    posterUrl: row.poster_url ?? null,
-    status: row.status,
-    tags: safeParseJsonArray(row.tags_json),
-    notes: row.notes ?? null,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
-
 function safeParseJsonArray(value: string): string[] {
   try {
     const parsed = JSON.parse(value);
@@ -27,17 +10,24 @@ function safeParseJsonArray(value: string): string[] {
   }
 }
 
-export async function listSavedTitles(): Promise<SavedTitle[]> {
-  const db = await initDb();
-  const rows = await db.getAllAsync(
-    `SELECT * FROM saved_titles ORDER BY created_at DESC`
-  );
-  return rows.map(rowToSavedTitle);
+function rowToSavedTitle(row: any): SavedTitle {
+  return {
+    id: String(row.id),
+    provider: row.provider, // "manual" | "tmdb"
+    externalId: String(row.external_id),
+    type: row.type, // "movie" | "tv"
+    title: String(row.title),
+    year: row.year ?? null,
+    posterUrl: row.poster_url ?? null,
+    status: row.status, // "planned" | "watching" | "done" | "dropped"
+    tags: safeParseJsonArray(String(row.tags_json ?? "[]")),
+    notes: row.notes ?? null,
+    createdAt: Number(row.created_at),
+    updatedAt: Number(row.updated_at),
+  };
 }
 
-export async function upsertSavedTitle(item: SavedTitle): Promise<string> {
-  const db = await initDb();
-
+async function upsertSavedTitleWithDb(db: any, item: SavedTitle): Promise<string> {
   await db.runAsync(
     `
     INSERT INTO saved_titles (
@@ -67,18 +57,59 @@ export async function upsertSavedTitle(item: SavedTitle): Promise<string> {
     item.updatedAt
   );
 
-  // Importante: si hubo conflicto, el ID real puede ser el ya existente
-  const row = await db.getFirstAsync<{ id: string }>(
+  // Ojo: si hubo conflicto, puede haber quedado el id viejo (existente).
+  const row = (await db.getFirstAsync(
     `SELECT id FROM saved_titles WHERE provider = ? AND external_id = ? LIMIT 1`,
     [item.provider, item.externalId]
-  );
+  )) as { id: string } | undefined;
 
   if (!row?.id) throw new Error("No se pudo leer el id guardado");
-
   return row.id;
 }
 
+export async function listSavedTitles(): Promise<SavedTitle[]> {
+  const db = await initDb();
+  const rows = await db.getAllAsync(`SELECT * FROM saved_titles ORDER BY created_at DESC`);
+  return rows.map(rowToSavedTitle);
+}
 
+// Alias “semántico” para export/import
+export async function getAllSavedTitles(): Promise<SavedTitle[]> {
+  return listSavedTitles();
+}
+
+export async function upsertSavedTitle(item: SavedTitle): Promise<string> {
+  const db = await initDb();
+  return upsertSavedTitleWithDb(db, item);
+}
+
+export async function bulkUpsertSavedTitles(
+  items: SavedTitle[]
+): Promise<{ ok: number; fail: number }> {
+  const db = await initDb();
+
+  let ok = 0;
+  let fail = 0;
+
+  const work = async () => {
+    for (const it of items) {
+      try {
+        await upsertSavedTitleWithDb(db, it);
+        ok++;
+      } catch {
+        fail++;
+      }
+    }
+  };
+
+  if (typeof db.withTransactionAsync === "function") {
+    await db.withTransactionAsync(work);
+  } else {
+    await work();
+  }
+
+  return { ok, fail };
+}
 
 export async function deleteSavedTitle(id: string): Promise<void> {
   const db = await initDb();
@@ -104,4 +135,3 @@ export async function getByProviderExternal(
   );
   return rows.length ? rowToSavedTitle(rows[0]) : null;
 }
-
