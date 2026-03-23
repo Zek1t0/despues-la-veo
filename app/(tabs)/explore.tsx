@@ -3,6 +3,7 @@ import { FlatList, Pressable, Text, TextInput, View, Image } from "react-native"
 import { useRouter } from "expo-router";
 import { posterUrl, searchMulti } from "../../src/providers/tmdb/tmdbApi";
 import type { TmdbSearchItem } from "../../src/providers/tmdb/tmdbTypes";
+import { colors } from "../../src/theme/colors";
 
 export default function ExploreScreen() {
   const router = useRouter();
@@ -49,20 +50,20 @@ export default function ExploreScreen() {
         value={q}
         onChangeText={setQ}
         placeholder="Buscar película o serie…"
-        placeholderTextColor="#666"
+        placeholderTextColor={colors.subtle}
         style={{
           padding: 12,
           borderRadius: 12,
           borderWidth: 1,
-          borderColor: "#ccc",
-          backgroundColor: "white",
-          color: "black",
+          borderColor: colors.border2,
+          backgroundColor: colors.input,
+          color: colors.text,
         }}
       />
 
-      {loading && <Text>Buscando…</Text>}
+      {loading && <Text style={{ color: colors.muted }}>Buscando…</Text>}
       {!loading && debounced.length > 0 && items.length === 0 && (
-        <Text style={{ opacity: 0.7 }}>No encontré resultados.</Text>
+        <Text style={{ color: colors.subtle }}>No encontré resultados.</Text>
       )}
 
       <FlatList
@@ -70,11 +71,18 @@ export default function ExploreScreen() {
         keyExtractor={(x) => `${x.media_type}-${x.id}`}
         contentContainerStyle={{ gap: 10, paddingBottom: 24 }}
         renderItem={({ item }) => {
-          const title = item.media_type === "movie" ? item.title ?? "Sin título" : item.name ?? "Sin nombre";
-          const date = item.media_type === "movie" ? item.release_date : item.first_air_date;
-          const year = date?.slice(0, 4) ?? "";
-          const img = posterUrl(item.poster_path);
-          
+          const title =
+            item.media_type === "movie"
+              ? item.title ?? "Sin título"
+              : item.name ?? "Sin nombre";
+
+          const year =
+            item.media_type === "movie"
+              ? item.release_date?.slice(0, 4)
+              : item.first_air_date?.slice(0, 4);
+
+          const img = item.poster_path ? posterUrl(item.poster_path, "w185") : null;
+
           return (
             <Pressable
               onPress={() => router.push(`/tmdb/${item.media_type}/${item.id}`)}
@@ -82,9 +90,10 @@ export default function ExploreScreen() {
                 flexDirection: "row",
                 gap: 12,
                 padding: 12,
-                borderRadius: 12,
+                borderRadius: 14,
                 borderWidth: 1,
-                borderColor: "#333",
+                borderColor: colors.border,
+                backgroundColor: colors.card,
                 alignItems: "flex-start",
               }}
             >
@@ -100,27 +109,30 @@ export default function ExploreScreen() {
                     width: 80,
                     height: 120,
                     borderRadius: 10,
-                    backgroundColor: "#222",
+                    backgroundColor: colors.card2,
                     alignItems: "center",
                     justifyContent: "center",
+                    borderWidth: 1,
+                    borderColor: colors.border,
                   }}
                 >
-                  <Text style={{ color: "white", fontSize: 12, opacity: 0.8 }}>Sin póster</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12 }}>Sin póster</Text>
                 </View>
               )}
 
               <View style={{ flex: 1, gap: 4 }}>
-                <Text style={{ fontSize: 16, fontWeight: "700" }}>
+                <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>
                   {title} {year ? `(${year})` : ""}
                 </Text>
-                <Text style={{ opacity: 0.7 }}>{item.media_type.toUpperCase()}</Text>
-                <Text style={{ opacity: 0.8 }} numberOfLines={4}>
+                <Text style={{ color: colors.subtle, fontWeight: "700" }}>
+                  {item.media_type.toUpperCase()}
+                </Text>
+                <Text style={{ color: colors.muted }} numberOfLines={4}>
                   {item.overview || "Sin descripción."}
                 </Text>
               </View>
             </Pressable>
           );
-
         }}
       />
     </View>

@@ -6,6 +6,7 @@ import * as DocumentPicker from "expo-document-picker";
 
 import type { SavedTitle, TitleStatus, TitleType } from "../../src/core/savedTitle";
 import { bulkUpsertSavedTitles, getAllSavedTitles } from "../../src/storage/savedTitlesRepo";
+import { colors } from "../../src/theme/colors";
 
 type ExportPayloadV1 = {
   version: 1;
@@ -25,18 +26,15 @@ function isObject(x: unknown): x is Record<string, unknown> {
   return typeof x === "object" && x !== null;
 }
 
-// === Validadores exactos según tu savedTitle.ts ===
 const PROVIDERS = ["manual", "tmdb"] as const;
 type Provider = (typeof PROVIDERS)[number];
 
 function isProvider(x: any): x is Provider {
   return typeof x === "string" && (PROVIDERS as readonly string[]).includes(x);
 }
-
 function isTitleType(x: any): x is TitleType {
   return x === "movie" || x === "tv";
 }
-
 function isTitleStatus(x: any): x is TitleStatus {
   return x === "planned" || x === "watching" || x === "done" || x === "dropped";
 }
@@ -124,6 +122,33 @@ async function readTextFromUri(uri: string): Promise<string> {
   return FileSystem.readAsStringAsync(uri);
 }
 
+function PrimaryButton({
+  label,
+  onPress,
+  disabled,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={{
+        padding: 14,
+        borderRadius: 14,
+        backgroundColor: disabled ? "#3b3b3b" : colors.card,
+        borderWidth: 1,
+        borderColor: colors.border,
+        alignItems: "center",
+      }}
+    >
+      <Text style={{ color: colors.text, fontWeight: "900" }}>{label}</Text>
+    </Pressable>
+  );
+}
+
 export default function SettingsScreen() {
   const [busy, setBusy] = useState(false);
   const [lastMsg, setLastMsg] = useState<string | null>(null);
@@ -145,7 +170,6 @@ export default function SettingsScreen() {
       const json = JSON.stringify(payload, null, 2);
       const filename = `despues-la-veo-backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
 
-      // WEB: descarga por Blob
       if (Platform.OS === "web") {
         const blob = new Blob([json], { type: "application/json" });
         const url = URL.createObjectURL(blob);
@@ -160,7 +184,6 @@ export default function SettingsScreen() {
         return;
       }
 
-      // MOBILE: write + share
       const baseDir = (FileSystem as any).cacheDirectory ?? (FileSystem as any).documentDirectory;
       if (!baseDir) throw new Error("No hay directorio disponible para escribir el backup.");
 
@@ -195,7 +218,6 @@ export default function SettingsScreen() {
     }
 
     const { payload, invalidCount } = validated;
-
     const msg = `Válidos: ${payload.items.length}\nInválidos: ${invalidCount}\n\nSe va a MERGEAR (no borra nada).\n¿Continuar?`;
 
     const proceed = await new Promise<boolean>((resolve) => {
@@ -218,7 +240,6 @@ export default function SettingsScreen() {
       const { ok, fail } = await bulkUpsertSavedTitles(payload.items);
       const finalMsg = `Import terminado: OK ${ok} / Fallaron ${fail}`;
       setLastMsg(finalMsg);
-
       if (Platform.OS !== "web") Alert.alert("Import", finalMsg);
     } catch (e: any) {
       Alert.alert("Error importando", e?.message ?? "Error desconocido");
@@ -263,7 +284,7 @@ export default function SettingsScreen() {
 
   const onWebFilePicked = async (ev: React.ChangeEvent<HTMLInputElement>) => {
     const f = ev.target.files?.[0];
-    ev.target.value = ""; // permite elegir el mismo archivo otra vez
+    ev.target.value = "";
     if (!f) return;
 
     const text = await f.text();
@@ -272,44 +293,19 @@ export default function SettingsScreen() {
 
   return (
     <View style={{ flex: 1, padding: 16, gap: 12 }}>
-      <Text style={{ fontSize: 22, fontWeight: "700" }}>Ajustes</Text>
+      <Text style={{ fontSize: 22, fontWeight: "900", color: colors.text }}>Ajustes</Text>
 
-      <Pressable
-        onPress={onExport}
-        disabled={busy}
-        style={{
-          padding: 14,
-          borderRadius: 12,
-          backgroundColor: busy ? "#999" : "#111",
-        }}
-      >
-        <Text style={{ color: "white", fontWeight: "700", textAlign: "center" }}>
-          Exportar biblioteca
-        </Text>
-      </Pressable>
-
-      <Pressable
-        onPress={onImport}
-        disabled={busy}
-        style={{
-          padding: 14,
-          borderRadius: 12,
-          backgroundColor: busy ? "#999" : "#111",
-        }}
-      >
-        <Text style={{ color: "white", fontWeight: "700", textAlign: "center" }}>
-          Importar biblioteca
-        </Text>
-      </Pressable>
+      <PrimaryButton label="Exportar biblioteca" onPress={onExport} disabled={busy} />
+      <PrimaryButton label="Importar biblioteca" onPress={onImport} disabled={busy} />
 
       {busy && (
         <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
           <ActivityIndicator />
-          <Text>Procesando…</Text>
+          <Text style={{ color: colors.muted }}>Procesando…</Text>
         </View>
       )}
 
-      {!!lastMsg && <Text style={{ opacity: 0.8 }}>{lastMsg}</Text>}
+      {!!lastMsg && <Text style={{ color: colors.muted }}>{lastMsg}</Text>}
 
       {Platform.OS === "web" && (
         <input
@@ -321,7 +317,7 @@ export default function SettingsScreen() {
         />
       )}
 
-      <Text style={{ opacity: 0.6, marginTop: 10 }}>
+      <Text style={{ color: colors.subtle, marginTop: 6 }}>
         Export genera un .json versionado. Import hace MERGE (no borra nada) y evita duplicados por
         provider + externalId.
       </Text>

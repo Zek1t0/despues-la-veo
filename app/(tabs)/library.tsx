@@ -4,6 +4,7 @@ import { deleteSavedTitle, listSavedTitles, upsertSavedTitle } from "../../src/s
 import type { SavedTitle, TitleStatus, TitleType } from "../../src/core/savedTitle";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import { colors } from "../../src/theme/colors";
 
 function uuid() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -16,13 +17,40 @@ function uuid() {
 type StatusFilter = "all" | TitleStatus;
 type TypeFilter = "all" | TitleType;
 
+function Chip({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{
+        paddingVertical: 8,
+        paddingHorizontal: 10,
+        borderRadius: 999,
+        backgroundColor: active ? colors.primary : colors.card2,
+        borderWidth: 1,
+        borderColor: active ? colors.primary : colors.border2,
+      }}
+    >
+      <Text style={{ color: active ? colors.bg : colors.text, fontWeight: active ? "900" : "700" }}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 export default function LibraryScreen() {
   const router = useRouter();
 
   const [items, setItems] = useState<SavedTitle[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filtros
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
@@ -68,7 +96,7 @@ export default function LibraryScreen() {
       const newItem: SavedTitle = {
         id,
         provider: "manual",
-        externalId: id, // único
+        externalId: id,
         type: "movie",
         title: `Recomendación ${items.length + 1}`,
         year: null,
@@ -116,64 +144,38 @@ export default function LibraryScreen() {
     await refresh();
   }
 
-  function Chip({
-    label,
-    active,
-    onPress,
-  }: {
-    label: string;
-    active: boolean;
-    onPress: () => void;
-  }) {
-    return (
-      <Pressable
-        onPress={onPress}
-        style={{
-          paddingVertical: 8,
-          paddingHorizontal: 10,
-          borderRadius: 999,
-          backgroundColor: active ? "#111" : "#2a2a2a",
-          borderWidth: 1,
-          borderColor: active ? "#444" : "#333",
-        }}
-      >
-        <Text style={{ color: "white", fontWeight: active ? "700" : "500" }}>{label}</Text>
-      </Pressable>
-    );
-  }
-
   return (
     <View style={{ flex: 1, padding: 16, gap: 12 }}>
       <Pressable
         onPress={addMock}
         style={{
           padding: 12,
-          borderRadius: 12,
-          backgroundColor: "#222",
+          borderRadius: 14,
+          backgroundColor: colors.card,
+          borderWidth: 1,
+          borderColor: colors.border,
           alignItems: "center",
         }}
       >
-        <Text style={{ color: "white", fontWeight: "700" }}>+ Agregar (mock)</Text>
+        <Text style={{ color: colors.text, fontWeight: "900" }}>+ Agregar (mock)</Text>
       </Pressable>
 
-      {/* Search */}
       <TextInput
         value={q}
         onChangeText={setQ}
         placeholder="Buscar en library (título o tags)…"
-        placeholderTextColor="#777"
+        placeholderTextColor={colors.subtle}
         style={{
           paddingHorizontal: 12,
           paddingVertical: 10,
           borderRadius: 12,
           borderWidth: 1,
-          borderColor: "#333",
-          color: "white",
-          backgroundColor: "#141414",
+          borderColor: colors.border2,
+          color: colors.text,
+          backgroundColor: colors.input,
         }}
       />
 
-      {/* Filters */}
       <View style={{ gap: 10 }}>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
           <Chip label="Status: Todos" active={statusFilter === "all"} onPress={() => setStatusFilter("all")} />
@@ -189,13 +191,13 @@ export default function LibraryScreen() {
           <Chip label="TV" active={typeFilter === "tv"} onPress={() => setTypeFilter("tv")} />
         </View>
 
-        <Text style={{ opacity: 0.7, color: "white" }}>
+        <Text style={{ color: colors.subtle, fontWeight: "700" }}>
           Mostrando {filtered.length} / {items.length}
         </Text>
       </View>
 
       {loading ? (
-        <Text style={{ color: "white" }}>Cargando…</Text>
+        <Text style={{ color: colors.muted }}>Cargando…</Text>
       ) : (
         <FlatList
           data={filtered}
@@ -206,18 +208,18 @@ export default function LibraryScreen() {
               <View
                 style={{
                   padding: 12,
-                  borderRadius: 12,
+                  borderRadius: 14,
                   borderWidth: 1,
-                  borderColor: "#333",
+                  borderColor: colors.border,
                   gap: 6,
-                  backgroundColor: "#101010",
+                  backgroundColor: colors.card,
                 }}
               >
-                <Text style={{ fontSize: 16, fontWeight: "700", color: "white" }}>
+                <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>
                   {item.title}
                 </Text>
 
-                <Text style={{ opacity: 0.75, color: "white" }}>
+                <Text style={{ color: colors.muted, fontWeight: "700" }}>
                   {item.type.toUpperCase()} • Estado: {item.status} • Tags: {item.tags.length}
                 </Text>
 
@@ -227,11 +229,13 @@ export default function LibraryScreen() {
                     style={{
                       paddingVertical: 8,
                       paddingHorizontal: 10,
-                      borderRadius: 10,
-                      backgroundColor: "#333",
+                      borderRadius: 12,
+                      backgroundColor: colors.card2,
+                      borderWidth: 1,
+                      borderColor: colors.border2,
                     }}
                   >
-                    <Text style={{ color: "white" }}>
+                    <Text style={{ color: colors.text, fontWeight: "800" }}>
                       {item.status === "done" ? "Marcar planned" : "Marcar done"}
                     </Text>
                   </Pressable>
@@ -241,11 +245,13 @@ export default function LibraryScreen() {
                     style={{
                       paddingVertical: 8,
                       paddingHorizontal: 10,
-                      borderRadius: 10,
-                      backgroundColor: "#4a1f1f",
+                      borderRadius: 12,
+                      backgroundColor: colors.danger,
+                      borderWidth: 1,
+                      borderColor: colors.dangerBorder,
                     }}
                   >
-                    <Text style={{ color: "white" }}>Borrar</Text>
+                    <Text style={{ color: colors.text, fontWeight: "800" }}>Borrar</Text>
                   </Pressable>
                 </View>
               </View>
@@ -253,8 +259,8 @@ export default function LibraryScreen() {
           )}
           ListEmptyComponent={
             <View style={{ paddingVertical: 20, gap: 8 }}>
-              <Text style={{ color: "white", fontWeight: "700" }}>No hay resultados</Text>
-              <Text style={{ color: "white", opacity: 0.7 }}>
+              <Text style={{ color: colors.text, fontWeight: "900" }}>No hay resultados</Text>
+              <Text style={{ color: colors.muted }}>
                 Probá borrar filtros o buscar otra cosa.
               </Text>
             </View>
