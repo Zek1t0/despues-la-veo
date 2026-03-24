@@ -13,13 +13,18 @@ function safeParseJsonArray(value: string): string[] {
 function rowToSavedTitle(row: any): SavedTitle {
   return {
     id: String(row.id),
-    provider: row.provider, // "manual" | "tmdb"
+    provider: row.provider,
     externalId: String(row.external_id),
-    type: row.type, // "movie" | "tv"
+    type: row.type,
     title: String(row.title),
     year: row.year ?? null,
     posterUrl: row.poster_url ?? null,
-    status: row.status, // "planned" | "watching" | "done" | "dropped"
+
+    overview: row.overview ?? null,
+    voteAverage: typeof row.vote_average === "number" ? row.vote_average : row.vote_average ?? null,
+    genres: safeParseJsonArray(String(row.genres_json ?? "[]")),
+
+    status: row.status,
     tags: safeParseJsonArray(String(row.tags_json ?? "[]")),
     notes: row.notes ?? null,
     createdAt: Number(row.created_at),
@@ -31,13 +36,18 @@ async function upsertSavedTitleWithDb(db: any, item: SavedTitle): Promise<string
   await db.runAsync(
     `
     INSERT INTO saved_titles (
-      id, provider, external_id, type, title, year, poster_url, status, tags_json, notes, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      id, provider, external_id, type, title, year, poster_url,
+      overview, vote_average, genres_json,
+      status, tags_json, notes, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(provider, external_id) DO UPDATE SET
       type=excluded.type,
       title=excluded.title,
       year=excluded.year,
       poster_url=excluded.poster_url,
+      overview=excluded.overview,
+      vote_average=excluded.vote_average,
+      genres_json=excluded.genres_json,
       status=excluded.status,
       tags_json=excluded.tags_json,
       notes=excluded.notes,
@@ -50,6 +60,11 @@ async function upsertSavedTitleWithDb(db: any, item: SavedTitle): Promise<string
     item.title,
     item.year ?? null,
     item.posterUrl ?? null,
+
+    item.overview ?? null,
+    item.voteAverage ?? null,
+    JSON.stringify(item.genres ?? []),
+
     item.status,
     JSON.stringify(item.tags ?? []),
     item.notes ?? null,
@@ -57,7 +72,6 @@ async function upsertSavedTitleWithDb(db: any, item: SavedTitle): Promise<string
     item.updatedAt
   );
 
-  // Ojo: si hubo conflicto, puede haber quedado el id viejo (existente).
   const row = (await db.getFirstAsync(
     `SELECT id FROM saved_titles WHERE provider = ? AND external_id = ? LIMIT 1`,
     [item.provider, item.externalId]
@@ -73,7 +87,6 @@ export async function listSavedTitles(): Promise<SavedTitle[]> {
   return rows.map(rowToSavedTitle);
 }
 
-// Alias “semántico” para export/import
 export async function getAllSavedTitles(): Promise<SavedTitle[]> {
   return listSavedTitles();
 }

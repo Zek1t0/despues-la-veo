@@ -1,53 +1,52 @@
 import * as SQLite from "expo-sqlite";
 
-const DB_NAME = "despueslaveo.db";
-let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
-
-export async function getDb() {
-  if (!dbPromise) dbPromise = SQLite.openDatabaseAsync(DB_NAME);
-  return dbPromise;
-}
+let _db: SQLite.SQLiteDatabase | null = null;
+let _initPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 export async function initDb() {
-  const db = await getDb();
+  if (_db) return _db;
+  if (_initPromise) return _initPromise;
 
-  await db.execAsync(`PRAGMA journal_mode = WAL;`);
+  _initPromise = (async () => {
+    const db = await SQLite.openDatabaseAsync("despues-la-veo.db");
 
-  await db.execAsync(`
-    CREATE TABLE IF NOT EXISTS saved_titles (
-      id TEXT PRIMARY KEY NOT NULL,
-      provider TEXT NOT NULL,
-      external_id TEXT NOT NULL,
-      type TEXT NOT NULL,
-      title TEXT NOT NULL,
-      year INTEGER,
-      poster_url TEXT,
-      status TEXT NOT NULL,
-      tags_json TEXT NOT NULL,
-      notes TEXT,
-      created_at INTEGER NOT NULL,
-      updated_at INTEGER NOT NULL
-    );
-  `);
+    // Tabla principal
+    await db.execAsync(`
+      PRAGMA journal_mode = WAL;
 
-  await db.execAsync(`CREATE INDEX IF NOT EXISTS idx_saved_titles_status ON saved_titles(status);`);
-  await db.execAsync(`CREATE INDEX IF NOT EXISTS idx_saved_titles_title  ON saved_titles(title);`);
+      CREATE TABLE IF NOT EXISTS saved_titles (
+        id TEXT NOT NULL,
+        provider TEXT NOT NULL,
+        external_id TEXT NOT NULL,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        year INTEGER,
+        poster_url TEXT,
 
-  // 1) Deduplicar (nos quedamos con el más viejo por provider+external_id)
-  await db.execAsync(`
-    DELETE FROM saved_titles
-    WHERE rowid NOT IN (
-      SELECT MIN(rowid)
-      FROM saved_titles
-      GROUP BY provider, external_id
-    );
-  `);
+        overview TEXT,
+        vote_average REAL,
+        genres_json TEXT,
 
-  // 2) índice único
-  await db.execAsync(`
-    CREATE UNIQUE INDEX IF NOT EXISTS uniq_provider_external
-    ON saved_titles(provider, external_id);
-  `);
+        status TEXT NOT NULL,
+        tags_json TEXT NOT NULL,
+        notes TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
 
-  return db;
+        PRIMARY KEY(id)
+      );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_saved_titles_provider_external
+      ON saved_titles(provider, external_id);
+    `);
+
+    // Defaults para filas viejas
+    await db.execAsync(`UPDATE saved_titles SET tags_json = '[]' WHERE tags_json IS NULL;`);
+    await db.execAsync(`UPDATE saved_titles SET genres_json = '[]' WHERE genres_json IS NULL;`);
+
+    _db = db;
+    return db;
+  })();
+
+  return _initPromise;
 }

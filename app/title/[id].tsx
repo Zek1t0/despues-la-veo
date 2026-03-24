@@ -9,7 +9,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 
 import type { SavedTitle, TitleStatus } from "../../src/core/savedTitle";
@@ -18,6 +18,7 @@ import {
   getSavedTitleById,
   upsertSavedTitle,
 } from "../../src/storage/savedTitlesRepo";
+import { colors } from "../../src/theme/colors";
 
 const STATUS_OPTIONS: { value: TitleStatus; label: string }[] = [
   { value: "planned", label: "Pendiente" },
@@ -42,15 +43,15 @@ function Chip({
         paddingVertical: 8,
         paddingHorizontal: 12,
         borderRadius: 999,
-        backgroundColor: active ? "#ffffff" : "#1e1e1e",
+        backgroundColor: active ? colors.primary : colors.card2,
         borderWidth: 1,
-        borderColor: active ? "#ffffff" : "#333333",
+        borderColor: active ? colors.primary : colors.border2,
       }}
     >
       <Text
         style={{
-          color: active ? "#0b0b0b" : "#f2f2f2",
-          fontWeight: active ? "800" : "600",
+          color: active ? colors.bg : colors.text,
+          fontWeight: active ? "900" : "700",
         }}
       >
         {label}
@@ -69,12 +70,12 @@ function TagPill({ tag, onRemove }: { tag: string; onRemove: () => void }) {
         paddingVertical: 8,
         paddingHorizontal: 10,
         borderRadius: 999,
-        backgroundColor: "#171717",
+        backgroundColor: colors.card2,
         borderWidth: 1,
-        borderColor: "#2c2c2c",
+        borderColor: colors.border2,
       }}
     >
-      <Text style={{ color: "#f2f2f2", fontWeight: "600" }}>{tag}</Text>
+      <Text style={{ color: colors.text, fontWeight: "700" }}>{tag}</Text>
       <Pressable
         onPress={onRemove}
         hitSlop={10}
@@ -84,11 +85,30 @@ function TagPill({ tag, onRemove }: { tag: string; onRemove: () => void }) {
           borderRadius: 999,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#2a2a2a",
+          backgroundColor: colors.card,
+          borderWidth: 1,
+          borderColor: colors.border,
         }}
       >
-        <Text style={{ color: "#f2f2f2", fontWeight: "900" }}>✕</Text>
+        <Text style={{ color: colors.text, fontWeight: "900" }}>✕</Text>
       </Pressable>
+    </View>
+  );
+}
+
+function Card({ children }: { children: React.ReactNode }) {
+  return (
+    <View
+      style={{
+        padding: 14,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.card,
+        gap: 10,
+      }}
+    >
+      {children}
     </View>
   );
 }
@@ -97,14 +117,12 @@ export default function TitleDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const [item, setItem] = useState<SavedTitle | null>(null);
   const [loading, setLoading] = useState(true);
+  const [item, setItem] = useState<SavedTitle | null>(null);
 
-  // edición local
   const [notes, setNotes] = useState("");
   const [dirtyNotes, setDirtyNotes] = useState(false);
 
-  // tags
   const [newTag, setNewTag] = useState("");
   const [tagHint, setTagHint] = useState<string | null>(null);
 
@@ -121,6 +139,7 @@ export default function TitleDetailScreen() {
       setTagHint(null);
     } catch (e: any) {
       Alert.alert("Error", e?.message ?? "No se pudo cargar el título.");
+      setItem(null);
     } finally {
       setLoading(false);
     }
@@ -136,19 +155,29 @@ export default function TitleDetailScreen() {
     }, [load])
   );
 
+  const headerTitle = useMemo(() => {
+    const t = item?.title ?? "Título";
+    return t.length > 28 ? t.slice(0, 28) + "…" : t;
+  }, [item]);
+
+  const tmdbHref = useMemo(() => {
+    if (!item) return null;
+    if (item.provider !== "tmdb") return null;
+    if (!item.type || !item.externalId) return null;
+    return `/tmdb/${item.type}/${item.externalId}`;
+  }, [item]);
+
   const save = useCallback(
     async (patch: Partial<SavedTitle>) => {
       if (!item) return;
       const now = Date.now();
       const updated: SavedTitle = { ...item, ...patch, updatedAt: now };
-
       await upsertSavedTitle(updated);
       setItem(updated);
     },
     [item]
   );
 
-  // Status: auto-save
   const setStatus = useCallback(
     async (status: TitleStatus) => {
       try {
@@ -160,10 +189,8 @@ export default function TitleDetailScreen() {
     [save]
   );
 
-  // Notes: guardar y volver (como antes)
   const saveNotesAndBack = useCallback(async () => {
     if (!item) return;
-
     try {
       await save({ notes: notes.trim() ? notes : null });
       setDirtyNotes(false);
@@ -173,14 +200,11 @@ export default function TitleDetailScreen() {
     }
   }, [item, notes, router, save]);
 
-  // Tags: auto-save + feedback claro
   const addTag = useCallback(async () => {
     if (!item) return;
-
     const t = newTag.trim();
     if (!t) return;
 
-    // Normalización suave (evita duplicados por espacios)
     const exists = tags.some((x) => x.toLowerCase() === t.toLowerCase());
     if (exists) {
       setTagHint("Ese tag ya existe.");
@@ -192,8 +216,7 @@ export default function TitleDetailScreen() {
       await save({ tags: [t, ...tags] });
       setNewTag("");
       setTagHint(`Tag agregado: ${t}`);
-      // borrar hint después de un ratito
-      setTimeout(() => setTagHint(null), 1400);
+      setTimeout(() => setTagHint(null), 1200);
     } catch (e: any) {
       Alert.alert("Error", e?.message ?? "No se pudo agregar el tag.");
     }
@@ -205,7 +228,7 @@ export default function TitleDetailScreen() {
       try {
         await save({ tags: tags.filter((x) => x !== tag) });
         setTagHint(`Tag borrado: ${tag}`);
-        setTimeout(() => setTagHint(null), 1400);
+        setTimeout(() => setTagHint(null), 1200);
       } catch (e: any) {
         Alert.alert("Error", e?.message ?? "No se pudo borrar el tag.");
       }
@@ -236,55 +259,87 @@ export default function TitleDetailScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: "#0b0b0b", padding: 16, justifyContent: "center", gap: 10 }}>
+      <View style={{ flex: 1, padding: 16, justifyContent: "center", gap: 10 }}>
         <ActivityIndicator />
-        <Text style={{ color: "#f2f2f2", textAlign: "center" }}>Cargando…</Text>
+        <Text style={{ color: colors.muted, textAlign: "center" }}>Cargando…</Text>
       </View>
     );
   }
 
   if (!item) {
     return (
-      <View style={{ flex: 1, backgroundColor: "#0b0b0b", padding: 16, gap: 10 }}>
-        <Text style={{ color: "#f2f2f2", fontSize: 18, fontWeight: "800" }}>No encontrado</Text>
-        <Text style={{ color: "#bdbdbd" }}>
-          Este título no existe en tu biblioteca (o fue borrado).
-        </Text>
-        <Pressable
-          onPress={() => router.back()}
-          style={{ padding: 12, borderRadius: 12, backgroundColor: "#1e1e1e", alignItems: "center" }}
-        >
-          <Text style={{ color: "#f2f2f2", fontWeight: "800" }}>Volver</Text>
-        </Pressable>
-      </View>
+      <>
+        <Stack.Screen
+          options={{
+            title: "Título",
+            headerStyle: { backgroundColor: colors.bg },
+            headerTintColor: colors.text,
+          }}
+        />
+        <View style={{ flex: 1, padding: 16, gap: 10 }}>
+          <Text style={{ color: colors.text, fontWeight: "900", fontSize: 18 }}>
+            No encontrado
+          </Text>
+          <Text style={{ color: colors.muted }}>
+            Este ítem no existe (o fue borrado).
+          </Text>
+          <Pressable
+            onPress={() => router.back()}
+            style={{
+              padding: 12,
+              borderRadius: 12,
+              backgroundColor: colors.card,
+              borderWidth: 1,
+              borderColor: colors.border,
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: colors.text, fontWeight: "900" }}>Volver</Text>
+          </Pressable>
+        </View>
+      </>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#0b0b0b" }}>
+    <>
+      <Stack.Screen
+        options={{
+          title: headerTitle,
+          headerStyle: { backgroundColor: colors.bg },
+          headerTintColor: colors.text,
+          headerRight: () =>
+            tmdbHref ? (
+              <Pressable
+                onPress={() => router.push(tmdbHref)}
+                style={{
+                  paddingVertical: 6,
+                  paddingHorizontal: 10,
+                  borderRadius: 10,
+                  backgroundColor: colors.card,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
+              >
+                <Text style={{ color: colors.text, fontWeight: "900" }}>TMDB</Text>
+              </Pressable>
+            ) : null,
+        }}
+      />
+
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 }}>
-        {/* Header */}
         <View style={{ gap: 6 }}>
-          <Text style={{ fontSize: 24, fontWeight: "900", color: "#f2f2f2" }}>
+          <Text style={{ fontSize: 24, fontWeight: "900", color: colors.text }}>
             {item.title}
           </Text>
-          <Text style={{ color: "#bdbdbd", fontWeight: "600" }}>
+          <Text style={{ color: colors.muted, fontWeight: "700" }}>
             {item.type.toUpperCase()} • {item.provider.toUpperCase()}
           </Text>
         </View>
 
         {/* Estado */}
-        <View
-          style={{
-            padding: 14,
-            borderRadius: 14,
-            borderWidth: 1,
-            borderColor: "#242424",
-            backgroundColor: "#101010",
-            gap: 10,
-          }}
-        >
-          <Text style={{ color: "#f2f2f2", fontWeight: "900", fontSize: 16 }}>Estado</Text>
+        <Card>
+          <Text style={{ color: colors.text, fontWeight: "900", fontSize: 16 }}>Estado</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {STATUS_OPTIONS.map((s) => (
               <Chip
@@ -295,30 +350,15 @@ export default function TitleDetailScreen() {
               />
             ))}
           </View>
-          <Text style={{ color: "#9a9a9a" }}>
-            Se guarda automáticamente.
-          </Text>
-        </View>
+          <Text style={{ color: colors.subtle }}>Se guarda automáticamente.</Text>
+        </Card>
 
         {/* Tags */}
-        <View
-          style={{
-            padding: 14,
-            borderRadius: 14,
-            borderWidth: 1,
-            borderColor: "#242424",
-            backgroundColor: "#101010",
-            gap: 10,
-          }}
-        >
+        <Card>
           <View style={{ gap: 4 }}>
-            <Text style={{ color: "#f2f2f2", fontWeight: "900", fontSize: 16 }}>Tags</Text>
-            <Text style={{ color: "#9a9a9a" }}>
-              Se guardan automáticamente al agregar o borrar.
-            </Text>
-            {!!tagHint && (
-              <Text style={{ color: "#cfcfcf", fontWeight: "700" }}>{tagHint}</Text>
-            )}
+            <Text style={{ color: colors.text, fontWeight: "900", fontSize: 16 }}>Tags</Text>
+            <Text style={{ color: colors.subtle }}>Se guardan automáticamente al agregar o borrar.</Text>
+            {!!tagHint && <Text style={{ color: colors.muted, fontWeight: "800" }}>{tagHint}</Text>}
           </View>
 
           <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
@@ -326,7 +366,7 @@ export default function TitleDetailScreen() {
               value={newTag}
               onChangeText={setNewTag}
               placeholder="Ej: Con: Martina"
-              placeholderTextColor="#777"
+              placeholderTextColor={colors.subtle}
               onSubmitEditing={() => void addTag()}
               style={{
                 flex: 1,
@@ -334,9 +374,9 @@ export default function TitleDetailScreen() {
                 paddingVertical: 10,
                 borderRadius: 12,
                 borderWidth: 1,
-                borderColor: "#2c2c2c",
-                backgroundColor: "#0f0f0f",
-                color: "#f2f2f2",
+                borderColor: colors.border2,
+                backgroundColor: colors.input,
+                color: colors.text,
               }}
               returnKeyType="done"
             />
@@ -346,38 +386,27 @@ export default function TitleDetailScreen() {
                 paddingVertical: 10,
                 paddingHorizontal: 14,
                 borderRadius: 12,
-                backgroundColor: "#ffffff",
+                backgroundColor: colors.primary,
                 borderWidth: 1,
-                borderColor: "#ffffff",
+                borderColor: colors.primary,
               }}
             >
-              <Text style={{ color: "#0b0b0b", fontWeight: "900" }}>+ Tag</Text>
+              <Text style={{ color: colors.bg, fontWeight: "900" }}>+ Tag</Text>
             </Pressable>
           </View>
 
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {tags.length === 0 ? (
-              <Text style={{ color: "#bdbdbd" }}>Sin tags todavía.</Text>
+              <Text style={{ color: colors.muted }}>Sin tags todavía.</Text>
             ) : (
-              tags.map((t) => (
-                <TagPill key={t} tag={t} onRemove={() => void removeTag(t)} />
-              ))
+              tags.map((t) => <TagPill key={t} tag={t} onRemove={() => void removeTag(t)} />)
             )}
           </View>
-        </View>
+        </Card>
 
         {/* Notas */}
-        <View
-          style={{
-            padding: 14,
-            borderRadius: 14,
-            borderWidth: 1,
-            borderColor: "#242424",
-            backgroundColor: "#101010",
-            gap: 10,
-          }}
-        >
-          <Text style={{ color: "#f2f2f2", fontWeight: "900", fontSize: 16 }}>Notas</Text>
+        <Card>
+          <Text style={{ color: colors.text, fontWeight: "900", fontSize: 16 }}>Notas</Text>
 
           <TextInput
             value={notes}
@@ -386,7 +415,7 @@ export default function TitleDetailScreen() {
               setDirtyNotes(true);
             }}
             placeholder="Escribí una nota…"
-            placeholderTextColor="#777"
+            placeholderTextColor={colors.subtle}
             multiline
             style={{
               minHeight: 140,
@@ -394,9 +423,9 @@ export default function TitleDetailScreen() {
               paddingVertical: 10,
               borderRadius: 12,
               borderWidth: 1,
-              borderColor: "#2c2c2c",
-              backgroundColor: "#0f0f0f",
-              color: "#f2f2f2",
+              borderColor: colors.border2,
+              backgroundColor: colors.input,
+              color: colors.text,
               textAlignVertical: "top",
             }}
           />
@@ -407,35 +436,34 @@ export default function TitleDetailScreen() {
             style={{
               paddingVertical: 12,
               borderRadius: 12,
-              backgroundColor: dirtyNotes ? "#ffffff" : "#3b3b3b",
+              backgroundColor: dirtyNotes ? colors.primary : "#3b3b3b",
               alignItems: "center",
             }}
           >
-            <Text style={{ color: dirtyNotes ? "#0b0b0b" : "#e0e0e0", fontWeight: "900" }}>
+            <Text style={{ color: dirtyNotes ? colors.bg : colors.text, fontWeight: "900" }}>
               {dirtyNotes ? "Guardar y volver" : "Sin cambios"}
             </Text>
           </Pressable>
 
-          <Text style={{ color: "#9a9a9a" }}>
+          <Text style={{ color: colors.subtle }}>
             Updated: {new Date(item.updatedAt).toLocaleString()}
           </Text>
-        </View>
+        </Card>
 
-        {/* Borrar */}
         <Pressable
           onPress={confirmDelete}
           style={{
             paddingVertical: 14,
             borderRadius: 14,
-            backgroundColor: "#4a1f1f",
+            backgroundColor: colors.danger,
             alignItems: "center",
             borderWidth: 1,
-            borderColor: "#5a2a2a",
+            borderColor: colors.dangerBorder,
           }}
         >
-          <Text style={{ color: "#f2f2f2", fontWeight: "900" }}>Borrar</Text>
+          <Text style={{ color: colors.text, fontWeight: "900" }}>Borrar</Text>
         </Pressable>
       </ScrollView>
-    </View>
+    </>
   );
 }

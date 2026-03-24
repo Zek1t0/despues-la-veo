@@ -2,6 +2,7 @@ import React from "react";
 import { Stack } from "expo-router";
 import { ThemeProvider, DarkTheme } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
+import "../global.css";
 
 const colors = {
   bg: "#0b0b0b",
