@@ -1,0 +1,70 @@
+schema: spec-driven
+
+context: |
+  Producto:
+  "Después la veo" es una aplicación local-first para buscar películas y
+  series mediante TMDB y organizarlas en una biblioteca personal.
+
+  Funcionalidades actuales:
+  - Buscar películas y series en TMDB.
+  - Ver detalles, géneros, puntuación, reparto y proveedores.
+  - Guardar títulos en una biblioteca local.
+  - Clasificar títulos como planned, watching, done o dropped.
+  - Agregar etiquetas y notas.
+  - Filtrar y buscar dentro de la biblioteca.
+  - Exportar e importar backups JSON versionados.
+  - Ejecutarse tanto en web como en dispositivos móviles.
+
+  Stack actual:
+  - Expo SDK 54.
+  - React Native 0.81.
+  - React 19.
+  - Expo Router 6.
+  - TypeScript 5.9 con strict habilitado.
+  - expo-sqlite para persistencia local.
+  - TMDB como proveedor externo.
+  - Sin backend propio actualmente.
+
+  Arquitectura:
+  - app/ contiene pantallas y rutas de Expo Router.
+  - src/core/ contiene tipos del dominio.
+  - src/providers/tmdb/ contiene la integración con TMDB.
+  - src/storage/ contiene SQLite y el repositorio de títulos.
+  - src/theme/ contiene el sistema visual compartido.
+
+  Restricciones:
+  - No reescribir el proyecto desde cero.
+  - Preservar los datos existentes y la compatibilidad con backups version 1.
+  - Mantener funcionamiento tanto en web como en móvil.
+  - No modificar el esquema SQLite sin una migración explícita y verificable.
+  - No agregar ni actualizar dependencias sin aprobación expresa.
+  - No usar npm audit fix --force.
+  - No realizar actualizaciones masivas junto con cambios funcionales.
+  - Mantener la interfaz y los textos visibles en español.
+  - Preferir cambios pequeños, revisables y reversibles.
+  - Ejecutar una sola tarea de implementación por vez.
+  - Explicar en español sencillo cualquier cambio importante de TypeScript o SQL.
+  - Antes de considerar una tarea completa, ejecutar npx tsc --noEmit.
+  - Revisar manualmente el funcionamiento web después de cambios visibles.
+
+rules:
+  proposal:
+    - Diferenciar claramente problema, alcance y cosas fuera de alcance.
+    - Incluir riesgos para los datos existentes.
+    - Incluir una estrategia de reversión cuando se modifique persistencia.
+
+  specs:
+    - Expresar el comportamiento desde la perspectiva del usuario.
+    - Incluir escenarios normales, datos inválidos y compatibilidad con datos anteriores.
+    - No describir detalles de implementación como si fueran requisitos del producto.
+
+  design:
+    - Identificar exactamente qué archivos y capas serán afectados.
+    - Para cambios de SQLite, documentar versión anterior, versión nueva y migración.
+    - Justificar cualquier dependencia nueva.
+    - Preferir los patrones ya existentes antes de crear abstracciones nuevas.
+
+  tasks:
+    - Dividir el trabajo en tareas pequeñas y verificables.
+    - No agrupar actualización de dependencias, refactorización y funcionalidad en una misma tarea.
+    - Cada tarea debe indicar cómo comprobar que funciona.
