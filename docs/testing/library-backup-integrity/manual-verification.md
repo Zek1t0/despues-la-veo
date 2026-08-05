@@ -30,7 +30,23 @@ Pendiente después de la ejecución web:
 - No se ejecutaron pruebas en Android o iOS.
 - No se forzó un `failed` de persistencia; requiere una prueba automatizada con SQLite desechable e inyección controlada de fallo.
 
-Los fixtures `11` a `26` agregados posteriormente **no figuran como ejecutados**. Las matrices siguientes describen cómo verificarlos manualmente; crear el fixture y documentar el resultado esperado no constituye evidencia de ejecución.
+### Ejecución manual web complementaria — 2026-08-05
+
+- Plataforma: web.
+- Origen aislado: `localhost:8099`.
+- Fixtures ejecutados: `11-invalid-exported-at-null.json` a `26-update-explicit-null.json`.
+- Resultado observado: todos los resultados coincidieron con las matrices de esta guía.
+- Los fixtures `11` a `15` rechazaron el archivo completo cuando `exportedAt` estaba presente como `null`, número, booleano, objeto o array; no se mostró confirmación ni se modificó la biblioteca. `16-exported-at-absent.json` fue aceptado.
+- Strings obligatorios vacíos o compuestos sólo por espacios, `id` vacío o con espacios, fechas negativas y fechas con tipos inválidos fueron rechazados sin escritura.
+- En coincidencias del mismo tipo, un `updatedAt` igual o ausente produjo `skipped` y conservó la fila local.
+- Las inserciones conservaron exactamente las fechas entrantes válidas y generaron fechas locales coherentes cuando estaban ausentes.
+- Las actualizaciones conservaron exactamente `id` y `createdAt` locales y persistieron exactamente el `updatedAt` entrante posterior.
+- Los campos opcionales ausentes conservaron sus valores locales.
+- `null` explícito borró solamente `year`, `posterUrl`, `overview`, `voteAverage` y `notes`; `genres`, `status` y `tags` se conservaron.
+- Un título local ausente del backup permaneció sin cambios.
+- El round-trip exportar → importar → exportar conservó todos los campos comparados, incluidos `overview`, `voteAverage` y `genres`.
+- Las comparaciones JSON de conflicto de tipo, colisión de ID, campos ausentes e identidad/fechas exactas coincidieron con lo esperado.
+- La rama `failed` mediante fallo SQLite controlado no fue ejecutada y sigue pendiente; los fixtures observados terminaron con `failed: 0`.
 
 ## Preparar una web aislada
 
@@ -94,7 +110,7 @@ Empezá con una base vacía y respetá este orden. Cada fila parte del estado de
 
 Los exports generados durante esta prueba también son datos sintéticos. Eliminarlos al terminar evita confundirlos con backups útiles.
 
-## Matriz manual pendiente: envoltura y validación
+## Matriz manual ejecutada: envoltura y validación
 
 Cada fila debe ejecutarse sobre un origen descartable. Cuando el archivo se rechaza completamente no existe confirmación ni resumen final: las seis categorías son **no aplicables** y la biblioteca debe quedar idéntica.
 
@@ -115,7 +131,7 @@ Para los fixtures `11` a `15`, comprobar además que el error menciona `exported
 
 JSON no puede representar `NaN`, `Infinity` o `-Infinity`: esos tokens vuelven inválido al archivo JSON completo y ya están cubiertos por el caso de JSON inválido, no por un elemento `invalid`.
 
-## Matriz manual pendiente: fechas, presencia y merge
+## Matriz manual ejecutada: fechas, presencia y merge
 
 Estas secuencias son independientes. Reiniciar con una biblioteca vacía entre secuencias.
 
@@ -128,7 +144,7 @@ Estas secuencias son independientes. Reiniciar con una biblioteca vacía entre s
 | Actualización con opcionales ausentes | Importar `01`; exportar Alfa como línea base | `25-update-optional-fields-absent.json` | 0 | 1 | 0 | 0 | 0 | 0 | `title` cambia; `updatedAt = 1893456003000`; `id`, `createdAt`, `year`, `posterUrl`, `overview`, `voteAverage`, `genres`, `status`, `tags` y `notes` permanecen exactamente iguales a la línea base. |
 | Actualización con `null` explícito | Importar `01`; exportar Alfa como línea base | `26-update-explicit-null.json` | 0 | 1 | 0 | 0 | 0 | 0 | `year`, `posterUrl`, `overview`, `voteAverage` y `notes` pasan a `null`; `id` y `createdAt` siguen exactos; `updatedAt = 1893456004000`; `genres`, `status` y `tags` se conservan. |
 
-## Matriz manual pendiente: permanencia, identidad y round-trip
+## Matriz manual ejecutada: permanencia, identidad y round-trip
 
 | Caso | Estado previo necesario | Fixture/acción | Resultado esperado | Comparación JSON obligatoria |
 | --- | --- | --- | --- | --- |
@@ -139,7 +155,7 @@ Estas secuencias son independientes. Reiniciar con una biblioteca vacía entre s
 | Colisión de ID | Estado dejado por `01` | `06-id-collision.json` | `1/0/0/0/0/0` | Alfa conserva `fixture-shared-id`; el nuevo elemento existe con otro `id` y sus fechas entrantes exactas. |
 | Resultado mixto sin fallo SQLite | Ejecutar la secuencia principal hasta `06` | `07-mixed-partial.json` | `1/1/1/1/1/0` | Exportar y confirmar las filas insertada/actualizada; los elementos conflictivo e inválido no deben existir. |
 
-Los tres últimos casos ya tienen evidencia web registrada para sus conteos principales, pero las comparaciones JSON adicionales de esta matriz permanecen pendientes hasta registrarlas explícitamente.
+Los conteos y las comparaciones JSON de esta matriz quedaron registrados en la ejecución web complementaria de `localhost:8099`.
 
 ## Verificación pendiente de `failed`
 
@@ -152,6 +168,7 @@ Copiá una fila por fixture y completala sin marcar como ejecutado lo que no se 
 | Fecha | Plataforma | Navegador/dispositivo | Puerto/perfil aislado | Fixture | Esperado | Observado | Resultado | Observaciones |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | AAAA-MM-DD | web / Android / iOS | versión | detalle | archivo.json | seis conteos | seis conteos | pasa / falla / pendiente | texto |
+| 2026-08-05 | web | no informado | `localhost:8099`, origen aislado | `11` a `26` y secuencias asociadas | matrices de esta guía | coincidieron con lo esperado | pasa | `failed` controlado no ejecutado; permaneció en 0 |
 
 Si algo difiere, detené la secuencia, conservá el fixture y el registro sintético, y reportá el paso exacto. No pruebes un posible bug contra datos reales.
 
