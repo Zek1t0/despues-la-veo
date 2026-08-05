@@ -15,14 +15,14 @@ Cada sección constituye una sesión coherente de implementación y verificació
 
 ## 2. Merge seguro y conflictos
 
-- [ ] 2.1 Consultar la fila existente por `provider + externalId` antes de decidir cada escritura.
-- [ ] 2.2 Detectar distinto `type` bajo la misma clave, no escribir y contabilizar `conflicts` con referencia y motivo.
-- [ ] 2.3 Para coincidencias del mismo tipo, actualizar sólo cuando `updatedAt` entrante sea válido y posterior.
-- [ ] 2.4 Contabilizar como `skipped` y conservar la fila local ante `updatedAt` anterior, igual o ausente; los valores presentes inválidos ya deben llegar como `invalid` sin escritura.
-- [ ] 2.5 En una actualización válida, conservar siempre `id` y `createdAt` locales, conservar cualquier campo ausente y persistir exactamente el `updatedAt` entrante.
-- [ ] 2.6 Aplicar `null` explícito únicamente a `year`, `posterUrl`, `overview`, `voteAverage` y `notes`.
-- [ ] 2.7 Resolver una colisión de `id` en una inserción sin reemplazar otra fila.
-- [ ] 2.8 Mantener el procesamiento parcial por elemento y devolver resultados acordes a lo efectivamente persistido.
+- [x] 2.1 Consultar la fila existente por `provider + externalId` antes de decidir cada escritura.
+- [x] 2.2 Detectar distinto `type` bajo la misma clave, no escribir y contabilizar `conflicts` con referencia y motivo.
+- [x] 2.3 Para coincidencias del mismo tipo, actualizar sólo cuando `updatedAt` entrante sea válido y posterior.
+- [x] 2.4 Contabilizar como `skipped` y conservar la fila local ante `updatedAt` anterior, igual o ausente; los valores presentes inválidos ya deben llegar como `invalid` sin escritura.
+- [x] 2.5 En una actualización válida, conservar siempre `id` y `createdAt` locales, conservar cualquier campo ausente y persistir exactamente el `updatedAt` entrante.
+- [x] 2.6 Aplicar `null` explícito únicamente a `year`, `posterUrl`, `overview`, `voteAverage` y `notes`.
+- [x] 2.7 Resolver una colisión de `id` en una inserción sin reemplazar otra fila.
+- [x] 2.8 Mantener el procesamiento parcial por elemento y devolver resultados acordes a lo efectivamente persistido.
 
 ## 3. Resultados e interfaz
 

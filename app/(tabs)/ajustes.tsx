@@ -5,11 +5,8 @@ import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 
 import type { SavedTitle } from "../../src/core/savedTitle";
-import {
-  materializeSavedTitleForInsert,
-  parseLibraryBackupV1,
-} from "../../src/core/libraryBackupV1";
-import { bulkUpsertSavedTitles, getAllSavedTitles } from "../../src/storage/savedTitlesRepo";
+import { parseLibraryBackupV1 } from "../../src/core/libraryBackupV1";
+import { getAllSavedTitles, mergeLibraryBackupItems } from "../../src/storage/savedTitlesRepo";
 import { colors } from "../../src/theme/colors";
 
 type ExportPayloadV1 = {
@@ -146,8 +143,9 @@ export default function SettingsScreen() {
     setLastMsg(null);
 
     try {
-      const items = payload.items.map((item) => materializeSavedTitleForInsert(item, uuid));
-      const { ok, fail } = await bulkUpsertSavedTitles(items);
+      const result = await mergeLibraryBackupItems(payload.items, uuid);
+      const ok = result.inserted + result.updated;
+      const fail = result.failed.length;
       const finalMsg = `Import terminado: OK ${ok} / Fallaron ${fail}`;
       setLastMsg(finalMsg);
       if (Platform.OS !== "web") Alert.alert("Import", finalMsg);
