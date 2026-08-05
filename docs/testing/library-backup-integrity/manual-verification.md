@@ -157,9 +157,43 @@ Estas secuencias son independientes. Reiniciar con una biblioteca vacía entre s
 
 Los conteos y las comparaciones JSON de esta matriz quedaron registrados en la ejecución web complementaria de `localhost:8099`.
 
-## Verificación pendiente de `failed`
+## Verificación controlada de `failed`
 
-No intentar provocar `failed` sobre la base real ni mediante corrupción, bloqueo o cambios de esquema. Este caso requiere una base SQLite descartable y una inyección controlada que haga fallar una escritura elegible mientras otras puedan persistirse. La evidencia debe demostrar las seis categorías, una referencia y motivo seguros para el fallo y la continuidad de los demás elementos. Hasta contar con esa ejecución, la tarea 4.7 permanece sin marcar.
+### Ejecución controlada con SQLite descartable — 2026-08-05
+
+Se ejecutó el harness reproducible `controlled-sqlite-failure.cjs` con Node 22 y su SQLite real integrado. El harness no carga `src/storage/db.ts` ni `expo-sqlite`: llama a la misma implementación de merge mediante una conexión inyectada y crea un archivo exclusivo en el directorio temporal del sistema.
+
+Comando ejecutado desde la raíz del proyecto:
+
+```powershell
+node docs\testing\library-backup-integrity\controlled-sqlite-failure.cjs
+```
+
+Procedimiento controlado:
+
+1. Crear una base con nombre `despues-la-veo-controlled-import-<pid>-<timestamp>.sqlite`, distinto de `despues-la-veo.db`.
+2. Crear `saved_titles` y su índice único solamente en esa base.
+3. Crear un trigger temporal `BEFORE INSERT` que ejecuta `RAISE(ABORT, 'controlled import failure')` sólo para `external_id = 'controlled-failure'`.
+4. Procesar, en orden, un elemento exitoso, el elemento destinado a fallar y un segundo elemento exitoso posterior.
+5. Consultar SQLite para comprobar las filas realmente persistidas y la ausencia de la fila fallida.
+6. Cerrar y eliminar el archivo descartable en un bloque de limpieza, tanto ante éxito como ante error.
+
+Resultado realmente observado:
+
+| inserted | updated | skipped | conflicts | invalid | failed |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 2 | 0 | 0 | 0 | 0 | 1 |
+
+- Referencia observada: `Controlled SQLite Failure [manual/movie/controlled-failure]`.
+- Motivo observado: `controlled import failure`.
+- Persistidos: `controlled-success-before-id` y `controlled-success-after-id`.
+- La presencia de `controlled-success-after-id` demuestra que el procesamiento continuó después del fallo.
+- No existió ninguna fila con `external_id = 'controlled-failure'`; el elemento fallido no quedó parcialmente persistido.
+- Base utilizada: `C:\Users\elias\AppData\Local\Temp\despues-la-veo-controlled-import-35024-1785958419589.sqlite`.
+- Limpieza observada: `Disposable database removed`; el archivo dejó de existir al finalizar.
+- La base de producción `despues-la-veo.db` nunca fue abierta.
+
+La ejecución web mixta de `07-mixed-partial.json` ya había observado `inserted`, `updated`, `skipped`, `conflicts` e `invalid`, con referencias y motivos. Combinada con este fallo SQLite real, queda cubierta la tarea 4.7 sin corromper, bloquear ni abrir una base existente.
 
 ## Registro de ejecución
 

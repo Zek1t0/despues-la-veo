@@ -2,6 +2,8 @@
 
 Cada sección constituye una sesión coherente de implementación y verificación en Codex.
 
+Estado: 33/33 tareas completadas (sección 1: 8; sección 2: 8; sección 3: 6; sección 4: 11).
+
 ## 1. Contrato y normalización
 
 - [x] 1.1 Inventariar cada campo de `SavedTitle`, su representación JSON versión 1, tipos admitidos, nulabilidad y columna SQLite.
@@ -41,7 +43,7 @@ Cada sección constituye una sesión coherente de implementación y verificació
 - [x] 4.4 Verificar inserciones con fechas ausentes y válidas, y coincidencias del mismo tipo con `updatedAt` posterior, anterior, igual y ausente.
 - [x] 4.5 Verificar que una actualización persiste el `updatedAt` entrante y conserva siempre `createdAt` local.
 - [x] 4.6 Verificar conflicto de distinto `type`, colisión de `id` y que títulos ausentes del backup nunca se borren.
-- [ ] 4.7 Verificar mezclas de `inserted`, `updated`, `skipped`, `conflicts`, `invalid` y `failed`, incluidos referencias y motivos.
+- [x] 4.7 Verificar mezclas de `inserted`, `updated`, `skipped`, `conflicts`, `invalid` y `failed`, incluidos referencias y motivos.
 - [x] 4.8 Documentar el contrato JSON versión 1, la política de merge y que `provider + type + externalId` queda para una migración SQLite posterior.
 - [x] 4.9 Confirmar que no se modificaron esquema SQLite, dependencias ni TMDB.
 - [x] 4.10 Ejecutar `npx tsc --noEmit`.
