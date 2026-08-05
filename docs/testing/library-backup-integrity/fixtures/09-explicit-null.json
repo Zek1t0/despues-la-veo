@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "exportedAt": "2030-01-01T00:00:00.000Z",
+  "items": [
+    {
+      "provider": "manual",
+      "externalId": "fixture-nullable",
+      "type": "tv",
+      "title": "Serie Ficticia con Nulos",
+      "year": null,
+      "posterUrl": null,
+      "overview": null,
+      "voteAverage": null,
+      "notes": null,
+      "createdAt": 1893456010000,
+      "updatedAt": 1893456010000
+    }
+  ]
+}

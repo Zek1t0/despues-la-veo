@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "items": [
+    {"provider":"manual","externalId":"fixture-created-negative","type":"movie","title":"Created negativo","createdAt":-1},
+    {"provider":"manual","externalId":"fixture-updated-negative","type":"movie","title":"Updated negativo","updatedAt":-1}
+  ]
+}

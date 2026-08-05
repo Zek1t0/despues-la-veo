@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "exportedAt": "2030-01-01T00:00:00.000Z",
+  "items": [
+    {
+      "provider": "manual",
+      "externalId": "fixture-alpha",
+      "type": "tv",
+      "title": "Serie Ficticia en Conflicto",
+      "updatedAt": 1893456004000
+    }
+  ]
+}

@@ -83,6 +83,10 @@ Al guardar contenido desde TMDB, los géneros también se transforman en tags au
 ### Export / Import versionado
 La app soporta exportar e importar la biblioteca en JSON versionado para facilitar backups y futuras migraciones de datos.
 
+El formato vigente sigue siendo JSON `version: 1`. La importación hace merge: no borra títulos locales ausentes del backup y sólo actualiza una coincidencia del mismo tipo cuando su `updatedAt` entrante es posterior. Los campos opcionales ausentes conservan el valor local y una coincidencia de `provider + externalId` con distinto `type` se informa como conflicto sin sobrescribirla. Adoptar definitivamente la identidad `provider + type + externalId` requerirá una migración SQLite futura y explícita.
+
+La guía reproducible y los backups totalmente sintéticos están en [`docs/testing/library-backup-integrity/`](docs/testing/library-backup-integrity/manual-verification.md).
+
 ---
 
 ## Estructura del proyecto

@@ -4,8 +4,12 @@ import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 
-import type { SavedTitle, TitleStatus, TitleType } from "../../src/core/savedTitle";
-import { bulkUpsertSavedTitles, getAllSavedTitles } from "../../src/storage/savedTitlesRepo";
+import type { SavedTitle } from "../../src/core/savedTitle";
+import {
+  parseLibraryBackupV1,
+  type BackupValidationError,
+} from "../../src/core/libraryBackupV1";
+import { getAllSavedTitles, mergeLibraryBackupItems } from "../../src/storage/savedTitlesRepo";
 import { colors } from "../../src/theme/colors";
 
 type ExportPayloadV1 = {
@@ -14,108 +18,40 @@ type ExportPayloadV1 = {
   items: SavedTitle[];
 };
 
+const MAX_IMPORT_PROBLEM_DETAILS = 5;
+
+type ImportProblemDetail = {
+  reference: string;
+  reason: string;
+};
+
+function invalidProblemDetail(error: BackupValidationError): ImportProblemDetail {
+  const itemReference = error.index === undefined ? "Elemento" : `Elemento ${error.index + 1}`;
+  const fieldReference = error.field ? `, campo ${error.field}` : "";
+  return {
+    reference: `${itemReference}${fieldReference}`,
+    reason: error.message,
+  };
+}
+
+function formatProblemDetails(label: string, details: ImportProblemDetail[]): string | null {
+  if (details.length === 0) return null;
+
+  const visible = details
+    .slice(0, MAX_IMPORT_PROBLEM_DETAILS)
+    .map((detail) => `- ${detail.reference}: ${detail.reason}`);
+  const hiddenCount = details.length - visible.length;
+  if (hiddenCount > 0) visible.push(`- Hay ${hiddenCount} elemento(s) más no mostrado(s).`);
+
+  return `${label}:\n${visible.join("\n")}`;
+}
+
 function uuid() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     const v = c === "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
-}
-
-function isObject(x: unknown): x is Record<string, unknown> {
-  return typeof x === "object" && x !== null;
-}
-
-const PROVIDERS = ["manual", "tmdb"] as const;
-type Provider = (typeof PROVIDERS)[number];
-
-function isProvider(x: any): x is Provider {
-  return typeof x === "string" && (PROVIDERS as readonly string[]).includes(x);
-}
-function isTitleType(x: any): x is TitleType {
-  return x === "movie" || x === "tv";
-}
-function isTitleStatus(x: any): x is TitleStatus {
-  return x === "planned" || x === "watching" || x === "done" || x === "dropped";
-}
-
-function normalizeSavedTitle(raw: any): SavedTitle | null {
-  if (!isObject(raw)) return null;
-
-  const provider = (raw as any).provider;
-  const externalId = (raw as any).externalId;
-  const type = (raw as any).type;
-
-  const title =
-    typeof (raw as any).title === "string"
-      ? (raw as any).title
-      : typeof (raw as any).name === "string"
-        ? (raw as any).name
-        : null;
-
-  if (!isProvider(provider)) return null;
-  if (typeof externalId !== "string") return null;
-  if (!isTitleType(type)) return null;
-  if (!title) return null;
-
-  const status: TitleStatus = isTitleStatus((raw as any).status) ? (raw as any).status : "planned";
-
-  return {
-    id: typeof (raw as any).id === "string" ? (raw as any).id : uuid(),
-    provider,
-    externalId,
-    type,
-    title,
-    year: typeof (raw as any).year === "number" ? (raw as any).year : null,
-    posterUrl: typeof (raw as any).posterUrl === "string" ? (raw as any).posterUrl : null,
-    status,
-    tags: Array.isArray((raw as any).tags)
-      ? (raw as any).tags.filter((t: any) => typeof t === "string")
-      : [],
-    notes: typeof (raw as any).notes === "string" ? (raw as any).notes : null,
-    createdAt: typeof (raw as any).createdAt === "number" ? (raw as any).createdAt : Date.now(),
-    updatedAt: typeof (raw as any).updatedAt === "number" ? (raw as any).updatedAt : Date.now(),
-  };
-}
-
-function parseAndValidateExport(
-  jsonText: string
-): { payload: ExportPayloadV1; invalidCount: number } | { error: string } {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(jsonText);
-  } catch {
-    return { error: "El archivo no es JSON válido." };
-  }
-
-  if (!isObject(parsed)) return { error: "El JSON debe ser un objeto." };
-
-  const version = (parsed as any).version;
-  if (version !== 1) return { error: "Versión de backup no soportada (se esperaba version=1)." };
-
-  const items = (parsed as any).items;
-  if (!Array.isArray(items)) return { error: "El JSON debe tener 'items' como array." };
-
-  const normalized: SavedTitle[] = [];
-  let invalid = 0;
-
-  for (const it of items) {
-    const n = normalizeSavedTitle(it);
-    if (n) normalized.push(n);
-    else invalid++;
-  }
-
-  return {
-    payload: {
-      version: 1,
-      exportedAt:
-        typeof (parsed as any).exportedAt === "string"
-          ? (parsed as any).exportedAt
-          : new Date().toISOString(),
-      items: normalized,
-    },
-    invalidCount: invalid,
-  };
 }
 
 async function readTextFromUri(uri: string): Promise<string> {
@@ -211,14 +147,27 @@ export default function SettingsScreen() {
   };
 
   const doImportFromText = async (text: string) => {
-    const validated = parseAndValidateExport(text);
-    if ("error" in validated) {
-      Alert.alert("Import", validated.error);
+    setLastMsg(null);
+    const validated = parseLibraryBackupV1(text);
+    if (!validated.ok) {
+      Alert.alert("Import", validated.error.message);
       return;
     }
 
-    const { payload, invalidCount } = validated;
-    const msg = `Válidos: ${payload.items.length}\nInválidos: ${invalidCount}\n\nSe va a MERGEAR (no borra nada).\n¿Continuar?`;
+    const { payload } = validated;
+    const totalCount = payload.items.length + payload.invalid.length;
+    const invalidCount = payload.invalid.length;
+    const msg = [
+      `Total: ${totalCount}`,
+      `Válidos: ${payload.items.length}`,
+      `Inválidos: ${invalidCount}`,
+      "",
+      "La importación hace merge: no borra títulos locales ausentes del backup.",
+      "Sólo actualiza coincidencias del mismo tipo cuando el backup es más reciente; conserva los cambios locales iguales o más recientes.",
+      "El resultado puede ser parcial: algunos elementos pueden procesarse y otros omitirse o fallar.",
+      "",
+      "¿Continuar?",
+    ].join("\n");
 
     const proceed = await new Promise<boolean>((resolve) => {
       if (Platform.OS === "web") {
@@ -237,10 +186,70 @@ export default function SettingsScreen() {
     setLastMsg(null);
 
     try {
-      const { ok, fail } = await bulkUpsertSavedTitles(payload.items);
-      const finalMsg = `Import terminado: OK ${ok} / Fallaron ${fail}`;
+      const result = await mergeLibraryBackupItems(payload.items, uuid);
+      const finalResult = {
+        inserted: result.inserted,
+        updated: result.updated,
+        skipped: result.skipped,
+        conflicts: result.conflicts,
+        invalid: payload.invalid.map(invalidProblemDetail),
+        failed: result.failed,
+      };
+      const persistedCount = finalResult.inserted + finalResult.updated;
+      const nonAppliedCount =
+        finalResult.skipped +
+        finalResult.conflicts.length +
+        finalResult.invalid.length +
+        finalResult.failed.length;
+      let outcome: string;
+      if (persistedCount > 0 && nonAppliedCount === 0) {
+        outcome = "Importación completada.";
+      } else if (persistedCount > 0 && nonAppliedCount > 0) {
+        outcome =
+          "Resultado parcial: se conservaron los cambios persistidos y se detallan los elementos no aplicados.";
+      } else if (
+        finalResult.skipped > 0 &&
+        finalResult.conflicts.length === 0 &&
+        finalResult.invalid.length === 0 &&
+        finalResult.failed.length === 0
+      ) {
+        outcome =
+          "No se realizaron cambios: todos los elementos fueron omitidos porque los datos locales eran iguales o más recientes.";
+      } else if (nonAppliedCount > 0) {
+        outcome = "No se aplicaron cambios. Revisá los resultados detallados.";
+      } else {
+        outcome = "El backup no contenía elementos para importar.";
+      }
+      const detailSections = [
+        formatProblemDetails("Inválidos", finalResult.invalid),
+        formatProblemDetails("Conflictos", finalResult.conflicts),
+        formatProblemDetails("Fallidos", finalResult.failed),
+      ].filter((section): section is string => section !== null);
+      const countLines = [
+        `Insertados: ${finalResult.inserted}`,
+        `Actualizados: ${finalResult.updated}`,
+        `Omitidos: ${finalResult.skipped}`,
+        `Conflictos: ${finalResult.conflicts.length}`,
+        `Inválidos: ${finalResult.invalid.length}`,
+        `Fallidos: ${finalResult.failed.length}`,
+      ];
+      const finalMsg = [
+        outcome,
+        "",
+        ...countLines,
+        ...(detailSections.length > 0 ? ["", ...detailSections] : []),
+      ].join("\n");
       setLastMsg(finalMsg);
-      if (Platform.OS !== "web") Alert.alert("Import", finalMsg);
+      if (Platform.OS !== "web") {
+        const mobileSummary = [
+          outcome,
+          "",
+          ...countLines,
+          "",
+          "Los detalles están visibles en Ajustes.",
+        ].join("\n");
+        Alert.alert("Resultado de importación", mobileSummary);
+      }
     } catch (e: any) {
       Alert.alert("Error importando", e?.message ?? "Error desconocido");
     } finally {

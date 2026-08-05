@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "exportedAt": "2030-01-01T00:00:00.000Z",
+  "items": [
+    {
+      "provider": "manual",
+      "externalId": "fixture-invalid",
+      "type": "movie",
+      "title": "Elemento Ficticio Inválido",
+      "genres": "esto-no-es-un-array",
+      "updatedAt": 1893456005000
+    }
+  ]
+}

@@ -1,36 +1,16 @@
 import { initDb } from "./db";
 import type { SavedTitle } from "../core/savedTitle";
+import {
+  mergeLibraryBackupItemsWithDb,
+  rowToSavedTitle,
+  type LibraryImportIssue,
+  type LibraryImportMergeResult,
+} from "./libraryBackupMerge";
+import {
+  type NormalizedBackupSavedTitle,
+} from "../core/libraryBackupV1";
 
-function safeParseJsonArray(value: string): string[] {
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed.filter((x) => typeof x === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-function rowToSavedTitle(row: any): SavedTitle {
-  return {
-    id: String(row.id),
-    provider: row.provider,
-    externalId: String(row.external_id),
-    type: row.type,
-    title: String(row.title),
-    year: row.year ?? null,
-    posterUrl: row.poster_url ?? null,
-
-    overview: row.overview ?? null,
-    voteAverage: typeof row.vote_average === "number" ? row.vote_average : row.vote_average ?? null,
-    genres: safeParseJsonArray(String(row.genres_json ?? "[]")),
-
-    status: row.status,
-    tags: safeParseJsonArray(String(row.tags_json ?? "[]")),
-    notes: row.notes ?? null,
-    createdAt: Number(row.created_at),
-    updatedAt: Number(row.updated_at),
-  };
-}
+export type { LibraryImportIssue, LibraryImportMergeResult };
 
 async function upsertSavedTitleWithDb(db: any, item: SavedTitle): Promise<string> {
   await db.runAsync(
@@ -96,32 +76,12 @@ export async function upsertSavedTitle(item: SavedTitle): Promise<string> {
   return upsertSavedTitleWithDb(db, item);
 }
 
-export async function bulkUpsertSavedTitles(
-  items: SavedTitle[]
-): Promise<{ ok: number; fail: number }> {
+export async function mergeLibraryBackupItems(
+  items: NormalizedBackupSavedTitle[],
+  generateId: () => string
+): Promise<LibraryImportMergeResult> {
   const db = await initDb();
-
-  let ok = 0;
-  let fail = 0;
-
-  const work = async () => {
-    for (const it of items) {
-      try {
-        await upsertSavedTitleWithDb(db, it);
-        ok++;
-      } catch {
-        fail++;
-      }
-    }
-  };
-
-  if (typeof db.withTransactionAsync === "function") {
-    await db.withTransactionAsync(work);
-  } else {
-    await work();
-  }
-
-  return { ok, fail };
+  return mergeLibraryBackupItemsWithDb(db, items, generateId);
 }
 
 export async function deleteSavedTitle(id: string): Promise<void> {

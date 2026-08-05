@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "exportedAt": "2030-01-01T00:00:00.000Z",
+  "items": [
+    {
+      "id": "fixture-shared-id",
+      "provider": "manual",
+      "externalId": "fixture-alpha",
+      "type": "movie",
+      "title": "Película Ficticia Alfa",
+      "year": 2030,
+      "posterUrl": "https://example.invalid/fixture-alpha.jpg",
+      "overview": "Sinopsis completamente ficticia para verificar el backup.",
+      "voteAverage": 7.25,
+      "genres": ["Ficción de prueba", "Aventura sintética"],
+      "status": "watching",
+      "tags": ["fixture", "alfa"],
+      "notes": "Nota sintética Alfa.",
+      "createdAt": 1893456000000,
+      "updatedAt": 1893456002000
+    }
+  ]
+}

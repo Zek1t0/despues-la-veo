@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "items": [
+    {"provider":"manual","externalId":"","type":"movie","title":"External vacío"},
+    {"provider":"manual","externalId":"   ","type":"movie","title":"External espacios"},
+    {"provider":"manual","externalId":"fixture-title-empty","type":"movie","title":""},
+    {"provider":"manual","externalId":"fixture-title-spaces","type":"movie","title":"   "}
+  ]
+}

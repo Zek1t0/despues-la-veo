@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "exportedAt": "2030-01-01T00:00:00.000Z",
+  "items": [
+    {
+      "id": "fixture-shared-id",
+      "provider": "manual",
+      "externalId": "fixture-collision-new-identity",
+      "type": "tv",
+      "title": "Serie Ficticia con ID Colisionado",
+      "createdAt": 1893456006000,
+      "updatedAt": 1893456006000
+    }
+  ]
+}

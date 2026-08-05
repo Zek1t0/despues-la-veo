@@ -1,0 +1,4 @@
+{
+  "version": 1,
+  "items": [{"id":"incoming-id-not-used","provider":"manual","externalId":"fixture-alpha","type":"movie","title":"Alfa actualizada con opcionales ausentes","updatedAt":1893456003000}]
+}
