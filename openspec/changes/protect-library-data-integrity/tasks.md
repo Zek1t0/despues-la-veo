@@ -4,14 +4,14 @@ Cada sección constituye una sesión coherente de implementación y verificació
 
 ## 1. Contrato y normalización
 
-- [ ] 1.1 Inventariar cada campo de `SavedTitle`, su representación JSON versión 1, tipos admitidos, nulabilidad y columna SQLite.
-- [ ] 1.2 Definir tipos internos para elemento normalizado, presencia de campos opcionales y errores de validación.
-- [ ] 1.3 Exigir `provider`, `externalId`, `type` y `title`; validar que `externalId` y `title` sean strings no vacíos después de `trim` y que `id`, si aparece, sea un string no vacío.
-- [ ] 1.4 Restaurar `overview`, `voteAverage` y `genres`, además de los campos ya contemplados.
-- [ ] 1.5 Aplicar a inserciones los valores por ausencia: `planned`, arrays vacíos, campos anulables en `null` y fechas locales coherentes sólo cuando `createdAt` o `updatedAt` estén ausentes.
-- [ ] 1.6 Preservar la diferencia entre campo ausente y `null` explícito, permitiendo `null` sólo en los campos anulables definidos.
-- [ ] 1.7 Validar que `createdAt` y `updatedAt` presentes sean números finitos y no negativos; si no, producir `invalid` sin escribir tanto en inserciones como en coincidencias.
-- [ ] 1.8 Mantener compatibilidad con backups JSON versión 1 anteriores y rechazo completo de JSON o versión inválidos.
+- [x] 1.1 Inventariar cada campo de `SavedTitle`, su representación JSON versión 1, tipos admitidos, nulabilidad y columna SQLite.
+- [x] 1.2 Definir tipos internos para elemento normalizado, presencia de campos opcionales y errores de validación.
+- [x] 1.3 Exigir `provider`, `externalId`, `type` y `title`; validar que `externalId` y `title` sean strings no vacíos después de `trim` y que `id`, si aparece, sea un string no vacío.
+- [x] 1.4 Restaurar `overview`, `voteAverage` y `genres`, además de los campos ya contemplados.
+- [x] 1.5 Aplicar a inserciones los valores por ausencia: `planned`, arrays vacíos, campos anulables en `null` y fechas locales coherentes sólo cuando `createdAt` o `updatedAt` estén ausentes.
+- [x] 1.6 Preservar la diferencia entre campo ausente y `null` explícito, permitiendo `null` sólo en los campos anulables definidos.
+- [x] 1.7 Validar que `createdAt` y `updatedAt` presentes sean números finitos y no negativos; si no, producir `invalid` sin escribir tanto en inserciones como en coincidencias.
+- [x] 1.8 Mantener compatibilidad con backups JSON versión 1 anteriores y rechazo completo de JSON o versión inválidos.
 
 ## 2. Merge seguro y conflictos
 
