@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "exportedAt": "2030-01-01T00:00:00.000Z",
+  "items": [
+    {
+      "provider": "manual",
+      "externalId": "fixture-optional-absent",
+      "type": "movie",
+      "title": "Película Ficticia con Opcionales Ausentes"
+    }
+  ]
+}

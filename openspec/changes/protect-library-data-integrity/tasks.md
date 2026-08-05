@@ -42,7 +42,7 @@ Cada sección constituye una sesión coherente de implementación y verificació
 - [ ] 4.5 Verificar que una actualización persiste el `updatedAt` entrante y conserva siempre `createdAt` local.
 - [ ] 4.6 Verificar conflicto de distinto `type`, colisión de `id` y que títulos ausentes del backup nunca se borren.
 - [ ] 4.7 Verificar mezclas de `inserted`, `updated`, `skipped`, `conflicts`, `invalid` y `failed`, incluidos referencias y motivos.
-- [ ] 4.8 Documentar el contrato JSON versión 1, la política de merge y que `provider + type + externalId` queda para una migración SQLite posterior.
-- [ ] 4.9 Confirmar que no se modificaron esquema SQLite, dependencias ni TMDB.
-- [ ] 4.10 Ejecutar `npx tsc --noEmit`.
+- [x] 4.8 Documentar el contrato JSON versión 1, la política de merge y que `provider + type + externalId` queda para una migración SQLite posterior.
+- [x] 4.9 Confirmar que no se modificaron esquema SQLite, dependencias ni TMDB.
+- [x] 4.10 Ejecutar `npx tsc --noEmit`.
 - [ ] 4.11 Revisar manualmente en web los textos previos, la confirmación y el resultado final.

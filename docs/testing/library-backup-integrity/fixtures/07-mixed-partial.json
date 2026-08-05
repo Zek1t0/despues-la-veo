@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "exportedAt": "2030-01-01T00:00:00.000Z",
+  "items": [
+    {
+      "provider": "manual",
+      "externalId": "fixture-mixed-insert",
+      "type": "movie",
+      "title": "Mixto Ficticio Nuevo",
+      "updatedAt": 1893456007000
+    },
+    {
+      "provider": "manual",
+      "externalId": "fixture-alpha",
+      "type": "movie",
+      "title": "Alfa Ficticia Más Reciente",
+      "overview": "Valor actualizado por el fixture mixto.",
+      "updatedAt": 1893456008000
+    },
+    {
+      "provider": "manual",
+      "externalId": "fixture-alpha",
+      "type": "movie",
+      "title": "Alfa Ficticia Más Antigua",
+      "updatedAt": 1893456000000
+    },
+    {
+      "provider": "manual",
+      "externalId": "fixture-alpha",
+      "type": "tv",
+      "title": "Conflicto Ficticio Mixto",
+      "updatedAt": 1893456009000
+    },
+    {
+      "provider": "manual",
+      "externalId": "fixture-mixed-invalid",
+      "type": "movie",
+      "title": "Inválido Ficticio Mixto",
+      "updatedAt": -1
+    }
+  ]
+}

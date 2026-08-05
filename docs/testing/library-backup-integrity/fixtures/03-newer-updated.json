@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "exportedAt": "2030-01-01T00:00:00.000Z",
+  "items": [
+    {
+      "id": "incoming-id-must-not-replace-local",
+      "provider": "manual",
+      "externalId": "fixture-alpha",
+      "type": "movie",
+      "title": "Película Ficticia Alfa Actualizada",
+      "overview": "Sinopsis ficticia actualizada.",
+      "voteAverage": 8.5,
+      "genres": ["Actualización sintética"],
+      "updatedAt": 1893456003000
+    }
+  ]
+}
