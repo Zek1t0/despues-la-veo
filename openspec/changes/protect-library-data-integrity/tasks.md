@@ -26,12 +26,12 @@ Cada sección constituye una sesión coherente de implementación y verificació
 
 ## 3. Resultados e interfaz
 
-- [ ] 3.1 Definir el resultado final con `inserted`, `updated`, `skipped`, `conflicts`, `invalid` y `failed`.
-- [ ] 3.2 Conservar referencias y motivos seguros para elementos conflictivos, inválidos o fallidos.
-- [ ] 3.3 Mostrar antes de confirmar sólo las cantidades de elementos válidos e inválidos.
-- [ ] 3.4 Explicar antes de confirmar la política de merge, la protección por tipo y fecha, y la posibilidad de resultados parciales.
-- [ ] 3.5 Mostrar después los seis resultados reales y evitar describir una importación parcial como éxito total.
-- [ ] 3.6 Reutilizar la pantalla y los estilos actuales, limitando los cambios visuales a los textos de importación.
+- [x] 3.1 Definir el resultado final con `inserted`, `updated`, `skipped`, `conflicts`, `invalid` y `failed`.
+- [x] 3.2 Conservar referencias y motivos seguros para elementos conflictivos, inválidos o fallidos.
+- [x] 3.3 Mostrar antes de confirmar sólo las cantidades de elementos válidos e inválidos.
+- [x] 3.4 Explicar antes de confirmar la política de merge, la protección por tipo y fecha, y la posibilidad de resultados parciales.
+- [x] 3.5 Mostrar después los seis resultados reales y evitar describir una importación parcial como éxito total.
+- [x] 3.6 Reutilizar la pantalla y los estilos actuales, limitando los cambios visuales a los textos de importación.
 
 ## 4. Verificación y documentación
 

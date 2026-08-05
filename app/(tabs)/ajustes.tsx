@@ -5,7 +5,10 @@ import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 
 import type { SavedTitle } from "../../src/core/savedTitle";
-import { parseLibraryBackupV1 } from "../../src/core/libraryBackupV1";
+import {
+  parseLibraryBackupV1,
+  type BackupValidationError,
+} from "../../src/core/libraryBackupV1";
 import { getAllSavedTitles, mergeLibraryBackupItems } from "../../src/storage/savedTitlesRepo";
 import { colors } from "../../src/theme/colors";
 
@@ -14,6 +17,34 @@ type ExportPayloadV1 = {
   exportedAt: string;
   items: SavedTitle[];
 };
+
+const MAX_IMPORT_PROBLEM_DETAILS = 5;
+
+type ImportProblemDetail = {
+  reference: string;
+  reason: string;
+};
+
+function invalidProblemDetail(error: BackupValidationError): ImportProblemDetail {
+  const itemReference = error.index === undefined ? "Elemento" : `Elemento ${error.index + 1}`;
+  const fieldReference = error.field ? `, campo ${error.field}` : "";
+  return {
+    reference: `${itemReference}${fieldReference}`,
+    reason: error.message,
+  };
+}
+
+function formatProblemDetails(label: string, details: ImportProblemDetail[]): string | null {
+  if (details.length === 0) return null;
+
+  const visible = details
+    .slice(0, MAX_IMPORT_PROBLEM_DETAILS)
+    .map((detail) => `- ${detail.reference}: ${detail.reason}`);
+  const hiddenCount = details.length - visible.length;
+  if (hiddenCount > 0) visible.push(`- Hay ${hiddenCount} elemento(s) más no mostrado(s).`);
+
+  return `${label}:\n${visible.join("\n")}`;
+}
 
 function uuid() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -116,6 +147,7 @@ export default function SettingsScreen() {
   };
 
   const doImportFromText = async (text: string) => {
+    setLastMsg(null);
     const validated = parseLibraryBackupV1(text);
     if (!validated.ok) {
       Alert.alert("Import", validated.error.message);
@@ -123,8 +155,19 @@ export default function SettingsScreen() {
     }
 
     const { payload } = validated;
+    const totalCount = payload.items.length + payload.invalid.length;
     const invalidCount = payload.invalid.length;
-    const msg = `Válidos: ${payload.items.length}\nInválidos: ${invalidCount}\n\nSe va a MERGEAR (no borra nada).\n¿Continuar?`;
+    const msg = [
+      `Total: ${totalCount}`,
+      `Válidos: ${payload.items.length}`,
+      `Inválidos: ${invalidCount}`,
+      "",
+      "La importación hace merge: no borra títulos locales ausentes del backup.",
+      "Sólo actualiza coincidencias del mismo tipo cuando el backup es más reciente; conserva los cambios locales iguales o más recientes.",
+      "El resultado puede ser parcial: algunos elementos pueden procesarse y otros omitirse o fallar.",
+      "",
+      "¿Continuar?",
+    ].join("\n");
 
     const proceed = await new Promise<boolean>((resolve) => {
       if (Platform.OS === "web") {
@@ -144,11 +187,69 @@ export default function SettingsScreen() {
 
     try {
       const result = await mergeLibraryBackupItems(payload.items, uuid);
-      const ok = result.inserted + result.updated;
-      const fail = result.failed.length;
-      const finalMsg = `Import terminado: OK ${ok} / Fallaron ${fail}`;
+      const finalResult = {
+        inserted: result.inserted,
+        updated: result.updated,
+        skipped: result.skipped,
+        conflicts: result.conflicts,
+        invalid: payload.invalid.map(invalidProblemDetail),
+        failed: result.failed,
+      };
+      const persistedCount = finalResult.inserted + finalResult.updated;
+      const nonAppliedCount =
+        finalResult.skipped +
+        finalResult.conflicts.length +
+        finalResult.invalid.length +
+        finalResult.failed.length;
+      let outcome: string;
+      if (persistedCount > 0 && nonAppliedCount === 0) {
+        outcome = "Importación completada.";
+      } else if (persistedCount > 0 && nonAppliedCount > 0) {
+        outcome =
+          "Resultado parcial: se conservaron los cambios persistidos y se detallan los elementos no aplicados.";
+      } else if (
+        finalResult.skipped > 0 &&
+        finalResult.conflicts.length === 0 &&
+        finalResult.invalid.length === 0 &&
+        finalResult.failed.length === 0
+      ) {
+        outcome =
+          "No se realizaron cambios: todos los elementos fueron omitidos porque los datos locales eran iguales o más recientes.";
+      } else if (nonAppliedCount > 0) {
+        outcome = "No se aplicaron cambios. Revisá los resultados detallados.";
+      } else {
+        outcome = "El backup no contenía elementos para importar.";
+      }
+      const detailSections = [
+        formatProblemDetails("Inválidos", finalResult.invalid),
+        formatProblemDetails("Conflictos", finalResult.conflicts),
+        formatProblemDetails("Fallidos", finalResult.failed),
+      ].filter((section): section is string => section !== null);
+      const countLines = [
+        `Insertados: ${finalResult.inserted}`,
+        `Actualizados: ${finalResult.updated}`,
+        `Omitidos: ${finalResult.skipped}`,
+        `Conflictos: ${finalResult.conflicts.length}`,
+        `Inválidos: ${finalResult.invalid.length}`,
+        `Fallidos: ${finalResult.failed.length}`,
+      ];
+      const finalMsg = [
+        outcome,
+        "",
+        ...countLines,
+        ...(detailSections.length > 0 ? ["", ...detailSections] : []),
+      ].join("\n");
       setLastMsg(finalMsg);
-      if (Platform.OS !== "web") Alert.alert("Import", finalMsg);
+      if (Platform.OS !== "web") {
+        const mobileSummary = [
+          outcome,
+          "",
+          ...countLines,
+          "",
+          "Los detalles están visibles en Ajustes.",
+        ].join("\n");
+        Alert.alert("Resultado de importación", mobileSummary);
+      }
     } catch (e: any) {
       Alert.alert("Error importando", e?.message ?? "Error desconocido");
     } finally {
