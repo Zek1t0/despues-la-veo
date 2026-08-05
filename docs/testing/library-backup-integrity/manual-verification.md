@@ -4,6 +4,17 @@ Esta guía usa únicamente datos sintéticos de `fixtures/`. No importes un back
 
 ## Estado de verificación
 
+### Ejecución manual web — 2026-08-05
+
+- Plataforma: web.
+- Origen aislado: `localhost:8098`.
+- Fixtures ejecutados: `00-empty.json` a `10-valid-empty-arrays.json`, en el orden documentado.
+- Resultado: los conteos observados coincidieron con la tabla de esta guía.
+- Se probaron inserción, actualización, `skipped`, conflicto de tipo, elemento inválido, colisión de ID, resultado parcial, campos opcionales ausentes, `null` explícito permitido y arrays vacíos válidos.
+- Se revisaron en web los textos previos, la confirmación y el resultado final en Ajustes.
+- `failed` por un fallo SQLite controlado sigue pendiente; todos los fixtures válidos observaron `failed: 0`.
+- Android e iOS no fueron verificados.
+
 Ejecutado técnicamente en esta preparación:
 
 - Los 11 fixtures fueron parseados como JSON y se comprobó `version: 1` y la cantidad de elementos.
@@ -12,10 +23,10 @@ Ejecutado técnicamente en esta preparación:
 - `npm run web -- --port 8098` produjo el bundle web principal (881 módulos) y el worker web de SQLite; se obtuvo HTTP 200 y Metro se detuvo después.
 - El diff de paths confirmó que esta sesión no modificó esquema SQLite, dependencias, TMDB ni los tres archivos de producción excluidos.
 
-No ejecutado todavía:
+Pendiente después de la ejecución web:
 
-- Ningún fixture fue importado mediante la interfaz; por lo tanto, los conteos de merge de esta guía son expectativas derivadas del contrato, no resultados observados.
-- No se verificaron visualmente Biblioteca, Ajustes, confirmaciones ni round-trip.
+- No se verificaron los casos específicos de strings obligatorios vacíos, `id` vacío, fechas no finitas o con tipo inválido, ni coincidencias con `updatedAt` igual o ausente.
+- No quedó registrada evidencia suficiente para marcar el round-trip completo ni todas las comprobaciones exactas de identidad y fechas de la sección correspondiente.
 - No se ejecutaron pruebas en Android o iOS.
 - No se forzó un `failed` de persistencia; requiere una prueba automatizada con SQLite desechable e inyección controlada de fallo.
 

@@ -36,7 +36,7 @@ Cada sección constituye una sesión coherente de implementación y verificació
 ## 4. Verificación y documentación
 
 - [ ] 4.1 Verificar round-trip completo y backups versión 1 con cada campo opcional ausente.
-- [ ] 4.2 Verificar valores de inserción, conservación de campos ausentes en coincidencias y `null` explícito permitido.
+- [x] 4.2 Verificar valores de inserción, conservación de campos ausentes en coincidencias y `null` explícito permitido.
 - [ ] 4.3 Verificar strings obligatorios vacíos, `id` vacío y fechas presentes negativas, no finitas o con tipo inválido; todos deben producir `invalid` sin escritura.
 - [ ] 4.4 Verificar inserciones con fechas ausentes y válidas, y coincidencias del mismo tipo con `updatedAt` posterior, anterior, igual y ausente.
 - [ ] 4.5 Verificar que una actualización persiste el `updatedAt` entrante y conserva siempre `createdAt` local.
@@ -45,4 +45,4 @@ Cada sección constituye una sesión coherente de implementación y verificació
 - [x] 4.8 Documentar el contrato JSON versión 1, la política de merge y que `provider + type + externalId` queda para una migración SQLite posterior.
 - [x] 4.9 Confirmar que no se modificaron esquema SQLite, dependencias ni TMDB.
 - [x] 4.10 Ejecutar `npx tsc --noEmit`.
-- [ ] 4.11 Revisar manualmente en web los textos previos, la confirmación y el resultado final.
+- [x] 4.11 Revisar manualmente en web los textos previos, la confirmación y el resultado final.
