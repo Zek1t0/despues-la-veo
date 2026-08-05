@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "items": [
+    {"provider":"manual","externalId":"fixture-created-string","type":"movie","title":"Created string","createdAt":"1893456000000"},
+    {"provider":"manual","externalId":"fixture-created-null","type":"movie","title":"Created null","createdAt":null},
+    {"provider":"manual","externalId":"fixture-created-object","type":"movie","title":"Created objeto","createdAt":{"value":1893456000000}},
+    {"provider":"manual","externalId":"fixture-updated-string","type":"movie","title":"Updated string","updatedAt":"1893456000000"},
+    {"provider":"manual","externalId":"fixture-updated-null","type":"movie","title":"Updated null","updatedAt":null},
+    {"provider":"manual","externalId":"fixture-updated-array","type":"movie","title":"Updated array","updatedAt":[1893456000000]}
+  ]
+}

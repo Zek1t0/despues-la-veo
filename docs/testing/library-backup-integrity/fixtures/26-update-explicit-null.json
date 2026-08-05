@@ -1,0 +1,4 @@
+{
+  "version": 1,
+  "items": [{"provider":"manual","externalId":"fixture-alpha","type":"movie","title":"Alfa con borrado explícito","year":null,"posterUrl":null,"overview":null,"voteAverage":null,"notes":null,"updatedAt":1893456004000}]
+}

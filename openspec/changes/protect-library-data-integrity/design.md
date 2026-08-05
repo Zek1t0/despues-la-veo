@@ -24,6 +24,8 @@ El flujo tendrá tres etapas conceptuales:
 2. Normalizar cada elemento, conservando presencia y validez de los campos.
 3. Aplicar los elementos válidos contra el estado local usando las políticas de identidad, fecha y merge.
 
+En la envoltura versión 1, `exportedAt` puede faltar por compatibilidad. Si está presente debe ser un `string`; `null`, números, booleanos, objetos o arrays invalidan el archivo completo antes de procesar elementos.
+
 No habrá un dry-run que simule todas las escrituras. La confirmación previa usará sólo la validación y explicará que el merge puede terminar parcialmente. La lógica pura podrá extraerse de la pantalla a un módulo pequeño si facilita su verificación, sin introducir una arquitectura nueva ni dependencias.
 
 ### 3. Identidad y conflicto de tipo

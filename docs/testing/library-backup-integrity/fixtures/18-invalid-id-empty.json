@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "items": [
+    {"id":"","provider":"manual","externalId":"fixture-id-empty","type":"movie","title":"ID vacío"},
+    {"id":"   ","provider":"manual","externalId":"fixture-id-spaces","type":"movie","title":"ID espacios"}
+  ]
+}

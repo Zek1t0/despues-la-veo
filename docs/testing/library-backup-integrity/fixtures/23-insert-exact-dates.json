@@ -1,0 +1,4 @@
+{
+  "version": 1,
+  "items": [{"id":"fixture-exact-dates-id","provider":"manual","externalId":"fixture-exact-dates","type":"movie","title":"Fechas exactas","createdAt":1893456023000,"updatedAt":1893456023999}]
+}

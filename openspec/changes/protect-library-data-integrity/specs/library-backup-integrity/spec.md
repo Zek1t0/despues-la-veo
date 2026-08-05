@@ -198,6 +198,19 @@ El sistema MUST procesar independientemente los elementos elegibles y describir 
 
 El sistema MUST evitar toda modificación de SQLite cuando la estructura principal del backup sea inválida o su versión no sea compatible.
 
+#### Scenario: exportedAt ausente
+
+- **GIVEN** un backup versión 1 que omite `exportedAt`
+- **WHEN** se valida el archivo
+- **THEN** la envoltura sigue siendo válida
+
+#### Scenario: exportedAt presente con tipo inválido
+
+- **GIVEN** un backup versión 1 cuyo `exportedAt` presente no es un `string`
+- **WHEN** se valida el archivo
+- **THEN** se rechaza el archivo completo
+- **AND** no se modifica la biblioteca
+
 #### Scenario: JSON inválido
 
 - **GIVEN** un archivo que no contiene JSON válido

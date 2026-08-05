@@ -30,6 +30,8 @@ Pendiente después de la ejecución web:
 - No se ejecutaron pruebas en Android o iOS.
 - No se forzó un `failed` de persistencia; requiere una prueba automatizada con SQLite desechable e inyección controlada de fallo.
 
+Los fixtures `11` a `26` agregados posteriormente **no figuran como ejecutados**. Las matrices siguientes describen cómo verificarlos manualmente; crear el fixture y documentar el resultado esperado no constituye evidencia de ejecución.
+
 ## Preparar una web aislada
 
 1. Cerrá cualquier servidor Expo de este proyecto.
@@ -91,6 +93,57 @@ Empezá con una base vacía y respetá este orden. Cada fila parte del estado de
 5. Para campos ausentes en una coincidencia, observá que el paso 4 no incluye `status`, `tags`, `year`, `posterUrl` ni `notes`; esos valores deben seguir iguales a los insertados en el paso 2.
 
 Los exports generados durante esta prueba también son datos sintéticos. Eliminarlos al terminar evita confundirlos con backups útiles.
+
+## Matriz manual pendiente: envoltura y validación
+
+Cada fila debe ejecutarse sobre un origen descartable. Cuando el archivo se rechaza completamente no existe confirmación ni resumen final: las seis categorías son **no aplicables** y la biblioteca debe quedar idéntica.
+
+| Caso | Estado previo | Fixture | Previo válidos/inválidos | inserted | updated | skipped | conflicts | invalid | failed | Comparación posterior |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `exportedAt: null` | Biblioteca con un título testigo | `11-invalid-exported-at-null.json` | archivo rechazado | N/A | N/A | N/A | N/A | N/A | N/A | Exportar antes y después; el array `items` debe ser idéntico. |
+| `exportedAt` número | Igual | `12-invalid-exported-at-number.json` | archivo rechazado | N/A | N/A | N/A | N/A | N/A | N/A | Mismo control. |
+| `exportedAt` booleano | Igual | `13-invalid-exported-at-boolean.json` | archivo rechazado | N/A | N/A | N/A | N/A | N/A | N/A | Mismo control. |
+| `exportedAt` objeto | Igual | `14-invalid-exported-at-object.json` | archivo rechazado | N/A | N/A | N/A | N/A | N/A | N/A | Mismo control. |
+| `exportedAt` array | Igual | `15-invalid-exported-at-array.json` | archivo rechazado | N/A | N/A | N/A | N/A | N/A | N/A | Mismo control. |
+| `exportedAt` ausente | Biblioteca vacía | `16-exported-at-absent.json` | 0/0 | 0 | 0 | 0 | 0 | 0 | 0 | Exportar y confirmar que sigue sin items. |
+| Strings obligatorios vacíos/espacios | Biblioteca vacía | `17-invalid-required-empty.json` | 0/4 | 0 | 0 | 0 | 0 | 4 | 0 | El export posterior debe seguir con `items: []`. |
+| `id` vacío/espacios | Biblioteca vacía | `18-invalid-id-empty.json` | 0/2 | 0 | 0 | 0 | 0 | 2 | 0 | El export posterior debe seguir con `items: []`. |
+| Fechas negativas | Biblioteca vacía | `19-invalid-negative-dates.json` | 0/2 | 0 | 0 | 0 | 0 | 2 | 0 | El export posterior debe seguir con `items: []`. |
+| Fechas con string, `null`, objeto o array | Biblioteca vacía | `20-invalid-date-types.json` | 0/6 | 0 | 0 | 0 | 0 | 6 | 0 | El export posterior debe seguir con `items: []`. |
+
+Para los fixtures `11` a `15`, comprobar además que el error menciona `exportedAt` y que nunca aparece el diálogo de confirmación. Para `17` a `20`, confirmar que el detalle identifica el campo inválido y que ningún valor se reemplaza por un predeterminado.
+
+JSON no puede representar `NaN`, `Infinity` o `-Infinity`: esos tokens vuelven inválido al archivo JSON completo y ya están cubiertos por el caso de JSON inválido, no por un elemento `invalid`.
+
+## Matriz manual pendiente: fechas, presencia y merge
+
+Estas secuencias son independientes. Reiniciar con una biblioteca vacía entre secuencias.
+
+| Secuencia | Estado previo necesario | Fixture | inserted | updated | skipped | conflicts | invalid | failed | Campos a comparar en el JSON exportado |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| Fecha igual | Importar `01-insert-new.json`; exportar y guardar Alfa | `21-equal-updated-at.json` | 0 | 0 | 1 | 0 | 0 | 0 | El objeto Alfa completo debe ser idéntico; especialmente `title`, `id`, `createdAt`, `updatedAt`, `overview`, `voteAverage` y `genres`. |
+| `updatedAt` ausente en coincidencia | Importar `01`; exportar y guardar Alfa | `22-absent-updated-at-match.json` | 0 | 0 | 1 | 0 | 0 | Los mismos campos deben permanecer idénticos. |
+| Inserción con fechas exactas | Biblioteca vacía | `23-insert-exact-dates.json` | 1 | 0 | 0 | 0 | 0 | 0 | `id = fixture-exact-dates-id`, `createdAt = 1893456023000` y `updatedAt = 1893456023999`. |
+| Inserción con fechas ausentes | Biblioteca vacía; anotar la hora inmediatamente antes y después | `24-insert-dates-absent.json` | 1 | 0 | 0 | 0 | 0 | 0 | `createdAt` y `updatedAt` deben ser números finitos, no negativos, iguales entre sí y comprendidos entre las horas anotadas. |
+| Actualización con opcionales ausentes | Importar `01`; exportar Alfa como línea base | `25-update-optional-fields-absent.json` | 0 | 1 | 0 | 0 | 0 | 0 | `title` cambia; `updatedAt = 1893456003000`; `id`, `createdAt`, `year`, `posterUrl`, `overview`, `voteAverage`, `genres`, `status`, `tags` y `notes` permanecen exactamente iguales a la línea base. |
+| Actualización con `null` explícito | Importar `01`; exportar Alfa como línea base | `26-update-explicit-null.json` | 0 | 1 | 0 | 0 | 0 | 0 | `year`, `posterUrl`, `overview`, `voteAverage` y `notes` pasan a `null`; `id` y `createdAt` siguen exactos; `updatedAt = 1893456004000`; `genres`, `status` y `tags` se conservan. |
+
+## Matriz manual pendiente: permanencia, identidad y round-trip
+
+| Caso | Estado previo necesario | Fixture/acción | Resultado esperado | Comparación JSON obligatoria |
+| --- | --- | --- | --- | --- |
+| Título local ausente del backup | Biblioteca vacía; crear manualmente un título testigo y exportar | Importar `00-empty.json` | `inserted 0`, `updated 0`, `skipped 0`, `conflicts 0`, `invalid 0`, `failed 0` | El objeto testigo debe seguir presente y ser idéntico campo por campo. |
+| Conservación exacta de identidad y datos enriquecidos | Importar `01`, exportar; luego importar `25` y exportar | `01-insert-new.json` + `25-update-optional-fields-absent.json` | Primera importación `1/0/0/0/0/0`; segunda `0/1/0/0/0/0` | `id = fixture-shared-id` y `createdAt = 1893456000000` no cambian; `updatedAt = 1893456003000`; `overview`, `voteAverage` y `genres` conservan exactamente los valores de `01`. |
+| Round-trip completo | En origen A vacío importar `01`, exportar A; en origen B vacío importar ese export y volver a exportar B | Export A generado, no un fixture nuevo | En A `1/0/0/0/0/0`; en B `1/0/0/0/0/0` | Comparar los objetos ordenando claves si hace falta: todos los campos deben coincidir, especialmente `id`, `createdAt`, `updatedAt`, `overview`, `voteAverage` y `genres`. |
+| Conflicto de tipo | Estado dejado por `01` | `04-type-conflict.json` | `0/0/0/1/0/0` | Alfa debe ser idéntica antes y después. |
+| Colisión de ID | Estado dejado por `01` | `06-id-collision.json` | `1/0/0/0/0/0` | Alfa conserva `fixture-shared-id`; el nuevo elemento existe con otro `id` y sus fechas entrantes exactas. |
+| Resultado mixto sin fallo SQLite | Ejecutar la secuencia principal hasta `06` | `07-mixed-partial.json` | `1/1/1/1/1/0` | Exportar y confirmar las filas insertada/actualizada; los elementos conflictivo e inválido no deben existir. |
+
+Los tres últimos casos ya tienen evidencia web registrada para sus conteos principales, pero las comparaciones JSON adicionales de esta matriz permanecen pendientes hasta registrarlas explícitamente.
+
+## Verificación pendiente de `failed`
+
+No intentar provocar `failed` sobre la base real ni mediante corrupción, bloqueo o cambios de esquema. Este caso requiere una base SQLite descartable y una inyección controlada que haga fallar una escritura elegible mientras otras puedan persistirse. La evidencia debe demostrar las seis categorías, una referencia y motivo seguros para el fallo y la continuidad de los demás elementos. Hasta contar con esa ejecución, la tarea 4.7 permanece sin marcar.
 
 ## Registro de ejecución
 

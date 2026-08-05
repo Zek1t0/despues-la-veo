@@ -45,7 +45,7 @@ export type NormalizedBackupSavedTitle = {
 
 export type BackupValidationError = {
   index?: number;
-  field?: keyof SavedTitle | "version" | "items" | "root" | "json";
+  field?: keyof SavedTitle | "version" | "exportedAt" | "items" | "root" | "json";
   message: string;
 };
 
@@ -184,6 +184,9 @@ export function parseLibraryBackupV1(jsonText: string): LibraryBackupParseResult
   if (parsed.version !== LIBRARY_BACKUP_VERSION) {
     return { ok: false, error: { field: "version", message: "Versión de backup no soportada (se esperaba version=1)." } };
   }
+  if (hasOwn(parsed, "exportedAt") && typeof parsed.exportedAt !== "string") {
+    return { ok: false, error: { field: "exportedAt", message: "exportedAt debe ser un string cuando está presente." } };
+  }
   if (!Array.isArray(parsed.items)) {
     return { ok: false, error: { field: "items", message: "El JSON debe tener 'items' como array." } };
   }
@@ -200,7 +203,7 @@ export function parseLibraryBackupV1(jsonText: string): LibraryBackupParseResult
     ok: true,
     payload: {
       version: LIBRARY_BACKUP_VERSION,
-      exportedAt: typeof parsed.exportedAt === "string" ? parsed.exportedAt : undefined,
+      exportedAt: parsed.exportedAt as string | undefined,
       items,
       invalid,
     },

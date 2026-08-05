@@ -1,0 +1,4 @@
+{
+  "version": 1,
+  "items": [{"provider":"manual","externalId":"fixture-alpha","type":"movie","title":"No debe aplicarse sin updatedAt"}]
+}
