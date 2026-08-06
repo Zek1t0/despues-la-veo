@@ -42,10 +42,11 @@ const SPANISH_COLLATOR = new Intl.Collator("es", {
 });
 
 function compareExactSpanish(a: string, b: string): number {
-  return (
+  const localeResult =
     SPANISH_COLLATOR.compare(a, b) ||
-    a.localeCompare(b, "es", { sensitivity: "variant" })
-  );
+    a.localeCompare(b, "es", { sensitivity: "variant" });
+  if (localeResult !== 0) return localeResult;
+  return a < b ? -1 : a > b ? 1 : 0;
 }
 
 function compareTags(a: TagInfo, b: TagInfo, sort: TagsSort): number {
@@ -446,7 +447,7 @@ export default function EtiquetasScreen() {
   );
 
   const gap = 12;
-  const availableWidth = Math.max(0, windowWidth - 32);
+  const availableWidth = Math.max(0, Math.min(windowWidth - 32, 1168));
   const tagGridColumns = Math.max(
     1,
     Math.min(3, Math.floor((availableWidth + gap) / (290 + gap)))
@@ -456,7 +457,7 @@ export default function EtiquetasScreen() {
   const tagListKey = `${viewMode}-${tagColumns}`;
   const titleGridColumns = Math.max(
     1,
-    Math.min(6, Math.floor((availableWidth + gap) / (165 + gap)))
+    Math.min(6, Math.floor((availableWidth + gap) / (150 + gap)))
   );
   const titleColumns = libraryViewMode === "grid" ? titleGridColumns : 1;
   const titleCardWidth = Math.floor(
@@ -474,7 +475,7 @@ export default function EtiquetasScreen() {
     setIsSearchActive(false);
   };
 
-  const openOptionsButton = (withLabel: boolean) => (
+  const openOptionsButton = (withLabel: boolean) => selectedTag ? null : (
     <Pressable
       accessibilityLabel="Abrir opciones de Etiquetas"
       accessibilityRole="button"
@@ -506,7 +507,7 @@ export default function EtiquetasScreen() {
   const listHeader = selectedTag ? (
     <View style={{ gap: 10 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-        <Text numberOfLines={1} style={{ color: colors.text, flex: 1, fontSize: 18, fontWeight: "900" }}>
+        <Text numberOfLines={2} style={{ color: colors.text, flex: 1, flexShrink: 1, fontSize: 18, fontWeight: "900" }}>
           Títulos con: {selectedTag}
         </Text>
         <Pressable
@@ -611,7 +612,16 @@ export default function EtiquetasScreen() {
         />
       ) : null}
 
-      <View style={{ flex: 1, gap: 12, padding: 16 }}>
+      <View
+        style={{
+          alignSelf: "center",
+          flex: 1,
+          gap: 12,
+          maxWidth: 1200,
+          padding: 16,
+          width: "100%",
+        }}
+      >
         {Platform.OS === "web" ? (
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
             <TextInput

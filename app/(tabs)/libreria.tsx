@@ -374,12 +374,12 @@ export default function LibraryScreen() {
   }, [items, q, sort, statusFilter, typeFilter]);
 
   const gridGap = 12;
-  const availableListWidth = Math.max(0, windowWidth - 32);
+  const availableListWidth = Math.max(0, Math.min(windowWidth - 32, 1168));
   const gridColumns =
     viewMode === "grid"
       ? Math.max(
           1,
-          Math.min(6, Math.floor((availableListWidth + gridGap) / (160 + gridGap)))
+          Math.min(6, Math.floor((availableListWidth + gridGap) / (150 + gridGap)))
         )
       : 1;
   const gridCardWidth = Math.floor(
@@ -517,7 +517,16 @@ export default function LibraryScreen() {
         />
       ) : null}
 
-      <View style={{ flex: 1, padding: 16, gap: 12 }}>
+      <View
+        style={{
+          alignSelf: "center",
+          flex: 1,
+          gap: 12,
+          maxWidth: 1200,
+          padding: 16,
+          width: "100%",
+        }}
+      >
       {Platform.OS === "web" ? (
         <View style={{ gap: 10 }}>
           <View style={{ alignItems: "flex-end" }}>
@@ -637,16 +646,22 @@ export default function LibraryScreen() {
             const tagsPreview = (item.tags ?? []).slice(0, 3);
 
             return (
-              <Pressable onPress={() => router.push(`/title/${item.id}`)}>
-                <View
-                  style={{
-                    padding: 12,
-                    borderRadius: 16,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    backgroundColor: colors.card,
-                    gap: 10,
-                  }}
+              <View
+                style={{
+                  padding: 12,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  backgroundColor: colors.card,
+                  gap: 10,
+                }}
+              >
+                <Pressable
+                  accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}`}
+                  accessibilityRole="button"
+                  focusable
+                  onPress={() => router.push(`/title/${item.id}`)}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.82 : 1 })}
                 >
                   <View style={{ flexDirection: "row", gap: 12 }}>
                     {item.posterUrl ? (
@@ -698,42 +713,56 @@ export default function LibraryScreen() {
                       )}
                     </View>
                   </View>
+                </Pressable>
 
-                  <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
-                    <Pressable
-                      onPress={() => toggleDone(item)}
-                      style={{
-                        paddingVertical: 8,
-                        paddingHorizontal: 10,
-                        borderRadius: 12,
-                        backgroundColor: colors.card2,
-                        borderWidth: 1,
-                        borderColor: colors.border2,
-                      }}
-                    >
-                      <Text style={{ color: colors.text, fontWeight: "800" }}>
-                        {item.status === "done"
-                          ? "Marcar como planeado"
-                          : "Marcar como terminado"}
-                      </Text>
-                    </Pressable>
+                <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
+                  <Pressable
+                    accessibilityLabel={
+                      item.status === "done"
+                        ? `Marcar ${item.title} como planeado`
+                        : `Marcar ${item.title} como terminado`
+                    }
+                    accessibilityRole="button"
+                    focusable
+                    onPress={() => toggleDone(item)}
+                    style={{
+                      minHeight: 44,
+                      justifyContent: "center",
+                      paddingVertical: 8,
+                      paddingHorizontal: 10,
+                      borderRadius: 12,
+                      backgroundColor: colors.card2,
+                      borderWidth: 1,
+                      borderColor: colors.border2,
+                    }}
+                  >
+                    <Text style={{ color: colors.text, fontWeight: "800" }}>
+                      {item.status === "done"
+                        ? "Marcar como planeado"
+                        : "Marcar como terminado"}
+                    </Text>
+                  </Pressable>
 
-                    <Pressable
-                      onPress={() => remove(item.id)}
-                      style={{
-                        paddingVertical: 8,
-                        paddingHorizontal: 10,
-                        borderRadius: 12,
-                        backgroundColor: colors.danger,
-                        borderWidth: 1,
-                        borderColor: colors.dangerBorder,
-                      }}
-                    >
-                      <Text style={{ color: colors.text, fontWeight: "800" }}>Borrar</Text>
-                    </Pressable>
-                  </View>
+                  <Pressable
+                    accessibilityLabel={`Borrar ${item.title}`}
+                    accessibilityRole="button"
+                    focusable
+                    onPress={() => remove(item.id)}
+                    style={{
+                      minHeight: 44,
+                      justifyContent: "center",
+                      paddingVertical: 8,
+                      paddingHorizontal: 10,
+                      borderRadius: 12,
+                      backgroundColor: colors.danger,
+                      borderWidth: 1,
+                      borderColor: colors.dangerBorder,
+                    }}
+                  >
+                    <Text style={{ color: colors.text, fontWeight: "800" }}>Borrar</Text>
+                  </Pressable>
                 </View>
-              </Pressable>
+              </View>
             );
           }}
           ListEmptyComponent={

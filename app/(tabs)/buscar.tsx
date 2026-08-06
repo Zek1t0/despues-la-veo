@@ -140,10 +140,10 @@ export default function ExploreScreen() {
   );
 
   const gridGap = 12;
-  const availableWidth = Math.max(0, windowWidth - 32);
+  const availableWidth = Math.max(0, Math.min(windowWidth - 32, 1168));
   const responsiveGridColumns = Math.max(
     1,
-    Math.min(6, Math.floor((availableWidth + gridGap) / (165 + gridGap)))
+    Math.min(6, Math.floor((availableWidth + gridGap) / (150 + gridGap)))
   );
   const listColumns = viewMode === "grid" ? responsiveGridColumns : 1;
   const gridCardWidth = Math.floor(
@@ -190,7 +190,16 @@ export default function ExploreScreen() {
   }, [debounced]);
 
   return (
-    <View style={{ flex: 1, padding: 16, gap: 12 }}>
+    <View
+      style={{
+        alignSelf: "center",
+        flex: 1,
+        gap: 12,
+        maxWidth: 1200,
+        padding: 16,
+        width: "100%",
+      }}
+    >
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <TextInput
           accessibilityLabel="Buscar película o serie"

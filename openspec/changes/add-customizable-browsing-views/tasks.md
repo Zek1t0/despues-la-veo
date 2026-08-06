@@ -61,16 +61,16 @@ Aplicar una sola tarea por vez. Antes de marcar cualquier tarea como completa, e
 
 ## 6. Traducción y pulido responsive de pantallas afectadas
 
-- [ ] 6.1 Inventariar y normalizar textos visibles de Biblioteca, Buscar y Etiquetas a español, incluidos tipos, estados, `Estado` y `Etiquetas`; comprobar que no queden `Movie`, `Movies`, `TV`, `Planned`, `Watching`, `Done`, `Dropped`, `Status` ni `Tags` visibles en esas pantallas.
-- [ ] 6.2 Normalizar en `app/title/[id].tsx` los textos afectados, incluidos tipo, estados, Etiquetas y fecha de actualización, sin cambiar valores persistidos; comprobar editar estado, etiquetas y notas de película y serie.
-- [ ] 6.3 Revisar anchos móviles, tablet y web para evitar controles en varias líneas desordenadas, recortes de texto y áreas táctiles pequeñas; comprobar al menos un ancho móvil estrecho, uno intermedio y uno web amplio.
-- [ ] 6.4 Incorporar una transición breve y discreta sólo si las APIs existentes la permiten sin inestabilidad; comprobar que desactivarla no afecta ninguna función y que navegación/información no dependen de hover.
-- [ ] 6.5 Confirmar que no se agregó selector de idioma, sistema i18n, menú de tres puntos, signo `+` en placeholders ni acciones de mosaico; comprobar mediante revisión de las cuatro pantallas y búsqueda textual relevante.
-- [ ] 6.6 Detenerse para revisión de la sección 6 y presentar capturas o descripción reproducible por breakpoint, inventario de textos y `npx tsc --noEmit` antes de avanzar.
+- [x] 6.1 Inventariar y normalizar textos visibles de Biblioteca, Buscar y Etiquetas a español, incluidos tipos, estados, `Estado` y `Etiquetas`; comprobar que no queden `Movie`, `Movies`, `TV`, `Planned`, `Watching`, `Done`, `Dropped`, `Status` ni `Tags` visibles en esas pantallas.
+- [x] 6.2 Normalizar en `app/title/[id].tsx` los textos afectados, incluidos tipo, estados, Etiquetas y fecha de actualización, sin cambiar valores persistidos; comprobar editar estado, etiquetas y notas de película y serie.
+- [x] 6.3 Revisar anchos móviles, tablet y web para evitar controles en varias líneas desordenadas, recortes de texto y áreas táctiles pequeñas; comprobar al menos un ancho móvil estrecho, uno intermedio y uno web amplio.
+- [x] 6.4 Incorporar una transición breve y discreta sólo si las APIs existentes la permiten sin inestabilidad; comprobar que desactivarla no afecta ninguna función y que navegación/información no dependen de hover.
+- [x] 6.5 Confirmar que no se agregó selector de idioma, sistema i18n, menú de tres puntos, signo `+` en placeholders ni acciones de mosaico; comprobar mediante revisión de las cuatro pantallas y búsqueda textual relevante.
+- [x] 6.6 Detenerse para revisión de la sección 6 y presentar capturas o descripción reproducible por breakpoint, inventario de textos y `npx tsc --noEmit` antes de avanzar.
 
 ## 7. Pruebas y verificación integral
 
-- [ ] 7.1 Ejecutar `npx tsc --noEmit` sobre el cambio completo y resolver todos los errores sin actualizar dependencias; comprobar salida exitosa con código `0`.
+- [x] 7.1 Ejecutar `npx tsc --noEmit` sobre el cambio completo y resolver todos los errores sin actualizar dependencias; comprobar salida exitosa con código `0`.
 - [ ] 7.2 Revisar manualmente en web Biblioteca, Buscar, Etiquetas y detalle, cubriendo búsqueda, chips, paneles, todos los órdenes, filtros, layouts y navegación; registrar ancho probado y resultados.
 - [ ] 7.3 Revisar manualmente en una pantalla móvil física o emulador las mismas pantallas, incluidos encabezado de Biblioteca, búsqueda activable, barra horizontal, modal/panel, áreas táctiles y rotación; registrar dispositivo o viewport y resultados.
 - [ ] 7.4 Cambiar todas las preferencias, cerrar por completo y volver a abrir la aplicación; comprobar recuperación de cada valor y luego cambiar una por vez para confirmar que no afecta a las otras.
@@ -78,6 +78,6 @@ Aplicar una sola tarea por vez. Antes de marcar cualquier tarea como completa, e
 - [ ] 7.6 Comparar una biblioteca existente antes y después de la evolución SQLite aditiva —conteo, IDs, identidad `provider + externalId`, campos e índice— y comprobar que todos los datos permanecen intactos.
 - [ ] 7.7 Exportar un backup JSON v1 antes y después de cambiar preferencias, comprobar que sigue en `version: 1` y no contiene preferencias, e importar una copia verificando el comportamiento existente sin reemplazar configuración local.
 - [ ] 7.8 Verificar placeholders y estados vacíos en las tres pantallas: contrato visual completo de `TitleGridCard` con póster ausente/error, biblioteca vacía, búsqueda sin resultados, ningún título con etiquetas, búsqueda de etiquetas sin coincidencias, etiqueta abierta que pierde sus títulos y collages incompletos, siempre sin `+`, metadatos extra ni interacción indebida.
-- [ ] 7.9 Confirmar por diff de `package.json`, tipos y SQL que no se actualizaron dependencias, no cambió `SavedTitle`, no cambió el índice actual y no se agregaron filtros TMDB, fijados ni refactorizaciones ajenas.
-- [ ] 7.10 Ejecutar `npx.cmd openspec validate add-customizable-browsing-views --strict` y corregir únicamente inconsistencias de los artefactos o de cumplimiento detectadas; comprobar validación exitosa.
+- [x] 7.9 Confirmar por diff de `package.json`, tipos y SQL que no se actualizaron dependencias, no cambió `SavedTitle`, no cambió el índice actual y no se agregaron filtros TMDB, fijados ni refactorizaciones ajenas.
+- [x] 7.10 Ejecutar `npx.cmd openspec validate add-customizable-browsing-views --strict` y corregir únicamente inconsistencias de los artefactos o de cumplimiento detectadas; comprobar validación exitosa.
 - [ ] 7.11 Detenerse para revisión final y presentar resultados, evidencia de compatibilidad, riesgos residuales y estado de todas las tareas antes de proponer el archivado en un paso separado.
