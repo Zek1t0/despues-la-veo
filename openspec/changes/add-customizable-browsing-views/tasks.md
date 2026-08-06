@@ -49,15 +49,15 @@ Aplicar una sola tarea por vez. Antes de marcar cualquier tarea como completa, e
 
 ## 5. Etiquetas en Mosaico/Lista y collages
 
-- [ ] 5.1 Derivar estructuras de etiqueta exclusivamente desde `SavedTitle.tags`, con nombre, títulos y cantidad, sin inventar fechas, entidades persistentes ni almacenamiento para etiquetas con cero títulos; agregar los tres órdenes con desempates estables y comprobar cantidades iguales, mayúsculas/acentos y nombres repetibles.
-- [ ] 5.2 Incorporar carga y guardado de apariencia y orden de Etiquetas con `Mosaico` y `Mayor cantidad de títulos` como predeterminados; comprobar primera apertura, recuperación e independencia respecto de las otras pantallas.
-- [ ] 5.3 Crear `TagCollage` 2×2 seleccionando hasta cuatro títulos por `updatedAt` descendente y desempate por título e ID; comprobar etiquetas con uno, dos, tres, cuatro y más de cuatro títulos.
-- [ ] 5.4 Completar imágenes o lugares ausentes con placeholders neutros sin `+` ni interacción individual y aplicar contraste legible; comprobar mezcla de pósters claros, oscuros, URLs ausentes y errores de carga.
-- [ ] 5.5 Implementar tarjetas de Mosaico con collage, nombre, cantidad y una única área táctil, más Lista como alternativa navegable; comprobar apertura tocando distintas zonas y confirmar que las celdas no son botones separados.
-- [ ] 5.6 Migrar la colección principal a una lista virtualizada con columnas responsive y key de layout; comprobar una columna móvil, dos en ancho intermedio, hasta tres en web ancho y cambio Mosaico↔Lista sin layout inválido.
-- [ ] 5.7 Hacer que al abrir una etiqueta sus títulos lean y usen la apariencia de Biblioteca, sin guardar otra clave; comprobar Detalle y Mosaico, cambios posteriores de Biblioteca y cierre/retorno a la lista de etiquetas.
-- [ ] 5.8 Conservar búsqueda de etiquetas y separar tres estados: ningún `SavedTitle` contiene etiquetas, la búsqueda no coincide con etiquetas derivadas y una etiqueta abierta pierde todos sus títulos por un cambio concurrente; comprobar mensajes comprensibles o retorno seguro al listado, sin crear ni conservar una entidad de etiqueta vacía.
-- [ ] 5.9 Detenerse para revisión de la sección 5 y presentar matriz 0/1/2/3/4+ títulos, estabilidad de collage, herencia de Biblioteca y `npx tsc --noEmit` antes de avanzar.
+- [x] 5.1 Derivar estructuras de etiqueta exclusivamente desde `SavedTitle.tags`, con nombre, títulos y cantidad, sin inventar fechas, entidades persistentes ni almacenamiento para etiquetas con cero títulos; agregar los tres órdenes con desempates estables y comprobar cantidades iguales, mayúsculas/acentos y nombres repetibles.
+- [x] 5.2 Incorporar carga y guardado de apariencia y orden de Etiquetas con `Mosaico` y `Mayor cantidad de títulos` como predeterminados; comprobar primera apertura, recuperación e independencia respecto de las otras pantallas.
+- [x] 5.3 Crear `TagCollage` 2×2 seleccionando hasta cuatro títulos por `updatedAt` descendente y desempate por título e ID; comprobar etiquetas con uno, dos, tres, cuatro y más de cuatro títulos.
+- [x] 5.4 Completar imágenes o lugares ausentes con placeholders neutros sin `+` ni interacción individual y aplicar contraste legible; comprobar mezcla de pósters claros, oscuros, URLs ausentes y errores de carga.
+- [x] 5.5 Implementar tarjetas de Mosaico con collage, nombre, cantidad y una única área táctil, más Lista como alternativa navegable; comprobar apertura tocando distintas zonas y confirmar que las celdas no son botones separados.
+- [x] 5.6 Migrar la colección principal a una lista virtualizada con columnas responsive y key de layout; comprobar una columna móvil, dos en ancho intermedio, hasta tres en web ancho y cambio Mosaico↔Lista sin layout inválido.
+- [x] 5.7 Hacer que al abrir una etiqueta sus títulos lean y usen la apariencia de Biblioteca, sin guardar otra clave; comprobar Detalle y Mosaico, cambios posteriores de Biblioteca y cierre/retorno a la lista de etiquetas.
+- [x] 5.8 Conservar búsqueda de etiquetas y separar tres estados: ningún `SavedTitle` contiene etiquetas, la búsqueda no coincide con etiquetas derivadas y una etiqueta abierta pierde todos sus títulos por un cambio concurrente; comprobar mensajes comprensibles o retorno seguro al listado, sin crear ni conservar una entidad de etiqueta vacía.
+- [x] 5.9 Detenerse para revisión de la sección 5 y presentar matriz 0/1/2/3/4+ títulos, estabilidad de collage, herencia de Biblioteca y `npx tsc --noEmit` antes de avanzar.
 
 ## 6. Traducción y pulido responsive de pantallas afectadas
 

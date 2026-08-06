@@ -1,232 +1,720 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
-import { useRouter } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Platform,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+  useWindowDimensions,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 
-import { listSavedTitles } from "../../src/storage/savedTitlesRepo";
+import {
+  TagCollage,
+  TitleGridCard,
+  ViewOptionsPanel,
+  type ViewOptionsSection,
+} from "../../src/components/browsing";
+import { titleStatusLabel, titleTypeLabel } from "../../src/core/presentationLabels";
 import type { SavedTitle } from "../../src/core/savedTitle";
+import {
+  VIEW_PREFERENCE_DEFAULTS,
+  type LibraryViewMode,
+  type TagsSort,
+  type TagsViewMode,
+} from "../../src/core/viewPreferences";
+import { listSavedTitles } from "../../src/storage/savedTitlesRepo";
+import { getViewPreference, setViewPreference } from "../../src/storage/viewPreferencesRepo";
 import { colors } from "../../src/theme/colors";
 
-type TagInfo = { tag: string; count: number };
+type TagInfo = { tag: string; items: SavedTitle[]; count: number };
 
-function Card({ children }: { children: React.ReactNode }) {
+const SPANISH_COLLATOR = new Intl.Collator("es", {
+  numeric: true,
+  sensitivity: "base",
+});
+
+function compareExactSpanish(a: string, b: string): number {
   return (
-    <View
-      style={{
-        backgroundColor: colors.card,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: 16,
-        padding: 14,
-        gap: 10,
-      }}
+    SPANISH_COLLATOR.compare(a, b) ||
+    a.localeCompare(b, "es", { sensitivity: "variant" })
+  );
+}
+
+function compareTags(a: TagInfo, b: TagInfo, sort: TagsSort): number {
+  if (sort === "count-desc") {
+    return b.count - a.count || compareExactSpanish(a.tag, b.tag);
+  }
+  return sort === "name-asc"
+    ? compareExactSpanish(a.tag, b.tag)
+    : compareExactSpanish(b.tag, a.tag);
+}
+
+function normalizeTagSearch(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es");
+}
+
+function compareTitlesForCollage(a: SavedTitle, b: SavedTitle): number {
+  return (
+    b.updatedAt - a.updatedAt ||
+    compareExactSpanish(a.title, b.title) ||
+    a.id.localeCompare(b.id)
+  );
+}
+
+function selectCollageTitles(tagItems: readonly SavedTitle[]): SavedTitle[] {
+  return [...tagItems].sort(compareTitlesForCollage).slice(0, 4);
+}
+
+function tagCountLabel(count: number): string {
+  return count === 1 ? "1 título" : `${count} títulos`;
+}
+
+function TagGridCard({
+  info,
+  onPress,
+  style,
+}: {
+  info: TagInfo;
+  onPress: () => void;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const collageItems = selectCollageTitles(info.items).map((item) => ({
+    id: item.id,
+    posterUrl: item.posterUrl,
+  }));
+
+  return (
+    <Pressable
+      accessibilityLabel={`Abrir etiqueta ${info.tag}, ${tagCountLabel(info.count)}`}
+      accessibilityRole="button"
+      focusable
+      onPress={onPress}
+      style={({ pressed }) => [
+        {
+          backgroundColor: colors.card2,
+          borderColor: colors.border,
+          borderRadius: 16,
+          borderWidth: 1,
+          opacity: pressed ? 0.82 : 1,
+          overflow: "hidden",
+        },
+        style,
+      ]}
     >
-      {children}
-    </View>
+      <TagCollage items={collageItems} />
+      <View
+        accessible={false}
+        pointerEvents="none"
+        style={{ backgroundColor: "rgba(11, 11, 11, 0.94)", gap: 3, padding: 12 }}
+      >
+        <Text numberOfLines={2} style={{ color: colors.text, fontSize: 16, fontWeight: "900" }}>
+          {info.tag}
+        </Text>
+        <Text style={{ color: colors.muted, fontWeight: "700" }}>
+          {tagCountLabel(info.count)}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function TagListRow({ info, onPress }: { info: TagInfo; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityLabel={`Abrir etiqueta ${info.tag}, ${tagCountLabel(info.count)}`}
+      accessibilityRole="button"
+      focusable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        alignItems: "center",
+        backgroundColor: colors.card2,
+        borderColor: colors.border,
+        borderRadius: 14,
+        borderWidth: 1,
+        flexDirection: "row",
+        gap: 12,
+        minHeight: 56,
+        opacity: pressed ? 0.82 : 1,
+        padding: 12,
+      })}
+    >
+      <View accessible={false} pointerEvents="none" style={{ flex: 1, gap: 3 }}>
+        <Text numberOfLines={1} style={{ color: colors.text, fontWeight: "900" }}>
+          {info.tag}
+        </Text>
+        <Text style={{ color: colors.muted, fontWeight: "700" }}>
+          {tagCountLabel(info.count)}
+        </Text>
+      </View>
+      <Ionicons color={colors.muted} name="chevron-forward" size={20} />
+    </Pressable>
+  );
+}
+
+function DetailTitleRow({ item, onPress }: { item: SavedTitle; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}`}
+      accessibilityRole="button"
+      focusable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        backgroundColor: colors.card2,
+        borderColor: colors.border,
+        borderRadius: 14,
+        borderWidth: 1,
+        gap: 5,
+        opacity: pressed ? 0.82 : 1,
+        padding: 12,
+      })}
+    >
+      <Text numberOfLines={2} style={{ color: colors.text, fontWeight: "900" }}>
+        {item.title}{item.year ? ` (${item.year})` : ""}
+      </Text>
+      <Text style={{ color: colors.muted, fontWeight: "700" }}>
+        {titleTypeLabel(item.type)} · {titleStatusLabel(item.status)}
+      </Text>
+    </Pressable>
   );
 }
 
 export default function EtiquetasScreen() {
   const router = useRouter();
-
+  const { width: windowWidth } = useWindowDimensions();
   const [items, setItems] = useState<SavedTitle[]>([]);
+  const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [isSearchActive, setIsSearchActive] = useState(false);
+  const [optionsVisible, setOptionsVisible] = useState(false);
+  const [sort, setSort] = useState<TagsSort>(VIEW_PREFERENCE_DEFAULTS["tags.sort"]);
+  const [viewMode, setViewMode] = useState<TagsViewMode>(
+    VIEW_PREFERENCE_DEFAULTS["tags.viewMode"]
+  );
+  const [libraryViewMode, setLibraryViewMode] = useState<LibraryViewMode>(
+    VIEW_PREFERENCE_DEFAULTS["library.viewMode"]
+  );
+  const [preferencesReady, setPreferencesReady] = useState(false);
+  const confirmedViewMode = useRef<TagsViewMode>(VIEW_PREFERENCE_DEFAULTS["tags.viewMode"]);
+  const confirmedSort = useRef<TagsSort>(VIEW_PREFERENCE_DEFAULTS["tags.sort"]);
+  const latestViewMode = useRef<TagsViewMode>(VIEW_PREFERENCE_DEFAULTS["tags.viewMode"]);
+  const latestSort = useRef<TagsSort>(VIEW_PREFERENCE_DEFAULTS["tags.sort"]);
+  const viewModeWriteQueue = useRef<Promise<void>>(Promise.resolve());
+  const sortWriteQueue = useRef<Promise<void>>(Promise.resolve());
+  const viewModeSelectionId = useRef(0);
+  const sortSelectionId = useRef(0);
+  const mounted = useRef(true);
 
-  const refresh = useCallback(async () => {
-    const data = await listSavedTitles();
-    setItems(data);
+  const showPreferenceError = useCallback((preference: "apariencia" | "orden") => {
+    const message = `No se pudo guardar el ${preference}. Se restauró el último valor guardado.`;
+    if (Platform.OS === "web") {
+      window.alert(message);
+      return;
+    }
+    Alert.alert("Error al guardar", message);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    mounted.current = true;
+
+    async function loadPreferences() {
+      const [viewResult, sortResult] = await Promise.allSettled([
+        getViewPreference("tags.viewMode"),
+        getViewPreference("tags.sort"),
+      ]);
+      if (!active) return;
+
+      const loadedViewMode =
+        viewResult.status === "fulfilled"
+          ? viewResult.value
+          : VIEW_PREFERENCE_DEFAULTS["tags.viewMode"];
+      const loadedSort =
+        sortResult.status === "fulfilled"
+          ? sortResult.value
+          : VIEW_PREFERENCE_DEFAULTS["tags.sort"];
+      confirmedViewMode.current = loadedViewMode;
+      confirmedSort.current = loadedSort;
+      latestViewMode.current = loadedViewMode;
+      latestSort.current = loadedSort;
+      setViewMode(loadedViewMode);
+      setSort(loadedSort);
+      setPreferencesReady(true);
+    }
+
+    void loadPreferences();
+    return () => {
+      active = false;
+      mounted.current = false;
+    };
+  }, []);
+
+  const selectViewMode = useCallback(
+    (next: TagsViewMode) => {
+      if (!preferencesReady || next === latestViewMode.current) return;
+      const selectionId = ++viewModeSelectionId.current;
+      latestViewMode.current = next;
+      setViewMode(next);
+      viewModeWriteQueue.current = viewModeWriteQueue.current
+        .then(async () => {
+          try {
+            await setViewPreference("tags.viewMode", next);
+            confirmedViewMode.current = next;
+          } catch (error) {
+            console.error("No se pudo guardar la apariencia de Etiquetas.", error);
+            if (selectionId !== viewModeSelectionId.current || !mounted.current) return;
+            latestViewMode.current = confirmedViewMode.current;
+            setViewMode(confirmedViewMode.current);
+            showPreferenceError("apariencia");
+          }
+        })
+        .catch((error) => {
+          console.error("Falló inesperadamente la cola de apariencia de Etiquetas.", error);
+        });
+    },
+    [preferencesReady, showPreferenceError]
+  );
+
+  const selectSort = useCallback(
+    (next: TagsSort) => {
+      if (!preferencesReady || next === latestSort.current) return;
+      const selectionId = ++sortSelectionId.current;
+      latestSort.current = next;
+      setSort(next);
+      sortWriteQueue.current = sortWriteQueue.current
+        .then(async () => {
+          try {
+            await setViewPreference("tags.sort", next);
+            confirmedSort.current = next;
+          } catch (error) {
+            console.error("No se pudo guardar el orden de Etiquetas.", error);
+            if (selectionId !== sortSelectionId.current || !mounted.current) return;
+            latestSort.current = confirmedSort.current;
+            setSort(confirmedSort.current);
+            showPreferenceError("orden");
+          }
+        })
+        .catch((error) => {
+          console.error("Falló inesperadamente la cola de orden de Etiquetas.", error);
+        });
+    },
+    [preferencesReady, showPreferenceError]
+  );
 
   useFocusEffect(
     useCallback(() => {
+      let active = true;
+
+      async function refresh() {
+        setLoading(true);
+        const [titlesResult, libraryViewResult] = await Promise.allSettled([
+          listSavedTitles(),
+          getViewPreference("library.viewMode"),
+        ]);
+        if (!active) return;
+        if (titlesResult.status === "fulfilled") {
+          setItems(titlesResult.value);
+        } else {
+          console.error("No se pudieron recargar las etiquetas.", titlesResult.reason);
+          setItems([]);
+        }
+        setLibraryViewMode(
+          libraryViewResult.status === "fulfilled"
+            ? libraryViewResult.value
+            : VIEW_PREFERENCE_DEFAULTS["library.viewMode"]
+        );
+        setLoading(false);
+      }
+
       void refresh();
-    }, [refresh])
+      return () => {
+        active = false;
+      };
+    }, [])
   );
+
+  useEffect(() => {
+    if (!selectedTag) return;
+    let active = true;
+
+    async function refreshInheritedViewMode() {
+      try {
+        const inherited = await getViewPreference("library.viewMode");
+        if (active) setLibraryViewMode(inherited);
+      } catch (error) {
+        console.error("No se pudo leer la apariencia heredada de Biblioteca.", error);
+        if (active) setLibraryViewMode(VIEW_PREFERENCE_DEFAULTS["library.viewMode"]);
+      }
+    }
+
+    void refreshInheritedViewMode();
+    return () => {
+      active = false;
+    };
+  }, [selectedTag]);
 
   const tagMap = useMemo(() => {
     const map = new Map<string, SavedTitle[]>();
-    for (const it of items) {
-      for (const t of it.tags ?? []) {
-        const key = t.trim();
-        if (!key) continue;
-        const arr = map.get(key) ?? [];
-        arr.push(it);
-        map.set(key, arr);
+    for (const item of items) {
+      const titleTags = new Set<string>();
+      for (const storedTag of item.tags ?? []) {
+        const tag = storedTag.trim();
+        if (!tag || titleTags.has(tag)) continue;
+        titleTags.add(tag);
+        const tagItems = map.get(tag) ?? [];
+        tagItems.push(item);
+        map.set(tag, tagItems);
       }
     }
     return map;
   }, [items]);
 
-  const tagsList: TagInfo[] = useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    const arr: TagInfo[] = [];
+  const allTags = useMemo<TagInfo[]>(() => {
+    const result = Array.from(tagMap, ([tag, tagItems]) => ({
+      tag,
+      items: tagItems,
+      count: tagItems.length,
+    }));
+    return result.sort((a, b) => compareTags(a, b, sort));
+  }, [sort, tagMap]);
 
-    for (const [tag, list] of tagMap.entries()) {
-      if (needle && !tag.toLowerCase().includes(needle)) continue;
-      arr.push({ tag, count: list.length });
-    }
-
-    arr.sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
-    return arr;
-  }, [q, tagMap]);
+  const visibleTags = useMemo(() => {
+    const needle = normalizeTagSearch(q.trim());
+    if (!needle) return allTags;
+    return allTags.filter((info) => normalizeTagSearch(info.tag).includes(needle));
+  }, [allTags, q]);
 
   const selectedItems = useMemo(() => {
     if (!selectedTag) return [];
-    return (tagMap.get(selectedTag) ?? [])
-      .slice()
-      .sort((a, b) => b.updatedAt - a.updatedAt);
+    return [...(tagMap.get(selectedTag) ?? [])].sort(compareTitlesForCollage);
   }, [selectedTag, tagMap]);
 
-  // UX: si el usuario escribe en el buscador mientras está en “modo resultados”,
-  // podés elegir: (A) no hacer nada, o (B) salir de resultados para buscar otra tag.
-  // Yo hago (B) porque es más natural.
+  const optionSections = useMemo<ViewOptionsSection[]>(
+    () => [
+      {
+        presentation: "layout",
+        id: "appearance",
+        title: "Apariencia",
+        selectedId: viewMode,
+        onSelect: (id) => {
+          if (id === "grid" || id === "list") selectViewMode(id);
+        },
+        options: [
+          {
+            id: "grid",
+            title: "Mosaico",
+            accessibilityLabel: "Mostrar etiquetas en mosaico",
+            indicator: <Ionicons color={colors.muted} name="grid-outline" size={24} />,
+          },
+          {
+            id: "list",
+            title: "Lista",
+            accessibilityLabel: "Mostrar etiquetas en lista",
+            indicator: <Ionicons color={colors.muted} name="list-outline" size={24} />,
+          },
+        ],
+      },
+      {
+        presentation: "compact",
+        id: "sort",
+        title: "Ordenar",
+        selectedId: sort,
+        onSelect: (id) => {
+          if (id === "count-desc" || id === "name-asc" || id === "name-desc") {
+            selectSort(id);
+          }
+        },
+        options: [
+          { id: "count-desc", title: "Mayor cantidad de títulos" },
+          { id: "name-asc", title: "Nombre A–Z" },
+          { id: "name-desc", title: "Nombre Z–A" },
+        ],
+      },
+    ],
+    [selectSort, selectViewMode, sort, viewMode]
+  );
+
+  const gap = 12;
+  const availableWidth = Math.max(0, windowWidth - 32);
+  const tagGridColumns = Math.max(
+    1,
+    Math.min(3, Math.floor((availableWidth + gap) / (290 + gap)))
+  );
+  const tagColumns = viewMode === "grid" ? tagGridColumns : 1;
+  const tagCardWidth = Math.floor((availableWidth - gap * (tagColumns - 1)) / tagColumns);
+  const tagListKey = `${viewMode}-${tagColumns}`;
+  const titleGridColumns = Math.max(
+    1,
+    Math.min(6, Math.floor((availableWidth + gap) / (165 + gap)))
+  );
+  const titleColumns = libraryViewMode === "grid" ? titleGridColumns : 1;
+  const titleCardWidth = Math.floor(
+    (availableWidth - gap * (titleColumns - 1)) / titleColumns
+  );
+  const titleListKey = `${libraryViewMode}-${titleColumns}`;
+
   const onChangeQuery = (text: string) => {
     setQ(text);
     if (selectedTag) setSelectedTag(null);
   };
 
-  return (
-    <ScrollView
-      contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
-      keyboardShouldPersistTaps="handled"
+  const closeMobileSearch = () => {
+    setQ("");
+    setIsSearchActive(false);
+  };
+
+  const openOptionsButton = (withLabel: boolean) => (
+    <Pressable
+      accessibilityLabel="Abrir opciones de Etiquetas"
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !preferencesReady }}
+      disabled={!preferencesReady}
+      focusable
+      hitSlop={6}
+      onPress={() => setOptionsVisible(true)}
+      style={({ pressed }) => ({
+        alignItems: "center",
+        backgroundColor: withLabel ? colors.card2 : "transparent",
+        borderColor: colors.border2,
+        borderRadius: 12,
+        borderWidth: withLabel ? 1 : 0,
+        flexDirection: "row",
+        gap: 8,
+        justifyContent: "center",
+        minHeight: 44,
+        minWidth: 44,
+        opacity: !preferencesReady ? 0.45 : pressed ? 0.72 : 1,
+        paddingHorizontal: withLabel ? 12 : 0,
+      })}
     >
-      <Text style={{ fontSize: 22, fontWeight: "900", color: colors.text }}>
-        Buscador
-      </Text>
+      <Ionicons color={colors.text} name="options-outline" size={22} />
+      {withLabel ? <Text style={{ color: colors.text, fontWeight: "800" }}>Opciones</Text> : null}
+    </Pressable>
+  );
 
-      <TextInput
-        value={q}
-        onChangeText={onChangeQuery}
-        placeholder="Buscar etiqueta…"
-        placeholderTextColor={colors.subtle}
-        style={{
-          paddingHorizontal: 12,
-          paddingVertical: 10,
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: colors.border2,
-          backgroundColor: colors.input,
-          color: colors.text,
-        }}
-      />
+  const listHeader = selectedTag ? (
+    <View style={{ gap: 10 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+        <Text numberOfLines={1} style={{ color: colors.text, flex: 1, fontSize: 18, fontWeight: "900" }}>
+          Títulos con: {selectedTag}
+        </Text>
+        <Pressable
+          accessibilityLabel="Volver a la lista de etiquetas"
+          accessibilityRole="button"
+          focusable
+          onPress={() => setSelectedTag(null)}
+          style={({ pressed }) => ({
+            alignItems: "center",
+            backgroundColor: colors.card2,
+            borderColor: colors.border2,
+            borderRadius: 10,
+            borderWidth: 1,
+            minHeight: 44,
+            justifyContent: "center",
+            opacity: pressed ? 0.72 : 1,
+            paddingHorizontal: 12,
+          })}
+        >
+          <Text style={{ color: colors.text, fontWeight: "800" }}>Volver</Text>
+        </Pressable>
+      </View>
+    </View>
+  ) : (
+    <View style={{ gap: 4 }}>
+      <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900" }}>Etiquetas</Text>
+      <Text style={{ color: colors.muted }}>{visibleTags.length} de {allTags.length}</Text>
+    </View>
+  );
 
-      {/* ===================== MODO RESULTADOS (oculta tags) ===================== */}
-      {selectedTag ? (
-        <Card>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 10 }}>
-            <Text style={{ color: colors.text, fontWeight: "900", fontSize: 16 }} numberOfLines={1}>
-              Títulos con: {selectedTag}
-            </Text>
-
-            <Pressable
-              onPress={() => setSelectedTag(null)}
-              style={{
-                paddingVertical: 6,
-                paddingHorizontal: 10,
-                borderRadius: 10,
-                backgroundColor: colors.card2,
-                borderWidth: 1,
-                borderColor: colors.border2,
-              }}
-            >
-              <Text style={{ color: colors.text, fontWeight: "900" }}>Cerrar</Text>
-            </Pressable>
-          </View>
-
-          {selectedItems.length === 0 ? (
-            <Text style={{ color: colors.muted }}>No hay títulos con esa etiqueta.</Text>
-          ) : (
-            <View
-              style={{
-                maxHeight: 520,
-                borderRadius: 14,
-                overflow: "hidden",
-                borderWidth: 1,
-                borderColor: colors.border2,
-              }}
-            >
-              <ScrollView contentContainerStyle={{ gap: 10, padding: 10 }}>
-                {selectedItems.map((it) => (
+  return (
+    <>
+      {Platform.OS !== "web" ? (
+        <Tabs.Screen
+          options={{
+            headerLeft: isSearchActive
+              ? () => (
                   <Pressable
-                    key={it.id}
-                    onPress={() => router.push(`/title/${it.id}`)}
-                    style={{
-                      padding: 12,
-                      borderRadius: 14,
-                      borderWidth: 1,
-                      borderColor: colors.border,
-                      backgroundColor: colors.card2,
-                      gap: 4,
-                    }}
-                  >
-                    <Text style={{ color: colors.text, fontWeight: "900" }} numberOfLines={1}>
-                      {it.title}
-                    </Text>
-                    <Text style={{ color: colors.muted, fontWeight: "700" }}>
-                      {it.type.toUpperCase()} • {it.status}
-                    </Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-
-          <Text style={{ color: colors.subtle }}>
-            Tip: desde el detalle de cada título podés agregar o quitar etiquetas, y se reflejarán automáticamente en esta lista.
-          </Text>
-        </Card>
-      ) : (
-        /* ===================== MODO TAGS ===================== */
-        <Card>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 10 }}>
-            <Text style={{ color: colors.text, fontWeight: "900", fontSize: 16 }}>
-              Lista de etiquetas
-            </Text>
-            <Text style={{ color: colors.muted, fontWeight: "900" }}>{tagsList.length}</Text>
-          </View>
-
-          {tagsList.length === 0 ? (
-            <Text style={{ color: colors.muted }}>
-              Todavía no tenés etiquetas. Guardá algo desde TMDB o agregá tags desde el detalle.
-            </Text>
-          ) : (
-            <View
-              style={{
-                maxHeight: 9 * 54, // ~9 visibles, después scroll interno
-                borderRadius: 14,
-                overflow: "hidden",
-                borderWidth: 1,
-                borderColor: colors.border2,
-              }}
-            >
-              <ScrollView contentContainerStyle={{ gap: 10, padding: 10 }}>
-                {tagsList.map((t) => (
-                  <Pressable
-                    key={t.tag}
-                    onPress={() => setSelectedTag(t.tag)}
-                    style={{
-                      padding: 12,
-                      borderRadius: 14,
-                      borderWidth: 1,
-                      borderColor: colors.border,
-                      backgroundColor: colors.card2,
-                      flexDirection: "row",
-                      justifyContent: "space-between",
+                    accessibilityLabel="Cerrar búsqueda de etiquetas"
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    onPress={closeMobileSearch}
+                    style={({ pressed }) => ({
                       alignItems: "center",
-                    }}
+                      justifyContent: "center",
+                      minHeight: 44,
+                      minWidth: 44,
+                      opacity: pressed ? 0.7 : 1,
+                    })}
                   >
-                    <Text style={{ color: colors.text, fontWeight: "900" }} numberOfLines={1}>
-                      {t.tag}
-                    </Text>
-                    <Text style={{ color: colors.muted, fontWeight: "900" }}>{t.count}</Text>
+                    <Ionicons color={colors.text} name="arrow-back" size={24} />
                   </Pressable>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-        </Card>
-      )}
-    </ScrollView>
+                )
+              : undefined,
+            headerTitle: () =>
+              isSearchActive ? (
+                <TextInput
+                  accessibilityLabel="Buscar etiquetas"
+                  autoFocus
+                  onChangeText={onChangeQuery}
+                  placeholder="Buscar etiqueta…"
+                  placeholderTextColor={colors.subtle}
+                  style={{
+                    backgroundColor: colors.input,
+                    borderColor: colors.border2,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    color: colors.text,
+                    flex: 1,
+                    paddingHorizontal: 10,
+                    paddingVertical: 8,
+                    width: "100%",
+                  }}
+                  value={q}
+                />
+              ) : (
+                <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900" }}>Etiquetas</Text>
+              ),
+            headerRight: () => (
+              <View style={{ flexDirection: "row", gap: 4 }}>
+                {!isSearchActive ? (
+                  <Pressable
+                    accessibilityLabel="Buscar etiquetas"
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    onPress={() => setIsSearchActive(true)}
+                    style={({ pressed }) => ({
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minHeight: 44,
+                      minWidth: 44,
+                      opacity: pressed ? 0.7 : 1,
+                    })}
+                  >
+                    <Ionicons color={colors.text} name="search" size={22} />
+                  </Pressable>
+                ) : null}
+                {openOptionsButton(false)}
+              </View>
+            ),
+          }}
+        />
+      ) : null}
+
+      <View style={{ flex: 1, gap: 12, padding: 16 }}>
+        {Platform.OS === "web" ? (
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+            <TextInput
+              accessibilityLabel="Buscar etiquetas"
+              onChangeText={onChangeQuery}
+              placeholder="Buscar etiqueta…"
+              placeholderTextColor={colors.subtle}
+              style={{
+                backgroundColor: colors.input,
+                borderColor: colors.border2,
+                borderRadius: 12,
+                borderWidth: 1,
+                color: colors.text,
+                flex: 1,
+                minHeight: 44,
+                paddingHorizontal: 12,
+              }}
+              value={q}
+            />
+            {openOptionsButton(true)}
+          </View>
+        ) : null}
+
+        {loading ? (
+          <View style={{ alignItems: "center", gap: 10, paddingVertical: 32 }}>
+            <ActivityIndicator color={colors.text} />
+            <Text style={{ color: colors.muted }}>Cargando etiquetas…</Text>
+          </View>
+        ) : selectedTag ? (
+          <FlatList
+            ListEmptyComponent={
+              <View style={{ gap: 8, paddingVertical: 24 }}>
+                <Text style={{ color: colors.text, fontSize: 17, fontWeight: "900" }}>
+                  Esta etiqueta ya no tiene títulos
+                </Text>
+                <Text style={{ color: colors.muted }}>
+                  Volvé a la lista para elegir otra etiqueta.
+                </Text>
+              </View>
+            }
+            ListHeaderComponent={listHeader}
+            columnWrapperStyle={titleColumns > 1 ? { gap } : undefined}
+            contentContainerStyle={{ gap, paddingBottom: 32 }}
+            data={selectedItems}
+            key={titleListKey}
+            keyExtractor={(item) => item.id}
+            numColumns={titleColumns}
+            renderItem={({ item }) =>
+              libraryViewMode === "grid" ? (
+                <TitleGridCard
+                  accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}`}
+                  onPress={() => router.push(`/title/${item.id}`)}
+                  posterUrl={item.posterUrl}
+                  style={{ width: titleCardWidth }}
+                  title={item.title}
+                  type={item.type}
+                />
+              ) : (
+                <DetailTitleRow item={item} onPress={() => router.push(`/title/${item.id}`)} />
+              )
+            }
+          />
+        ) : (
+          <FlatList
+            ListEmptyComponent={
+              <View style={{ gap: 8, paddingVertical: 24 }}>
+                <Text style={{ color: colors.text, fontSize: 17, fontWeight: "900" }}>
+                  {allTags.length === 0 ? "Todavía no hay etiquetas" : "No hay coincidencias"}
+                </Text>
+                <Text style={{ color: colors.muted }}>
+                  {allTags.length === 0
+                    ? "Agregá etiquetas desde el detalle de un título de tu biblioteca."
+                    : "Probá con otro nombre de etiqueta."}
+                </Text>
+              </View>
+            }
+            ListHeaderComponent={listHeader}
+            columnWrapperStyle={tagColumns > 1 ? { gap } : undefined}
+            contentContainerStyle={{ gap, paddingBottom: 32 }}
+            data={visibleTags}
+            key={tagListKey}
+            keyExtractor={(info) => info.tag}
+            numColumns={tagColumns}
+            renderItem={({ item }) =>
+              viewMode === "grid" ? (
+                <TagGridCard
+                  info={item}
+                  onPress={() => setSelectedTag(item.tag)}
+                  style={{ width: tagCardWidth }}
+                />
+              ) : (
+                <TagListRow info={item} onPress={() => setSelectedTag(item.tag)} />
+              )
+            }
+          />
+        )}
+
+        <ViewOptionsPanel
+          onClose={() => setOptionsVisible(false)}
+          sections={optionSections}
+          visible={optionsVisible}
+        />
+      </View>
+    </>
   );
 }

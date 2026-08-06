@@ -5,6 +5,11 @@ export {
 } from "./PosterPlaceholder";
 export { TitleGridCard, type TitleGridCardProps } from "./TitleGridCard";
 export {
+  TagCollage,
+  type TagCollageItem,
+  type TagCollageProps,
+} from "./TagCollage";
+export {
   ViewOptionsPanel,
   type CompactViewOptionDescriptor,
   type LayoutViewOptionDescriptor,
