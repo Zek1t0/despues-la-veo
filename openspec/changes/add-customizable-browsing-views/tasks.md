@@ -15,13 +15,13 @@ Aplicar una sola tarea por vez. Antes de marcar cualquier tarea como completa, e
 
 ## 2. Componentes visuales compartidos necesarios
 
-- [ ] 2.1 Crear `PosterPlaceholder` neutro y no interactivo, sin signo `+`, con tamaños configurables; comprobarlo en proporción de tarjeta y en las cuatro celdas de un collage.
-- [ ] 2.2 Crear `TitleGridCard` con póster predominante `2:3` ocupando casi toda la tarjeta, indicador pequeño `Película`/`Serie` arriba a la izquierda y título superpuesto abajo sobre contraste oscuro, limitado a dos líneas con truncado; no incluir metadatos, acciones, botones ni zonas táctiles secundarias, y hacer que el placeholder conserve exactamente la estructura y que la tarjeta completa sea la única navegación. Comprobar cada regla con película, serie, título corto/largo, póster ausente y error de carga, sin acoplar `SavedTitle` con `TmdbSearchItem`.
-- [ ] 2.3 Crear `LayoutOption` y `ViewOptionsPanel` como componentes controlados, con secciones configurables, estados seleccionados e iconos o miniaturas distinguibles; comprobar que cada selección se aplica inmediatamente, que omitir una sección no deja espacios vacíos y que no existen botones `Aplicar`/`Restablecer` ni estado provisional de filtros.
-- [ ] 2.4 Implementar la presentación responsive del panel con modal o panel inferior táctil en móvil y control compacto en web usando APIs existentes; comprobar apertura, cierre, foco y selección en ambos entornos sin hover obligatorio.
-- [ ] 2.5 Agregar etiquetas accesibles, roles/estados y áreas táctiles adecuadas a controles de sólo icono, opciones y tarjetas; comprobar navegación por teclado en web y lector/inspector de accesibilidad disponible en móvil.
-- [ ] 2.6 Crear utilidades compartidas sólo para traducciones de presentación realmente reutilizadas (`Película`, `Serie` y estados), manteniendo valores internos en inglés; comprobar todas las entradas del dominio.
-- [ ] 2.7 Detenerse para revisión de la sección 2 y presentar catálogo de componentes, casos visuales, accesibilidad y `npx tsc --noEmit` antes de avanzar.
+- [x] 2.1 Crear `PosterPlaceholder` neutro y no interactivo, sin signo `+`, con tamaños configurables; comprobarlo en proporción de tarjeta y en las cuatro celdas de un collage.
+- [x] 2.2 Crear `TitleGridCard` con póster predominante `2:3` ocupando casi toda la tarjeta, indicador pequeño `Película`/`Serie` arriba a la izquierda y título superpuesto abajo sobre contraste oscuro, limitado a dos líneas con truncado; no incluir metadatos, acciones, botones ni zonas táctiles secundarias, y hacer que el placeholder conserve exactamente la estructura y que la tarjeta completa sea la única navegación. Comprobar cada regla con película, serie, título corto/largo, póster ausente y error de carga, sin acoplar `SavedTitle` con `TmdbSearchItem`.
+- [x] 2.3 Crear `LayoutOption` y `ViewOptionsPanel` como componentes controlados, con secciones configurables, estados seleccionados e iconos o miniaturas distinguibles; comprobar que cada selección se aplica inmediatamente, que omitir una sección no deja espacios vacíos y que no existen botones `Aplicar`/`Restablecer` ni estado provisional de filtros.
+- [x] 2.4 Implementar la presentación responsive del panel con modal o panel inferior táctil en móvil y control compacto en web usando APIs existentes; comprobar apertura, cierre, foco y selección en ambos entornos sin hover obligatorio.
+- [x] 2.5 Agregar etiquetas accesibles, roles/estados y áreas táctiles adecuadas a controles de sólo icono, opciones y tarjetas; comprobar navegación por teclado en web y lector/inspector de accesibilidad disponible en móvil.
+- [x] 2.6 Crear utilidades compartidas sólo para traducciones de presentación realmente reutilizadas (`Película`, `Serie` y estados), manteniendo valores internos en inglés; comprobar todas las entradas del dominio.
+- [x] 2.7 Detenerse para revisión de la sección 2 y presentar catálogo de componentes, casos visuales, accesibilidad y `npx tsc --noEmit` antes de avanzar.
 
 ## 3. Biblioteca en Detalle/Mosaico y controles responsive
 
