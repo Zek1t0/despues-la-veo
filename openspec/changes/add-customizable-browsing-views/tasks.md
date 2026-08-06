@@ -39,13 +39,13 @@ Aplicar una sola tarea por vez. Antes de marcar cualquier tarea como completa, e
 
 ## 4. Buscar en Detalle/Mosaico
 
-- [ ] 4.1 Incorporar carga y guardado de la apariencia independiente de Buscar con `Detalle` predeterminado; comprobar primera apertura, recuperación y que cambiarla no altera Biblioteca ni Etiquetas.
-- [ ] 4.2 Conservar la tarjeta Detalle y normalizar sus textos visibles al español sin cambiar consulta, debounce, filtrado de tipos ni navegación TMDB; comprobar búsquedas de película y serie.
-- [ ] 4.3 Agregar el Mosaico de Buscar reutilizando sin variantes el contrato completo de `TitleGridCard`: póster o placeholder predominante `2:3`, tipo arriba a la izquierda, título inferior de hasta dos líneas sobre contraste y tarjeta completa como única navegación, sin metadatos, acciones ni botones; comprobar póster presente/ausente, error de imagen, título largo y apertura del detalle remoto.
-- [ ] 4.4 Agregar el control de opciones con sólo Apariencia y sin secciones vacías de Ordenar o Filtrar; comprobar la composición en web y móvil.
-- [ ] 4.5 Mantener exactamente el orden natural recibido de `searchMulti()` y no agregar parámetros, género, año ni orden remoto; comprobar comparando IDs recibidos y renderizados para una consulta reproducible.
-- [ ] 4.6 Aplicar cálculo responsive y key de `FlatList` para cambios de apariencia/columnas, más estados de consulta vacía, carga, error y cero resultados; comprobar redimensionado web y pantalla móvil.
-- [ ] 4.7 Detenerse para revisión de la sección 4 y presentar independencia, orden TMDB, estados visuales y `npx tsc --noEmit` antes de avanzar.
+- [x] 4.1 Incorporar carga y guardado de la apariencia independiente de Buscar con `Detalle` predeterminado; comprobar primera apertura, recuperación y que cambiarla no altera Biblioteca ni Etiquetas.
+- [x] 4.2 Conservar la tarjeta Detalle y normalizar sus textos visibles al español sin cambiar consulta, debounce, filtrado de tipos ni navegación TMDB; comprobar búsquedas de película y serie.
+- [x] 4.3 Agregar el Mosaico de Buscar reutilizando sin variantes el contrato completo de `TitleGridCard`: póster o placeholder predominante `2:3`, tipo arriba a la izquierda, título inferior de hasta dos líneas sobre contraste y tarjeta completa como única navegación, sin metadatos, acciones ni botones; comprobar póster presente/ausente, error de imagen, título largo y apertura del detalle remoto.
+- [x] 4.4 Agregar el control de opciones con sólo Apariencia y sin secciones vacías de Ordenar o Filtrar; comprobar la composición en web y móvil.
+- [x] 4.5 Mantener exactamente el orden natural recibido de `searchMulti()` y no agregar parámetros, género, año ni orden remoto; comprobar comparando IDs recibidos y renderizados para una consulta reproducible.
+- [x] 4.6 Aplicar cálculo responsive y key de `FlatList` para cambios de apariencia/columnas, más estados de consulta vacía, carga, error y cero resultados; comprobar redimensionado web y pantalla móvil.
+- [x] 4.7 Detenerse para revisión de la sección 4 y presentar independencia, orden TMDB, estados visuales y `npx tsc --noEmit` antes de avanzar.
 
 ## 5. Etiquetas en Mosaico/Lista y collages
 
