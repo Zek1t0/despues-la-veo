@@ -25,17 +25,17 @@ Aplicar una sola tarea por vez. Antes de marcar cualquier tarea como completa, e
 
 ## 3. Biblioteca en Detalle/Mosaico y controles responsive
 
-- [ ] 3.1 Incorporar carga y guardado de apariencia y orden de Biblioteca con `Detalle` y `Actualizados recientemente` como predeterminados, evitando grabar antes de finalizar la lectura; comprobar primera apertura, recuperación y fallo simulado.
-- [ ] 3.2 Extraer o conservar la tarjeta Detalle sin perder información ni acciones actuales, traduciendo sus etiquetas visibles; comprobar abrir detalle, cambiar estado y borrar sin regresiones.
-- [ ] 3.3 Agregar el Mosaico de Biblioteca con el contrato completo de `TitleGridCard`: póster o placeholder predominante `2:3`, tipo arriba a la izquierda, título inferior de hasta dos líneas sobre contraste y navegación única de tarjeta completa, sin metadatos ni controles internos; comprobar títulos con y sin póster y confirmar que estado/borrado sólo siguen disponibles en Detalle.
-- [ ] 3.4 Implementar los cinco órdenes con valores ausentes al final y desempates por título e ID; comprobar conjuntos con puntuación/año presentes, ausentes, iguales y títulos repetidos.
-- [ ] 3.5 Aplicar búsqueda, estado, tipo y orden desde un único resultado memorizado; comprobar combinaciones, lista completa, cero coincidencias y que la búsqueda interna mantiene la apariencia elegida.
-- [ ] 3.6 Implementar Biblioteca web con búsqueda y chips frecuentes visibles más el panel de Apariencia/Ordenar/Filtrar sobre una única fuente de estado; comprobar que apariencia, orden, estado y tipo se aplican al seleccionarlos, que chips y panel se actualizan juntos y que no hay confirmación, restablecimiento ni filtros provisionales.
-- [ ] 3.7 Implementar Biblioteca móvil con encabezado `Biblioteca`, botones accesibles de búsqueda y opciones, búsqueda que reemplaza el título y sin menú de tres puntos; comprobar activación, escritura, cierre y navegación en pantalla móvil.
-- [ ] 3.8 Implementar la barra horizontal de una línea para `Todos`, `Planeados`, `Viendo`, `Terminados` y `Abandonados`, dejando tipo en el panel; comprobar aplicación inmediata, desplazamiento y sincronización bidireccional de barra y panel sobre el mismo estado, sin copia provisional.
-- [ ] 3.9 Calcular columnas y ancho de tarjeta desde `useWindowDimensions()` y remontar `FlatList` mediante una key que incluya apariencia y columnas; comprobar Detalle↔Mosaico, rotación, redimensionado web y ausencia de advertencias de `numColumns` inválido.
-- [ ] 3.10 Agregar estados de carga y vacío correctos para biblioteca vacía o filtros sin resultados en ambas apariencias; comprobar que no aparecen tarjetas ficticias ni acciones inválidas.
-- [ ] 3.11 Detenerse para revisión de la sección 3 y presentar matriz web/móvil, órdenes, sincronización, datos ausentes y `npx tsc --noEmit` antes de avanzar.
+- [x] 3.1 Incorporar carga y guardado de apariencia y orden de Biblioteca con `Detalle` y `Actualizados recientemente` como predeterminados, evitando grabar antes de finalizar la lectura; comprobar primera apertura, recuperación y fallo simulado.
+- [x] 3.2 Extraer o conservar la tarjeta Detalle sin perder información ni acciones actuales, traduciendo sus etiquetas visibles; comprobar abrir detalle, cambiar estado y borrar sin regresiones.
+- [x] 3.3 Agregar el Mosaico de Biblioteca con el contrato completo de `TitleGridCard`: póster o placeholder predominante `2:3`, tipo arriba a la izquierda, título inferior de hasta dos líneas sobre contraste y navegación única de tarjeta completa, sin metadatos ni controles internos; comprobar títulos con y sin póster y confirmar que estado/borrado sólo siguen disponibles en Detalle.
+- [x] 3.4 Implementar los cinco órdenes con valores ausentes al final y desempates por título e ID; comprobar conjuntos con puntuación/año presentes, ausentes, iguales y títulos repetidos.
+- [x] 3.5 Aplicar búsqueda, estado, tipo y orden desde un único resultado memorizado; comprobar combinaciones, lista completa, cero coincidencias y que la búsqueda interna mantiene la apariencia elegida.
+- [x] 3.6 Implementar Biblioteca web con búsqueda y chips frecuentes visibles más el panel de Apariencia/Ordenar/Filtrar sobre una única fuente de estado; comprobar que apariencia, orden, estado y tipo se aplican al seleccionarlos, que chips y panel se actualizan juntos y que no hay confirmación, restablecimiento ni filtros provisionales.
+- [x] 3.7 Implementar Biblioteca móvil con encabezado `Biblioteca`, botones accesibles de búsqueda y opciones, búsqueda que reemplaza el título y sin menú de tres puntos; comprobar activación, escritura, cierre y navegación en pantalla móvil.
+- [x] 3.8 Implementar la barra horizontal de una línea para `Todos`, `Planeados`, `Viendo`, `Terminados` y `Abandonados`, dejando tipo en el panel; comprobar aplicación inmediata, desplazamiento y sincronización bidireccional de barra y panel sobre el mismo estado, sin copia provisional.
+- [x] 3.9 Calcular columnas y ancho de tarjeta desde `useWindowDimensions()` y remontar `FlatList` mediante una key que incluya apariencia y columnas; comprobar Detalle↔Mosaico, rotación, redimensionado web y ausencia de advertencias de `numColumns` inválido.
+- [x] 3.10 Agregar estados de carga y vacío correctos para biblioteca vacía o filtros sin resultados en ambas apariencias; comprobar que no aparecen tarjetas ficticias ni acciones inválidas.
+- [x] 3.11 Detenerse para revisión de la sección 3 y presentar matriz web/móvil, órdenes, sincronización, datos ausentes y `npx tsc --noEmit` antes de avanzar.
 
 ## 4. Buscar en Detalle/Mosaico
 
