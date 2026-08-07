@@ -529,7 +529,26 @@ export default function LibraryScreen() {
       >
       {Platform.OS === "web" ? (
         <View style={{ gap: 10 }}>
-          <View style={{ alignItems: "flex-end" }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+            <TextInput
+              accessibilityLabel="Buscar en Biblioteca"
+              onChangeText={setQ}
+              placeholder="Buscar por título o etiqueta…"
+              placeholderTextColor={colors.subtle}
+              style={{
+                backgroundColor: colors.input,
+                borderColor: colors.border2,
+                borderRadius: 12,
+                borderWidth: 1,
+                color: colors.text,
+                flex: 1,
+                minHeight: 44,
+                minWidth: 0,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+              }}
+              value={q}
+            />
             <Pressable
               accessibilityLabel="Abrir opciones de Biblioteca"
               accessibilityRole="button"
@@ -554,23 +573,6 @@ export default function LibraryScreen() {
               <Text style={{ color: colors.text, fontWeight: "800" }}>Opciones</Text>
             </Pressable>
           </View>
-
-          <TextInput
-            accessibilityLabel="Buscar en Biblioteca"
-            onChangeText={setQ}
-            placeholder="Buscar por título o etiqueta…"
-            placeholderTextColor={colors.subtle}
-            style={{
-              backgroundColor: colors.input,
-              borderColor: colors.border2,
-              borderRadius: 12,
-              borderWidth: 1,
-              color: colors.text,
-              paddingHorizontal: 12,
-              paddingVertical: 10,
-            }}
-            value={q}
-          />
 
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             <Chip label="Todos" active={statusFilter === "all"} onPress={() => setStatusFilter("all")} />

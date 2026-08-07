@@ -81,6 +81,11 @@ function tagCountLabel(count: number): string {
   return count === 1 ? "1 título" : `${count} títulos`;
 }
 
+function tagsSummaryLabel(visibleCount: number, totalCount: number, hasQuery: boolean): string {
+  const noun = totalCount === 1 ? "etiqueta" : "etiquetas";
+  return hasQuery ? `${visibleCount} de ${totalCount} ${noun}` : `${totalCount} ${noun}`;
+}
+
 function TagGridCard({
   info,
   onPress,
@@ -448,10 +453,11 @@ export default function EtiquetasScreen() {
 
   const gap = 12;
   const availableWidth = Math.max(0, Math.min(windowWidth - 32, 1168));
-  const tagGridColumns = Math.max(
-    1,
-    Math.min(3, Math.floor((availableWidth + gap) / (290 + gap)))
-  );
+  const minimumTagCardWidth = 150;
+  const wideTagCardWidth = 290;
+  const canFitTwoTagCards = availableWidth >= minimumTagCardWidth * 2 + gap;
+  const canFitThreeWideTagCards = availableWidth >= wideTagCardWidth * 3 + gap * 2;
+  const tagGridColumns = canFitThreeWideTagCards ? 3 : canFitTwoTagCards ? 2 : 1;
   const tagColumns = viewMode === "grid" ? tagGridColumns : 1;
   const tagCardWidth = Math.floor((availableWidth - gap * (tagColumns - 1)) / tagColumns);
   const tagListKey = `${viewMode}-${tagColumns}`;
@@ -532,9 +538,10 @@ export default function EtiquetasScreen() {
       </View>
     </View>
   ) : (
-    <View style={{ gap: 4 }}>
-      <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900" }}>Etiquetas</Text>
-      <Text style={{ color: colors.muted }}>{visibleTags.length} de {allTags.length}</Text>
+    <View>
+      <Text style={{ color: colors.muted }}>
+        {tagsSummaryLabel(visibleTags.length, allTags.length, q.trim().length > 0)}
+      </Text>
     </View>
   );
 

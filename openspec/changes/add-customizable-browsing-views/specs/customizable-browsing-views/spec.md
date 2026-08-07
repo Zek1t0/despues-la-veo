@@ -150,6 +150,12 @@ El sistema MUST mostrar Etiquetas en `Mosaico` de forma predeterminada, MUST per
 - **THEN** ve un mosaico ordenado por mayor cantidad de títulos
 - **AND** los empates se resuelven de forma estable por nombre
 
+#### Scenario: columnas del Mosaico de Etiquetas
+- **WHEN** el usuario abre el Mosaico de Etiquetas en un móvil de ancho común
+- **THEN** ve dos columnas calculadas desde el ancho disponible
+- **AND** el sistema cae a una columna únicamente cuando dos tarjetas quedarían con un ancho insuficiente
+- **AND** puede mostrar hasta tres columnas en web ancho
+
 #### Scenario: cambio a Lista
 - **WHEN** el usuario selecciona `Lista`
 - **THEN** ve las mismas etiquetas y cantidades en una presentación de lista navegable

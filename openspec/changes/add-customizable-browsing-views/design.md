@@ -148,7 +148,7 @@ Cada pantalla medirá el ancho disponible con `useWindowDimensions()` y desconta
 
 En anchos demasiado estrechos para dos tarjetas accesibles, se permitirá una columna. `TitleGridCard` conserva siempre la proporción visual aproximada `2:3`, el título superpuesto de hasta dos líneas y el indicador superior izquierdo; ninguno depende de hover.
 
-Etiquetas usará tarjetas más anchas: una columna en móvil estrecho, dos desde tablet/web compacto y hasta tres en web ancho, usando la misma fórmula con un objetivo aproximado de 260–320 px. `TagCollage` será una grilla 2×2 dentro de una relación visual estable; el degradado o capa sólida semitransparente se resolverá con capacidades ya disponibles. Si un degradado real requiriera una dependencia nueva, se usará una capa de contraste existente en React Native y no se agregará el paquete.
+Etiquetas intentará dos columnas también en móviles comunes de aproximadamente 360–390 px. Con 32 px de padding horizontal total y 12 px de separación, usará dos columnas cuando cada tarjeta pueda conservar al menos 150 px; sólo caerá a una columna por debajo de ese mínimo. Mantendrá dos columnas en tablet/web compacto y pasará a tres cuando las tres tarjetas puedan conservar aproximadamente 290 px cada una. `TagCollage` seguirá siendo una grilla 2×2 dentro de cada tarjeta; el degradado o capa sólida semitransparente se resolverá con capacidades ya disponibles. Si un degradado real requiriera una dependencia nueva, se usará una capa de contraste existente en React Native y no se agregará el paquete.
 
 Los puntos exactos se basarán en ancho disponible, no sólo en `Platform.OS`, para soportar ventanas web pequeñas y rotación móvil.
 
