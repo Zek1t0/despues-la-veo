@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { SavedTitle, TitleStatus } from "../../src/core/savedTitle";
 import { titleStatusLabel, titleTypeLabel } from "../../src/core/presentationLabels";
@@ -145,6 +146,7 @@ function Card({ children }: { children: React.ReactNode }) {
 
 export default function TitleDetailScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -373,7 +375,7 @@ export default function TitleDetailScreen() {
           gap: 16,
           maxWidth: 800,
           padding: 16,
-          paddingBottom: 40,
+          paddingBottom: 16 + (Platform.OS === "web" ? 0 : insets.bottom),
           width: "100%",
         }}
       >
