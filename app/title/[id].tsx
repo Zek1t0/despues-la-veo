@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,11 +16,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { SavedTitle, TitleStatus } from "../../src/core/savedTitle";
 import { titleStatusLabel, titleTypeLabel } from "../../src/core/presentationLabels";
+import { type PinContext } from "../../src/core/contextualPin";
+import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";
+import {
+  titleDetailPinContextKey,
+  titleDetailPinContextLabel,
+} from "../../src/core/titleDetailPinContext";
 import {
   deleteSavedTitle,
-  getSavedTitleById,
   upsertSavedTitle,
 } from "../../src/storage/savedTitlesRepo";
+import { getTitleDetailPinSnapshot } from "../../src/storage/titleDetailPinSnapshot";
+import { setTitlePinState } from "../../src/storage/titlePinsRepo";
 import { colors } from "../../src/theme/colors";
 
 const STATUS_OPTIONS: { value: TitleStatus; label: string }[] = ([
@@ -148,46 +155,129 @@ export default function TitleDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, pinContext, tag } = useLocalSearchParams<{
+    id?: string | string[];
+    pinContext?: string | string[];
+    tag?: string | string[];
+  }>();
 
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState<SavedTitle | null>(null);
+  const [effectivePinContext, setEffectivePinContext] = useState<PinContext | null>(null);
+  const [pinnedAt, setPinnedAt] = useState<number | null>(null);
+  const [pinReady, setPinReady] = useState(false);
+  const [pinReadError, setPinReadError] = useState<string | null>(null);
 
   const [notes, setNotes] = useState("");
   const [dirtyNotes, setDirtyNotes] = useState(false);
 
   const [newTag, setNewTag] = useState("");
   const [tagHint, setTagHint] = useState<string | null>(null);
+  const loadGeneration = useRef(0);
+  const visiblePinContextKey = useRef<string | null>(null);
+  const pinIntentQueues = useRef<Map<string, ContextualPinIntentQueue>>(new Map());
 
   const tags = useMemo(() => item?.tags ?? [], [item]);
   const formattedUpdatedAt = item ? formatUpdatedAt(item.updatedAt) : null;
 
   const load = useCallback(async () => {
-    if (!id) return;
+    const savedTitleId = typeof id === "string" ? id : null;
+    const generation = ++loadGeneration.current;
     setLoading(true);
+    setPinReady(false);
+    setPinReadError(null);
+    visiblePinContextKey.current = null;
+    if (!savedTitleId) {
+      setItem(null);
+      setEffectivePinContext(null);
+      setPinnedAt(null);
+      setLoading(false);
+      return;
+    }
     try {
-      const data = await getSavedTitleById(String(id));
-      setItem(data);
-      setNotes(data?.notes ?? "");
+      const titleQueuePrefix = `${savedTitleId}\u0000`;
+      await Promise.all(
+        [...pinIntentQueues.current.entries()]
+          .filter(([key]) => key.startsWith(titleQueuePrefix))
+          .map(([, queue]) => queue.whenIdle())
+      );
+      const snapshot = await getTitleDetailPinSnapshot(savedTitleId, { pinContext, tag });
+      if (generation !== loadGeneration.current) return;
+      setItem(snapshot.item);
+      setNotes(snapshot.item?.notes ?? "");
       setDirtyNotes(false);
       setTagHint(null);
+      setEffectivePinContext(snapshot.context);
+      setPinnedAt(snapshot.pinnedAt);
+
+      if (snapshot.item && snapshot.pinReadError === null) {
+        const contextKey = titleDetailPinContextKey(snapshot.item.id, snapshot.context);
+        visiblePinContextKey.current = contextKey;
+        pinIntentQueues.current.set(
+          contextKey,
+          new ContextualPinIntentQueue(snapshot.pinnedAt)
+        );
+        setPinReady(true);
+      } else if (snapshot.item) {
+        const message = "No se pudo leer el estado de fijado. Podés volver a intentar.";
+        setPinReadError(message);
+        Alert.alert("Error al cargar el pin", message);
+      }
     } catch (e: any) {
+      if (generation !== loadGeneration.current) return;
       Alert.alert("Error", e?.message ?? "No se pudo cargar el título.");
       setItem(null);
+      setEffectivePinContext(null);
+      setPinnedAt(null);
     } finally {
-      setLoading(false);
+      if (generation === loadGeneration.current) setLoading(false);
     }
-  }, [id]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  }, [id, pinContext, tag]);
 
   useFocusEffect(
     useCallback(() => {
       void load();
     }, [load])
   );
+
+  const pinContextLabel = effectivePinContext
+    ? titleDetailPinContextLabel(effectivePinContext)
+    : "Biblioteca";
+
+  const showPinWriteError = useCallback((contextLabel: string) => {
+    const message = `No se pudo cambiar el pin en ${contextLabel}. Se restauró el último estado confirmado.`;
+    Alert.alert("Error al fijar", message);
+  }, []);
+
+  const togglePin = useCallback(() => {
+    if (!item || !effectivePinContext || !pinReady) return;
+    const context = effectivePinContext;
+    const contextKey = titleDetailPinContextKey(item.id, context);
+    const intent =
+      pinIntentQueues.current.get(contextKey) ?? new ContextualPinIntentQueue(pinnedAt);
+    pinIntentQueues.current.set(contextKey, intent);
+    const nextPinnedAt = intent.getLatest() === null ? Date.now() : null;
+
+    const updateVisibleState = (next: number | null) => {
+      if (visiblePinContextKey.current !== contextKey) return;
+      setPinnedAt(next);
+    };
+
+    void intent.request(
+      nextPinnedAt,
+      (next) => setTitlePinState(item.id, context, next),
+      {
+        onOptimistic: updateVisibleState,
+        onRollback: updateVisibleState,
+        onError: (error) => {
+          console.error(`No se pudo cambiar el pin en ${titleDetailPinContextLabel(context)}.`, error);
+          if (visiblePinContextKey.current === contextKey) {
+            showPinWriteError(titleDetailPinContextLabel(context));
+          }
+        },
+      }
+    );
+  }, [effectivePinContext, item, pinReady, pinnedAt, showPinWriteError]);
 
   const headerTitle = useMemo(() => {
     const t = item?.title ?? "Título";
@@ -207,9 +297,10 @@ export default function TitleDetailScreen() {
       const now = Date.now();
       const updated: SavedTitle = { ...item, ...patch, updatedAt: now };
       await upsertSavedTitle(updated);
-      setItem(updated);
+      if (patch.tags) await load();
+      else setItem(updated);
     },
-    [item]
+    [item, load]
   );
 
   const setStatus = useCallback(
@@ -387,6 +478,67 @@ export default function TitleDetailScreen() {
             {titleTypeLabel(item.type)} • {item.provider.toUpperCase()}
           </Text>
         </View>
+
+        <Card>
+          {pinReady ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: pinnedAt !== null }}
+              focusable
+              onPress={togglePin}
+              style={({ pressed }) => ({
+                alignItems: "center",
+                backgroundColor: pinnedAt === null ? colors.primary : colors.card2,
+                borderColor: pinnedAt === null ? colors.primary : colors.border2,
+                borderRadius: 12,
+                borderWidth: 1,
+                justifyContent: "center",
+                minHeight: 44,
+                opacity: pressed ? 0.78 : 1,
+                paddingHorizontal: 14,
+                paddingVertical: 10,
+              })}
+            >
+              <Text
+                style={{
+                  color: pinnedAt === null ? colors.bg : colors.text,
+                  fontWeight: "900",
+                }}
+              >
+                {pinnedAt === null
+                  ? `Fijar en ${pinContextLabel}`
+                  : `Desfijar de ${pinContextLabel}`}
+              </Text>
+            </Pressable>
+          ) : (
+            <View style={{ gap: 10 }}>
+              <Text style={{ color: colors.muted }}>
+                {pinReadError ?? "Cargando estado de fijado…"}
+              </Text>
+              {pinReadError ? (
+                <Pressable
+                  accessibilityRole="button"
+                  focusable
+                  onPress={() => void load()}
+                  style={({ pressed }) => ({
+                    alignItems: "center",
+                    backgroundColor: colors.card2,
+                    borderColor: colors.border2,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    justifyContent: "center",
+                    minHeight: 44,
+                    opacity: pressed ? 0.78 : 1,
+                    paddingHorizontal: 14,
+                    paddingVertical: 10,
+                  })}
+                >
+                  <Text style={{ color: colors.text, fontWeight: "900" }}>Reintentar</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          )}
+        </Card>
 
         {/* Estado */}
         <Card>

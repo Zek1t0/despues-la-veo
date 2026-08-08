@@ -55,12 +55,12 @@
 
 ## 6. Detalle completo y validación del contexto de origen
 
-- [ ] 6.1 Parsear los parámetros de `/title/[id]` en un contexto discriminado y validar tag no vacío y pertenencia exacta actual; comprobar library/tag válidos, parámetros múltiples o desconocidos y valores vacíos.
-- [ ] 6.2 Aplicar fallback explícito a Biblioteca cuando falte contexto, sea inválido o el título ya no contenga la etiqueta; comprobar deep links, recarga web y contexto obsoleto sin creación de pin tag.
-- [ ] 6.3 Mostrar la acción explícita `Fijar en …`/`Desfijar de …` y el estado del contexto validado, sin mezclar pins de Biblioteca/tag; comprobar las cuatro combinaciones del ejemplo Batman.
-- [ ] 6.4 Persistir la acción mediante `titlePinsRepo`, no mediante el save de `SavedTitle`; comprobar que estado, notas, tags y `updatedAt` no cambian al fijar/desfijar.
-- [ ] 6.5 Integrar cola, rollback visual, mensaje de error y reintento en el detalle; comprobar doble pulsación y fallo de escritura en web y móvil.
-- [ ] 6.6 Ejecutar `npx tsc --noEmit` y pruebas de rutas/contextos; revisar manualmente navegación directa, desde Biblioteca y desde etiquetas antes de continuar.
+- [x] 6.1 Parsear los parámetros de `/title/[id]` en un contexto discriminado y validar tag no vacío y pertenencia exacta actual; comprobar library/tag válidos, parámetros múltiples o desconocidos y valores vacíos.
+- [x] 6.2 Aplicar fallback explícito a Biblioteca cuando falte contexto, sea inválido o el título ya no contenga la etiqueta; comprobar deep links, recarga web y contexto obsoleto sin creación de pin tag.
+- [x] 6.3 Mostrar la acción explícita `Fijar en …`/`Desfijar de …` y el estado del contexto validado, sin mezclar pins de Biblioteca/tag; comprobar las cuatro combinaciones del ejemplo Batman.
+- [x] 6.4 Persistir la acción mediante `titlePinsRepo`, no mediante el save de `SavedTitle`; comprobar que estado, notas, tags y `updatedAt` no cambian al fijar/desfijar.
+- [x] 6.5 Integrar cola, rollback visual, mensaje de error y reintento en el detalle; comprobar doble pulsación y fallo de escritura en web y móvil.
+- [x] 6.6 Ejecutar `npx tsc --noEmit` y pruebas de rutas/contextos; revisar manualmente navegación directa, desde Biblioteca y desde etiquetas antes de continuar.
 
 ## 7. Indicadores Grid, accesibilidad y responsive
 

@@ -23,6 +23,17 @@ export type SavedTitlesReadDatabase = {
   getAllAsync<T>(source: string, ...params: any[]): Promise<T[]>;
 };
 
+export async function getSavedTitleByIdWithDb(
+  db: SavedTitlesReadDatabase,
+  id: string
+): Promise<SavedTitle | null> {
+  const rows = await db.getAllAsync<Record<string, unknown>>(
+    "SELECT * FROM saved_titles WHERE id = ? LIMIT 1",
+    id
+  );
+  return rows.length ? rowToSavedTitle(rows[0]) : null;
+}
+
 export async function listSavedTitlesWithDb(
   db: SavedTitlesReadDatabase
 ): Promise<SavedTitle[]> {
@@ -85,9 +96,7 @@ export async function deleteSavedTitle(id: string): Promise<void> {
 }
 
 export async function getSavedTitleById(id: string): Promise<SavedTitle | null> {
-  const db = await initDb();
-  const rows = await db.getAllAsync("SELECT * FROM saved_titles WHERE id = ? LIMIT 1", id);
-  return rows.length ? rowToSavedTitle(rows[0]) : null;
+  return getSavedTitleByIdWithDb(await initDb(), id);
 }
 
 export async function getByProviderExternal(

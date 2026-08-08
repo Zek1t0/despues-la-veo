@@ -140,6 +140,23 @@ export async function isTitlePinnedWithDb(
   return row?.found === 1;
 }
 
+export async function getTitlePinPinnedAtWithDb(
+  db: TitlePinsDatabase,
+  savedTitleId: string,
+  contextInput: PinContext
+): Promise<number | null> {
+  assertSavedTitleId(savedTitleId);
+  const context = normalizePinContext(contextInput);
+  const row = await db.getFirstAsync<{ pinned_at: number }>(
+    `SELECT pinned_at FROM title_pins
+     WHERE saved_title_id = ? AND context_type = ? AND context_key = ? LIMIT 1;`,
+    [savedTitleId, context.contextType, context.contextKey]
+  );
+  if (!row) return null;
+  assertValidPinnedAt(row.pinned_at);
+  return row.pinned_at;
+}
+
 export async function pinTitleWithDb(
   db: TitlePinsDatabase,
   savedTitleId: string,
