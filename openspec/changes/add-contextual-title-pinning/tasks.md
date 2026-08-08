@@ -22,16 +22,16 @@
 
 ## 3. Backup JSON v2 y compatibilidad v1
 
-- [ ] 3.1 Crear el contrato, normalización y parser de JSON v2 sin alterar el contrato de campos de `libraryBackupV1.ts`; comprobar envoltura, `items`, `pins`, identidades lógicas, contextos y que `pinnedAt` acepte sólo number entero seguro no negativo.
-- [ ] 3.2 Agregar un dispatcher que acepte versiones 1 y 2 y rechace cualquier otra o una envoltura estructuralmente corrupta antes de escribir; comprobar que JSON inválido, `exportedAt` inválido y `pins` no-array no modifican SQLite.
-- [ ] 3.3 Actualizar exportación para producir `version: 2` con `items` y pins referidos por `provider + externalId`, excluyendo preferencias; comprobar el JSON resultante con Biblioteca, múltiples tags y cero pins.
-- [ ] 3.4 Mantener v1 sin importación de pins ni desfijado por ausencia, pero aplicar la limpieza normal si un item elegible cambia `tags_json`; ejecutar las fixtures v1 actuales y comprobar que se elimina sólo el pin de una tag perdida mientras se conservan Biblioteca y tags todavía pertenecientes.
-- [ ] 3.5 Procesar v2 en orden títulos → resolución de identidad local final → pins; comprobar que una colisión de `SavedTitle.id` no rompe la asociación por `provider + externalId`.
-- [ ] 3.6 Implementar merge aditivo de pins: insertar ausentes con `pinnedAt` entrante, conservar filas y `pinned_at` locales coincidentes y no borrar pins locales ausentes; comprobar idempotencia importando dos veces.
-- [ ] 3.7 Omitir y reportar individualmente pins con título inexistente, contexto/key inválidos, tag no perteneciente o `pinnedAt` no-number, decimal, infinito, `NaN`, negativo o fuera del rango seguro; comprobar que otros títulos y pins elegibles sí se persisten.
-- [ ] 3.8 Ampliar el resultado/resumen con pins insertados, conservados, inválidos y fallidos, usando referencias seguras y sin presentar resultados parciales como éxito total; comprobar combinaciones mixtas.
-- [ ] 3.9 Verificar manualmente exportación e importación v1/v2 en web y en un dispositivo/emulador móvil, incluyendo compartir/seleccionar archivo y mensajes finales.
-- [ ] 3.10 Ejecutar `npx tsc --noEmit` y toda la suite/fixtures de backup; revisar compatibilidad y detener Apply para revisión antes de continuar.
+- [x] 3.1 Crear el contrato, normalización y parser de JSON v2 sin alterar el contrato de campos de `libraryBackupV1.ts`; comprobar envoltura, `items`, `pins`, identidades lógicas, contextos y que `pinnedAt` acepte sólo number entero seguro no negativo.
+- [x] 3.2 Agregar un dispatcher que acepte versiones 1 y 2 y rechace cualquier otra o una envoltura estructuralmente corrupta antes de escribir; comprobar que JSON inválido, `exportedAt` inválido y `pins` no-array no modifican SQLite.
+- [x] 3.3 Actualizar exportación para producir `version: 2` con `items` y pins referidos por `provider + externalId`, excluyendo preferencias; comprobar el JSON resultante con Biblioteca, múltiples tags y cero pins.
+- [x] 3.4 Mantener v1 sin importación de pins ni desfijado por ausencia, pero aplicar la limpieza normal si un item elegible cambia `tags_json`; ejecutar las fixtures v1 actuales y comprobar que se elimina sólo el pin de una tag perdida mientras se conservan Biblioteca y tags todavía pertenecientes.
+- [x] 3.5 Procesar v2 en orden títulos → resolución de identidad local final → pins; comprobar que una colisión de `SavedTitle.id` no rompe la asociación por `provider + externalId`.
+- [x] 3.6 Implementar merge aditivo de pins: insertar ausentes con `pinnedAt` entrante, conservar filas y `pinned_at` locales coincidentes y no borrar pins locales ausentes; comprobar idempotencia importando dos veces.
+- [x] 3.7 Omitir y reportar individualmente pins con título inexistente, contexto/key inválidos, tag no perteneciente o `pinnedAt` no-number, decimal, infinito, `NaN`, negativo o fuera del rango seguro; comprobar que otros títulos y pins elegibles sí se persisten.
+- [x] 3.8 Ampliar el resultado/resumen con pins insertados, conservados, inválidos y fallidos, usando referencias seguras y sin presentar resultados parciales como éxito total; comprobar combinaciones mixtas.
+- [x] 3.9 Verificar manualmente exportación e importación v1/v2 en web y en un dispositivo/emulador móvil, incluyendo compartir/seleccionar archivo y mensajes finales.
+- [x] 3.10 Ejecutar `npx tsc --noEmit` y toda la suite/fixtures de backup; revisar compatibilidad y detener Apply para revisión antes de continuar.
 
 ## 4. Biblioteca: estado contextual, orden y acción Detail
 

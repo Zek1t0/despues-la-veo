@@ -4,6 +4,9 @@ import {
   type NormalizedBackupSavedTitle,
 } from "../core/libraryBackupV1";
 import { upsertSavedTitleAndCleanPinsWithDb } from "./savedTitleIntegrity";
+import { mergeBackupPinWithDb } from "./titlePinsBackup";
+import { parsePinContext } from "../core/contextualPin";
+import type { LibraryBackupPinV2 } from "../core/libraryBackupV2";
 
 export type LibraryImportIssue = { reference: string; reason: string };
 export type LibraryImportMergeResult = {
@@ -19,6 +22,17 @@ export type LibraryBackupMergeDb = {
   getAllAsync<T>(sql: string, ...params: any[]): Promise<T[]>;
   runAsync(sql: string, ...params: any[]): Promise<any>;
   withTransactionAsync(task: () => Promise<void>): Promise<void>;
+};
+
+export type LibraryPinImportResult = {
+  inserted: number;
+  preserved: number;
+  invalid: LibraryImportIssue[];
+  failed: LibraryImportIssue[];
+};
+
+export type LibraryBackupMergeResult = LibraryImportMergeResult & {
+  pins: LibraryPinImportResult;
 };
 
 function safeParseJsonArray(value: string): string[] {
@@ -164,4 +178,76 @@ export async function mergeLibraryBackupItemsWithDb(
   }
 
   return result;
+}
+
+function backupPinReference(pin: LibraryBackupPinV2): string {
+  const context = pin.contextType === "library" ? "Biblioteca" : `tag ${pin.contextKey}`;
+  return `${pin.provider}:${pin.externalId} (${context})`;
+}
+
+export async function mergeLibraryBackupWithDb(
+  db: LibraryBackupMergeDb,
+  items: NormalizedBackupSavedTitle[],
+  pins: LibraryBackupPinV2[] | null,
+  generateId: () => string
+): Promise<LibraryBackupMergeResult> {
+  const titles = await mergeLibraryBackupItemsWithDb(db, items, generateId);
+  const pinResult: LibraryPinImportResult = {
+    inserted: 0,
+    preserved: 0,
+    invalid: [],
+    failed: [],
+  };
+
+  if (pins) {
+    const finalRows = await db.getAllAsync<{
+      id: string;
+      provider: string;
+      external_id: string;
+      tags_json: string;
+    }>("SELECT id, provider, external_id, tags_json FROM saved_titles;");
+    const byIdentity = new Map(
+      finalRows.map((row) => [`${row.provider}\u0000${row.external_id}`, row] as const)
+    );
+
+    for (const pin of pins) {
+      const reference = backupPinReference(pin);
+      const row = byIdentity.get(`${pin.provider}\u0000${pin.externalId}`);
+      if (!row) {
+        pinResult.invalid.push({ reference, reason: "El título referido no existe después del merge." });
+        continue;
+      }
+      const context = parsePinContext(pin.contextType, pin.contextKey);
+      if (!context) {
+        pinResult.invalid.push({ reference, reason: "El contexto del pin no es aplicable." });
+        continue;
+      }
+      if (context.contextType === "tag") {
+        const tags = safeParseJsonArray(row.tags_json)
+          .map((tag) => tag.trim())
+          .filter(Boolean);
+        if (!tags.includes(context.contextKey)) {
+          pinResult.invalid.push({
+            reference,
+            reason: "El título final no pertenece exactamente a la etiqueta indicada.",
+          });
+          continue;
+        }
+      }
+      try {
+        let outcome: "inserted" | "preserved" = "preserved";
+        await db.withTransactionAsync(async () => {
+          outcome = await mergeBackupPinWithDb(db, row.id, context, pin.pinnedAt);
+        });
+        pinResult[outcome]++;
+      } catch (error) {
+        pinResult.failed.push({
+          reference,
+          reason: error instanceof Error ? error.message : "No se pudo persistir el pin.",
+        });
+      }
+    }
+  }
+
+  return { ...titles, pins: pinResult };
 }

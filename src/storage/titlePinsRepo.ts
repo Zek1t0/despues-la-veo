@@ -24,6 +24,14 @@ type TitlePinRow = {
 
 type SavedTitlePinValidationRow = { id: string; tags_json: string };
 
+export type BackupTitlePinRow = {
+  provider: "manual" | "tmdb";
+  externalId: string;
+  contextType: "library" | "tag";
+  contextKey: string;
+  pinnedAt: number;
+};
+
 function assertSavedTitleId(savedTitleId: string): void {
   if (typeof savedTitleId !== "string" || !savedTitleId.trim()) {
     throw new Error("El id del título guardado debe ser un string no vacío.");
@@ -86,6 +94,35 @@ export async function listTitlePinsForContextWithDb(
     [context.contextType, context.contextKey]
   );
   return rows.map(rowToTitlePin);
+}
+
+export async function listAllPinsForBackupWithDb(
+  db: TitlePinsDatabase
+): Promise<BackupTitlePinRow[]> {
+  const rows = await db.getAllAsync<{
+    provider: "manual" | "tmdb";
+    external_id: string;
+    context_type: string;
+    context_key: string;
+    pinned_at: number;
+  }>(
+    `SELECT s.provider, s.external_id, p.context_type, p.context_key, p.pinned_at
+     FROM title_pins p
+     INNER JOIN saved_titles s ON s.id = p.saved_title_id
+     ORDER BY s.provider, s.external_id, p.context_type, p.context_key;`
+  );
+  return rows.map((row) => {
+    const context = parsePinContext(row.context_type, row.context_key);
+    assertValidPinnedAt(row.pinned_at);
+    if (!context) throw new Error("Se encontró un contexto de pin persistido inválido.");
+    return {
+      provider: row.provider,
+      externalId: String(row.external_id),
+      contextType: context.contextType,
+      contextKey: context.contextKey,
+      pinnedAt: row.pinned_at,
+    };
+  });
 }
 
 export async function isTitlePinnedWithDb(
@@ -176,6 +213,10 @@ export async function deleteTagPinsExceptWithDb(
 
 export async function listTitlePinsForContext(context: PinContext): Promise<TitlePin[]> {
   return listTitlePinsForContextWithDb(await initDb(), context);
+}
+
+export async function listAllPinsForBackup(): Promise<BackupTitlePinRow[]> {
+  return listAllPinsForBackupWithDb(await initDb());
 }
 
 export async function isTitlePinned(savedTitleId: string, context: PinContext): Promise<boolean> {

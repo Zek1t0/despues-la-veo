@@ -1,11 +1,14 @@
 import type { SavedTitle } from "../core/savedTitle";
 import type { NormalizedBackupSavedTitle } from "../core/libraryBackupV1";
+import type { ParsedLibraryBackup } from "../core/libraryBackup";
 import { initDb } from "./db";
 import {
   mergeLibraryBackupItemsWithDb,
+  mergeLibraryBackupWithDb,
   rowToSavedTitle,
   type LibraryImportIssue,
   type LibraryImportMergeResult,
+  type LibraryBackupMergeResult,
 } from "./libraryBackupMerge";
 import {
   deleteSavedTitleAndPinsWithDb,
@@ -14,6 +17,7 @@ import {
 import { runSerializedStorageMutation } from "./storageMutationQueue";
 
 export type { LibraryImportIssue, LibraryImportMergeResult };
+export type { LibraryBackupMergeResult };
 
 export async function listSavedTitles(): Promise<SavedTitle[]> {
   const db = await initDb();
@@ -44,6 +48,21 @@ export async function mergeLibraryBackupItems(
   const db = await initDb();
   return runSerializedStorageMutation(() =>
     mergeLibraryBackupItemsWithDb(db, items, generateId)
+  );
+}
+
+export async function mergeLibraryBackup(
+  payload: ParsedLibraryBackup,
+  generateId: () => string
+): Promise<LibraryBackupMergeResult> {
+  const db = await initDb();
+  return runSerializedStorageMutation(() =>
+    mergeLibraryBackupWithDb(
+      db,
+      payload.items,
+      payload.version === 2 ? payload.pins : null,
+      generateId
+    )
   );
 }
 
