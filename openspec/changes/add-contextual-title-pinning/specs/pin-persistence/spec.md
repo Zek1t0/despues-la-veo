@@ -47,6 +47,28 @@ El sistema MUST persistir fijar y desfijar independientemente de las escrituras 
 - **WHEN** se intenta persistir un `pinned_at` decimal, infinito, `NaN`, negativo o fuera del rango entero seguro
 - **THEN** la escritura se rechaza sin crear ni reemplazar un pin
 
+### Requirement: las escrituras aditivas y las intenciones UI conservan contratos distintos
+
+El sistema MUST conservar `pinTitle` como una inserción sólo-si-ausente que no reemplaza el
+`pinnedAt` local y MUST converger las intenciones directas de UI mediante una operación exacta
+que crea, actualiza o elimina el pin contextual solicitado.
+
+#### Scenario: inserción aditiva duplicada
+- **WHEN** `pinTitle` recibe un pin que ya existe con otro `pinnedAt`
+- **THEN** conserva el `pinnedAt` local existente
+
+#### Scenario: intención UI fijada confirmada
+- **WHEN** una intención UI solicita un `pinnedAt` válido y su escritura finaliza correctamente
+- **THEN** storage contiene el pin con exactamente ese `pinnedAt`
+
+#### Scenario: intención UI desfijada confirmada
+- **WHEN** una intención UI solicita estado desfijado y su escritura finaliza correctamente
+- **THEN** storage no contiene el pin contextual exacto
+
+#### Scenario: fallo intermedio seguido de intención posterior
+- **WHEN** falla una escritura intermedia y una intención posterior se confirma
+- **THEN** tanto pertenencia como `pinnedAt` en storage coinciden con la intención posterior
+
 ### Requirement: sólo se admiten pins de etiquetas a las que pertenece el título
 
 El sistema MUST validar la pertenencia exacta del título al contexto de etiqueta antes de crear el pin y MUST mantener la misma semántica actual de strings derivados sin crear entidades persistentes de etiqueta.

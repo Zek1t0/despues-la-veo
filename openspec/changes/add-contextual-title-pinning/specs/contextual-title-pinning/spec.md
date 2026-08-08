@@ -136,3 +136,18 @@ El sistema MUST mantener utilizables las acciones de pin ante pulsaciones rápid
 - **THEN** la interfaz vuelve al último estado confirmado
 - **AND** informa el fallo de forma comprensible
 - **AND** el usuario puede volver a intentar la acción
+
+### Requirement: un contexto con lectura fallida no presenta pins desconocidos como ausentes
+
+El sistema MUST distinguir un snapshot contextual confirmado de una lectura fallida y MUST NOT
+ofrecer acciones de pin sobre títulos cuyo estado contextual no pudo cargarse.
+
+#### Scenario: falla el snapshot de una etiqueta abierta
+- **WHEN** no se pueden cargar conjuntamente los títulos y pins de la etiqueta seleccionada
+- **THEN** termina el estado de carga y se informa un error recuperable
+- **AND** no se renderizan sus títulos como si ninguno estuviera fijado
+- **AND** no se ofrece `Fijar` o `Desfijar` hasta obtener un snapshot válido
+
+#### Scenario: falla tarde un contexto anterior
+- **WHEN** falla el snapshot de una etiqueta después de que otra etiqueta terminó de cargar
+- **THEN** el fallo anterior no cambia el error, loading, títulos ni pins del contexto visible

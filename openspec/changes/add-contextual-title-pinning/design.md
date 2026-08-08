@@ -108,6 +108,13 @@ Un repositorio nuevo bajo `src/storage/titlePinsRepo.ts` expondrá operaciones a
 - eliminar pins de tags que ya no pertenecen al título;
 - insertar pins de backup con semántica `insert if absent`.
 
+El repositorio mantiene dos contratos de escritura deliberadamente distintos. `pinTitle` usa
+`INSERT ... ON CONFLICT DO NOTHING`: un duplicado conserva el `pinned_at` local y sostiene el
+merge aditivo del backup. Las intenciones directas de UI usan `setTitlePinState`: `null` elimina
+el pin exacto y un número crea o actualiza la fila con exactamente ese `pinned_at`. Por lo tanto,
+si esa escritura autoritativa resuelve, tanto la pertenencia como `pinned_at` en storage coinciden
+con la última intención confirmada; esta operación no se reutiliza para el merge de backup.
+
 Antes de fijar en tag, el repositorio consulta el título dentro de la misma operación y compara la clave con el conjunto de tags normalizadas por trim e identidad exacta. Los parámetros de navegación nunca sustituyen esta validación.
 
 Las operaciones no llaman `upsertSavedTitle` ni escriben `saved_titles.updated_at`. Para dobles pulsaciones, cada superficie mantiene por título/contexto una cola serializada y un identificador de intención semejante al patrón de preferencias: actualización optimista, confirmación en orden y rollback sólo si el error corresponde a la intención todavía vigente. No se crea una abstracción general hasta demostrar repetición suficiente.

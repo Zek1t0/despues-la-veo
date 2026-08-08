@@ -24,6 +24,9 @@ import {
 } from "../../src/components/browsing";
 import { titleStatusLabel, titleTypeLabel } from "../../src/core/presentationLabels";
 import type { SavedTitle } from "../../src/core/savedTitle";
+import { createTagPinContext } from "../../src/core/contextualPin";
+import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";
+import { compareTagTitles, selectVisibleTagTitles } from "../../src/core/tagView";
 import {
   VIEW_PREFERENCE_DEFAULTS,
   type LibraryViewMode,
@@ -31,6 +34,8 @@ import {
   type TagsViewMode,
 } from "../../src/core/viewPreferences";
 import { listSavedTitles } from "../../src/storage/savedTitlesRepo";
+import { setTitlePinState } from "../../src/storage/titlePinsRepo";
+import { getTagScreenSnapshot } from "../../src/storage/tagScreenSnapshot";
 import { getViewPreference, setViewPreference } from "../../src/storage/viewPreferencesRepo";
 import { colors } from "../../src/theme/colors";
 
@@ -65,16 +70,8 @@ function normalizeTagSearch(value: string): string {
     .toLocaleLowerCase("es");
 }
 
-function compareTitlesForCollage(a: SavedTitle, b: SavedTitle): number {
-  return (
-    b.updatedAt - a.updatedAt ||
-    compareExactSpanish(a.title, b.title) ||
-    a.id.localeCompare(b.id)
-  );
-}
-
 function selectCollageTitles(tagItems: readonly SavedTitle[]): SavedTitle[] {
-  return [...tagItems].sort(compareTitlesForCollage).slice(0, 4);
+  return [...tagItems].sort(compareTagTitles).slice(0, 4);
 }
 
 function tagCountLabel(count: number): string {
@@ -168,30 +165,70 @@ function TagListRow({ info, onPress }: { info: TagInfo; onPress: () => void }) {
   );
 }
 
-function DetailTitleRow({ item, onPress }: { item: SavedTitle; onPress: () => void }) {
+function DetailTitleRow({
+  item,
+  onPress,
+  onTogglePin,
+  pinned,
+  tag,
+}: {
+  item: SavedTitle;
+  onPress: () => void;
+  onTogglePin: () => void;
+  pinned: boolean;
+  tag: string;
+}) {
   return (
-    <Pressable
-      accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}`}
-      accessibilityRole="button"
-      focusable
-      onPress={onPress}
-      style={({ pressed }) => ({
+    <View
+      style={{
         backgroundColor: colors.card2,
         borderColor: colors.border,
         borderRadius: 14,
         borderWidth: 1,
-        gap: 5,
-        opacity: pressed ? 0.82 : 1,
+        gap: 10,
         padding: 12,
-      })}
+      }}
     >
-      <Text numberOfLines={2} style={{ color: colors.text, fontWeight: "900" }}>
-        {item.title}{item.year ? ` (${item.year})` : ""}
-      </Text>
-      <Text style={{ color: colors.muted, fontWeight: "700" }}>
-        {titleTypeLabel(item.type)} · {titleStatusLabel(item.status)}
-      </Text>
-    </Pressable>
+      <Pressable
+        accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}`}
+        accessibilityRole="button"
+        focusable
+        onPress={onPress}
+        style={({ pressed }) => ({ gap: 5, opacity: pressed ? 0.82 : 1 })}
+      >
+        <Text numberOfLines={2} style={{ color: colors.text, fontWeight: "900" }}>
+          {item.title}{item.year ? ` (${item.year})` : ""}
+        </Text>
+        <Text style={{ color: colors.muted, fontWeight: "700" }}>
+          {titleTypeLabel(item.type)} · {titleStatusLabel(item.status)}
+        </Text>
+      </Pressable>
+      <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        <Pressable
+          accessibilityLabel={pinned ? `Desfijar de ${tag}` : `Fijar en ${tag}`}
+          accessibilityRole="button"
+          accessibilityState={{ selected: pinned }}
+          focusable
+          onPress={onTogglePin}
+          style={({ pressed }) => ({
+            alignItems: "center",
+            backgroundColor: colors.card,
+            borderColor: colors.border2,
+            borderRadius: 12,
+            borderWidth: 1,
+            justifyContent: "center",
+            minHeight: 44,
+            opacity: pressed ? 0.78 : 1,
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+          })}
+        >
+          <Text style={{ color: colors.text, fontWeight: "800" }}>
+            {pinned ? "Desfijar" : "Fijar"}
+          </Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
@@ -202,6 +239,8 @@ export default function EtiquetasScreen() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [tagPinnedAtById, setTagPinnedAtById] = useState<Map<string, number>>(new Map());
+  const [tagLoadError, setTagLoadError] = useState<string | null>(null);
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [optionsVisible, setOptionsVisible] = useState(false);
   const [sort, setSort] = useState<TagsSort>(VIEW_PREFERENCE_DEFAULTS["tags.sort"]);
@@ -220,6 +259,12 @@ export default function EtiquetasScreen() {
   const sortWriteQueue = useRef<Promise<void>>(Promise.resolve());
   const viewModeSelectionId = useRef(0);
   const sortSelectionId = useRef(0);
+  const selectedTagRef = useRef<string | null>(null);
+  const tagRefreshGeneration = useRef(0);
+  const latestTagPinnedAtById = useRef<Map<string, number>>(new Map());
+  const tagPinIntentQueues = useRef<
+    Map<string, Map<string, ContextualPinIntentQueue>>
+  >(new Map());
   const mounted = useRef(true);
 
   const showPreferenceError = useCallback((preference: "apariencia" | "orden") => {
@@ -321,54 +366,72 @@ export default function EtiquetasScreen() {
   useFocusEffect(
     useCallback(() => {
       let active = true;
+      const generation = ++tagRefreshGeneration.current;
+      const contextTag = selectedTag;
 
       async function refresh() {
         setLoading(true);
-        const [titlesResult, libraryViewResult] = await Promise.allSettled([
-          listSavedTitles(),
+        if (contextTag !== null) setTagLoadError(null);
+        if (contextTag !== null) {
+          const contextQueues = tagPinIntentQueues.current.get(contextTag);
+          if (contextQueues) {
+            await Promise.all([...contextQueues.values()].map((queue) => queue.whenIdle()));
+          }
+        }
+        const [snapshotResult, libraryViewResult] = await Promise.allSettled([
+          contextTag === null ? listSavedTitles() : getTagScreenSnapshot(contextTag),
           getViewPreference("library.viewMode"),
         ]);
-        if (!active) return;
-        if (titlesResult.status === "fulfilled") {
-          setItems(titlesResult.value);
+        if (!active || generation !== tagRefreshGeneration.current) return;
+        if (snapshotResult.status === "fulfilled") {
+          const snapshotItems = Array.isArray(snapshotResult.value)
+            ? snapshotResult.value
+            : snapshotResult.value.items;
+          setItems(snapshotItems);
+          if (!Array.isArray(snapshotResult.value)) {
+            const loaded = new Map(
+              snapshotResult.value.pins.map((pin) => [pin.savedTitleId, pin.pinnedAt] as const)
+            );
+            latestTagPinnedAtById.current = new Map(loaded);
+            setTagPinnedAtById(new Map(loaded));
+            const normalizedTag = snapshotResult.value.context.contextKey;
+            const contextQueues = new Map<string, ContextualPinIntentQueue>();
+            for (const item of snapshotItems) {
+              if (!(item.tags ?? []).some((tag) => tag.trim() === normalizedTag)) continue;
+              contextQueues.set(
+                item.id,
+                new ContextualPinIntentQueue(loaded.get(item.id) ?? null)
+              );
+            }
+            tagPinIntentQueues.current.set(normalizedTag, contextQueues);
+            setTagLoadError(null);
+          } else {
+            latestTagPinnedAtById.current = new Map();
+            setTagPinnedAtById(new Map());
+          }
         } else {
-          console.error("No se pudieron recargar las etiquetas.", titlesResult.reason);
-          setItems([]);
+          console.error("No se pudieron recargar las etiquetas.", snapshotResult.reason);
+          const message = contextTag
+            ? `No se pudo cargar la etiqueta ${contextTag}. Podés volver a intentar al regresar.`
+            : "No se pudieron cargar las etiquetas. Podés volver a intentar al regresar.";
+          if (contextTag) setTagLoadError(message);
+          if (Platform.OS === "web") window.alert(message);
+          else Alert.alert("Error al cargar", message);
         }
         setLibraryViewMode(
           libraryViewResult.status === "fulfilled"
             ? libraryViewResult.value
             : VIEW_PREFERENCE_DEFAULTS["library.viewMode"]
         );
-        setLoading(false);
+        if (active && generation === tagRefreshGeneration.current) setLoading(false);
       }
 
       void refresh();
       return () => {
         active = false;
       };
-    }, [])
+    }, [selectedTag])
   );
-
-  useEffect(() => {
-    if (!selectedTag) return;
-    let active = true;
-
-    async function refreshInheritedViewMode() {
-      try {
-        const inherited = await getViewPreference("library.viewMode");
-        if (active) setLibraryViewMode(inherited);
-      } catch (error) {
-        console.error("No se pudo leer la apariencia heredada de Biblioteca.", error);
-        if (active) setLibraryViewMode(VIEW_PREFERENCE_DEFAULTS["library.viewMode"]);
-      }
-    }
-
-    void refreshInheritedViewMode();
-    return () => {
-      active = false;
-    };
-  }, [selectedTag]);
 
   const tagMap = useMemo(() => {
     const map = new Map<string, SavedTitle[]>();
@@ -403,8 +466,8 @@ export default function EtiquetasScreen() {
 
   const selectedItems = useMemo(() => {
     if (!selectedTag) return [];
-    return [...(tagMap.get(selectedTag) ?? [])].sort(compareTitlesForCollage);
-  }, [selectedTag, tagMap]);
+    return selectVisibleTagTitles(tagMap.get(selectedTag) ?? [], tagPinnedAtById);
+  }, [selectedTag, tagMap, tagPinnedAtById]);
 
   const optionSections = useMemo<ViewOptionsSection[]>(
     () => [
@@ -471,9 +534,64 @@ export default function EtiquetasScreen() {
   );
   const titleListKey = `${libraryViewMode}-${titleColumns}`;
 
+  const selectTagContext = useCallback((tag: string | null) => {
+    const normalizedTag = tag === null ? null : createTagPinContext(tag).contextKey;
+    selectedTagRef.current = normalizedTag;
+    tagRefreshGeneration.current++;
+    latestTagPinnedAtById.current = new Map();
+    setTagPinnedAtById(new Map());
+    setTagLoadError(null);
+    setLoading(true);
+    setSelectedTag(normalizedTag);
+  }, []);
+
+  const showTagPinError = useCallback((tag: string) => {
+    const message = `No se pudo cambiar el pin en ${tag}. Se restauró el último estado confirmado.`;
+    if (Platform.OS === "web") window.alert(message);
+    else Alert.alert("Error al fijar", message);
+  }, []);
+
+  const toggleTagPin = useCallback((savedTitleId: string) => {
+    const visibleTag = selectedTagRef.current;
+    if (!visibleTag) return;
+    const context = createTagPinContext(visibleTag);
+    const contextQueues =
+      tagPinIntentQueues.current.get(context.contextKey) ??
+      new Map<string, ContextualPinIntentQueue>();
+    tagPinIntentQueues.current.set(context.contextKey, contextQueues);
+    const intent = contextQueues.get(savedTitleId) ??
+      new ContextualPinIntentQueue(latestTagPinnedAtById.current.get(savedTitleId) ?? null);
+    contextQueues.set(savedTitleId, intent);
+    const nextPinnedAt = intent.getLatest() === null ? Date.now() : null;
+
+    const updateVisibleContext = (pinnedAt: number | null) => {
+      if (!mounted.current || selectedTagRef.current !== context.contextKey) return;
+      const next = new Map(latestTagPinnedAtById.current);
+      if (pinnedAt === null) next.delete(savedTitleId);
+      else next.set(savedTitleId, pinnedAt);
+      latestTagPinnedAtById.current = next;
+      setTagPinnedAtById(new Map(next));
+    };
+
+    void intent.request(
+      nextPinnedAt,
+      (pinnedAt: number | null) => setTitlePinState(savedTitleId, context, pinnedAt),
+      {
+        onOptimistic: updateVisibleContext,
+        onRollback: updateVisibleContext,
+        onError: (error: unknown) => {
+          console.error(`No se pudo cambiar el pin en ${context.contextKey}.`, error);
+          if (mounted.current && selectedTagRef.current === context.contextKey) {
+            showTagPinError(context.contextKey);
+          }
+        },
+      }
+    );
+  }, [showTagPinError]);
+
   const onChangeQuery = (text: string) => {
     setQ(text);
-    if (selectedTag) setSelectedTag(null);
+    if (selectedTag) selectTagContext(null);
   };
 
   const closeMobileSearch = () => {
@@ -520,7 +638,7 @@ export default function EtiquetasScreen() {
           accessibilityLabel="Volver a la lista de etiquetas"
           accessibilityRole="button"
           focusable
-          onPress={() => setSelectedTag(null)}
+          onPress={() => selectTagContext(null)}
           style={({ pressed }) => ({
             alignItems: "center",
             backgroundColor: colors.card2,
@@ -657,6 +775,16 @@ export default function EtiquetasScreen() {
             <ActivityIndicator color={colors.text} />
             <Text style={{ color: colors.muted }}>Cargando etiquetas…</Text>
           </View>
+        ) : selectedTag && tagLoadError ? (
+          <View style={{ gap: 16 }}>
+            {listHeader}
+            <View style={{ gap: 8, paddingVertical: 24 }}>
+              <Text style={{ color: colors.text, fontSize: 17, fontWeight: "900" }}>
+                No se pudo cargar esta etiqueta
+              </Text>
+              <Text style={{ color: colors.muted }}>{tagLoadError}</Text>
+            </View>
+          </View>
         ) : selectedTag ? (
           <FlatList
             ListEmptyComponent={
@@ -680,14 +808,30 @@ export default function EtiquetasScreen() {
               libraryViewMode === "grid" ? (
                 <TitleGridCard
                   accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}`}
-                  onPress={() => router.push(`/title/${item.id}`)}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/title/[id]",
+                      params: { id: item.id, pinContext: "tag", tag: selectedTag },
+                    })
+                  }
                   posterUrl={item.posterUrl}
                   style={{ width: titleCardWidth }}
                   title={item.title}
                   type={item.type}
                 />
               ) : (
-                <DetailTitleRow item={item} onPress={() => router.push(`/title/${item.id}`)} />
+                <DetailTitleRow
+                  item={item}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/title/[id]",
+                      params: { id: item.id, pinContext: "tag", tag: selectedTag },
+                    })
+                  }
+                  onTogglePin={() => toggleTagPin(item.id)}
+                  pinned={tagPinnedAtById.has(item.id)}
+                  tag={selectedTag}
+                />
               )
             }
           />
@@ -716,11 +860,11 @@ export default function EtiquetasScreen() {
               viewMode === "grid" ? (
                 <TagGridCard
                   info={item}
-                  onPress={() => setSelectedTag(item.tag)}
+                  onPress={() => selectTagContext(item.tag)}
                   style={{ width: tagCardWidth }}
                 />
               ) : (
-                <TagListRow info={item} onPress={() => setSelectedTag(item.tag)} />
+                <TagListRow info={item} onPress={() => selectTagContext(item.tag)} />
               )
             }
           />

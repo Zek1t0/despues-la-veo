@@ -45,13 +45,13 @@
 
 ## 5. Etiquetas: independencia, orden propio y acción Detail
 
-- [ ] 5.1 Cargar pins sólo para la clave exacta de `selectedTag` y limpiarlos al cambiar/cerrar contexto; comprobar independencia respecto de Biblioteca, otras etiquetas, mayúsculas y acentos.
-- [ ] 5.2 Particionar la lista abierta, ordenar fijados por `pinnedAt` descendente con `compareTitlesForCollage` como desempate y no fijados con `compareTitlesForCollage` antes de concatenar; comprobar que no herede el sort de Biblioteca ni agregue selector nuevo.
-- [ ] 5.3 Mantener `selectCollageTitles` y `TagCollage` fuera del pipeline de pins; comprobar que fijar/desfijar no cambia las cuatro imágenes ni su orden.
-- [ ] 5.4 Agregar a la fila Detail de etiqueta una acción hermana corta `Fijar`/`Desfijar` con label contextual completo, sin controles anidados; comprobar interacción independiente en web, móvil y teclado.
-- [ ] 5.5 Aplicar cola/rollback de escritura a la acción contextual y refrescar con seguridad si la etiqueta pierde todos sus títulos; comprobar doble pulsación, error y contexto desaparecido.
-- [ ] 5.6 Navegar al detalle con `pinContext=tag` y la clave exacta codificada; comprobar tags con espacios, tildes y caracteres reservados, recarga web y regreso a la etiqueta abierta.
-- [ ] 5.7 Ejecutar `npx tsc --noEmit`, pruebas de independencia/orden y revisión manual responsive de la etiqueta abierta; detener Apply para revisión antes de continuar.
+- [x] 5.1 Cargar pins sólo para la clave exacta de `selectedTag` y limpiarlos al cambiar/cerrar contexto; comprobar independencia respecto de Biblioteca, otras etiquetas, mayúsculas y acentos.
+- [x] 5.2 Particionar la lista abierta, ordenar fijados por `pinnedAt` descendente con `compareTitlesForCollage` como desempate y no fijados con `compareTitlesForCollage` antes de concatenar; comprobar que no herede el sort de Biblioteca ni agregue selector nuevo.
+- [x] 5.3 Mantener `selectCollageTitles` y `TagCollage` fuera del pipeline de pins; comprobar que fijar/desfijar no cambia las cuatro imágenes ni su orden.
+- [x] 5.4 Agregar a la fila Detail de etiqueta una acción hermana corta `Fijar`/`Desfijar` con label contextual completo, sin controles anidados; comprobar interacción independiente en web, móvil y teclado.
+- [x] 5.5 Aplicar cola/rollback con escritura autoritativa exacta a la acción contextual, impedir acciones sobre un snapshot fallido y refrescar con seguridad si la etiqueta pierde todos sus títulos; comprobar fallo intermedio, doble pulsación, error de lectura y contexto desaparecido.
+- [x] 5.6 Navegar al detalle con `pinContext=tag` y la clave exacta codificada; comprobar tags con espacios, tildes y caracteres reservados, recarga web y regreso a la etiqueta abierta.
+- [x] 5.7 Ejecutar `npx tsc --noEmit`, pruebas de independencia/orden y revisión manual responsive de la etiqueta abierta; detener Apply para revisión antes de continuar.
 
 ## 6. Detalle completo y validación del contexto de origen
 

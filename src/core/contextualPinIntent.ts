@@ -1,10 +1,10 @@
-export type LibraryPinIntentCallbacks = {
+export type ContextualPinIntentCallbacks = {
   onOptimistic: (pinnedAt: number | null) => void;
   onRollback: (pinnedAt: number | null) => void;
   onError: (error: unknown) => void;
 };
 
-export class LibraryPinIntentQueue {
+export class ContextualPinIntentQueue {
   private confirmed: number | null;
   private latest: number | null;
   private sequence = 0;
@@ -22,7 +22,7 @@ export class LibraryPinIntentQueue {
   request(
     nextPinnedAt: number | null,
     persist: (pinnedAt: number | null) => Promise<void>,
-    callbacks: LibraryPinIntentCallbacks
+    callbacks: ContextualPinIntentCallbacks
   ): Promise<void> {
     const requestId = ++this.sequence;
     this.latest = nextPinnedAt;

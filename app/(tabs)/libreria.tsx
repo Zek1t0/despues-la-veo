@@ -12,8 +12,8 @@ import {
   type LibraryStatusFilter,
   type LibraryTypeFilter,
 } from "../../src/core/libraryView";
-import { LibraryPinIntentQueue } from "../../src/core/libraryPinIntent";
-import { pinTitle, unpinTitle } from "../../src/storage/titlePinsRepo";
+import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";
+import { setTitlePinState } from "../../src/storage/titlePinsRepo";
 import { getLibraryScreenSnapshot } from "../../src/storage/libraryScreenSnapshot";
 import { titleStatusLabel, titleTypeLabel } from "../../src/core/presentationLabels";
 import {
@@ -116,7 +116,7 @@ export default function LibraryScreen() {
   const viewModeSelectionId = useRef(0);
   const sortSelectionId = useRef(0);
   const latestPinnedAtById = useRef<Map<string, number>>(new Map());
-  const pinIntentQueues = useRef<Map<string, LibraryPinIntentQueue>>(new Map());
+  const pinIntentQueues = useRef<Map<string, ContextualPinIntentQueue>>(new Map());
   const mounted = useRef(true);
 
   const showPreferenceError = useCallback(() => {
@@ -320,7 +320,7 @@ export default function LibraryScreen() {
       pinIntentQueues.current = new Map(
         snapshot.items.map((item) => [
           item.id,
-          new LibraryPinIntentQueue(loadedPinnedAtById.get(item.id) ?? null),
+          new ContextualPinIntentQueue(loadedPinnedAtById.get(item.id) ?? null),
         ])
       );
       setPinnedAtById(new Map(loadedPinnedAtById));
@@ -419,7 +419,7 @@ export default function LibraryScreen() {
 
   const toggleLibraryPin = useCallback((savedTitleId: string) => {
     const intent = pinIntentQueues.current.get(savedTitleId) ??
-      new LibraryPinIntentQueue(latestPinnedAtById.current.get(savedTitleId) ?? null);
+      new ContextualPinIntentQueue(latestPinnedAtById.current.get(savedTitleId) ?? null);
     pinIntentQueues.current.set(savedTitleId, intent);
     const nextPinnedAt = intent.getLatest() === null ? Date.now() : null;
     const updateLocalState = (pinnedAt: number | null) => {
@@ -433,10 +433,7 @@ export default function LibraryScreen() {
 
     void intent.request(
       nextPinnedAt,
-      (pinnedAt) =>
-        pinnedAt !== null
-          ? pinTitle(savedTitleId, LIBRARY_PIN_CONTEXT, pinnedAt)
-          : unpinTitle(savedTitleId, LIBRARY_PIN_CONTEXT),
+      (pinnedAt) => setTitlePinState(savedTitleId, LIBRARY_PIN_CONTEXT, pinnedAt),
       {
         onOptimistic: updateLocalState,
         onRollback: updateLocalState,

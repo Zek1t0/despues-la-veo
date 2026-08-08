@@ -162,6 +162,40 @@ export async function pinTitleWithDb(
   );
 }
 
+export async function setTitlePinStateWithDb(
+  db: TitlePinsDatabase,
+  savedTitleId: string,
+  contextInput: PinContext,
+  pinnedAt: number | null
+): Promise<void> {
+  assertSavedTitleId(savedTitleId);
+  const context = normalizePinContext(contextInput);
+
+  if (pinnedAt === null) {
+    await db.runAsync(
+      `DELETE FROM title_pins
+       WHERE saved_title_id = ? AND context_type = ? AND context_key = ?;`,
+      savedTitleId,
+      context.contextType,
+      context.contextKey
+    );
+    return;
+  }
+
+  assertValidPinnedAt(pinnedAt);
+  await requireSavedTitleForPin(db, savedTitleId, context);
+  await db.runAsync(
+    `INSERT INTO title_pins (saved_title_id, context_type, context_key, pinned_at)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(saved_title_id, context_type, context_key)
+     DO UPDATE SET pinned_at = excluded.pinned_at;`,
+    savedTitleId,
+    context.contextType,
+    context.contextKey,
+    pinnedAt
+  );
+}
+
 export async function unpinTitleWithDb(
   db: TitlePinsDatabase,
   savedTitleId: string,
@@ -231,6 +265,19 @@ export async function pinTitle(
   const db = await initDb();
   return runSerializedStorageMutation(() =>
     db.withTransactionAsync(() => pinTitleWithDb(db, savedTitleId, context, pinnedAt))
+  );
+}
+
+export async function setTitlePinState(
+  savedTitleId: string,
+  context: PinContext,
+  pinnedAt: number | null
+): Promise<void> {
+  const db = await initDb();
+  return runSerializedStorageMutation(() =>
+    db.withTransactionAsync(() =>
+      setTitlePinStateWithDb(db, savedTitleId, context, pinnedAt)
+    )
   );
 }
 
