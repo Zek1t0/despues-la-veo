@@ -6,6 +6,7 @@ import {
   type TitlePin,
 } from "../core/contextualPin";
 import { initDb } from "./db";
+import { runSerializedStorageMutation } from "./storageMutationQueue";
 
 export type TitlePinsDatabase = {
   getFirstAsync<T>(source: string, ...params: any[]): Promise<T | null>;
@@ -112,18 +113,16 @@ export async function pinTitleWithDb(
   const context = normalizePinContext(contextInput);
   assertValidPinnedAt(pinnedAt);
 
-  await db.withTransactionAsync(async () => {
-    await requireSavedTitleForPin(db, savedTitleId, context);
-    await db.runAsync(
-      `INSERT INTO title_pins (saved_title_id, context_type, context_key, pinned_at)
-       VALUES (?, ?, ?, ?)
-       ON CONFLICT(saved_title_id, context_type, context_key) DO NOTHING;`,
-      savedTitleId,
-      context.contextType,
-      context.contextKey,
-      pinnedAt
-    );
-  });
+  await requireSavedTitleForPin(db, savedTitleId, context);
+  await db.runAsync(
+    `INSERT INTO title_pins (saved_title_id, context_type, context_key, pinned_at)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(saved_title_id, context_type, context_key) DO NOTHING;`,
+    savedTitleId,
+    context.contextType,
+    context.contextKey,
+    pinnedAt
+  );
 }
 
 export async function unpinTitleWithDb(
@@ -188,20 +187,28 @@ export async function pinTitle(
   context: PinContext,
   pinnedAt = Date.now()
 ): Promise<void> {
-  return pinTitleWithDb(await initDb(), savedTitleId, context, pinnedAt);
+  const db = await initDb();
+  return runSerializedStorageMutation(() =>
+    db.withTransactionAsync(() => pinTitleWithDb(db, savedTitleId, context, pinnedAt))
+  );
 }
 
 export async function unpinTitle(savedTitleId: string, context: PinContext): Promise<void> {
-  return unpinTitleWithDb(await initDb(), savedTitleId, context);
+  const db = await initDb();
+  return runSerializedStorageMutation(() => unpinTitleWithDb(db, savedTitleId, context));
 }
 
 export async function deletePinsForSavedTitle(savedTitleId: string): Promise<void> {
-  return deletePinsForSavedTitleWithDb(await initDb(), savedTitleId);
+  const db = await initDb();
+  return runSerializedStorageMutation(() => deletePinsForSavedTitleWithDb(db, savedTitleId));
 }
 
 export async function deleteTagPinsExcept(
   savedTitleId: string,
   currentTags: readonly string[]
 ): Promise<void> {
-  return deleteTagPinsExceptWithDb(await initDb(), savedTitleId, currentTags);
+  const db = await initDb();
+  return runSerializedStorageMutation(() =>
+    deleteTagPinsExceptWithDb(db, savedTitleId, currentTags)
+  );
 }

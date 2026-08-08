@@ -3,6 +3,7 @@ import {
   materializeSavedTitleForInsert,
   type NormalizedBackupSavedTitle,
 } from "../core/libraryBackupV1";
+import { upsertSavedTitleAndCleanPinsWithDb } from "./savedTitleIntegrity";
 
 export type LibraryImportIssue = { reference: string; reason: string };
 export type LibraryImportMergeResult = {
@@ -15,7 +16,9 @@ export type LibraryImportMergeResult = {
 
 export type LibraryBackupMergeDb = {
   getFirstAsync(sql: string, params: any): Promise<any>;
+  getAllAsync<T>(sql: string, ...params: any[]): Promise<T[]>;
   runAsync(sql: string, ...params: any[]): Promise<any>;
+  withTransactionAsync(task: () => Promise<void>): Promise<void>;
 };
 
 function safeParseJsonArray(value: string): string[] {
@@ -82,43 +85,25 @@ async function findAvailableInsertId(
   throw new Error(`No se pudo generar un ID libre después de ${maxAttempts} intentos.`);
 }
 
-async function insertSavedTitleWithDb(db: LibraryBackupMergeDb, item: SavedTitle): Promise<void> {
-  await db.runAsync(
-    `INSERT INTO saved_titles (
-      id, provider, external_id, type, title, year, poster_url,
-      overview, vote_average, genres_json,
-      status, tags_json, notes, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    item.id, item.provider, item.externalId, item.type, item.title,
-    item.year ?? null, item.posterUrl ?? null, item.overview ?? null,
-    item.voteAverage ?? null, JSON.stringify(item.genres ?? []),
-    item.status, JSON.stringify(item.tags ?? []), item.notes ?? null,
-    item.createdAt, item.updatedAt
-  );
-}
-
-async function updateSavedTitleFromBackupWithDb(
-  db: LibraryBackupMergeDb,
+function materializeSavedTitleForUpdate(
   local: SavedTitle,
   incoming: NormalizedBackupSavedTitle
-): Promise<void> {
-  await db.runAsync(
-    `UPDATE saved_titles SET
-      title = ?, year = ?, poster_url = ?, overview = ?, vote_average = ?,
-      genres_json = ?, status = ?, tags_json = ?, notes = ?, updated_at = ?
-    WHERE id = ?`,
-    incoming.title,
-    incoming.year.present ? incoming.year.value : local.year ?? null,
-    incoming.posterUrl.present ? incoming.posterUrl.value : local.posterUrl ?? null,
-    incoming.overview.present ? incoming.overview.value : local.overview ?? null,
-    incoming.voteAverage.present ? incoming.voteAverage.value : local.voteAverage ?? null,
-    JSON.stringify(incoming.genres.present ? incoming.genres.value : local.genres ?? []),
-    incoming.status.present ? incoming.status.value : local.status,
-    JSON.stringify(incoming.tags.present ? incoming.tags.value : local.tags ?? []),
-    incoming.notes.present ? incoming.notes.value : local.notes ?? null,
-    incoming.updatedAt.present ? incoming.updatedAt.value : local.updatedAt,
-    local.id
-  );
+): SavedTitle {
+  return {
+    ...local,
+    title: incoming.title,
+    year: incoming.year.present ? incoming.year.value : local.year ?? null,
+    posterUrl: incoming.posterUrl.present ? incoming.posterUrl.value : local.posterUrl ?? null,
+    overview: incoming.overview.present ? incoming.overview.value : local.overview ?? null,
+    voteAverage: incoming.voteAverage.present
+      ? incoming.voteAverage.value
+      : local.voteAverage ?? null,
+    genres: incoming.genres.present ? incoming.genres.value : local.genres ?? [],
+    status: incoming.status.present ? incoming.status.value : local.status,
+    tags: incoming.tags.present ? incoming.tags.value : local.tags ?? [],
+    notes: incoming.notes.present ? incoming.notes.value : local.notes ?? null,
+    updatedAt: incoming.updatedAt.present ? incoming.updatedAt.value : local.updatedAt,
+  };
 }
 
 export async function mergeLibraryBackupItemsWithDb(
@@ -156,14 +141,19 @@ export async function mergeLibraryBackupItemsWithDb(
           continue;
         }
 
-        await updateSavedTitleFromBackupWithDb(db, local, incoming);
+        const updated = materializeSavedTitleForUpdate(local, incoming);
+        await db.withTransactionAsync(async () => {
+          await upsertSavedTitleAndCleanPinsWithDb(db, updated);
+        });
         result.updated++;
         continue;
       }
 
       const materialized = materializeSavedTitleForInsert(incoming, generateId);
       materialized.id = await findAvailableInsertId(db, materialized.id, generateId);
-      await insertSavedTitleWithDb(db, materialized);
+      await db.withTransactionAsync(async () => {
+        await upsertSavedTitleAndCleanPinsWithDb(db, materialized);
+      });
       result.inserted++;
     } catch (error) {
       result.failed.push({

@@ -12,13 +12,13 @@
 
 ## 2. Integridad con SavedTitle, tags y eliminación
 
-- [ ] 2.1 Crear helpers con conexión activa para comparar tags normalizadas anteriores/nuevas y eliminar únicamente pins de tags perdidas; comprobar que se conservan Biblioteca y otras etiquetas.
-- [ ] 2.2 Integrar la limpieza en el guardado/upsert normal dentro de la misma transacción que reemplaza `tags_json`; comprobar que quitar `Acción` elimina su pin sin afectar otros datos.
-- [ ] 2.3 Integrar la misma limpieza en actualizaciones de títulos provenientes del merge de backup; comprobar que una actualización de tags no deja pins huérfanos.
-- [ ] 2.4 Tratar un cambio `Acción` → `Accion` como eliminación y adición: comprobar que desaparece el pin de `Acción` y no se crea ni transfiere uno a `Accion`.
-- [ ] 2.5 Hacer `deleteSavedTitle` transaccional con limpieza explícita previa, manteniendo cascade como respaldo; comprobar que borrar un título elimina todos sus pins y no afecta otros títulos.
-- [ ] 2.6 Probar carreras donde el título o la etiqueta desaparecen antes de fijar; comprobar que el repositorio rechaza el pin obsoleto y conserva los demás estados.
-- [ ] 2.7 Ejecutar `npx tsc --noEmit` y las pruebas de integridad del checkpoint; revisar las transacciones y detener Apply para revisión antes de continuar.
+- [x] 2.1 Crear helpers con conexión activa para derivar las tags finales normalizadas y eliminar únicamente pins de tags que ya no pertenecen al título; comprobar que se conservan Biblioteca y otras etiquetas.
+- [x] 2.2 Integrar la limpieza en el guardado/upsert normal dentro de la misma transacción que reemplaza `tags_json`; comprobar que quitar `Acción` elimina su pin sin afectar otros datos.
+- [x] 2.3 Integrar la misma limpieza en actualizaciones de títulos provenientes del merge de backup; comprobar que una actualización de tags no deja pins huérfanos.
+- [x] 2.4 Tratar un cambio `Acción` → `Accion` como eliminación y adición: comprobar que desaparece el pin de `Acción` y no se crea ni transfiere uno a `Accion`.
+- [x] 2.5 Hacer `deleteSavedTitle` transaccional con limpieza explícita previa, manteniendo cascade como respaldo; comprobar que borrar un título elimina todos sus pins y no afecta otros títulos.
+- [x] 2.6 Probar carreras donde el título o la etiqueta desaparecen antes de fijar; comprobar que el repositorio rechaza el pin obsoleto y conserva los demás estados.
+- [x] 2.7 Ejecutar `npx tsc --noEmit` y las pruebas de integridad del checkpoint; revisar las transacciones y detener Apply para revisión antes de continuar.
 
 ## 3. Backup JSON v2 y compatibilidad v1
 
