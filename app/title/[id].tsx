@@ -8,11 +8,14 @@ import {
   Text,
   TextInput,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { SavedTitle, TitleStatus } from "../../src/core/savedTitle";
+import { titleStatusLabel, titleTypeLabel } from "../../src/core/presentationLabels";
 import {
   deleteSavedTitle,
   getSavedTitleById,
@@ -20,12 +23,31 @@ import {
 } from "../../src/storage/savedTitlesRepo";
 import { colors } from "../../src/theme/colors";
 
-const STATUS_OPTIONS: { value: TitleStatus; label: string }[] = [
-  { value: "planned", label: "Pendiente" },
-  { value: "watching", label: "Viendo" },
-  { value: "done", label: "Visto" },
-  { value: "dropped", label: "Abandonado" },
-];
+const STATUS_OPTIONS: { value: TitleStatus; label: string }[] = ([
+  "planned",
+  "watching",
+  "done",
+  "dropped",
+] satisfies TitleStatus[]).map((value) => ({
+  value,
+  label: titleStatusLabel(value),
+}));
+
+const UPDATED_AT_FORMATTER = new Intl.DateTimeFormat("es-AR", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
+function formatUpdatedAt(value: number): string | null {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
+
+  try {
+    return UPDATED_AT_FORMATTER.format(date);
+  } catch {
+    return null;
+  }
+}
 
 function Chip({
   label,
@@ -38,8 +60,14 @@ function Chip({
 }) {
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      focusable
       onPress={onPress}
       style={{
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: 44,
         paddingVertical: 8,
         paddingHorizontal: 12,
         borderRadius: 999,
@@ -77,11 +105,14 @@ function TagPill({ tag, onRemove }: { tag: string; onRemove: () => void }) {
     >
       <Text style={{ color: colors.text, fontWeight: "700" }}>{tag}</Text>
       <Pressable
+        accessibilityLabel={`Quitar etiqueta ${tag}`}
+        accessibilityRole="button"
+        focusable
         onPress={onRemove}
         hitSlop={10}
         style={{
-          width: 24,
-          height: 24,
+          minWidth: 44,
+          minHeight: 44,
           borderRadius: 999,
           alignItems: "center",
           justifyContent: "center",
@@ -115,6 +146,8 @@ function Card({ children }: { children: React.ReactNode }) {
 
 export default function TitleDetailScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [loading, setLoading] = useState(true);
@@ -127,6 +160,7 @@ export default function TitleDetailScreen() {
   const [tagHint, setTagHint] = useState<string | null>(null);
 
   const tags = useMemo(() => item?.tags ?? [], [item]);
+  const formattedUpdatedAt = item ? formatUpdatedAt(item.updatedAt) : null;
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -207,7 +241,7 @@ export default function TitleDetailScreen() {
 
     const exists = tags.some((x) => x.toLowerCase() === t.toLowerCase());
     if (exists) {
-      setTagHint("Ese tag ya existe.");
+      setTagHint("Esa etiqueta ya existe.");
       setNewTag("");
       return;
     }
@@ -215,10 +249,10 @@ export default function TitleDetailScreen() {
     try {
       await save({ tags: [t, ...tags] });
       setNewTag("");
-      setTagHint(`Tag agregado: ${t}`);
+      setTagHint(`Etiqueta agregada: ${t}`);
       setTimeout(() => setTagHint(null), 1200);
     } catch (e: any) {
-      Alert.alert("Error", e?.message ?? "No se pudo agregar el tag.");
+      Alert.alert("Error", e?.message ?? "No se pudo agregar la etiqueta.");
     }
   }, [item, newTag, save, tags]);
 
@@ -227,10 +261,10 @@ export default function TitleDetailScreen() {
       if (!item) return;
       try {
         await save({ tags: tags.filter((x) => x !== tag) });
-        setTagHint(`Tag borrado: ${tag}`);
+        setTagHint(`Etiqueta borrada: ${tag}`);
         setTimeout(() => setTagHint(null), 1200);
       } catch (e: any) {
-        Alert.alert("Error", e?.message ?? "No se pudo borrar el tag.");
+        Alert.alert("Error", e?.message ?? "No se pudo borrar la etiqueta.");
       }
     },
     [item, save, tags]
@@ -246,12 +280,12 @@ export default function TitleDetailScreen() {
     if (!item) return;
 
     if (Platform.OS === "web") {
-      const ok = window.confirm("¿Seguro que querés borrar este ítem?");
+      const ok = window.confirm("¿Seguro que querés borrar este título?");
       if (ok) void doDelete();
       return;
     }
 
-    Alert.alert("Borrar", "¿Seguro que querés borrar este ítem?", [
+    Alert.alert("Borrar", "¿Seguro que querés borrar este título?", [
       { text: "Cancelar", style: "cancel" },
       { text: "Borrar", style: "destructive", onPress: () => void doDelete() },
     ]);
@@ -284,8 +318,11 @@ export default function TitleDetailScreen() {
             Este ítem no existe (o fue borrado).
           </Text>
           <Pressable
+            accessibilityRole="button"
+            focusable
             onPress={() => router.back()}
             style={{
+              minHeight: 44,
               padding: 12,
               borderRadius: 12,
               backgroundColor: colors.card,
@@ -311,8 +348,13 @@ export default function TitleDetailScreen() {
           headerRight: () =>
             tmdbHref ? (
               <Pressable
+                accessibilityLabel="Abrir este título en TMDB"
+                accessibilityRole="button"
+                focusable
                 onPress={() => router.push(tmdbHref)}
                 style={{
+                  minHeight: 44,
+                  justifyContent: "center",
                   paddingVertical: 6,
                   paddingHorizontal: 10,
                   borderRadius: 10,
@@ -327,13 +369,22 @@ export default function TitleDetailScreen() {
         }}
       />
 
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 }}>
+      <ScrollView
+        contentContainerStyle={{
+          alignSelf: "center",
+          gap: 16,
+          maxWidth: 800,
+          padding: 16,
+          paddingBottom: 16 + (Platform.OS === "web" ? 0 : insets.bottom),
+          width: "100%",
+        }}
+      >
         <View style={{ gap: 6 }}>
           <Text style={{ fontSize: 24, fontWeight: "900", color: colors.text }}>
             {item.title}
           </Text>
           <Text style={{ color: colors.muted, fontWeight: "700" }}>
-            {item.type.toUpperCase()} • {item.provider.toUpperCase()}
+            {titleTypeLabel(item.type)} • {item.provider.toUpperCase()}
           </Text>
         </View>
 
@@ -353,23 +404,32 @@ export default function TitleDetailScreen() {
           <Text style={{ color: colors.subtle }}>Se guarda automáticamente.</Text>
         </Card>
 
-        {/* Tags */}
+        {/* Etiquetas */}
         <Card>
           <View style={{ gap: 4 }}>
-            <Text style={{ color: colors.text, fontWeight: "900", fontSize: 16 }}>Tags</Text>
+            <Text style={{ color: colors.text, fontWeight: "900", fontSize: 16 }}>Etiquetas</Text>
             <Text style={{ color: colors.subtle }}>Se guardan automáticamente al agregar o borrar.</Text>
             {!!tagHint && <Text style={{ color: colors.muted, fontWeight: "800" }}>{tagHint}</Text>}
           </View>
 
-          <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
+          <View
+            style={{
+              alignItems: "center",
+              flexDirection: windowWidth < 390 ? "column" : "row",
+              gap: 10,
+            }}
+          >
             <TextInput
               value={newTag}
+              accessibilityLabel="Nueva etiqueta"
               onChangeText={setNewTag}
               placeholder="Ej: Con: Martina"
               placeholderTextColor={colors.subtle}
               onSubmitEditing={() => void addTag()}
               style={{
                 flex: 1,
+                minHeight: 44,
+                width: windowWidth < 390 ? "100%" : undefined,
                 paddingHorizontal: 12,
                 paddingVertical: 10,
                 borderRadius: 12,
@@ -381,8 +441,14 @@ export default function TitleDetailScreen() {
               returnKeyType="done"
             />
             <Pressable
+              accessibilityLabel="Agregar etiqueta"
+              accessibilityRole="button"
+              focusable
               onPress={() => void addTag()}
               style={{
+                minHeight: 44,
+                justifyContent: "center",
+                width: windowWidth < 390 ? "100%" : undefined,
                 paddingVertical: 10,
                 paddingHorizontal: 14,
                 borderRadius: 12,
@@ -391,13 +457,13 @@ export default function TitleDetailScreen() {
                 borderColor: colors.primary,
               }}
             >
-              <Text style={{ color: colors.bg, fontWeight: "900" }}>+ Tag</Text>
+              <Text style={{ color: colors.bg, fontWeight: "900" }}>Agregar</Text>
             </Pressable>
           </View>
 
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {tags.length === 0 ? (
-              <Text style={{ color: colors.muted }}>Sin tags todavía.</Text>
+              <Text style={{ color: colors.muted }}>Todavía no hay etiquetas.</Text>
             ) : (
               tags.map((t) => <TagPill key={t} tag={t} onRemove={() => void removeTag(t)} />)
             )}
@@ -431,9 +497,14 @@ export default function TitleDetailScreen() {
           />
 
           <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !dirtyNotes }}
+            focusable
             onPress={() => void saveNotesAndBack()}
             disabled={!dirtyNotes}
             style={{
+              minHeight: 44,
+              justifyContent: "center",
               paddingVertical: 12,
               borderRadius: 12,
               backgroundColor: dirtyNotes ? colors.primary : "#3b3b3b",
@@ -446,13 +517,19 @@ export default function TitleDetailScreen() {
           </Pressable>
 
           <Text style={{ color: colors.subtle }}>
-            Updated: {new Date(item.updatedAt).toLocaleString()}
+            {formattedUpdatedAt
+              ? `Actualizado: ${formattedUpdatedAt}`
+              : "Fecha de actualización no disponible."}
           </Text>
         </Card>
 
         <Pressable
+          accessibilityRole="button"
+          focusable
           onPress={confirmDelete}
           style={{
+            minHeight: 44,
+            justifyContent: "center",
             paddingVertical: 14,
             borderRadius: 14,
             backgroundColor: colors.danger,

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Alert, ActivityIndicator, Platform, Pressable, Text, View } from "react-native";
-import * as FileSystem from "expo-file-system";
+import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 
@@ -55,7 +55,7 @@ function uuid() {
 }
 
 async function readTextFromUri(uri: string): Promise<string> {
-  return FileSystem.readAsStringAsync(uri);
+  return new File(uri).text();
 }
 
 function PrimaryButton({
@@ -120,11 +120,8 @@ export default function SettingsScreen() {
         return;
       }
 
-      const baseDir = (FileSystem as any).cacheDirectory ?? (FileSystem as any).documentDirectory;
-      if (!baseDir) throw new Error("No hay directorio disponible para escribir el backup.");
-
-      const uri = baseDir + filename;
-      await FileSystem.writeAsStringAsync(uri, json);
+      const file = new File(Paths.cache, filename);
+      file.write(json);
 
       const shareAvailable = await Sharing.isAvailableAsync();
       if (!shareAvailable) {
@@ -132,7 +129,7 @@ export default function SettingsScreen() {
         return;
       }
 
-      await Sharing.shareAsync(uri, {
+      await Sharing.shareAsync(file.uri, {
         mimeType: "application/json",
         dialogTitle: "Exportar biblioteca",
         UTI: "public.json",
