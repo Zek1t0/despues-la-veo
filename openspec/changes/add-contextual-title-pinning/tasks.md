@@ -1,14 +1,14 @@
 ## 1. Modelo contextual, SQLite v2 y repositorio de pins
 
-- [ ] 1.1 Crear los tipos y helpers acotados de contexto en `src/core/contextualPin.ts`, usando exactamente `String.trim()`, Biblioteca con key vacía y tags normalizadas no vacías con identidad exacta posterior; comprobar whitespace Unicode cubierto por JS y casos válidos/inválidos sin normalizar mayúsculas ni acentos.
-- [ ] 1.2 Definir `title_pins`, su PK/FK/checks contextuales, defensa de rango entero seguro para `pinned_at` e `idx_title_pins_context` en `src/storage/db.ts`, activar y verificar `PRAGMA foreign_keys = ON`; comprobar por introspección SQLite que columnas, restricciones e índice coincidan con el diseño sin tratar el trim de SQLite como autoridad.
-- [ ] 1.3 Evolucionar `DATABASE_SCHEMA_VERSION` y la inicialización de 1 a 2 dentro de una transacción, estableciendo `user_version = 2` sólo tras verificar toda la estructura; comprobar que una fixture v1 conserva `saved_titles`, `idx_saved_titles_provider_external`, `app_preferences` y sus datos.
-- [ ] 1.4 Cubrir inicialización nueva/v0 y reapertura v2 idempotente; comprobar que ejecuciones repetidas no duplican estructuras ni alteran títulos, preferencias o pins.
-- [ ] 1.5 Inyectar un fallo controlado durante creación/verificación y comprobar rollback completo: la estructura parcial no se publica, `user_version` no queda en 2 y los datos v1 permanecen intactos.
-- [ ] 1.6 Probar una base con versión futura mayor que 2 y comprobar rechazo explícito sin escrituras ni cambios de versión.
-- [ ] 1.7 Implementar `src/storage/titlePinsRepo.ts` con lectura por contexto, lectura individual, pin, unpin y eliminación, validando existencia/pertenencia tag dentro de la operación; comprobar independencia Biblioteca/tag, múltiples etiquetas, claves inválidas y ausencia de consultas por card.
-- [ ] 1.8 Validar y persistir `pinned_at` sólo cuando sea number, `Number.isSafeInteger` y mayor o igual que cero, sin incorporarlo a comparadores visibles; comprobar `Date.now()` y rechazar decimales, `Infinity`, `NaN`, negativos y enteros fuera del rango seguro, verificando además que pin/unpin no modifica `SavedTitle.updatedAt`.
-- [ ] 1.9 Ejecutar `npx tsc --noEmit` y las pruebas del checkpoint; revisar los cambios de tipos/SQL y detener Apply para revisión antes de continuar.
+- [x] 1.1 Crear los tipos y helpers acotados de contexto en `src/core/contextualPin.ts`, usando exactamente `String.trim()`, Biblioteca con key vacía y tags normalizadas no vacías con identidad exacta posterior; comprobar whitespace Unicode cubierto por JS y casos válidos/inválidos sin normalizar mayúsculas ni acentos.
+- [x] 1.2 Definir `title_pins`, su PK/FK/checks contextuales, defensa de rango entero seguro para `pinned_at` e `idx_title_pins_context` en `src/storage/db.ts`, activar y verificar `PRAGMA foreign_keys = ON`; comprobar por introspección SQLite que columnas, restricciones e índice coincidan con el diseño sin tratar el trim de SQLite como autoridad.
+- [x] 1.3 Evolucionar `DATABASE_SCHEMA_VERSION` y la inicialización de 1 a 2 dentro de una transacción, estableciendo `user_version = 2` sólo tras verificar toda la estructura; comprobar que una fixture v1 conserva `saved_titles`, `idx_saved_titles_provider_external`, `app_preferences` y sus datos.
+- [x] 1.4 Cubrir inicialización nueva/v0 y reapertura v2 idempotente; comprobar que ejecuciones repetidas no duplican estructuras ni alteran títulos, preferencias o pins.
+- [x] 1.5 Inyectar un fallo controlado durante creación/verificación y comprobar rollback completo: la estructura parcial no se publica, `user_version` no queda en 2 y los datos v1 permanecen intactos.
+- [x] 1.6 Probar una base con versión futura mayor que 2 y comprobar rechazo explícito sin escrituras ni cambios de versión.
+- [x] 1.7 Implementar `src/storage/titlePinsRepo.ts` con lectura por contexto, lectura individual, pin, unpin y eliminación, validando existencia/pertenencia tag dentro de la operación; comprobar independencia Biblioteca/tag, múltiples etiquetas, claves inválidas y ausencia de consultas por card.
+- [x] 1.8 Validar y persistir `pinned_at` sólo cuando sea number, `Number.isSafeInteger` y mayor o igual que cero, sin incorporarlo a comparadores visibles; comprobar `Date.now()` y rechazar decimales, `Infinity`, `NaN`, negativos y enteros fuera del rango seguro, verificando además que pin/unpin no modifica `SavedTitle.updatedAt`.
+- [x] 1.9 Ejecutar `npx tsc --noEmit` y las pruebas del checkpoint; revisar los cambios de tipos/SQL y detener Apply para revisión antes de continuar.
 
 ## 2. Integridad con SavedTitle, tags y eliminación
 
