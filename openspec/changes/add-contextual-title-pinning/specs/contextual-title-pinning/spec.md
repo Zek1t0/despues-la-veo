@@ -24,12 +24,17 @@ El sistema MUST mantener un estado de fijado independiente para Biblioteca y par
 
 ### Requirement: pinning prioriza sin cambiar pertenencia
 
-El sistema MUST aplicar búsqueda y filtros antes de priorizar pins, MUST colocar primero los fijados del contexto visible y MUST ordenar fijados y no fijados por separado con el criterio que ya corresponde a esa vista.
+El sistema MUST aplicar búsqueda y filtros antes de priorizar pins, MUST colocar primero los fijados del contexto visible, MUST ordenarlos por `pinnedAt` descendente usando el comparator propio de la vista como desempate exacto y MUST ordenar los no fijados con el criterio normal de esa vista.
 
-#### Scenario: Biblioteca con sort activo
+#### Scenario: Biblioteca con pins de distintas fechas y sort activo
 - **WHEN** Biblioteca contiene títulos fijados y no fijados que pasan búsqueda y filtros
-- **THEN** muestra primero los fijados de Biblioteca usando el sort activo
-- **AND** muestra después los no fijados usando el mismo sort
+- **THEN** muestra primero los fijados de Biblioteca desde el `pinnedAt` más reciente al más antiguo
+- **AND** usa el sort activo sólo para desempatar fijados con el mismo `pinnedAt`
+- **AND** muestra después los no fijados usando normalmente el sort activo
+
+#### Scenario: empate exacto de fecha de fijado
+- **WHEN** dos títulos fijados del mismo contexto tienen exactamente el mismo `pinnedAt`
+- **THEN** su orden relativo se resuelve con el comparator que corresponde a la vista
 
 #### Scenario: fijado excluido por búsqueda
 - **WHEN** un título fijado no coincide con la búsqueda actual
@@ -45,8 +50,8 @@ El sistema MUST aplicar búsqueda y filtros antes de priorizar pins, MUST coloca
 
 #### Scenario: lista abierta de etiqueta
 - **WHEN** el usuario abre una etiqueta con títulos fijados y no fijados
-- **THEN** ve primero los pins de esa etiqueta usando el orden propio actual de sus títulos
-- **AND** ve después los no fijados usando ese mismo orden
+- **THEN** ve primero los pins de esa etiqueta por `pinnedAt` descendente y usa el orden propio actual sólo para desempates
+- **AND** ve después los no fijados usando normalmente ese orden propio
 - **AND** no se heredan el sort ni los pins de Biblioteca
 
 #### Scenario: collage de etiqueta
@@ -124,6 +129,7 @@ El sistema MUST mantener utilizables las acciones de pin ante pulsaciones rápid
 - **WHEN** el usuario solicita cambios de pin consecutivos antes de finalizar la primera escritura
 - **THEN** las escrituras se resuelven en orden
 - **AND** una respuesta antigua no sobrescribe visualmente una intención posterior confirmada
+- **AND** el estado final conserva tanto la pertenencia como el `pinnedAt` de la última intención confirmada
 
 #### Scenario: escritura rechazada
 - **WHEN** no se puede persistir un cambio de pin

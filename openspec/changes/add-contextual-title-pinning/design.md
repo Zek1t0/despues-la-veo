@@ -74,7 +74,7 @@ CREATE INDEX IF NOT EXISTS idx_title_pins_context
 ON title_pins(context_type, context_key, saved_title_id);
 ```
 
-La PK impide duplicados y permite un título en múltiples contextos. El índice adicional sirve a la consulta predominante: obtener todos los IDs fijados del contexto visible. `pinned_at` no participa en el índice ni en el sort de esta versión. El contrato de dominio y backup exige `typeof value === "number"`, `Number.isSafeInteger(value)` y `value >= 0`; `Date.now()` cumple naturalmente esas condiciones. El CHECK SQL defiende tipo entero y el mismo rango seguro, pero la validación TypeScript sigue siendo obligatoria.
+La PK impide duplicados y permite un título en múltiples contextos. El índice adicional sirve a la consulta predominante: obtener todos los pins del contexto visible. `pinned_at` determina en presentación la prioridad descendente dentro del grupo fijado, pero no requiere incorporarse al índice porque cada vista carga en lote el contexto completo y ordena en memoria. El contrato de dominio y backup exige `typeof value === "number"`, `Number.isSafeInteger(value)` y `value >= 0`; `Date.now()` cumple naturalmente esas condiciones. El CHECK SQL defiende tipo entero y el mismo rango seguro, pero la validación TypeScript sigue siendo obligatoria.
 
 El CHECK contextual de SQLite valida sólo las combinaciones `library`/key vacía y `tag`/key no vacía. No usa `trim(context_key)` porque el trim de SQLite no reproduce necesariamente todos los caracteres eliminados por `String.prototype.trim()`. La normalización exacta, el rechazo de un tag que resulte vacío y la persistencia de la key ya normalizada pertenecen al helper de dominio/repositorio; SQLite queda como defensa adicional, no como autoridad de normalización.
 
@@ -128,11 +128,11 @@ Para evitar duplicar SQL sensible, `savedTitlesRepo` y el merge recibirán helpe
 
 ### 6. Orden: filtrar, particionar y reutilizar comparadores existentes
 
-Biblioteca conserva su pipeline de pertenencia implícita, búsqueda y filtros. Después crea un `Set` de IDs fijados en Biblioteca, particiona los resultados, ejecuta `compareLibraryTitles` sobre cada grupo y concatena.
+Biblioteca conserva su pipeline de pertenencia implícita, búsqueda y filtros. Después crea un `Map` de ID a `pinnedAt` para los pins de Biblioteca, particiona los resultados, ordena los fijados por `pinnedAt` descendente usando `compareLibraryTitles` sólo como desempate, ordena los no fijados con `compareLibraryTitles` y concatena.
 
-Etiquetas conserva `tagMap`, `selectedTag` y `compareTitlesForCollage` para la lista abierta. Obtiene los pins sólo de esa clave exacta, particiona `tagMap.get(selectedTag)` y aplica el mismo comparador a ambos grupos. No lee pins ni sort de Biblioteca.
+Etiquetas conserva `tagMap`, `selectedTag` y `compareTitlesForCollage` para la lista abierta. Obtiene los pins sólo de esa clave exacta, particiona `tagMap.get(selectedTag)`, ordena los fijados por `pinnedAt` descendente usando `compareTitlesForCollage` sólo como desempate y ordena los no fijados con ese comparator propio. No lee pins ni sort de Biblioteca.
 
-Los collages siguen llamando a `selectCollageTitles` sobre el conjunto original, sin partición por pins. `pinned_at` no se consulta para presentación. Esta composición evita nuevos sorts y garantiza que pinning no reintroduzca elementos excluidos.
+Los collages siguen llamando a `selectCollageTitles` sobre el conjunto original, sin partición por pins. `pinned_at` sólo ordena la lista visible dentro del grupo fijado y no afecta collages. Esta composición evita nuevos sorts y garantiza que pinning no reintroduzca elementos excluidos.
 
 ### 7. Navegación transporta contexto, persistencia lo revalida
 

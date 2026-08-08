@@ -7,7 +7,7 @@
 - [x] 1.5 Inyectar un fallo controlado durante creación/verificación y comprobar rollback completo: la estructura parcial no se publica, `user_version` no queda en 2 y los datos v1 permanecen intactos.
 - [x] 1.6 Probar una base con versión futura mayor que 2 y comprobar rechazo explícito sin escrituras ni cambios de versión.
 - [x] 1.7 Implementar `src/storage/titlePinsRepo.ts` con lectura por contexto, lectura individual, pin, unpin y eliminación, validando existencia/pertenencia tag dentro de la operación; comprobar independencia Biblioteca/tag, múltiples etiquetas, claves inválidas y ausencia de consultas por card.
-- [x] 1.8 Validar y persistir `pinned_at` sólo cuando sea number, `Number.isSafeInteger` y mayor o igual que cero, sin incorporarlo a comparadores visibles; comprobar `Date.now()` y rechazar decimales, `Infinity`, `NaN`, negativos y enteros fuera del rango seguro, verificando además que pin/unpin no modifica `SavedTitle.updatedAt`.
+- [x] 1.8 Validar y persistir `pinned_at` sólo cuando sea number, `Number.isSafeInteger` y mayor o igual que cero, usándolo únicamente como prioridad descendente dentro del grupo fijado; comprobar `Date.now()` y rechazar decimales, `Infinity`, `NaN`, negativos y enteros fuera del rango seguro, verificando además que pin/unpin no modifica `SavedTitle.updatedAt`.
 - [x] 1.9 Ejecutar `npx tsc --noEmit` y las pruebas del checkpoint; revisar los cambios de tipos/SQL y detener Apply para revisión antes de continuar.
 
 ## 2. Integridad con SavedTitle, tags y eliminación
@@ -35,18 +35,18 @@
 
 ## 4. Biblioteca: estado contextual, orden y acción Detail
 
-- [ ] 4.1 Cargar en lote los IDs fijados del contexto Biblioteca al enfocar/refrescar la pantalla y sincronizarlos tras mutaciones; comprobar que no se consulten pins individualmente por card.
-- [ ] 4.2 Mantener el pipeline búsqueda/filtros → partición pinned/unpinned → `compareLibraryTitles` en ambos grupos → concatenación; comprobar todos los sorts, empates, filtros de estado/tipo y búsqueda por título/tag.
-- [ ] 4.3 Comprobar que un fijado excluido no aparece, que limpiar búsqueda/filtro lo devuelve arriba y que pins de etiquetas nunca afectan Biblioteca.
-- [ ] 4.4 Agregar en Detail de Biblioteca una acción hermana `Fijar`/`Desfijar` con labels `Fijar en Biblioteca`/`Desfijar de Biblioteca`, sin `Pressable` anidado; comprobar navegación y acción como zonas independientes con mouse, touch y teclado.
-- [ ] 4.5 Serializar mutaciones rápidas por título/contexto y aplicar rollback al último estado confirmado ante error; comprobar doble pulsación, respuesta antigua, fallo controlado y reintento utilizable.
-- [ ] 4.6 Navegar al detalle completo con `pinContext=library` mediante parámetros tipados; comprobar URL web, recarga y regreso a Biblioteca.
-- [ ] 4.7 Ejecutar `npx tsc --noEmit`, pruebas de orden/estado y revisión manual responsive de Detail en web/móvil; detener Apply para revisión antes de continuar.
+- [x] 4.1 Cargar en lote los pins con ID y `pinnedAt` del contexto Biblioteca al enfocar/refrescar la pantalla y sincronizarlos tras mutaciones; comprobar que no se consulten pins individualmente por card.
+- [x] 4.2 Mantener el pipeline búsqueda/filtros → partición pinned/unpinned → fijados por `pinnedAt` descendente con `compareLibraryTitles` como desempate → no fijados por `compareLibraryTitles` → concatenación; comprobar todos los sorts, empates, filtros de estado/tipo y búsqueda por título/tag.
+- [x] 4.3 Comprobar que un fijado excluido no aparece, que limpiar búsqueda/filtro lo devuelve arriba y que pins de etiquetas nunca afectan Biblioteca.
+- [x] 4.4 Agregar en Detail de Biblioteca una acción hermana `Fijar`/`Desfijar` con labels `Fijar en Biblioteca`/`Desfijar de Biblioteca`, sin `Pressable` anidado; comprobar navegación y acción como zonas independientes con mouse, touch y teclado.
+- [x] 4.5 Serializar mutaciones rápidas por título/contexto y aplicar rollback al último estado y `pinnedAt` confirmados ante error; comprobar doble pulsación, respuesta antigua, fallo controlado y reintento utilizable.
+- [x] 4.6 Navegar al detalle completo con `pinContext=library` mediante parámetros tipados; comprobar URL web, recarga y regreso a Biblioteca.
+- [x] 4.7 Ejecutar `npx tsc --noEmit`, pruebas de orden/estado y revisión manual responsive de Detail en web/móvil; detener Apply para revisión antes de continuar.
 
 ## 5. Etiquetas: independencia, orden propio y acción Detail
 
 - [ ] 5.1 Cargar pins sólo para la clave exacta de `selectedTag` y limpiarlos al cambiar/cerrar contexto; comprobar independencia respecto de Biblioteca, otras etiquetas, mayúsculas y acentos.
-- [ ] 5.2 Particionar la lista abierta y aplicar `compareTitlesForCollage` por separado a fijados/no fijados antes de concatenar; comprobar que no herede el sort de Biblioteca ni agregue selector nuevo.
+- [ ] 5.2 Particionar la lista abierta, ordenar fijados por `pinnedAt` descendente con `compareTitlesForCollage` como desempate y no fijados con `compareTitlesForCollage` antes de concatenar; comprobar que no herede el sort de Biblioteca ni agregue selector nuevo.
 - [ ] 5.3 Mantener `selectCollageTitles` y `TagCollage` fuera del pipeline de pins; comprobar que fijar/desfijar no cambia las cuatro imágenes ni su orden.
 - [ ] 5.4 Agregar a la fila Detail de etiqueta una acción hermana corta `Fijar`/`Desfijar` con label contextual completo, sin controles anidados; comprobar interacción independiente en web, móvil y teclado.
 - [ ] 5.5 Aplicar cola/rollback de escritura a la acción contextual y refrescar con seguridad si la etiqueta pierde todos sus títulos; comprobar doble pulsación, error y contexto desaparecido.

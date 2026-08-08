@@ -5,7 +5,7 @@ Los títulos importantes no pueden mantenerse accesibles al comienzo de Bibliote
 ## What Changes
 
 - Permitir fijar y desfijar cada título independientemente en Biblioteca y en cada etiqueta exacta a la que pertenece.
-- Priorizar los fijados del contexto visible y aplicar dentro de fijados y no fijados el criterio de orden que ya corresponde a esa vista; pinning cambia orden, nunca pertenencia.
+- Priorizar los fijados del contexto visible, ordenarlos por `pinnedAt` descendente con el comparator propio de la vista como desempate y ordenar los no fijados por el criterio normal de esa vista; pinning cambia orden, nunca pertenencia.
 - Incorporar acciones individuales en las vistas Detalle, una acción explícita según el contexto de origen en el detalle completo y un indicador no interactivo en Mosaico, preservando una única acción de navegación en `TitleGridCard` y evitando `Pressable` anidados.
 - Transportar el contexto Biblioteca/etiqueta en los parámetros de navegación y validarlo contra el título persistido, con fallback explícito a Biblioteca cuando falte o sea inválido.
 - Persistir los pins en una tabla relacional independiente `title_pins`, sin agregarlos a `SavedTitle`, sin serializarlos como JSON y sin modificar `SavedTitle.updatedAt`.

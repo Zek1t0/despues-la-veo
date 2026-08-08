@@ -40,7 +40,8 @@ El sistema MUST persistir fijar y desfijar independientemente de las escrituras 
 #### Scenario: fecha de fijado
 - **WHEN** se crea un pin nuevo
 - **THEN** se conserva un `pinned_at` de tipo number, entero seguro según `Number.isSafeInteger` y mayor o igual que cero
-- **AND** esa fecha no determina el orden visible de esta versión
+- **AND** esa fecha determina la prioridad descendente dentro del grupo fijado del contexto visible
+- **AND** no modifica la pertenencia ni el orden normal del grupo no fijado
 
 #### Scenario: fecha de fijado inválida
 - **WHEN** se intenta persistir un `pinned_at` decimal, infinito, `NaN`, negativo o fuera del rango entero seguro

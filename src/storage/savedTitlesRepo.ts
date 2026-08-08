@@ -19,10 +19,21 @@ import { runSerializedStorageMutation } from "./storageMutationQueue";
 export type { LibraryImportIssue, LibraryImportMergeResult };
 export type { LibraryBackupMergeResult };
 
-export async function listSavedTitles(): Promise<SavedTitle[]> {
-  const db = await initDb();
-  const rows = await db.getAllAsync("SELECT * FROM saved_titles ORDER BY created_at DESC");
+export type SavedTitlesReadDatabase = {
+  getAllAsync<T>(source: string, ...params: any[]): Promise<T[]>;
+};
+
+export async function listSavedTitlesWithDb(
+  db: SavedTitlesReadDatabase
+): Promise<SavedTitle[]> {
+  const rows = await db.getAllAsync<Record<string, unknown>>(
+    "SELECT * FROM saved_titles ORDER BY created_at DESC"
+  );
   return rows.map(rowToSavedTitle);
+}
+
+export async function listSavedTitles(): Promise<SavedTitle[]> {
+  return listSavedTitlesWithDb(await initDb());
 }
 
 export async function getAllSavedTitles(): Promise<SavedTitle[]> {
