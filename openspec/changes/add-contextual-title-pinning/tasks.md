@@ -73,12 +73,12 @@
 
 ## 8. Verificación integral y cierre de implementación
 
-- [ ] 8.1 Ejecutar pruebas completas de migración 1→2, idempotencia, rollback, versión futura, FK e integridad explícita sobre fixtures controladas; documentar resultados y rutas de recuperación.
-- [ ] 8.2 Ejecutar matriz de dominio: Biblioteca/tag independientes, múltiples tags, quitar/cambiar tag, borrar título, contexto obsoleto y garantía de `updatedAt` intacto.
-- [ ] 8.3 Ejecutar matriz de presentación: búsqueda, filtros, todos los sorts de Biblioteca, orden propio de tag, collages intactos, Detail/Grid y errores de escritura.
-- [ ] 8.4 Ejecutar matriz de backup: v1 sin importar pins pero con limpieza por tags realmente removidas, v2 round-trip, colisión de ID local, merge aditivo, `pinnedAt` local conservado, validación de entero seguro, repetición idempotente y pins inválidos/huérfanos omitidos y reportados.
-- [ ] 8.5 Verificar manualmente export/import, navegación, acciones, responsive y accesibilidad en web y móvil; confirmar que no existen `Pressable` anidados ni controles secundarios en `TitleGridCard`.
-- [ ] 8.6 Revisar el diff completo y confirmar ausencia de ratings, drag-and-drop, orden manual, entidades Tag, cambios de collages/ViewOptionsPanel, dependencias nuevas y modificaciones a `app.json` o `package.json`.
-- [ ] 8.7 Ejecutar `npx tsc --noEmit` y todos los comandos de pruebas finales, registrar cualquier verificación manual pendiente y resolver fallos antes de marcar implementación completa.
-- [ ] 8.8 Ejecutar `npx.cmd openspec validate add-contextual-title-pinning --strict` y corregir cualquier inconsistencia de artefactos detectada antes del handoff final.
-- [ ] 8.9 Obtener revisión externa final del diff completo y aprobación explícita antes de Archive; no archivar mientras esta tarea permanezca pendiente.
+- [x] 8.1 Ejecutar pruebas completas de migración 1→2, idempotencia, rollback, versión futura, FK e integridad explícita sobre fixtures controladas; documentar resultados y rutas de recuperación.
+- [x] 8.2 Ejecutar matriz de dominio: Biblioteca/tag independientes, múltiples tags, quitar/cambiar tag, borrar título, contexto obsoleto y garantía de `updatedAt` intacto.
+- [x] 8.3 Ejecutar matriz de presentación: búsqueda, filtros, todos los sorts de Biblioteca, orden propio de tag, collages intactos, Detail/Grid y errores de escritura.
+- [x] 8.4 Ejecutar matriz de backup: v1 sin importar pins pero con limpieza por tags realmente removidas, v2 round-trip, colisión de ID local, merge aditivo, `pinnedAt` local conservado, validación de entero seguro, repetición idempotente y pins inválidos/huérfanos omitidos y reportados.
+- [x] 8.5 Verificar manualmente export/import, navegación, acciones, responsive y accesibilidad en web y móvil; confirmar que no existen `Pressable` anidados ni controles secundarios en `TitleGridCard`.
+- [x] 8.6 Revisar el diff completo y confirmar ausencia de ratings, drag-and-drop, orden manual, entidades Tag, cambios de collages/ViewOptionsPanel, dependencias nuevas y modificaciones a `app.json` o `package.json`.
+- [x] 8.7 Ejecutar `npx tsc --noEmit` y todos los comandos de pruebas finales, registrar cualquier verificación manual pendiente y resolver fallos antes de marcar implementación completa.
+- [x] 8.8 Ejecutar `npx.cmd openspec validate add-contextual-title-pinning --strict` y corregir cualquier inconsistencia de artefactos detectada antes del handoff final.
+- [x] 8.9 Obtener revisión externa final del diff completo y aprobación explícita antes de Archive; no archivar mientras esta tarea permanezca pendiente.

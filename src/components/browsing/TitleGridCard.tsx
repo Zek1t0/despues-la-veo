@@ -68,10 +68,7 @@ export function TitleGridCard({
 
       {isPinned ? (
         <View accessible={false} pointerEvents="none" style={styles.pinBadge}>
-          <Ionicons color={colors.text} name="pin" size={12} />
-          <Text numberOfLines={1} style={styles.pinBadgeText}>
-            Fijado
-          </Text>
+          <Ionicons color={colors.text} name="pin" size={14} />
         </View>
       ) : null}
 
@@ -121,20 +118,11 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.22)",
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
-    flexDirection: "row",
-    gap: 4,
-    maxWidth: "52%",
-    paddingHorizontal: 7,
-    paddingVertical: 4,
+    justifyContent: "center",
+    padding: 6,
     position: "absolute",
     right: 8,
     top: 8,
-  },
-  pinBadgeText: {
-    color: colors.text,
-    flexShrink: 1,
-    fontSize: 11,
-    fontWeight: "800",
   },
   titleOverlay: {
     backgroundColor: "rgba(11, 11, 11, 0.78)",

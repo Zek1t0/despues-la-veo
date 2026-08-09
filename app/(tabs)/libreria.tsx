@@ -86,6 +86,8 @@ export default function LibraryScreen() {
   const [items, setItems] = useState<SavedTitle[]>([]);
   const [pinnedAtById, setPinnedAtById] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [snapshotReady, setSnapshotReady] = useState(false);
+  const [snapshotError, setSnapshotError] = useState<string | null>(null);
 
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -309,6 +311,8 @@ export default function LibraryScreen() {
 
   const refresh = useCallback(async () => {
     setLoading(true);
+    setSnapshotReady(false);
+    setSnapshotError(null);
     try {
       await Promise.all([...pinIntentQueues.current.values()].map((queue) => queue.whenIdle()));
       const snapshot = await getLibraryScreenSnapshot();
@@ -324,9 +328,11 @@ export default function LibraryScreen() {
         ])
       );
       setPinnedAtById(new Map(loadedPinnedAtById));
+      setSnapshotReady(true);
     } catch (error) {
       console.error("No se pudo cargar la Biblioteca.", error);
-      const message = "No se pudo cargar la Biblioteca. Volvé a intentar al regresar a la pantalla.";
+      const message = "No se pudo cargar la Biblioteca. Podés volver a intentar.";
+      setSnapshotError(message);
       if (Platform.OS === "web") window.alert(message);
       else Alert.alert("Error al cargar", message);
     } finally {
@@ -647,6 +653,35 @@ export default function LibraryScreen() {
         <View style={{ alignItems: "center", gap: 10, paddingVertical: 32 }}>
           <ActivityIndicator color={colors.text} />
           <Text style={{ color: colors.muted }}>Cargando Biblioteca…</Text>
+        </View>
+      ) : snapshotError || !snapshotReady ? (
+        <View style={{ alignItems: "flex-start", gap: 10, paddingVertical: 24 }}>
+          <Text style={{ color: colors.text, fontSize: 17, fontWeight: "900" }}>
+            No se pudo cargar la Biblioteca
+          </Text>
+          <Text style={{ color: colors.muted }}>
+            {snapshotError ?? "El estado de la Biblioteca aún no está disponible."}
+          </Text>
+          <Pressable
+            accessibilityLabel="Reintentar cargar la Biblioteca"
+            accessibilityRole="button"
+            focusable
+            onPress={() => void refresh()}
+            style={({ pressed }) => ({
+              alignItems: "center",
+              backgroundColor: colors.card2,
+              borderColor: colors.border2,
+              borderRadius: 12,
+              borderWidth: 1,
+              justifyContent: "center",
+              minHeight: 44,
+              opacity: pressed ? 0.78 : 1,
+              paddingHorizontal: 14,
+              paddingVertical: 8,
+            })}
+          >
+            <Text style={{ color: colors.text, fontWeight: "900" }}>Reintentar</Text>
+          </Pressable>
         </View>
       ) : (
         <FlatList

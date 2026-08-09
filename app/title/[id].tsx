@@ -170,6 +170,8 @@ export default function TitleDetailScreen() {
 
   const [notes, setNotes] = useState("");
   const [dirtyNotes, setDirtyNotes] = useState(false);
+  const notesDraft = useRef("");
+  const notesDraftDirty = useRef(false);
 
   const [newTag, setNewTag] = useState("");
   const [tagHint, setTagHint] = useState<string | null>(null);
@@ -180,7 +182,7 @@ export default function TitleDetailScreen() {
   const tags = useMemo(() => item?.tags ?? [], [item]);
   const formattedUpdatedAt = item ? formatUpdatedAt(item.updatedAt) : null;
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (options?: { preserveNotesDraft?: boolean }) => {
     const savedTitleId = typeof id === "string" ? id : null;
     const generation = ++loadGeneration.current;
     setLoading(true);
@@ -204,8 +206,16 @@ export default function TitleDetailScreen() {
       const snapshot = await getTitleDetailPinSnapshot(savedTitleId, { pinContext, tag });
       if (generation !== loadGeneration.current) return;
       setItem(snapshot.item);
-      setNotes(snapshot.item?.notes ?? "");
-      setDirtyNotes(false);
+      if (options?.preserveNotesDraft && notesDraftDirty.current) {
+        setNotes(notesDraft.current);
+        setDirtyNotes(true);
+      } else {
+        const persistedNotes = snapshot.item?.notes ?? "";
+        notesDraft.current = persistedNotes;
+        notesDraftDirty.current = false;
+        setNotes(persistedNotes);
+        setDirtyNotes(false);
+      }
       setTagHint(null);
       setEffectivePinContext(snapshot.context);
       setPinnedAt(snapshot.pinnedAt);
@@ -297,7 +307,7 @@ export default function TitleDetailScreen() {
       const now = Date.now();
       const updated: SavedTitle = { ...item, ...patch, updatedAt: now };
       await upsertSavedTitle(updated);
-      if (patch.tags) await load();
+      if (patch.tags) await load({ preserveNotesDraft: true });
       else setItem(updated);
     },
     [item, load]
@@ -318,6 +328,8 @@ export default function TitleDetailScreen() {
     if (!item) return;
     try {
       await save({ notes: notes.trim() ? notes : null });
+      notesDraft.current = notes;
+      notesDraftDirty.current = false;
       setDirtyNotes(false);
       router.back();
     } catch (e: any) {
@@ -629,6 +641,8 @@ export default function TitleDetailScreen() {
           <TextInput
             value={notes}
             onChangeText={(t) => {
+              notesDraft.current = t;
+              notesDraftDirty.current = true;
               setNotes(t);
               setDirtyNotes(true);
             }}
