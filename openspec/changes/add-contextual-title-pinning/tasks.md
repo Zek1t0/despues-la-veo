@@ -64,12 +64,12 @@
 
 ## 7. Indicadores Grid, accesibilidad y responsive
 
-- [ ] 7.1 Extender `TitleGridCard` con un indicador contextual no interactivo y sin apariencia de botón, comenzando por la propuesta de badge superior derecho con icono + `Fijado`; comprobar que `pointerEvents="none"`, tipo y título preserven el contrato de la card.
-- [ ] 7.2 Mantener exactamente un `Pressable` navegable en cada card Grid y enriquecer su label con el estado contextual; inspeccionar el árbol y comprobar click/touch/teclado sobre badge y resto de card.
-- [ ] 7.3 Pasar únicamente el pin del contexto visible desde Biblioteca y etiqueta abierta; comprobar que un pin global no se indica dentro de un tag y viceversa.
-- [ ] 7.4 Revisar Grid y Detail en PC, anchos móviles estrechos y móvil común, y ajustar cuando sea necesario texto, icono, tamaño, truncamiento o posición del indicador; comprobar la presentación finalmente elegida sin rediseñar cards ni cambiar su semántica/interacción.
-- [ ] 7.5 Verificar contraste, foco, lectura accesible, áreas táctiles y ausencia de dependencia de hover o long press en todas las acciones nuevas.
-- [ ] 7.6 Ejecutar `npx tsc --noEmit` y la revisión manual visual/accesible web-móvil; detener Apply para aprobación del pulido antes del cierre.
+- [x] 7.1 Extender `TitleGridCard` con un indicador contextual no interactivo y sin apariencia de botón, comenzando por la propuesta de badge superior derecho con icono + `Fijado`; comprobar que `pointerEvents="none"`, tipo y título preserven el contrato de la card.
+- [x] 7.2 Mantener exactamente un `Pressable` navegable en cada card Grid y enriquecer su label con el estado contextual; inspeccionar el árbol y comprobar click/touch/teclado sobre badge y resto de card.
+- [x] 7.3 Pasar únicamente el pin del contexto visible desde Biblioteca y etiqueta abierta; comprobar que un pin global no se indica dentro de un tag y viceversa.
+- [x] 7.4 Revisar Grid y Detail en PC, anchos móviles estrechos y móvil común, y ajustar cuando sea necesario texto, icono, tamaño, truncamiento o posición del indicador; comprobar la presentación finalmente elegida sin rediseñar cards ni cambiar su semántica/interacción.
+- [x] 7.5 Verificar contraste, foco, lectura accesible, áreas táctiles y ausencia de dependencia de hover o long press en todas las acciones nuevas.
+- [x] 7.6 Ejecutar `npx tsc --noEmit` y la revisión manual visual/accesible web-móvil; detener Apply para aprobación del pulido antes del cierre.
 
 ## 8. Verificación integral y cierre de implementación
 

@@ -663,6 +663,7 @@ export default function LibraryScreen() {
               return (
                 <TitleGridCard
                   accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}`}
+                  isPinned={pinnedAtById.has(item.id)}
                   onPress={() =>
                     router.push({
                       pathname: "/title/[id]",

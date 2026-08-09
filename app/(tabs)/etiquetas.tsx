@@ -808,6 +808,7 @@ export default function EtiquetasScreen() {
               libraryViewMode === "grid" ? (
                 <TitleGridCard
                   accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}`}
+                  isPinned={tagPinnedAtById.has(item.id)}
                   onPress={() =>
                     router.push({
                       pathname: "/title/[id]",
