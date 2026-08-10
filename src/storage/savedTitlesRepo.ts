@@ -35,10 +35,58 @@ export type SavedTitlesMutationDatabase = SavedTitlesReadDatabase & {
   withTransactionAsync(task: () => Promise<void>): Promise<void>;
 };
 
+export type SavedTitleMetadataPatch = Partial<
+  Pick<SavedTitle, "status" | "tags" | "notes">
+>;
+
 function assertSavedTitleId(id: string): void {
   if (typeof id !== "string" || !id.trim()) {
     throw new Error("El id del título guardado debe ser un string no vacío.");
   }
+}
+
+function assertSavedTitleMetadataPatch(patch: SavedTitleMetadataPatch): void {
+  const keys = Object.keys(patch);
+  if (keys.length === 0 || keys.some((key) => !["status", "tags", "notes"].includes(key))) {
+    throw new Error("El cambio de metadata debe limitarse a status, tags o notes.");
+  }
+}
+
+/** Lee y actualiza metadata editable del detalle dentro de la transacción activa. */
+export async function updateSavedTitleMetadataWithDb(
+  db: SavedTitlesMutationDatabase,
+  id: string,
+  patch: SavedTitleMetadataPatch,
+  now: () => number = Date.now
+): Promise<SavedTitle> {
+  assertSavedTitleId(id);
+  assertSavedTitleMetadataPatch(patch);
+  const current = await getSavedTitleByIdWithDb(db, id);
+  if (!current) throw new Error("El título guardado no existe.");
+
+  const updated: SavedTitle = {
+    ...current,
+    ...patch,
+    updatedAt: nextSavedTitleUpdatedAt(current.updatedAt, now()),
+  };
+  await upsertSavedTitleAndCleanPinsWithDb(db, updated);
+  return updated;
+}
+
+/** Serializa una sola transacción atómica de metadata del detalle completo. */
+export async function updateSavedTitleMetadata(
+  id: string,
+  patch: SavedTitleMetadataPatch
+): Promise<SavedTitle> {
+  const db = await initDb();
+  return runSerializedStorageMutation(async () => {
+    let updated: SavedTitle | null = null;
+    await db.withTransactionAsync(async () => {
+      updated = await updateSavedTitleMetadataWithDb(db, id, patch);
+    });
+    if (!updated) throw new Error("No se pudo completar la actualización de metadata.");
+    return updated;
+  });
 }
 
 /** Actualiza sólo un título existente y retorna su nuevo updatedAt confirmado. */
