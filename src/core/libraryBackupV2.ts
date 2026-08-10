@@ -39,7 +39,7 @@ function hasOwn(object: Record<string, unknown>, field: string): boolean {
   return Object.prototype.hasOwnProperty.call(object, field);
 }
 
-function normalizeBackupPin(
+export function normalizeBackupPin(
   value: unknown
 ): { ok: true; pin: LibraryBackupPinV2 } | { ok: false; message: string } {
   if (!isObject(value)) return { ok: false, message: "El pin debe ser un objeto." };

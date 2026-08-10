@@ -178,7 +178,7 @@ export async function mergeLibraryBackup(
     mergeLibraryBackupWithDb(
       db,
       payload.items,
-      payload.version === 2 ? payload.pins : null,
+      payload.version === 1 ? null : payload.pins,
       generateId
     )
   );

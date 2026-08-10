@@ -114,6 +114,9 @@ function materializeSavedTitleForUpdate(
     voteAverage: incoming.voteAverage.present
       ? incoming.voteAverage.value
       : local.voteAverage ?? null,
+    personalRating: incoming.personalRating.present
+      ? parsePersonalRating(incoming.personalRating.value)
+      : local.personalRating,
     genres: incoming.genres.present ? incoming.genres.value : local.genres ?? [],
     status: incoming.status.present ? incoming.status.value : local.status,
     tags: incoming.tags.present ? incoming.tags.value : local.tags ?? [],

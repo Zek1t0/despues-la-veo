@@ -1,4 +1,5 @@
 import type { SavedTitle, TitleStatus, TitleType } from "./savedTitle";
+import { parsePersonalRating, type PersonalRating } from "./personalRating";
 
 export const LIBRARY_BACKUP_VERSION = 1 as const;
 
@@ -35,6 +36,7 @@ export type NormalizedBackupSavedTitle = {
   posterUrl: OptionalBackupField<string | null>;
   overview: OptionalBackupField<string | null>;
   voteAverage: OptionalBackupField<number | null>;
+  personalRating: OptionalBackupField<PersonalRating>;
   genres: OptionalBackupField<string[]>;
   status: OptionalBackupField<TitleStatus>;
   tags: OptionalBackupField<string[]>;
@@ -160,6 +162,7 @@ export function normalizeBackupSavedTitle(
       posterUrl: posterUrl as OptionalBackupField<string | null>,
       overview: overview as OptionalBackupField<string | null>,
       voteAverage: voteAverage as OptionalBackupField<number | null>,
+      personalRating: absent(),
       genres: genres as OptionalBackupField<string[]>,
       status: status as OptionalBackupField<TitleStatus>,
       tags: tags as OptionalBackupField<string[]>,
@@ -225,7 +228,9 @@ export function materializeSavedTitleForInsert(
     posterUrl: item.posterUrl.present ? item.posterUrl.value : null,
     overview: item.overview.present ? item.overview.value : null,
     voteAverage: item.voteAverage.present ? item.voteAverage.value : null,
-    personalRating: null,
+    personalRating: item.personalRating.present
+      ? parsePersonalRating(item.personalRating.value)
+      : null,
     genres: item.genres.present ? item.genres.value : [],
     status: item.status.present ? item.status.value : "planned",
     tags: item.tags.present ? item.tags.value : [],

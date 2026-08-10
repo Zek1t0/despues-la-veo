@@ -6,17 +6,10 @@ import * as DocumentPicker from "expo-document-picker";
 
 import { parseLibraryBackup } from "../../src/core/libraryBackup";
 import type { BackupValidationError } from "../../src/core/libraryBackupV1";
-import type { LibraryBackupPinV2 } from "../../src/core/libraryBackupV2";
+import { createLibraryBackupV3 } from "../../src/core/libraryBackupV3";
 import { getLibraryBackupExportData } from "../../src/storage/libraryBackupExport";
 import { mergeLibraryBackup } from "../../src/storage/savedTitlesRepo";
 import { colors } from "../../src/theme/colors";
-
-type ExportPayloadV2 = {
-  version: 2;
-  exportedAt: string;
-  items: Awaited<ReturnType<typeof getLibraryBackupExportData>>["items"];
-  pins: LibraryBackupPinV2[];
-};
 
 const MAX_IMPORT_PROBLEM_DETAILS = 5;
 
@@ -97,12 +90,7 @@ export default function SettingsScreen() {
       setLastMsg(null);
 
       const { items, pins } = await getLibraryBackupExportData();
-      const payload: ExportPayloadV2 = {
-        version: 2,
-        exportedAt: new Date().toISOString(),
-        items,
-        pins,
-      };
+      const payload = createLibraryBackupV3(items, pins);
 
       const json = JSON.stringify(payload, null, 2);
       const filename = `despues-la-veo-backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
@@ -160,7 +148,7 @@ export default function SettingsScreen() {
       `Total: ${totalCount}`,
       `Válidos: ${payload.items.length}`,
       `Inválidos: ${invalidCount}`,
-      ...(payload.version === 2
+      ...(payload.version !== 1
         ? [
             `Pins válidos: ${payload.pins.length}`,
             `Pins estructuralmente inválidos: ${payload.invalidPins.length}`,
@@ -192,7 +180,7 @@ export default function SettingsScreen() {
 
     try {
       const result = await mergeLibraryBackup(payload, uuid);
-      const structurallyInvalidPins = payload.version === 2
+      const structurallyInvalidPins = payload.version !== 1
         ? payload.invalidPins.map((error) => ({
             reference: `Pin ${error.index + 1}`,
             reason: error.message,
@@ -251,7 +239,7 @@ export default function SettingsScreen() {
         `Conflictos: ${finalResult.conflicts.length}`,
         `Inválidos: ${finalResult.invalid.length}`,
         `Fallidos: ${finalResult.failed.length}`,
-        ...(payload.version === 2
+        ...(payload.version !== 1
           ? [
               `Pins insertados: ${finalResult.pinsInserted}`,
               `Pins existentes conservados: ${finalResult.pinsPreserved}`,
