@@ -68,7 +68,7 @@ export function TitleGridCard({
 
       {isPinned ? (
         <View accessible={false} pointerEvents="none" style={styles.pinBadge}>
-          <Ionicons color={colors.text} name="pin" size={14} />
+          <Ionicons color={colors.text} name="diamond-outline" size={14} />
         </View>
       ) : null}
 
