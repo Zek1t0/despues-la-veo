@@ -1,4 +1,5 @@
 import type { SavedTitle } from "../core/savedTitle";
+import { parsePersonalRating } from "../core/personalRating";
 import {
   materializeSavedTitleForInsert,
   type NormalizedBackupSavedTitle,
@@ -55,6 +56,7 @@ export function rowToSavedTitle(row: any): SavedTitle {
     posterUrl: row.poster_url ?? null,
     overview: row.overview ?? null,
     voteAverage: typeof row.vote_average === "number" ? row.vote_average : row.vote_average ?? null,
+    personalRating: parsePersonalRating(row.personal_rating),
     genres: safeParseJsonArray(String(row.genres_json ?? "[]")),
     status: row.status,
     tags: safeParseJsonArray(String(row.tags_json ?? "[]")),

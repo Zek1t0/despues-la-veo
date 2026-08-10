@@ -1,4 +1,14 @@
-export const DATABASE_SCHEMA_VERSION = 2;
+export const DATABASE_SCHEMA_VERSION = 3;
+
+export const PERSONAL_RATING_COLUMN_SQL = `
+  personal_rating INTEGER NULL CHECK (
+    personal_rating IS NULL OR (
+      typeof(personal_rating) = 'integer' AND
+      personal_rating >= 10 AND
+      personal_rating <= 100
+    )
+  )
+`;
 
 export const APP_PREFERENCES_TABLE_SQL = `
   CREATE TABLE IF NOT EXISTS app_preferences (
@@ -46,6 +56,7 @@ export const LIBRARY_SCHEMA_SQL = `
     poster_url TEXT,
     overview TEXT,
     vote_average REAL,
+    ${PERSONAL_RATING_COLUMN_SQL},
     genres_json TEXT,
     status TEXT NOT NULL,
     tags_json TEXT NOT NULL,
@@ -72,6 +83,7 @@ type IndexInfoRow = { name: string };
 
 export type DatabaseMigrationHooks = {
   beforeVersion2Published?: () => void | Promise<void>;
+  beforeVersion3Published?: () => void | Promise<void>;
 };
 
 function normalizeSql(sql: string): string {
@@ -184,6 +196,61 @@ export async function verifyTitlePinsSchema(db: SchemaDatabase): Promise<void> {
   }
 }
 
+export async function verifySavedTitlesV3Schema(db: SchemaDatabase): Promise<void> {
+  const table = await db.getFirstAsync<{ name: string; sql: string }>(
+    "SELECT name, sql FROM sqlite_master WHERE type = 'table' AND name = 'saved_titles' LIMIT 1;"
+  );
+  if (table?.name !== "saved_titles" || typeof table.sql !== "string") {
+    throw new Error("No se pudo verificar la tabla saved_titles.");
+  }
+
+  const columns = await db.getAllAsync<TableInfoRow>("PRAGMA table_info(saved_titles);");
+  const personalRating = columns.find((column) => column.name === "personal_rating");
+  if (!personalRating || personalRating.type.toUpperCase() !== "INTEGER" ||
+      personalRating.notnull !== 0 || personalRating.pk !== 0) {
+    throw new Error("La columna personal_rating no coincide con el esquema v3 esperado.");
+  }
+
+  const tableSql = normalizeSql(table.sql);
+  const constraints = [
+    "personal_rating is null",
+    "typeof(personal_rating) = 'integer'",
+    "personal_rating >= 10",
+    "personal_rating <= 100",
+  ];
+  if (constraints.some((constraint) => !tableSql.includes(constraint))) {
+    throw new Error("El CHECK constraint de personal_rating no coincide.");
+  }
+  const invalidValue = await db.getFirstAsync<{ id: string }>(
+    `SELECT id FROM saved_titles
+     WHERE personal_rating IS NOT NULL AND (
+       typeof(personal_rating) <> 'integer' OR
+       personal_rating < 10 OR
+       personal_rating > 100
+     )
+     LIMIT 1;`
+  );
+  if (invalidValue) {
+    throw new Error("saved_titles contiene un personal_rating fuera del dominio v3.");
+  }
+
+  const indexes = await db.getAllAsync<IndexListRow>("PRAGMA index_list(saved_titles);");
+  const identityIndex = indexes.find(
+    (index) => index.name === "idx_saved_titles_provider_external"
+  );
+  if (!identityIndex || identityIndex.unique !== 1) {
+    throw new Error("No se pudo verificar idx_saved_titles_provider_external.");
+  }
+  const indexColumns = await db.getAllAsync<IndexInfoRow>(
+    "PRAGMA index_info(idx_saved_titles_provider_external);"
+  );
+  const expectedIndexColumns = ["provider", "external_id"];
+  if (indexColumns.length !== expectedIndexColumns.length ||
+      expectedIndexColumns.some((name, index) => indexColumns[index]?.name !== name)) {
+    throw new Error("Las columnas de idx_saved_titles_provider_external no coinciden.");
+  }
+}
+
 export async function evolveDatabaseSchema(
   db: SchemaDatabase,
   currentVersion: number,
@@ -205,6 +272,19 @@ export async function evolveDatabaseSchema(
     await db.execAsync(TITLE_PINS_CONTEXT_INDEX_SQL);
     await verifyTitlePinsSchema(db);
     await hooks.beforeVersion2Published?.();
+
+    if (currentVersion < 3) {
+      const savedTitleColumns = await db.getAllAsync<TableInfoRow>(
+        "PRAGMA table_info(saved_titles);"
+      );
+      if (!savedTitleColumns.some((column) => column.name === "personal_rating")) {
+        await db.execAsync(
+          `ALTER TABLE saved_titles ADD COLUMN ${PERSONAL_RATING_COLUMN_SQL};`
+        );
+      }
+    }
+    await verifySavedTitlesV3Schema(db);
+    await hooks.beforeVersion3Published?.();
 
     if (currentVersion < DATABASE_SCHEMA_VERSION) {
       await db.execAsync(`PRAGMA user_version = ${DATABASE_SCHEMA_VERSION};`);

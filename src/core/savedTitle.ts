@@ -1,3 +1,5 @@
+import type { PersonalRating } from "./personalRating";
+
 export type TitleType = "movie" | "tv";
 export type TitleStatus = "planned" | "watching" | "done" | "dropped";
 
@@ -16,6 +18,7 @@ export type SavedTitle = {
   // ✅ NUEVO: snapshot liviano
   overview?: string | null;
   voteAverage?: number | null;
+  personalRating: PersonalRating;
   genres?: string[]; // ["Drama", "Acción", ...]
 
   status: TitleStatus;

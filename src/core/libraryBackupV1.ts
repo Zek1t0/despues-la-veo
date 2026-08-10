@@ -225,6 +225,7 @@ export function materializeSavedTitleForInsert(
     posterUrl: item.posterUrl.present ? item.posterUrl.value : null,
     overview: item.overview.present ? item.overview.value : null,
     voteAverage: item.voteAverage.present ? item.voteAverage.value : null,
+    personalRating: null,
     genres: item.genres.present ? item.genres.value : [],
     status: item.status.present ? item.status.value : "planned",
     tags: item.tags.present ? item.tags.value : [],

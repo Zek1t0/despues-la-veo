@@ -261,6 +261,7 @@ export default function TmdbDetailScreen() {
 
         overview,
         voteAverage: voteAvg,
+        personalRating: null,
         genres: genreNames,
 
         status: "planned",
