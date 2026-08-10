@@ -7,6 +7,8 @@ export const LIBRARY_SORT_OPTIONS = [
   "title-asc",
   "title-desc",
   "rating-desc",
+  "personal-rating-desc",
+  "personal-rating-asc",
   "year-desc",
 ] as const;
 
@@ -63,6 +65,8 @@ export function isLibrarySort(value: unknown): value is LibrarySort {
     value === "title-asc" ||
     value === "title-desc" ||
     value === "rating-desc" ||
+    value === "personal-rating-desc" ||
+    value === "personal-rating-asc" ||
     value === "year-desc"
   );
 }

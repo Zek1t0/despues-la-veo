@@ -25,6 +25,24 @@ function compareOptionalNumberDescending(
   return 0;
 }
 
+function comparePersonalRating(
+  a: SavedTitle,
+  b: SavedTitle,
+  direction: "asc" | "desc"
+): number {
+  if (a.personalRating === null && b.personalRating === null) {
+    return compareTitleThenId(a, b);
+  }
+  if (a.personalRating === null) return 1;
+  if (b.personalRating === null) return -1;
+
+  const primary =
+    direction === "asc"
+      ? a.personalRating - b.personalRating
+      : b.personalRating - a.personalRating;
+  return primary || compareTitleThenId(a, b);
+}
+
 export function compareLibraryTitles(
   a: SavedTitle,
   b: SavedTitle,
@@ -45,6 +63,10 @@ export function compareLibraryTitles(
     case "rating-desc":
       primary = compareOptionalNumberDescending(a.voteAverage, b.voteAverage);
       break;
+    case "personal-rating-desc":
+      return comparePersonalRating(a, b, "desc");
+    case "personal-rating-asc":
+      return comparePersonalRating(a, b, "asc");
     case "year-desc":
       primary = compareOptionalNumberDescending(a.year, b.year);
       break;
