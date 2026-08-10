@@ -23,13 +23,12 @@ import {
   providerLogoUrl,
 } from "../../../src/providers/tmdb/tmdbApi";
 
-import type { SavedTitle } from "../../../src/core/savedTitle";
 import type {
   TmdbCreditsResponse,
   TmdbWatchProvidersCountry,
 } from "../../../src/providers/tmdb/tmdbTypes";
 
-import { getByProviderExternal, upsertSavedTitle } from "../../../src/storage/savedTitlesRepo";
+import { getByProviderExternal, saveTmdbTitle } from "../../../src/storage/savedTitlesRepo";
 import { colors } from "../../../src/theme/colors";
 
 function uuid() {
@@ -222,12 +221,7 @@ export default function TmdbDetailScreen() {
   async function saveToLibrary() {
     if (!data || !type || !id) return;
 
-    if (savedId) {
-      router.push(`/title/${savedId}`);
-      return;
-    }
-
-    const now = Date.now();
+    const wasSaved = savedId !== null;
     const externalId = String(id);
 
     const date = type === "movie" ? data.release_date : data.first_air_date;
@@ -245,14 +239,10 @@ export default function TmdbDetailScreen() {
         ? data.overview
         : null;
 
-    const existing = await getByProviderExternal("tmdb", externalId);
-
     try {
       setSaving(true);
 
-      const item: SavedTitle = {
-        id: existing?.id ?? uuid(),
-        provider: "tmdb",
+      const newSavedId = await saveTmdbTitle({
         externalId,
         type,
         title: title ?? "Sin título",
@@ -260,28 +250,22 @@ export default function TmdbDetailScreen() {
         posterUrl: poster ?? null,
 
         overview,
-        voteAverage: voteAvg,
-        personalRating: null,
         genres: genreNames,
-
-        status: "planned",
-        tags: genreNames,
-
-        notes: null,
-        createdAt: existing?.createdAt ?? now,
-        updatedAt: now,
-      };
-
-      const newSavedId = await upsertSavedTitle(item);
+        voteAverage: voteAvg,
+      }, uuid);
       setSavedId(newSavedId);
 
       if (Platform.OS === "web") alert("Guardado ✅");
       else Alert.alert("Listo", "Guardado en tu biblioteca ✅");
 
-      router.push(`/title/${newSavedId}`);
+      if (!wasSaved) router.push(`/title/${newSavedId}`);
     } finally {
       setSaving(false);
     }
+  }
+
+  function openSavedTitle() {
+    if (savedId) router.push(`/title/${savedId}`);
   }
 
   return (
@@ -397,9 +381,31 @@ export default function TmdbDetailScreen() {
               }}
             >
               <Text style={{ color: saving ? colors.text : colors.bg, fontWeight: "900" }}>
-                {saving ? "Guardando…" : savedId ? "Ir a Biblioteca" : "Guardar en Biblioteca"}
+                {saving ? "Guardando…" : savedId ? "Actualizar en Biblioteca" : "Guardar en Biblioteca"}
               </Text>
             </Pressable>
+
+            {savedId && (
+              <Pressable
+                onPress={openSavedTitle}
+                disabled={saving}
+                accessibilityRole="button"
+                accessibilityLabel="Ir al título guardado en Biblioteca"
+                style={{
+                  paddingVertical: 14,
+                  borderRadius: 16,
+                  backgroundColor: colors.card2,
+                  borderWidth: 1,
+                  borderColor: colors.border2,
+                  alignItems: "center",
+                  opacity: saving ? 0.6 : 1,
+                }}
+              >
+                <Text style={{ color: colors.text, fontWeight: "900" }}>
+                  Ir a Biblioteca
+                </Text>
+              </Pressable>
+            )}
 
             <Card>
               <Text style={{ color: colors.text, fontWeight: "900", fontSize: 16 }}>
