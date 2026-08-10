@@ -4,18 +4,18 @@ import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 
-import type { SavedTitle } from "../../src/core/savedTitle";
-import {
-  parseLibraryBackupV1,
-  type BackupValidationError,
-} from "../../src/core/libraryBackupV1";
-import { getAllSavedTitles, mergeLibraryBackupItems } from "../../src/storage/savedTitlesRepo";
+import { parseLibraryBackup } from "../../src/core/libraryBackup";
+import type { BackupValidationError } from "../../src/core/libraryBackupV1";
+import type { LibraryBackupPinV2 } from "../../src/core/libraryBackupV2";
+import { getLibraryBackupExportData } from "../../src/storage/libraryBackupExport";
+import { mergeLibraryBackup } from "../../src/storage/savedTitlesRepo";
 import { colors } from "../../src/theme/colors";
 
-type ExportPayloadV1 = {
-  version: 1;
+type ExportPayloadV2 = {
+  version: 2;
   exportedAt: string;
-  items: SavedTitle[];
+  items: Awaited<ReturnType<typeof getLibraryBackupExportData>>["items"];
+  pins: LibraryBackupPinV2[];
 };
 
 const MAX_IMPORT_PROBLEM_DETAILS = 5;
@@ -96,11 +96,12 @@ export default function SettingsScreen() {
       setBusy(true);
       setLastMsg(null);
 
-      const items = await getAllSavedTitles();
-      const payload: ExportPayloadV1 = {
-        version: 1,
+      const { items, pins } = await getLibraryBackupExportData();
+      const payload: ExportPayloadV2 = {
+        version: 2,
         exportedAt: new Date().toISOString(),
         items,
+        pins,
       };
 
       const json = JSON.stringify(payload, null, 2);
@@ -116,7 +117,7 @@ export default function SettingsScreen() {
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
-        setLastMsg(`Export listo: ${items.length} títulos.`);
+        setLastMsg(`Export listo: ${items.length} títulos y ${pins.length} pins.`);
         return;
       }
 
@@ -135,7 +136,7 @@ export default function SettingsScreen() {
         UTI: "public.json",
       });
 
-      setLastMsg(`Export listo: ${items.length} títulos.`);
+      setLastMsg(`Export listo: ${items.length} títulos y ${pins.length} pins.`);
     } catch (e: any) {
       Alert.alert("Error exportando", e?.message ?? "Error desconocido");
     } finally {
@@ -145,7 +146,7 @@ export default function SettingsScreen() {
 
   const doImportFromText = async (text: string) => {
     setLastMsg(null);
-    const validated = parseLibraryBackupV1(text);
+    const validated = parseLibraryBackup(text);
     if (!validated.ok) {
       Alert.alert("Import", validated.error.message);
       return;
@@ -155,9 +156,16 @@ export default function SettingsScreen() {
     const totalCount = payload.items.length + payload.invalid.length;
     const invalidCount = payload.invalid.length;
     const msg = [
+      `Versión: ${payload.version}`,
       `Total: ${totalCount}`,
       `Válidos: ${payload.items.length}`,
       `Inválidos: ${invalidCount}`,
+      ...(payload.version === 2
+        ? [
+            `Pins válidos: ${payload.pins.length}`,
+            `Pins estructuralmente inválidos: ${payload.invalidPins.length}`,
+          ]
+        : ["Este backup v1 no contiene ni modifica pins por ausencia."]),
       "",
       "La importación hace merge: no borra títulos locales ausentes del backup.",
       "Sólo actualiza coincidencias del mismo tipo cuando el backup es más reciente; conserva los cambios locales iguales o más recientes.",
@@ -183,7 +191,13 @@ export default function SettingsScreen() {
     setLastMsg(null);
 
     try {
-      const result = await mergeLibraryBackupItems(payload.items, uuid);
+      const result = await mergeLibraryBackup(payload, uuid);
+      const structurallyInvalidPins = payload.version === 2
+        ? payload.invalidPins.map((error) => ({
+            reference: `Pin ${error.index + 1}`,
+            reason: error.message,
+          }))
+        : [];
       const finalResult = {
         inserted: result.inserted,
         updated: result.updated,
@@ -191,13 +205,19 @@ export default function SettingsScreen() {
         conflicts: result.conflicts,
         invalid: payload.invalid.map(invalidProblemDetail),
         failed: result.failed,
+        pinsInserted: result.pins.inserted,
+        pinsPreserved: result.pins.preserved,
+        pinsInvalid: [...structurallyInvalidPins, ...result.pins.invalid],
+        pinsFailed: result.pins.failed,
       };
-      const persistedCount = finalResult.inserted + finalResult.updated;
+      const persistedCount = finalResult.inserted + finalResult.updated + finalResult.pinsInserted;
       const nonAppliedCount =
         finalResult.skipped +
         finalResult.conflicts.length +
         finalResult.invalid.length +
-        finalResult.failed.length;
+        finalResult.failed.length +
+        finalResult.pinsInvalid.length +
+        finalResult.pinsFailed.length;
       let outcome: string;
       if (persistedCount > 0 && nonAppliedCount === 0) {
         outcome = "Importación completada.";
@@ -221,6 +241,8 @@ export default function SettingsScreen() {
         formatProblemDetails("Inválidos", finalResult.invalid),
         formatProblemDetails("Conflictos", finalResult.conflicts),
         formatProblemDetails("Fallidos", finalResult.failed),
+        formatProblemDetails("Pins omitidos", finalResult.pinsInvalid),
+        formatProblemDetails("Pins fallidos", finalResult.pinsFailed),
       ].filter((section): section is string => section !== null);
       const countLines = [
         `Insertados: ${finalResult.inserted}`,
@@ -229,6 +251,14 @@ export default function SettingsScreen() {
         `Conflictos: ${finalResult.conflicts.length}`,
         `Inválidos: ${finalResult.invalid.length}`,
         `Fallidos: ${finalResult.failed.length}`,
+        ...(payload.version === 2
+          ? [
+              `Pins insertados: ${finalResult.pinsInserted}`,
+              `Pins existentes conservados: ${finalResult.pinsPreserved}`,
+              `Pins omitidos: ${finalResult.pinsInvalid.length}`,
+              `Pins fallidos: ${finalResult.pinsFailed.length}`,
+            ]
+          : []),
       ];
       const finalMsg = [
         outcome,
@@ -324,8 +354,8 @@ export default function SettingsScreen() {
       )}
 
       <Text style={{ color: colors.subtle, marginTop: 6 }}>
-        Export genera un .json versionado. Import hace MERGE (no borra nada) y evita duplicados por
-        provider + externalId.
+        Export genera un .json versionado. Import hace MERGE: no borra títulos locales ausentes del
+        backup y evita duplicados por provider + externalId.
       </Text>
     </View>
   );

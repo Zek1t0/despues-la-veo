@@ -3,6 +3,10 @@ import {
   materializeSavedTitleForInsert,
   type NormalizedBackupSavedTitle,
 } from "../core/libraryBackupV1";
+import { upsertSavedTitleAndCleanPinsWithDb } from "./savedTitleIntegrity";
+import { mergeBackupPinWithDb } from "./titlePinsBackup";
+import { parsePinContext } from "../core/contextualPin";
+import type { LibraryBackupPinV2 } from "../core/libraryBackupV2";
 
 export type LibraryImportIssue = { reference: string; reason: string };
 export type LibraryImportMergeResult = {
@@ -15,7 +19,20 @@ export type LibraryImportMergeResult = {
 
 export type LibraryBackupMergeDb = {
   getFirstAsync(sql: string, params: any): Promise<any>;
+  getAllAsync<T>(sql: string, ...params: any[]): Promise<T[]>;
   runAsync(sql: string, ...params: any[]): Promise<any>;
+  withTransactionAsync(task: () => Promise<void>): Promise<void>;
+};
+
+export type LibraryPinImportResult = {
+  inserted: number;
+  preserved: number;
+  invalid: LibraryImportIssue[];
+  failed: LibraryImportIssue[];
+};
+
+export type LibraryBackupMergeResult = LibraryImportMergeResult & {
+  pins: LibraryPinImportResult;
 };
 
 function safeParseJsonArray(value: string): string[] {
@@ -82,43 +99,25 @@ async function findAvailableInsertId(
   throw new Error(`No se pudo generar un ID libre después de ${maxAttempts} intentos.`);
 }
 
-async function insertSavedTitleWithDb(db: LibraryBackupMergeDb, item: SavedTitle): Promise<void> {
-  await db.runAsync(
-    `INSERT INTO saved_titles (
-      id, provider, external_id, type, title, year, poster_url,
-      overview, vote_average, genres_json,
-      status, tags_json, notes, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    item.id, item.provider, item.externalId, item.type, item.title,
-    item.year ?? null, item.posterUrl ?? null, item.overview ?? null,
-    item.voteAverage ?? null, JSON.stringify(item.genres ?? []),
-    item.status, JSON.stringify(item.tags ?? []), item.notes ?? null,
-    item.createdAt, item.updatedAt
-  );
-}
-
-async function updateSavedTitleFromBackupWithDb(
-  db: LibraryBackupMergeDb,
+function materializeSavedTitleForUpdate(
   local: SavedTitle,
   incoming: NormalizedBackupSavedTitle
-): Promise<void> {
-  await db.runAsync(
-    `UPDATE saved_titles SET
-      title = ?, year = ?, poster_url = ?, overview = ?, vote_average = ?,
-      genres_json = ?, status = ?, tags_json = ?, notes = ?, updated_at = ?
-    WHERE id = ?`,
-    incoming.title,
-    incoming.year.present ? incoming.year.value : local.year ?? null,
-    incoming.posterUrl.present ? incoming.posterUrl.value : local.posterUrl ?? null,
-    incoming.overview.present ? incoming.overview.value : local.overview ?? null,
-    incoming.voteAverage.present ? incoming.voteAverage.value : local.voteAverage ?? null,
-    JSON.stringify(incoming.genres.present ? incoming.genres.value : local.genres ?? []),
-    incoming.status.present ? incoming.status.value : local.status,
-    JSON.stringify(incoming.tags.present ? incoming.tags.value : local.tags ?? []),
-    incoming.notes.present ? incoming.notes.value : local.notes ?? null,
-    incoming.updatedAt.present ? incoming.updatedAt.value : local.updatedAt,
-    local.id
-  );
+): SavedTitle {
+  return {
+    ...local,
+    title: incoming.title,
+    year: incoming.year.present ? incoming.year.value : local.year ?? null,
+    posterUrl: incoming.posterUrl.present ? incoming.posterUrl.value : local.posterUrl ?? null,
+    overview: incoming.overview.present ? incoming.overview.value : local.overview ?? null,
+    voteAverage: incoming.voteAverage.present
+      ? incoming.voteAverage.value
+      : local.voteAverage ?? null,
+    genres: incoming.genres.present ? incoming.genres.value : local.genres ?? [],
+    status: incoming.status.present ? incoming.status.value : local.status,
+    tags: incoming.tags.present ? incoming.tags.value : local.tags ?? [],
+    notes: incoming.notes.present ? incoming.notes.value : local.notes ?? null,
+    updatedAt: incoming.updatedAt.present ? incoming.updatedAt.value : local.updatedAt,
+  };
 }
 
 export async function mergeLibraryBackupItemsWithDb(
@@ -156,14 +155,19 @@ export async function mergeLibraryBackupItemsWithDb(
           continue;
         }
 
-        await updateSavedTitleFromBackupWithDb(db, local, incoming);
+        const updated = materializeSavedTitleForUpdate(local, incoming);
+        await db.withTransactionAsync(async () => {
+          await upsertSavedTitleAndCleanPinsWithDb(db, updated);
+        });
         result.updated++;
         continue;
       }
 
       const materialized = materializeSavedTitleForInsert(incoming, generateId);
       materialized.id = await findAvailableInsertId(db, materialized.id, generateId);
-      await insertSavedTitleWithDb(db, materialized);
+      await db.withTransactionAsync(async () => {
+        await upsertSavedTitleAndCleanPinsWithDb(db, materialized);
+      });
       result.inserted++;
     } catch (error) {
       result.failed.push({
@@ -174,4 +178,76 @@ export async function mergeLibraryBackupItemsWithDb(
   }
 
   return result;
+}
+
+function backupPinReference(pin: LibraryBackupPinV2): string {
+  const context = pin.contextType === "library" ? "Biblioteca" : `tag ${pin.contextKey}`;
+  return `${pin.provider}:${pin.externalId} (${context})`;
+}
+
+export async function mergeLibraryBackupWithDb(
+  db: LibraryBackupMergeDb,
+  items: NormalizedBackupSavedTitle[],
+  pins: LibraryBackupPinV2[] | null,
+  generateId: () => string
+): Promise<LibraryBackupMergeResult> {
+  const titles = await mergeLibraryBackupItemsWithDb(db, items, generateId);
+  const pinResult: LibraryPinImportResult = {
+    inserted: 0,
+    preserved: 0,
+    invalid: [],
+    failed: [],
+  };
+
+  if (pins) {
+    const finalRows = await db.getAllAsync<{
+      id: string;
+      provider: string;
+      external_id: string;
+      tags_json: string;
+    }>("SELECT id, provider, external_id, tags_json FROM saved_titles;");
+    const byIdentity = new Map(
+      finalRows.map((row) => [`${row.provider}\u0000${row.external_id}`, row] as const)
+    );
+
+    for (const pin of pins) {
+      const reference = backupPinReference(pin);
+      const row = byIdentity.get(`${pin.provider}\u0000${pin.externalId}`);
+      if (!row) {
+        pinResult.invalid.push({ reference, reason: "El título referido no existe después del merge." });
+        continue;
+      }
+      const context = parsePinContext(pin.contextType, pin.contextKey);
+      if (!context) {
+        pinResult.invalid.push({ reference, reason: "El contexto del pin no es aplicable." });
+        continue;
+      }
+      if (context.contextType === "tag") {
+        const tags = safeParseJsonArray(row.tags_json)
+          .map((tag) => tag.trim())
+          .filter(Boolean);
+        if (!tags.includes(context.contextKey)) {
+          pinResult.invalid.push({
+            reference,
+            reason: "El título final no pertenece exactamente a la etiqueta indicada.",
+          });
+          continue;
+        }
+      }
+      try {
+        let outcome: "inserted" | "preserved" = "preserved";
+        await db.withTransactionAsync(async () => {
+          outcome = await mergeBackupPinWithDb(db, row.id, context, pin.pinnedAt);
+        });
+        pinResult[outcome]++;
+      } catch (error) {
+        pinResult.failed.push({
+          reference,
+          reason: error instanceof Error ? error.message : "No se pudo persistir el pin.",
+        });
+      }
+    }
+  }
+
+  return { ...titles, pins: pinResult };
 }

@@ -4,8 +4,17 @@ import { useFocusEffect } from "@react-navigation/native";
 import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
-import { deleteSavedTitle, listSavedTitles, upsertSavedTitle } from "../../src/storage/savedTitlesRepo";
-import type { SavedTitle, TitleStatus, TitleType } from "../../src/core/savedTitle";
+import { deleteSavedTitle, upsertSavedTitle } from "../../src/storage/savedTitlesRepo";
+import type { SavedTitle, TitleStatus } from "../../src/core/savedTitle";
+import { LIBRARY_PIN_CONTEXT } from "../../src/core/contextualPin";
+import {
+  selectVisibleLibraryTitles,
+  type LibraryStatusFilter,
+  type LibraryTypeFilter,
+} from "../../src/core/libraryView";
+import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";
+import { setTitlePinState } from "../../src/storage/titlePinsRepo";
+import { getLibraryScreenSnapshot } from "../../src/storage/libraryScreenSnapshot";
 import { titleStatusLabel, titleTypeLabel } from "../../src/core/presentationLabels";
 import {
   VIEW_PREFERENCE_DEFAULTS,
@@ -24,53 +33,8 @@ import {
   type ViewOptionsSection,
 } from "../../src/components/browsing";
 
-type StatusFilter = "all" | TitleStatus;
-type TypeFilter = "all" | TitleType;
-
-const SPANISH_TITLE_COLLATOR = new Intl.Collator("es", {
-  numeric: true,
-  sensitivity: "base",
-});
-
-function compareTitleThenId(a: SavedTitle, b: SavedTitle): number {
-  return SPANISH_TITLE_COLLATOR.compare(a.title, b.title) || a.id.localeCompare(b.id);
-}
-
-function compareOptionalNumberDescending(
-  a: number | null | undefined,
-  b: number | null | undefined
-): number {
-  const aPresent = typeof a === "number" && Number.isFinite(a);
-  const bPresent = typeof b === "number" && Number.isFinite(b);
-  if (aPresent && bPresent) return b - a;
-  if (aPresent) return -1;
-  if (bPresent) return 1;
-  return 0;
-}
-
-function compareLibraryTitles(a: SavedTitle, b: SavedTitle, sort: LibrarySort): number {
-  let primary = 0;
-
-  switch (sort) {
-    case "updated-desc":
-      primary = b.updatedAt - a.updatedAt;
-      break;
-    case "title-asc":
-      primary = SPANISH_TITLE_COLLATOR.compare(a.title, b.title);
-      break;
-    case "title-desc":
-      primary = SPANISH_TITLE_COLLATOR.compare(b.title, a.title);
-      break;
-    case "rating-desc":
-      primary = compareOptionalNumberDescending(a.voteAverage, b.voteAverage);
-      break;
-    case "year-desc":
-      primary = compareOptionalNumberDescending(a.year, b.year);
-      break;
-  }
-
-  return primary || compareTitleThenId(a, b);
-}
+type StatusFilter = LibraryStatusFilter;
+type TypeFilter = LibraryTypeFilter;
 
 function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   return (
@@ -120,7 +84,10 @@ export default function LibraryScreen() {
   const { width: windowWidth } = useWindowDimensions();
 
   const [items, setItems] = useState<SavedTitle[]>([]);
+  const [pinnedAtById, setPinnedAtById] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [snapshotReady, setSnapshotReady] = useState(false);
+  const [snapshotError, setSnapshotError] = useState<string | null>(null);
 
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -150,6 +117,8 @@ export default function LibraryScreen() {
   const sortWriteQueue = useRef<Promise<void>>(Promise.resolve());
   const viewModeSelectionId = useRef(0);
   const sortSelectionId = useRef(0);
+  const latestPinnedAtById = useRef<Map<string, number>>(new Map());
+  const pinIntentQueues = useRef<Map<string, ContextualPinIntentQueue>>(new Map());
   const mounted = useRef(true);
 
   const showPreferenceError = useCallback(() => {
@@ -342,8 +311,30 @@ export default function LibraryScreen() {
 
   const refresh = useCallback(async () => {
     setLoading(true);
+    setSnapshotReady(false);
+    setSnapshotError(null);
     try {
-      setItems(await listSavedTitles());
+      await Promise.all([...pinIntentQueues.current.values()].map((queue) => queue.whenIdle()));
+      const snapshot = await getLibraryScreenSnapshot();
+      setItems(snapshot.items);
+      const loadedPinnedAtById = new Map(
+        snapshot.pins.map((pin) => [pin.savedTitleId, pin.pinnedAt] as const)
+      );
+      latestPinnedAtById.current = new Map(loadedPinnedAtById);
+      pinIntentQueues.current = new Map(
+        snapshot.items.map((item) => [
+          item.id,
+          new ContextualPinIntentQueue(loadedPinnedAtById.get(item.id) ?? null),
+        ])
+      );
+      setPinnedAtById(new Map(loadedPinnedAtById));
+      setSnapshotReady(true);
+    } catch (error) {
+      console.error("No se pudo cargar la Biblioteca.", error);
+      const message = "No se pudo cargar la Biblioteca. Podés volver a intentar.";
+      setSnapshotError(message);
+      if (Platform.OS === "web") window.alert(message);
+      else Alert.alert("Error al cargar", message);
     } finally {
       setLoading(false);
     }
@@ -356,22 +347,15 @@ export default function LibraryScreen() {
   );
 
   const visibleItems = useMemo(() => {
-    const needle = q.trim().toLocaleLowerCase("es");
-
-    const matchingItems = items.filter((it) => {
-      if (statusFilter !== "all" && it.status !== statusFilter) return false;
-      if (typeFilter !== "all" && it.type !== typeFilter) return false;
-
-      if (!needle) return true;
-      const inTitle = it.title.toLocaleLowerCase("es").includes(needle);
-      const inTags = (it.tags ?? []).some((t) =>
-        t.toLocaleLowerCase("es").includes(needle)
-      );
-      return inTitle || inTags;
+    return selectVisibleLibraryTitles({
+      items,
+      pinnedAtById,
+      query: q,
+      sort,
+      statusFilter,
+      typeFilter,
     });
-
-    return [...matchingItems].sort((a, b) => compareLibraryTitles(a, b, sort));
-  }, [items, q, sort, statusFilter, typeFilter]);
+  }, [items, pinnedAtById, q, sort, statusFilter, typeFilter]);
 
   const gridGap = 12;
   const availableListWidth = Math.max(0, Math.min(windowWidth - 32, 1168));
@@ -392,6 +376,13 @@ export default function LibraryScreen() {
       const ok = window.confirm("¿Seguro que querés borrar este ítem?");
       if (!ok) return;
       await deleteSavedTitle(id);
+      latestPinnedAtById.current.delete(id);
+      pinIntentQueues.current.delete(id);
+      setPinnedAtById((current) => {
+        const next = new Map(current);
+        next.delete(id);
+        return next;
+      });
       await refresh();
       return;
     }
@@ -403,6 +394,13 @@ export default function LibraryScreen() {
         style: "destructive",
         onPress: async () => {
           await deleteSavedTitle(id);
+          latestPinnedAtById.current.delete(id);
+          pinIntentQueues.current.delete(id);
+          setPinnedAtById((current) => {
+            const next = new Map(current);
+            next.delete(id);
+            return next;
+          });
           await refresh();
         },
       },
@@ -415,6 +413,43 @@ export default function LibraryScreen() {
     await upsertSavedTitle({ ...item, status: nextStatus, updatedAt: now });
     await refresh();
   }
+
+  const showPinError = useCallback(() => {
+    const message = "No se pudo cambiar el pin de Biblioteca. Se restauró el último estado confirmado.";
+    if (Platform.OS === "web") {
+      window.alert(message);
+      return;
+    }
+    Alert.alert("Error al fijar", message);
+  }, []);
+
+  const toggleLibraryPin = useCallback((savedTitleId: string) => {
+    const intent = pinIntentQueues.current.get(savedTitleId) ??
+      new ContextualPinIntentQueue(latestPinnedAtById.current.get(savedTitleId) ?? null);
+    pinIntentQueues.current.set(savedTitleId, intent);
+    const nextPinnedAt = intent.getLatest() === null ? Date.now() : null;
+    const updateLocalState = (pinnedAt: number | null) => {
+      if (!mounted.current) return;
+      const next = new Map(latestPinnedAtById.current);
+      if (pinnedAt !== null) next.set(savedTitleId, pinnedAt);
+      else next.delete(savedTitleId);
+      latestPinnedAtById.current = next;
+      setPinnedAtById(new Map(next));
+    };
+
+    void intent.request(
+      nextPinnedAt,
+      (pinnedAt) => setTitlePinState(savedTitleId, LIBRARY_PIN_CONTEXT, pinnedAt),
+      {
+        onOptimistic: updateLocalState,
+        onRollback: updateLocalState,
+        onError: (error) => {
+          console.error("No se pudo cambiar el pin de Biblioteca.", error);
+          if (mounted.current) showPinError();
+        },
+      }
+    );
+  }, [showPinError]);
 
   const closeMobileSearch = () => {
     setQ("");
@@ -619,6 +654,35 @@ export default function LibraryScreen() {
           <ActivityIndicator color={colors.text} />
           <Text style={{ color: colors.muted }}>Cargando Biblioteca…</Text>
         </View>
+      ) : snapshotError || !snapshotReady ? (
+        <View style={{ alignItems: "flex-start", gap: 10, paddingVertical: 24 }}>
+          <Text style={{ color: colors.text, fontSize: 17, fontWeight: "900" }}>
+            No se pudo cargar la Biblioteca
+          </Text>
+          <Text style={{ color: colors.muted }}>
+            {snapshotError ?? "El estado de la Biblioteca aún no está disponible."}
+          </Text>
+          <Pressable
+            accessibilityLabel="Reintentar cargar la Biblioteca"
+            accessibilityRole="button"
+            focusable
+            onPress={() => void refresh()}
+            style={({ pressed }) => ({
+              alignItems: "center",
+              backgroundColor: colors.card2,
+              borderColor: colors.border2,
+              borderRadius: 12,
+              borderWidth: 1,
+              justifyContent: "center",
+              minHeight: 44,
+              opacity: pressed ? 0.78 : 1,
+              paddingHorizontal: 14,
+              paddingVertical: 8,
+            })}
+          >
+            <Text style={{ color: colors.text, fontWeight: "900" }}>Reintentar</Text>
+          </Pressable>
+        </View>
       ) : (
         <FlatList
           columnWrapperStyle={
@@ -634,7 +698,13 @@ export default function LibraryScreen() {
               return (
                 <TitleGridCard
                   accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}`}
-                  onPress={() => router.push(`/title/${item.id}`)}
+                  isPinned={pinnedAtById.has(item.id)}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/title/[id]",
+                      params: { id: item.id, pinContext: "library" },
+                    })
+                  }
                   posterUrl={item.posterUrl}
                   style={{ width: gridCardWidth }}
                   title={item.title}
@@ -662,7 +732,12 @@ export default function LibraryScreen() {
                   accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}`}
                   accessibilityRole="button"
                   focusable
-                  onPress={() => router.push(`/title/${item.id}`)}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/title/[id]",
+                      params: { id: item.id, pinContext: "library" },
+                    })
+                  }
                   style={({ pressed }) => ({ opacity: pressed ? 0.82 : 1 })}
                 >
                   <View style={{ flexDirection: "row", gap: 12 }}>
@@ -742,6 +817,34 @@ export default function LibraryScreen() {
                       {item.status === "done"
                         ? "Marcar como planeado"
                         : "Marcar como terminado"}
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    accessibilityLabel={
+                      pinnedAtById.has(item.id)
+                        ? "Desfijar de Biblioteca"
+                        : "Fijar en Biblioteca"
+                    }
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: pinnedAtById.has(item.id) }}
+                    focusable
+                    onPress={() => toggleLibraryPin(item.id)}
+                    style={({ pressed }) => ({
+                      alignItems: "center",
+                      backgroundColor: colors.card2,
+                      borderColor: colors.border2,
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      justifyContent: "center",
+                      minHeight: 44,
+                      opacity: pressed ? 0.78 : 1,
+                      paddingHorizontal: 12,
+                      paddingVertical: 8,
+                    })}
+                  >
+                    <Text style={{ color: colors.text, fontWeight: "800" }}>
+                      {pinnedAtById.has(item.id) ? "Desfijar" : "Fijar"}
                     </Text>
                   </Pressable>
 

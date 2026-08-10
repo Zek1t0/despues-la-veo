@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import {
   Image,
   Pressable,
@@ -20,6 +21,7 @@ export type TitleGridCardProps = {
   posterUrl?: string | null;
   onPress: () => void;
   accessibilityLabel: string;
+  isPinned?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -29,6 +31,7 @@ export function TitleGridCard({
   posterUrl,
   onPress,
   accessibilityLabel,
+  isPinned = false,
   style,
 }: TitleGridCardProps) {
   const [imageFailed, setImageFailed] = useState(false);
@@ -41,7 +44,7 @@ export function TitleGridCard({
 
   return (
     <Pressable
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={isPinned ? `${accessibilityLabel}, fijado` : accessibilityLabel}
       accessibilityRole="button"
       focusable
       onPress={onPress}
@@ -62,6 +65,12 @@ export function TitleGridCard({
       <View accessible={false} pointerEvents="none" style={styles.badge}>
         <Text style={styles.badgeText}>{titleTypeLabel(type)}</Text>
       </View>
+
+      {isPinned ? (
+        <View accessible={false} pointerEvents="none" style={styles.pinBadge}>
+          <Ionicons color={colors.text} name="pin" size={14} />
+        </View>
+      ) : null}
 
       <View accessible={false} pointerEvents="none" style={styles.titleOverlay}>
         <Text ellipsizeMode="tail" numberOfLines={2} style={styles.title}>
@@ -102,6 +111,18 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 11,
     fontWeight: "800",
+  },
+  pinBadge: {
+    alignItems: "center",
+    backgroundColor: "rgba(11, 11, 11, 0.9)",
+    borderColor: "rgba(255, 255, 255, 0.22)",
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    justifyContent: "center",
+    padding: 6,
+    position: "absolute",
+    right: 8,
+    top: 8,
   },
   titleOverlay: {
     backgroundColor: "rgba(11, 11, 11, 0.78)",
