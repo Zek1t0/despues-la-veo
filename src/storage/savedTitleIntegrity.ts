@@ -1,4 +1,5 @@
 import type { SavedTitle } from "../core/savedTitle";
+import { parsePersonalRating } from "../core/personalRating";
 import {
   deletePinsForSavedTitleWithDb,
   deleteTagPinsExceptWithDb,
@@ -11,12 +12,13 @@ export async function upsertSavedTitleAndCleanPinsWithDb(
   db: SavedTitleIntegrityDatabase,
   item: SavedTitle
 ): Promise<string> {
+  const personalRating = parsePersonalRating(item.personalRating);
   await db.runAsync(
     `INSERT INTO saved_titles (
       id, provider, external_id, type, title, year, poster_url,
-      overview, vote_average, genres_json,
+      overview, vote_average, personal_rating, genres_json,
       status, tags_json, notes, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(provider, external_id) DO UPDATE SET
       type=excluded.type,
       title=excluded.title,
@@ -24,6 +26,7 @@ export async function upsertSavedTitleAndCleanPinsWithDb(
       poster_url=excluded.poster_url,
       overview=excluded.overview,
       vote_average=excluded.vote_average,
+      personal_rating=excluded.personal_rating,
       genres_json=excluded.genres_json,
       status=excluded.status,
       tags_json=excluded.tags_json,
@@ -38,6 +41,7 @@ export async function upsertSavedTitleAndCleanPinsWithDb(
     item.posterUrl ?? null,
     item.overview ?? null,
     item.voteAverage ?? null,
+    personalRating,
     JSON.stringify(item.genres ?? []),
     item.status,
     JSON.stringify(item.tags ?? []),

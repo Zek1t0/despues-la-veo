@@ -19,12 +19,25 @@ import { titleStatusLabel, titleTypeLabel } from "../../src/core/presentationLab
 import { type PinContext } from "../../src/core/contextualPin";
 import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";
 import {
+  formatPersonalRating,
+  PERSONAL_RATING_MAX,
+  PERSONAL_RATING_MIN,
+  type PersonalRating,
+} from "../../src/core/personalRating";
+import {
+  applyPersonalRatingConfirmation,
+  applyPersonalRatingRollback,
+  PersonalRatingIntentQueue,
+} from "../../src/core/personalRatingIntent";
+import {
   titleDetailPinContextKey,
   titleDetailPinContextLabel,
 } from "../../src/core/titleDetailPinContext";
 import {
   deleteSavedTitle,
-  upsertSavedTitle,
+  setPersonalRating,
+  updateSavedTitleMetadata,
+  type SavedTitleMetadataPatch,
 } from "../../src/storage/savedTitlesRepo";
 import { getTitleDetailPinSnapshot } from "../../src/storage/titleDetailPinSnapshot";
 import { setTitlePinState } from "../../src/storage/titlePinsRepo";
@@ -44,6 +57,8 @@ const UPDATED_AT_FORMATTER = new Intl.DateTimeFormat("es-AR", {
   dateStyle: "medium",
   timeStyle: "short",
 });
+
+const INITIAL_PERSONAL_RATING = 70;
 
 function formatUpdatedAt(value: number): string | null {
   const date = new Date(value);
@@ -175,9 +190,14 @@ export default function TitleDetailScreen() {
 
   const [newTag, setNewTag] = useState("");
   const [tagHint, setTagHint] = useState<string | null>(null);
+  const [ratingPending, setRatingPending] = useState(false);
+  const [ratingError, setRatingError] = useState<string | null>(null);
   const loadGeneration = useRef(0);
+  const visibleTitleId = useRef<string | null>(null);
+  const deletedTitleIds = useRef<Set<string>>(new Set());
   const visiblePinContextKey = useRef<string | null>(null);
   const pinIntentQueues = useRef<Map<string, ContextualPinIntentQueue>>(new Map());
+  const ratingIntentQueues = useRef<Map<string, PersonalRatingIntentQueue>>(new Map());
 
   const tags = useMemo(() => item?.tags ?? [], [item]);
   const formattedUpdatedAt = item ? formatUpdatedAt(item.updatedAt) : null;
@@ -188,11 +208,15 @@ export default function TitleDetailScreen() {
     setLoading(true);
     setPinReady(false);
     setPinReadError(null);
+    setRatingPending(false);
+    setRatingError(null);
+    visibleTitleId.current = savedTitleId;
     visiblePinContextKey.current = null;
     if (!savedTitleId) {
       setItem(null);
       setEffectivePinContext(null);
       setPinnedAt(null);
+      visibleTitleId.current = null;
       setLoading(false);
       return;
     }
@@ -203,9 +227,19 @@ export default function TitleDetailScreen() {
           .filter(([key]) => key.startsWith(titleQueuePrefix))
           .map(([, queue]) => queue.whenIdle())
       );
+      await ratingIntentQueues.current.get(savedTitleId)?.whenIdle();
       const snapshot = await getTitleDetailPinSnapshot(savedTitleId, { pinContext, tag });
       if (generation !== loadGeneration.current) return;
       setItem(snapshot.item);
+      if (snapshot.item) {
+        const ratingQueue = ratingIntentQueues.current.get(savedTitleId);
+        const confirmed = {
+          value: snapshot.item.personalRating,
+          updatedAt: snapshot.item.updatedAt,
+        };
+        if (ratingQueue) ratingQueue.reconcileConfirmed(confirmed);
+        else ratingIntentQueues.current.set(savedTitleId, new PersonalRatingIntentQueue(confirmed));
+      }
       if (options?.preserveNotesDraft && notesDraftDirty.current) {
         setNotes(notesDraft.current);
         setDirtyNotes(true);
@@ -239,6 +273,7 @@ export default function TitleDetailScreen() {
       setItem(null);
       setEffectivePinContext(null);
       setPinnedAt(null);
+      visibleTitleId.current = null;
     } finally {
       if (generation === loadGeneration.current) setLoading(false);
     }
@@ -258,6 +293,60 @@ export default function TitleDetailScreen() {
     const message = `No se pudo cambiar el pin en ${contextLabel}. Se restauró el último estado confirmado.`;
     Alert.alert("Error al fijar", message);
   }, []);
+
+  const requestPersonalRating = useCallback((next: PersonalRating) => {
+    if (!item) return;
+    const savedTitleId = item.id;
+    const intent = ratingIntentQueues.current.get(savedTitleId) ??
+      new PersonalRatingIntentQueue({
+        value: item.personalRating,
+        updatedAt: item.updatedAt,
+      });
+    ratingIntentQueues.current.set(savedTitleId, intent);
+    if (next === intent.getLatest()) return;
+
+    const isVisible = () =>
+      visibleTitleId.current === savedTitleId && !deletedTitleIds.current.has(savedTitleId);
+    setRatingError(null);
+    setRatingPending(true);
+    void intent.request(next, (value) => setPersonalRating(savedTitleId, value), {
+      onOptimistic: (value) => {
+        if (!isVisible()) return;
+        setItem((current) => current?.id === savedTitleId
+          ? { ...current, personalRating: value }
+          : current);
+      },
+      onConfirmed: ({ confirmed, latest }) => {
+        if (!isVisible()) return;
+        setItem((current) => current?.id === savedTitleId
+          ? applyPersonalRatingConfirmation(current, { confirmed, latest })
+          : current);
+      },
+      onRollback: (confirmed) => {
+        if (!isVisible()) return;
+        setItem((current) => current?.id === savedTitleId
+          ? applyPersonalRatingRollback(current, confirmed)
+          : current);
+      },
+      onError: (error) => {
+        console.error("No se pudo guardar la puntuación personal.", error);
+        if (!isVisible()) return;
+        setRatingError("No se pudo guardar tu puntuación. Se restauró el último valor confirmado.");
+      },
+    }).then(() => {
+      if (isVisible()) setRatingPending(intent.isPending());
+    });
+  }, [item]);
+
+  const adjustPersonalRating = useCallback((delta: number) => {
+    if (!item) return;
+    const ratingQueue = ratingIntentQueues.current.get(item.id);
+    const currentValue = ratingQueue?.getLatest() ?? item.personalRating;
+    if (currentValue === null) return;
+    const next = currentValue + delta;
+    if (next < PERSONAL_RATING_MIN || next > PERSONAL_RATING_MAX) return;
+    requestPersonalRating(next);
+  }, [item, requestPersonalRating]);
 
   const togglePin = useCallback(() => {
     if (!item || !effectivePinContext || !pinReady) return;
@@ -302,13 +391,24 @@ export default function TitleDetailScreen() {
   }, [item]);
 
   const save = useCallback(
-    async (patch: Partial<SavedTitle>) => {
+    async (patch: SavedTitleMetadataPatch) => {
       if (!item) return;
-      const now = Date.now();
-      const updated: SavedTitle = { ...item, ...patch, updatedAt: now };
-      await upsertSavedTitle(updated);
+      const savedTitleId = item.id;
+      await ratingIntentQueues.current.get(savedTitleId)?.whenIdle();
+      const updated = await updateSavedTitleMetadata(savedTitleId, patch);
       if (patch.tags) await load({ preserveNotesDraft: true });
-      else setItem(updated);
+      else if (visibleTitleId.current === savedTitleId) {
+        const ratingQueue = ratingIntentQueues.current.get(savedTitleId);
+        setItem((current) => current?.id === savedTitleId
+          ? {
+              ...updated,
+              personalRating: ratingQueue
+                ? ratingQueue.getLatest()
+                : updated.personalRating,
+              updatedAt: Math.max(current.updatedAt, updated.updatedAt),
+            }
+          : current);
+      }
     },
     [item, load]
   );
@@ -375,8 +475,17 @@ export default function TitleDetailScreen() {
 
   const doDelete = useCallback(async () => {
     if (!item) return;
-    await deleteSavedTitle(item.id);
-    router.back();
+    const savedTitleId = item.id;
+    await ratingIntentQueues.current.get(savedTitleId)?.whenIdle();
+    deletedTitleIds.current.add(savedTitleId);
+    try {
+      await deleteSavedTitle(savedTitleId);
+      visibleTitleId.current = null;
+      router.back();
+    } catch (error) {
+      deletedTitleIds.current.delete(savedTitleId);
+      throw error;
+    }
   }, [item, router]);
 
   const confirmDelete = useCallback(() => {
@@ -550,6 +659,135 @@ export default function TitleDetailScreen() {
               ) : null}
             </View>
           )}
+        </Card>
+
+        {/* Puntuaciones */}
+        <Card>
+          <View
+            style={{
+              flexDirection: windowWidth < 390 ? "column" : "row",
+              gap: 16,
+            }}
+          >
+            <View style={{ flex: 1, gap: 4 }}>
+              <Text style={{ color: colors.text, fontWeight: "900", fontSize: 16 }}>
+                Tu puntuación
+              </Text>
+              <Text
+                accessibilityLabel={item.personalRating === null
+                  ? "Mi puntuación: sin calificar"
+                  : `Mi puntuación: ${formatPersonalRating(item.personalRating)} de 10`}
+                style={{ color: colors.text, fontSize: 26, fontWeight: "900" }}
+              >
+                {item.personalRating === null
+                  ? "Sin calificar"
+                  : `${formatPersonalRating(item.personalRating)} / 10`}
+              </Text>
+            </View>
+            <View style={{ flex: 1, gap: 4 }}>
+              <Text style={{ color: colors.text, fontWeight: "900", fontSize: 16 }}>
+                TMDB
+              </Text>
+              <Text style={{ color: colors.muted, fontSize: 26, fontWeight: "800" }}>
+                {typeof item.voteAverage === "number" && Number.isFinite(item.voteAverage)
+                  ? `${item.voteAverage.toFixed(1)} / 10`
+                  : "— / 10"}
+              </Text>
+            </View>
+          </View>
+
+          {item.personalRating === null ? (
+            <Pressable
+              accessibilityLabel="Comenzar mi puntuación en 7.0 de 10"
+              accessibilityRole="button"
+              focusable
+              onPress={() => requestPersonalRating(INITIAL_PERSONAL_RATING)}
+              style={({ pressed }) => ({
+                alignItems: "center",
+                backgroundColor: colors.primary,
+                borderColor: colors.primary,
+                borderRadius: 12,
+                borderWidth: 1,
+                justifyContent: "center",
+                minHeight: 44,
+                opacity: pressed ? 0.78 : 1,
+                paddingHorizontal: 14,
+                paddingVertical: 10,
+              })}
+            >
+              <Text style={{ color: colors.bg, fontWeight: "900" }}>Calificar con 7.0</Text>
+            </Pressable>
+          ) : (
+            <>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {([
+                  { delta: -10, text: "−1.0", label: "Disminuir mi puntuación en 1.0" },
+                  { delta: -1, text: "−0.1", label: "Disminuir mi puntuación en 0.1" },
+                  { delta: 1, text: "+0.1", label: "Aumentar mi puntuación en 0.1" },
+                  { delta: 10, text: "+1.0", label: "Aumentar mi puntuación en 1.0" },
+                ] as const).map((control) => {
+                  const next = item.personalRating! + control.delta;
+                  const disabled = next < PERSONAL_RATING_MIN || next > PERSONAL_RATING_MAX;
+                  return (
+                    <Pressable
+                      key={control.delta}
+                      accessibilityLabel={control.label}
+                      accessibilityRole="button"
+                      accessibilityState={{ disabled }}
+                      disabled={disabled}
+                      focusable
+                      onPress={() => adjustPersonalRating(control.delta)}
+                      style={({ pressed }) => ({
+                        alignItems: "center",
+                        backgroundColor: colors.card2,
+                        borderColor: colors.border2,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        flexGrow: 1,
+                        justifyContent: "center",
+                        minHeight: 44,
+                        minWidth: 72,
+                        opacity: disabled ? 0.4 : pressed ? 0.78 : 1,
+                        paddingHorizontal: 12,
+                        paddingVertical: 10,
+                      })}
+                    >
+                      <Text style={{ color: colors.text, fontWeight: "900" }}>{control.text}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Pressable
+                accessibilityLabel="Quitar mi puntuación"
+                accessibilityRole="button"
+                focusable
+                onPress={() => requestPersonalRating(null)}
+                style={({ pressed }) => ({
+                  alignItems: "center",
+                  borderColor: colors.border2,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  justifyContent: "center",
+                  minHeight: 44,
+                  opacity: pressed ? 0.78 : 1,
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                })}
+              >
+                <Text style={{ color: colors.text, fontWeight: "800" }}>Quitar puntuación</Text>
+              </Pressable>
+            </>
+          )}
+          {ratingPending ? (
+            <Text accessibilityLiveRegion="polite" style={{ color: colors.subtle }}>
+              Guardando puntuación…
+            </Text>
+          ) : null}
+          {ratingError ? (
+            <Text accessibilityLiveRegion="assertive" style={{ color: colors.dangerBorder }}>
+              {ratingError}
+            </Text>
+          ) : null}
         </Card>
 
         {/* Estado */}

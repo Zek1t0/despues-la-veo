@@ -46,6 +46,13 @@ async function main() {
       poster_url TEXT,
       overview TEXT,
       vote_average REAL,
+      personal_rating INTEGER CHECK (
+        personal_rating IS NULL OR (
+          typeof(personal_rating) = 'integer' AND
+          personal_rating >= 10 AND
+          personal_rating <= 100
+        )
+      ),
       genres_json TEXT,
       status TEXT NOT NULL,
       tags_json TEXT NOT NULL,

@@ -23,6 +23,7 @@ import {
   type ViewOptionsSection,
 } from "../../src/components/browsing";
 import { titleStatusLabel, titleTypeLabel } from "../../src/core/presentationLabels";
+import { formatPersonalRating } from "../../src/core/personalRating";
 import type { SavedTitle } from "../../src/core/savedTitle";
 import { createTagPinContext } from "../../src/core/contextualPin";
 import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";
@@ -178,6 +179,10 @@ function DetailTitleRow({
   pinned: boolean;
   tag: string;
 }) {
+  const personalRating = item.personalRating === null
+    ? null
+    : formatPersonalRating(item.personalRating);
+
   return (
     <View
       style={{
@@ -190,7 +195,9 @@ function DetailTitleRow({
       }}
     >
       <Pressable
-        accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}`}
+        accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}${
+          personalRating ? `. Mi puntuación: ${personalRating} de 10` : ""
+        }`}
         accessibilityRole="button"
         focusable
         onPress={onPress}
@@ -202,6 +209,26 @@ function DetailTitleRow({
         <Text style={{ color: colors.muted, fontWeight: "700" }}>
           {titleTypeLabel(item.type)} · {titleStatusLabel(item.status)}
         </Text>
+        {personalRating ? (
+          <View
+            style={{
+              alignSelf: "flex-start",
+              backgroundColor: colors.card,
+              borderColor: colors.border2,
+              borderRadius: 999,
+              borderWidth: 1,
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+            }}
+          >
+            <Text
+              accessibilityLabel={`Mi puntuación: ${personalRating} de 10`}
+              style={{ color: colors.text, fontWeight: "800" }}
+            >
+              Mi puntuación {personalRating}/10
+            </Text>
+          </View>
+        ) : null}
       </Pressable>
       <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         <Pressable

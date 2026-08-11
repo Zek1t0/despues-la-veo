@@ -16,6 +16,7 @@ import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";
 import { setTitlePinState } from "../../src/storage/titlePinsRepo";
 import { getLibraryScreenSnapshot } from "../../src/storage/libraryScreenSnapshot";
 import { titleStatusLabel, titleTypeLabel } from "../../src/core/presentationLabels";
+import { formatPersonalRating } from "../../src/core/personalRating";
 import {
   VIEW_PREFERENCE_DEFAULTS,
   isLibrarySort,
@@ -62,7 +63,13 @@ function Chip({ label, active, onPress }: { label: string; active: boolean; onPr
   );
 }
 
-function Pill({ text }: { text: string }) {
+function Pill({
+  accessibilityLabel,
+  text,
+}: {
+  accessibilityLabel?: string;
+  text: string;
+}) {
   return (
     <View
       style={{
@@ -74,7 +81,12 @@ function Pill({ text }: { text: string }) {
         borderColor: colors.border2,
       }}
     >
-      <Text style={{ color: colors.text, fontWeight: "800" }}>{text}</Text>
+      <Text
+        accessibilityLabel={accessibilityLabel}
+        style={{ color: colors.text, fontWeight: "800" }}
+      >
+        {text}
+      </Text>
     </View>
   );
 }
@@ -261,7 +273,9 @@ export default function LibraryScreen() {
           { id: "updated-desc", title: "Actualizados recientemente" },
           { id: "title-asc", title: "Título A–Z" },
           { id: "title-desc", title: "Título Z–A" },
-          { id: "rating-desc", title: "Mayor puntuación" },
+          { id: "rating-desc", title: "Puntuación TMDB" },
+          { id: "personal-rating-desc", title: "Mi puntuación: mayor primero" },
+          { id: "personal-rating-asc", title: "Mi puntuación: menor primero" },
           { id: "year-desc", title: "Año más reciente" },
         ],
       },
@@ -713,7 +727,10 @@ export default function LibraryScreen() {
               );
             }
 
-            const rating = typeof item.voteAverage === "number" ? item.voteAverage.toFixed(1) : null;
+            const tmdbRating = typeof item.voteAverage === "number" ? item.voteAverage.toFixed(1) : null;
+            const personalRating = item.personalRating === null
+              ? null
+              : formatPersonalRating(item.personalRating);
             const overview = item.overview?.trim() ?? "";
             const tagsPreview = (item.tags ?? []).slice(0, 3);
 
@@ -729,7 +746,9 @@ export default function LibraryScreen() {
                 }}
               >
                 <Pressable
-                  accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}`}
+                  accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}${
+                    personalRating ? `. Mi puntuación: ${personalRating} de 10` : ""
+                  }`}
                   accessibilityRole="button"
                   focusable
                   onPress={() =>
@@ -773,7 +792,13 @@ export default function LibraryScreen() {
                       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                         <Pill text={titleTypeLabel(item.type)} />
                         <Pill text={`Estado: ${titleStatusLabel(item.status)}`} />
-                        {rating && <Pill text={`⭐ ${rating}/10`} />}
+                        {tmdbRating && <Pill text={`TMDB ${tmdbRating}/10`} />}
+                        {personalRating && (
+                          <Pill
+                            accessibilityLabel={`Mi puntuación: ${personalRating} de 10`}
+                            text={`Mi puntuación ${personalRating}/10`}
+                          />
+                        )}
                       </View>
 
                       {!!overview && (
