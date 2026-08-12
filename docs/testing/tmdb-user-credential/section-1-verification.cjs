@@ -493,8 +493,9 @@ function testBoundaries() {
   const root = path.resolve(__dirname, "../../..");
   const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
   const client = read("src/providers/tmdb/tmdbClient.ts");
-  assert.match(client, /EXPO_PUBLIC_TMDB_TOKEN/);
-  assert.doesNotMatch(client, /TmdbCredentialService|tmdbCredential/);
+  assert.doesNotMatch(client, new RegExp(["EXPO", "PUBLIC", "TMDB", "TOKEN"].join("_") + "|process\\.env"));
+  assert.match(client, /tmdbCredentialRuntime/);
+  assert.match(client, /tmdbRequestWithToken/);
   const service = read("src/providers/tmdb/credential/TmdbCredentialService.ts");
   assert.doesNotMatch(service, /tmdbApi|tmdbClient|React|SecureStore|localStorage/);
   const transport = read("src/providers/tmdb/tmdbTransport.ts");

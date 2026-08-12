@@ -2,6 +2,7 @@ import React from "react";
 import { Stack } from "expo-router";
 import { ThemeProvider, DarkTheme } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
+import { TmdbCredentialProvider } from "../src/providers/tmdb/credential/TmdbCredentialProvider";
 import "../global.css";
 
 const colors = {
@@ -26,19 +27,21 @@ const navDark = {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider value={navDark}>
-      <StatusBar style="light" />
-      <Stack
-        screenOptions={{
-          headerStyle: { backgroundColor: colors.bg },
-          headerTintColor: colors.text,
+    <TmdbCredentialProvider>
+      <ThemeProvider value={navDark}>
+        <StatusBar style="light" />
+        <Stack
+          screenOptions={{
+            headerStyle: { backgroundColor: colors.bg },
+            headerTintColor: colors.text,
 
-          // CLAVE: fondo global de todas las screens
-          contentStyle: { backgroundColor: colors.bg },
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
-    </ThemeProvider>
+            // CLAVE: fondo global de todas las screens
+            contentStyle: { backgroundColor: colors.bg },
+          }}
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        </Stack>
+      </ThemeProvider>
+    </TmdbCredentialProvider>
   );
 }
