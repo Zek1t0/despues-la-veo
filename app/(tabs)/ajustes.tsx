@@ -1,5 +1,6 @@
-import React, { useRef, useState } from "react";
-import { Alert, ActivityIndicator, Platform, Pressable, Text, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Alert, ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from "react-native";
+import { router } from "expo-router";
 import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
@@ -10,6 +11,11 @@ import { createLibraryBackupV3 } from "../../src/core/libraryBackupV3";
 import { getLibraryBackupExportData } from "../../src/storage/libraryBackupExport";
 import { mergeLibraryBackup } from "../../src/storage/savedTitlesRepo";
 import { colors } from "../../src/theme/colors";
+import { useTmdbCredential } from "../../src/providers/tmdb/credential/TmdbCredentialProvider";
+import {
+  presentTmdbCredentialStatus,
+  TMDB_SETTINGS_ROUTE,
+} from "../../src/providers/tmdb/credential/tmdbCredentialUi";
 
 const MAX_IMPORT_PROBLEM_DETAILS = 5;
 
@@ -62,6 +68,8 @@ function PrimaryButton({
 }) {
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
       onPress={onPress}
       disabled={disabled}
       style={{
@@ -81,8 +89,34 @@ function PrimaryButton({
 export default function SettingsScreen() {
   const [busy, setBusy] = useState(false);
   const [lastMsg, setLastMsg] = useState<string | null>(null);
+  const [tmdbRetrying, setTmdbRetrying] = useState(false);
+  const { snapshot: tmdbSnapshot, retryInitialization } = useTmdbCredential();
+  const tmdbStatus = presentTmdbCredentialStatus(tmdbSnapshot);
 
   const webFileInputRef = useRef<HTMLInputElement>(null);
+  const tmdbRetryInFlightRef = useRef(false);
+  const tmdbMountedRef = useRef(true);
+
+  useEffect(() => {
+    tmdbMountedRef.current = true;
+    return () => {
+      tmdbMountedRef.current = false;
+    };
+  }, []);
+
+  const onRetryTmdb = async () => {
+    if (tmdbRetryInFlightRef.current) return;
+    tmdbRetryInFlightRef.current = true;
+    setTmdbRetrying(true);
+    try {
+      await retryInitialization();
+    } catch {
+      // El snapshot vuelve a storage-error y presenta el estado seguro correspondiente.
+    } finally {
+      tmdbRetryInFlightRef.current = false;
+      if (tmdbMountedRef.current) setTmdbRetrying(false);
+    }
+  };
 
   const onExport = async () => {
     try {
@@ -316,8 +350,36 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={{ flex: 1, padding: 16, gap: 12 }}>
+    <ScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ padding: 16, gap: 12 }}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={{ fontSize: 22, fontWeight: "900", color: colors.text }}>Ajustes</Text>
+
+      <View
+        accessibilityLabel="Configuración de TMDB"
+        style={{ padding: 16, gap: 10, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }}
+      >
+        <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900" }}>TMDB</Text>
+        <Text accessibilityLiveRegion="polite" style={{ color: colors.text, fontWeight: "700" }}>
+          Estado: {tmdbStatus.label}
+        </Text>
+        {!!tmdbStatus.detail && <Text style={{ color: colors.muted }}>{tmdbStatus.detail}</Text>}
+        {(tmdbSnapshot.status === "storage-error" || tmdbRetrying) && (
+          <PrimaryButton
+            label={tmdbRetrying ? "Reintentando..." : "Reintentar"}
+            onPress={onRetryTmdb}
+            disabled={tmdbRetrying}
+          />
+        )}
+        {!!tmdbStatus.actionLabel && (
+          <PrimaryButton
+            label={tmdbStatus.actionLabel}
+            onPress={() => router.push(TMDB_SETTINGS_ROUTE)}
+          />
+        )}
+      </View>
 
       <PrimaryButton label="Exportar biblioteca" onPress={onExport} disabled={busy} />
       <PrimaryButton label="Importar biblioteca" onPress={onImport} disabled={busy} />
@@ -345,6 +407,6 @@ export default function SettingsScreen() {
         Export genera un .json versionado. Import hace MERGE: no borra títulos locales ausentes del
         backup y evita duplicados por provider + externalId.
       </Text>
-    </View>
+    </ScrollView>
   );
 }

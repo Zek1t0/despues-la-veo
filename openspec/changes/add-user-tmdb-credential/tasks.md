@@ -30,15 +30,15 @@ Implementar una sola sección lógica por vez: dentro de esa sección completar 
 
 ## 3. Ajustes y screen de configuración
 
-- [ ] 3.1 Incorporar en Ajustes una sección TMDB que distinga initializing, not-configured, configured y storage-error, y conectar `Reintentar` a una reinitialization real; comprobar retry→token, retry→null, retry→nuevo fallo y múltiples activaciones concurrentes sin lecturas duplicadas.
-- [ ] 3.2 Crear una screen propia de configuración y su navegación, no modal, con explicación, campo de API Read Access Token, show/hide accesible, candidato local, `Obtener token` y `Guardar y comprobar`; comprobar que cambiar comienza con campo vacío y nunca precarga el token guardado.
-- [ ] 3.3 Conectar validación/save/change para que 200 persista, 401 marque inválido, network/timeout/5xx mantenga candidato y write failure muestre `credential-storage-error`; comprobar retry, submits concurrentes, token anterior y generation sin cambio ante fallos.
-- [ ] 3.4 Implementar eliminación con confirmación, estado pendiente, éxito `No configurado` y `credential-storage-error` ante fallo con rollback coherente; comprobar que no hay request nuevo durante delete y que el fallo no publica generation permanente ni falsa ausencia.
-- [ ] 3.5 Añadir en web la advertencia explícita sobre almacenamiento en navegador, ausencia de protección Keychain/Keystore/SecureStore, borrado por limpieza de datos y acceso potencial de JavaScript same-origin; comprobar copy visible sin promesas de cifrado.
-- [ ] 3.6 Implementar el link `Obtener token` al flujo oficial apropiado de TMDB y fallo amistoso si no puede abrirse; revisar que la UI use `API Read Access Token de TMDB` y evite copy técnica innecesaria.
-- [ ] 3.7 Añadir harnesses focalizados de estado/configuración, accesibilidad básica, show/hide, token anterior preservado, no revelación del token configurado y separación respecto de backup.
-- [ ] 3.8 Ejecutar harnesses de la sección, regresiones de Ajustes/import/export, `npx.cmd tsc --noEmit` y OpenSpec strict.
-- [ ] 3.9 **STOP / REVIEW:** presentar matriz completa de configuración/cambio/eliminación, copy web, links, accesibilidad, no-leakage y resultados antes de integrar Search/detalle.
+- [x] 3.1 Incorporar en Ajustes una sección TMDB que distinga initializing, not-configured, configured y storage-error, y conectar `Reintentar` a una reinitialization real; comprobar retry→token, retry→null, retry→nuevo fallo y múltiples activaciones concurrentes sin lecturas duplicadas.
+- [x] 3.2 Crear una screen propia de configuración y su navegación, no modal, con explicación, campo de API Read Access Token, show/hide accesible, candidato local, `Obtener token` y `Guardar y comprobar`; comprobar que cambiar comienza con campo vacío y nunca precarga el token guardado.
+- [x] 3.3 Conectar validación/save/change para que 200 persista, 401 marque inválido, network/timeout/5xx mantenga candidato y write failure muestre `credential-storage-error`; comprobar retry, submits concurrentes, token anterior y generation sin cambio ante fallos.
+- [x] 3.4 Implementar eliminación con confirmación, estado pendiente, éxito `No configurado` y `credential-storage-error` ante fallo con rollback coherente; comprobar que no hay request nuevo durante delete y que el fallo no publica generation permanente ni falsa ausencia.
+- [x] 3.5 Añadir en web la advertencia explícita sobre almacenamiento en navegador, ausencia de protección Keychain/Keystore/SecureStore, borrado por limpieza de datos y acceso potencial de JavaScript same-origin; comprobar copy visible sin promesas de cifrado.
+- [x] 3.6 Implementar el link `Obtener token` al flujo oficial apropiado de TMDB y fallo amistoso si no puede abrirse; revisar que la UI use `API Read Access Token de TMDB` y evite copy técnica innecesaria.
+- [x] 3.7 Añadir harnesses focalizados de estado/configuración, accesibilidad básica, show/hide, token anterior preservado, no revelación del token configurado y separación respecto de backup.
+- [x] 3.8 Ejecutar harnesses de la sección, regresiones de Ajustes/import/export, `npx.cmd tsc --noEmit` y OpenSpec strict.
+- [x] 3.9 **STOP / REVIEW:** presentar matriz completa de configuración/cambio/eliminación, copy web, links, accesibilidad, no-leakage y resultados antes de integrar Search/detalle.
 
 ## 4. Search y detalle remoto
 
