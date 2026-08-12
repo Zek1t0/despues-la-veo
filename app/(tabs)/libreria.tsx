@@ -16,7 +16,6 @@ import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";
 import { setTitlePinState } from "../../src/storage/titlePinsRepo";
 import { getLibraryScreenSnapshot } from "../../src/storage/libraryScreenSnapshot";
 import { titleStatusLabel, titleTypeLabel } from "../../src/core/presentationLabels";
-import { formatPersonalRating } from "../../src/core/personalRating";
 import {
   VIEW_PREFERENCE_DEFAULTS,
   isLibrarySort,
@@ -29,6 +28,8 @@ import {
 } from "../../src/storage/viewPreferencesRepo";
 import { colors } from "../../src/theme/colors";
 import {
+  getPersonalRatingPresentation,
+  PersonalRatingBadge,
   TitleGridCard,
   ViewOptionsPanel,
   type ViewOptionsSection,
@@ -720,6 +721,7 @@ export default function LibraryScreen() {
                     })
                   }
                   posterUrl={item.posterUrl}
+                  personalRating={item.personalRating}
                   style={{ width: gridCardWidth }}
                   title={item.title}
                   type={item.type}
@@ -728,9 +730,9 @@ export default function LibraryScreen() {
             }
 
             const tmdbRating = typeof item.voteAverage === "number" ? item.voteAverage.toFixed(1) : null;
-            const personalRating = item.personalRating === null
-              ? null
-              : formatPersonalRating(item.personalRating);
+            const personalRatingPresentation = getPersonalRatingPresentation(
+              item.personalRating
+            );
             const overview = item.overview?.trim() ?? "";
             const tagsPreview = (item.tags ?? []).slice(0, 3);
 
@@ -747,7 +749,9 @@ export default function LibraryScreen() {
               >
                 <Pressable
                   accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}${
-                    personalRating ? `. Mi puntuación: ${personalRating} de 10` : ""
+                    personalRatingPresentation
+                      ? `. ${personalRatingPresentation.accessibilityLabel}`
+                      : ""
                   }`}
                   accessibilityRole="button"
                   focusable
@@ -793,12 +797,7 @@ export default function LibraryScreen() {
                         <Pill text={titleTypeLabel(item.type)} />
                         <Pill text={`Estado: ${titleStatusLabel(item.status)}`} />
                         {tmdbRating && <Pill text={`TMDB ${tmdbRating}/10`} />}
-                        {personalRating && (
-                          <Pill
-                            accessibilityLabel={`Mi puntuación: ${personalRating} de 10`}
-                            text={`Mi puntuación ${personalRating}/10`}
-                          />
-                        )}
+                        <PersonalRatingBadge value={item.personalRating} />
                       </View>
 
                       {!!overview && (

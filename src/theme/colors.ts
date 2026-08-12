@@ -11,4 +11,10 @@ export const colors = {
   primary: "#ffffff",
   danger: "#4a1f1f",
   dangerBorder: "#5a2a2a",
+  personalRatingLowBackground: "#f4b8b8",
+  personalRatingLowText: "#4a1111",
+  personalRatingMediumBackground: "#f3d88a",
+  personalRatingMediumText: "#3f2c00",
+  personalRatingHighBackground: "#a9ddb9",
+  personalRatingHighText: "#123a20",
 };
