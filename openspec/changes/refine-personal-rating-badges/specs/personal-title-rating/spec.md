@@ -25,8 +25,8 @@ El sistema MUST presentar cada puntuación personal visible en Biblioteca y en u
 - **WHEN** una pill muestra visualmente `7.4`
 - **THEN** la información accesible expresa conceptualmente `Mi puntuación: 7.4 de 10`
 - **AND** cada superficie aporta esa información desde una única fuente accesible y la anuncia una sola vez
-- **AND** cuando el contenedor principal ya incorpora la puntuación en su etiqueta accesible, el badge visual queda fuera del árbol accesible para evitar un anuncio duplicado
-- **AND** cuando el propio badge aporta la información accesible, lo hace sin crear un focus target adicional
+- **AND** el contenedor principal incorpora la puntuación en su etiqueta accesible
+- **AND** el badge visual queda fuera del árbol accesible para evitar un anuncio duplicado o un target adicional
 - **AND** la pill permanece como metadata pasiva, sin rol de botón ni nuevo control interactivo
 
 ## MODIFIED Requirements

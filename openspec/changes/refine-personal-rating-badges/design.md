@@ -25,7 +25,7 @@ El cambio cruza componentes compartidos, dos pantallas y tokens visuales, pero n
 
 Crear un componente de presentación equivalente a `PersonalRatingBadge` dentro de la UI compartida de browsing. Recibe `number | null` (o sólo un valor no nulo si el caller decide la ausencia), valida/formatea mediante las utilidades vigentes y resuelve un único variant semántico `low | medium | high` desde los límites canónicos `74/75` y `84/85`.
 
-El componente renderiza sólo el texto producido por `formatPersonalRating(...)`, centraliza la descripción accesible conceptual y permite que cada superficie elija una única fuente accesible: el propio badge o su contenedor principal. Cuando el contenedor ya anuncia la puntuación, el badge visual se excluye explícitamente del árbol accesible; cuando el badge aporta el anuncio, continúa siendo una `View` pasiva sin `Pressable`, rol interactivo ni focus target. El contrato no fija el nombre de una prop para esta selección. Alternativas descartadas: repetir condiciones y estilos en cada pantalla, porque divergirían; clasificar sobre el decimal visible, porque el contrato de rangos está definido sobre el entero canónico.
+La utilidad compartida devuelve sólo valor canónico, texto, rango semántico y descripción accesible conceptual; permanece independiente de la paleta. El componente renderiza sólo el texto producido por esa utilidad, resuelve el rango semántico contra los tokens visuales vigentes y queda siempre excluido del árbol accesible. La navegación o contenedor principal de cada superficie será la única fuente accesible y usará la descripción centralizada, mientras el badge continúa como `View` visual sin `Pressable`, rol interactivo ni focus target. Alternativas descartadas: repetir condiciones y estilos en cada pantalla, porque divergirían; clasificar sobre el decimal visible, porque el contrato de rangos está definido sobre el entero canónico; acoplar la utilidad semántica a la paleta, porque dificultaría un futuro cambio visual.
 
 ### 2. Colores semánticos en el tema vigente
 
@@ -45,7 +45,7 @@ Alternativa descartada: variantes `library/tags/search`, porque acoplan el compo
 
 Cuando recibe una puntuación no nula, `TitleGridCard` incorpora “Mi puntuación: X de 10” al `accessibilityLabel` de su `Pressable` principal, junto con el estado de pin si corresponde. En este contexto el badge visual queda explícitamente fuera del árbol accesible: el `Pressable` principal es la única fuente accesible de la puntuación y la anuncia una sola vez. Los indicadores internos permanecen pasivos, sin foco ni rol interactivo.
 
-En las filas Detalle se aplica la misma regla de fuente única. Si la navegación principal incorpora la puntuación en su etiqueta accesible, el badge visual es decorativo; si la superficie delega el anuncio al badge, el contenedor no lo repite. En ambos casos se anuncia “Mi puntuación: X de 10” una sola vez y el badge nunca adquiere interacción ni foco propio.
+En las filas Detalle se aplica la misma regla: la navegación principal incorpora la puntuación en su etiqueta accesible y el badge visual permanece decorativo. En todas las superficies previstas se anuncia “Mi puntuación: X de 10” una sola vez y el badge nunca adquiere interacción ni foco propio.
 
 ### 5. Integración mínima y exclusiones explícitas
 
