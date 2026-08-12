@@ -98,7 +98,8 @@ for (const token of [
 ]) {
   assert.match(badge, new RegExp(`colors\\.${token}`));
 }
-assert.doesNotMatch(grid, /personalRating|PersonalRatingBadge/);
+assert.match(grid, /personalRating\?: PersonalRating/);
+assert.match(grid, /PersonalRatingBadge/);
 assert.doesNotMatch(search, /personalRating|PersonalRatingBadge/);
 assert.doesNotMatch(collage, /personalRating|PersonalRatingBadge/);
 

@@ -11,9 +11,12 @@ import {
 } from "react-native";
 
 import type { TitleType } from "../../core/savedTitle";
+import type { PersonalRating } from "../../core/personalRating";
 import { titleTypeLabel } from "../../core/presentationLabels";
 import { colors } from "../../theme/colors";
+import { PersonalRatingBadge } from "./PersonalRatingBadge";
 import { PosterPlaceholder } from "./PosterPlaceholder";
+import { getPersonalRatingPresentation } from "./personalRatingPresentation";
 
 export type TitleGridCardProps = {
   title: string;
@@ -22,6 +25,7 @@ export type TitleGridCardProps = {
   onPress: () => void;
   accessibilityLabel: string;
   isPinned?: boolean;
+  personalRating?: PersonalRating;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -32,6 +36,7 @@ export function TitleGridCard({
   onPress,
   accessibilityLabel,
   isPinned = false,
+  personalRating = null,
   style,
 }: TitleGridCardProps) {
   const [imageFailed, setImageFailed] = useState(false);
@@ -41,10 +46,18 @@ export function TitleGridCard({
   }, [posterUrl]);
 
   const showImage = Boolean(posterUrl) && !imageFailed;
+  const personalRatingPresentation = getPersonalRatingPresentation(personalRating);
+  const composedAccessibilityLabel = [
+    accessibilityLabel,
+    isPinned ? "fijado" : null,
+    personalRatingPresentation?.accessibilityLabel ?? null,
+  ]
+    .filter((part): part is string => part !== null)
+    .join(". ");
 
   return (
     <Pressable
-      accessibilityLabel={isPinned ? `${accessibilityLabel}, fijado` : accessibilityLabel}
+      accessibilityLabel={composedAccessibilityLabel}
       accessibilityRole="button"
       focusable
       onPress={onPress}
@@ -73,6 +86,7 @@ export function TitleGridCard({
       ) : null}
 
       <View accessible={false} pointerEvents="none" style={styles.titleOverlay}>
+        <PersonalRatingBadge value={personalRating} style={styles.ratingBadge} />
         <Text ellipsizeMode="tail" numberOfLines={2} style={styles.title}>
           {title}
         </Text>
@@ -134,6 +148,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     justifyContent: "flex-end",
+  },
+  ratingBadge: {
+    marginBottom: 5,
   },
   title: {
     color: colors.text,

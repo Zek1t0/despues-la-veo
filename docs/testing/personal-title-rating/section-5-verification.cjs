@@ -36,12 +36,15 @@ const search = read("app/(tabs)/buscar.tsx");
 const collage = read("src/components/browsing/TagCollage.tsx");
 
 for (const source of [library, tags]) {
-  assert.match(source, /formatPersonalRating\(item\.personalRating\)/);
-  assert.match(source, /Mi puntuación/);
+  assert.match(source, /getPersonalRatingPresentation/);
+  assert.match(source, /PersonalRatingBadge/);
+  assert.match(source, /personalRating=\{item\.personalRating\}/);
 }
 assert.match(library, /TMDB \$\{tmdbRating\}\/10/);
-assert.doesNotMatch(grid, /personalRating|Mi puntuación/);
-assert.doesNotMatch(search, /personalRating|Mi puntuación/);
-assert.doesNotMatch(collage, /personalRating|Mi puntuación/);
+assert.match(grid, /personalRating\?: PersonalRating/);
+assert.match(grid, /PersonalRatingBadge/);
+assert.match(grid, /personalRatingPresentation\?\.accessibilityLabel/);
+assert.doesNotMatch(search, /personalRating|PersonalRatingBadge/);
+assert.doesNotMatch(collage, /personalRating|PersonalRatingBadge/);
 
 console.log("Section 5 passive personal rating presentation verification passed.");
