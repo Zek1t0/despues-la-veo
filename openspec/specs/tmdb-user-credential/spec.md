@@ -1,8 +1,10 @@
+# tmdb-user-credential Specification
+
 ## Purpose
 
 Permitir que cada persona configure localmente su propio API Read Access Token de TMDB y que el acceso remoto se degrade de forma segura sin afectar la biblioteca local.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cada instalación usa una única credencial TMDB configurada por el usuario
 El sistema MUST usar como única credencial para requests autenticados a TMDB el API Read Access Token configurado por el usuario, MUST enviarlo como Bearer token y MUST dejar de obtener credenciales de variables públicas de entorno, credenciales compartidas, backend o proxy.
@@ -301,13 +303,15 @@ El sistema MUST mantener operativas todas las funciones locales cuando la creden
 - **AND** si falla se aplica el tratamiento existente de imagen ausente o fallida
 
 ### Requirement: la app incluye attribution mínimo y acceso a información de TMDB
-El sistema MUST ofrecer desde Ajustes una screen o sección separada `Acerca de / Créditos` que identifique a TMDB como servicio externo, use un logo oficial aprobado, enlace a TMDB e incluya el notice requerido sin mezclar credencial ni estado de configuración.
+El sistema MUST ofrecer desde Ajustes una screen o sección separada `Acerca de / Créditos` que identifique a TMDB como servicio externo, use un logo oficial aprobado, enlace a TMDB e incluya el notice requerido sin mezclar credencial ni estado de configuración, y MUST atribuir a JustWatch los datos de disponibilidad en streaming, alquiler y compra provistos a través de TMDB.
 
 #### Scenario: créditos de TMDB
 - **WHEN** el usuario abre `Acerca de / Créditos`
 - **THEN** ve un logo oficial aprobado de TMDB
 - **AND** ve exactamente `This product uses the TMDB API but is not endorsed or certified by TMDB.`
 - **AND** dispone de un enlace a TMDB y una indicación de que es un servicio externo
+- **AND** ve exactamente `Los datos de disponibilidad en streaming, alquiler y compra son provistos por JustWatch a través de TMDB.`
+- **AND** dispone de un enlace a `https://www.justwatch.com/`
 
 #### Scenario: separación respecto de la credencial
 - **WHEN** se presenta la attribution
