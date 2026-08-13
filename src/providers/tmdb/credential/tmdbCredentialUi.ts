@@ -37,6 +37,69 @@ export type TmdbUiError = Readonly<{
   retryable: boolean;
 }>;
 
+export type TmdbRemoteErrorPresentation = Readonly<{
+  title: string;
+  message: string | null;
+  action: "configure" | "change" | "retry" | null;
+}>;
+
+export function presentTmdbRemoteError(error: unknown): TmdbRemoteErrorPresentation {
+  if (!isTmdbError(error)) {
+    return {
+      title: "TMDB no está disponible",
+      message: "No pudimos completar la consulta. Intentá nuevamente.",
+      action: "retry",
+    };
+  }
+
+  switch (error.kind) {
+    case "credential-not-configured":
+      return {
+        title: "TMDB no está configurado",
+        message: "Configurá tu API Read Access Token para consultar TMDB. La Biblioteca local sigue disponible.",
+        action: "configure",
+      };
+    case "credential-storage-error":
+      return {
+        title: "No pudimos acceder a la configuración de TMDB",
+        message: "La Biblioteca local sigue disponible. Reintentá el acceso a la configuración.",
+        action: "retry",
+      };
+    case "credential-invalid":
+      return {
+        title: "TMDB rechazó la credencial configurada",
+        message: "Cambiá el API Read Access Token para volver a consultar TMDB.",
+        action: "change",
+      };
+    case "network":
+      return {
+        title: "No pudimos conectar con TMDB",
+        message: "Revisá tu conexión e intentá nuevamente.",
+        action: "retry",
+      };
+    case "rate-limited":
+      return {
+        title: "TMDB limitó temporalmente las consultas",
+        message: "Esperá un momento e intentá nuevamente.",
+        action: "retry",
+      };
+    case "http":
+      return {
+        title: "TMDB no está disponible por el momento",
+        message: "Intentá nuevamente más tarde.",
+        action: "retry",
+      };
+    case "invalid-response":
+      return {
+        title: "TMDB devolvió una respuesta inesperada",
+        message: "Intentá nuevamente.",
+        action: "retry",
+      };
+    case "aborted":
+      return { title: "", message: null, action: null };
+  }
+}
+
 export function presentTmdbMutationError(error: unknown): TmdbUiError {
   if (!isTmdbError(error)) {
     return {
