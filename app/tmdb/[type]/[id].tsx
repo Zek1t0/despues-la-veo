@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -30,6 +30,18 @@ import type {
 
 import { getByProviderExternal, saveTmdbTitle } from "../../../src/storage/savedTitlesRepo";
 import { colors } from "../../../src/theme/colors";
+import { useTmdbCredential } from "../../../src/providers/tmdb/credential/TmdbCredentialProvider";
+import {
+  presentTmdbRemoteError,
+  TMDB_SETTINGS_ROUTE,
+  TMDB_TOKEN_URL,
+  type TmdbRemoteErrorPresentation,
+} from "../../../src/providers/tmdb/credential/tmdbCredentialUi";
+import {
+  isTmdbDetailLoadingVisible,
+  sameTmdbRemoteRequest,
+  type TmdbRemoteRequestIdentity,
+} from "../../../src/providers/tmdb/credential/tmdbRemoteRequestIdentity";
 
 function uuid() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -101,30 +113,62 @@ function uniqByName(arr: { provider_name: string }[]) {
 
 export default function TmdbDetailScreen() {
   const router = useRouter();
+  const { snapshot, retryInitialization } = useTmdbCredential();
   const { type, id } = useLocalSearchParams<{ type: "movie" | "tv"; id: string }>();
 
   const [data, setData] = useState<any>(null);
   const [credits, setCredits] = useState<TmdbCreditsResponse | null>(null);
   const [watch, setWatch] = useState<TmdbWatchProvidersCountry | null>(null);
 
-  const [loading, setLoading] = useState(true);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [overviewExpanded, setOverviewExpanded] = useState(false);
+  const [loadError, setLoadError] = useState<TmdbRemoteErrorPresentation | null>(null);
+  const [loadErrorContext, setLoadErrorContext] = useState<{ resource: string; generation: number; retry: number } | null>(null);
+  const [loadRetry, setLoadRetry] = useState(0);
+  const [loadedRemoteIdentity, setLoadedRemoteIdentity] = useState<{ resource: string; generation: number } | null>(null);
+  const loadSequence = useRef(0);
+  const currentLoadIdentity = useRef<TmdbRemoteRequestIdentity>({ sequence: 0, resource: "", generation: 0 });
+  const mounted = useRef(true);
 
   useEffect(() => {
-    let cancelled = false;
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      loadSequence.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    const sequence = ++loadSequence.current;
+    const identity = { sequence, resource: `${type ?? ""}/${id ?? ""}`, generation: snapshot.generation };
+    currentLoadIdentity.current = identity;
+    const isCurrent = () => mounted.current && sameTmdbRemoteRequest(identity, currentLoadIdentity.current);
+    setLoadError(null);
+    setLoadErrorContext(null);
 
     async function run() {
       if (!type || !id) return;
-      setLoading(true);
+      setData(null);
+      setCredits(null);
+      setWatch(null);
+      setLoadedRemoteIdentity(null);
+
+      const externalId = String(id);
+      try {
+        const existing = await getByProviderExternal("tmdb", externalId);
+        if (isCurrent()) setSavedId(existing?.id ?? null);
+      } catch {
+        if (isCurrent()) setSavedId(null);
+      }
+
+      if (!isCurrent()) return;
+      if (snapshot.status !== "configured") {
+        return;
+      }
 
       try {
         const numId = Number(id);
-        const externalId = String(id);
-
-        const existing = await getByProviderExternal("tmdb", externalId);
-        if (!cancelled) setSavedId(existing?.id ?? null);
 
         const [d, c, w] = await Promise.all([
           type === "movie" ? getMovieDetails(numId) : getTvDetails(numId),
@@ -134,29 +178,45 @@ export default function TmdbDetailScreen() {
 
         const country = w?.results?.AR ?? w?.results?.US ?? null;
 
-        if (!cancelled) {
+        if (isCurrent()) {
           setData(d);
           setCredits(c);
           setWatch(country);
+          setLoadedRemoteIdentity({ resource: identity.resource, generation: identity.generation });
         }
-      } catch (e: any) {
-        console.error(e);
-        if (!cancelled) {
+      } catch (e) {
+        const presented = presentTmdbRemoteError(e);
+        if (isCurrent()) {
           setData(null);
           setCredits(null);
           setWatch(null);
-          Alert.alert("Error", e?.message ?? "No se pudo cargar.");
+          setLoadedRemoteIdentity(null);
+          if (presented.message !== null) {
+            setLoadError(presented);
+            setLoadErrorContext({ resource: identity.resource, generation: identity.generation, retry: loadRetry });
+          }
         }
-      } finally {
-        if (!cancelled) setLoading(false);
       }
     }
 
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [type, id]);
+    void run();
+  }, [type, id, loadRetry, snapshot.generation, snapshot.status]);
+
+  const openTokenPage = useCallback(async () => {
+    try {
+      await Linking.openURL(TMDB_TOKEN_URL);
+    } catch {
+      Alert.alert("No pudimos abrir TMDB", "Abrí la configuración de TMDB e intentá nuevamente.");
+    }
+  }, []);
+
+  const retryCredentialAccess = useCallback(async () => {
+    try {
+      await retryInitialization();
+    } catch {
+      // El provider publica storage-error; el detalle permite otro intento sin requests TMDB.
+    }
+  }, [retryInitialization]);
 
   const title = useMemo(() => {
     if (!data) return "";
@@ -219,7 +279,7 @@ export default function TmdbDetailScreen() {
   }
 
   async function saveToLibrary() {
-    if (!data || !type || !id) return;
+    if (!hasCurrentData || !data || !type || !id) return;
 
     const wasSaved = savedId !== null;
     const externalId = String(id);
@@ -268,6 +328,57 @@ export default function TmdbDetailScreen() {
     if (savedId) router.push(`/title/${savedId}`);
   }
 
+  const unavailableState = snapshot.status === "not-configured"
+    ? {
+        title: "TMDB no está configurado",
+        message: "Configurá tu token para cargar este detalle. La Biblioteca local sigue disponible.",
+      }
+    : snapshot.status === "storage-error"
+      ? {
+          title: "No pudimos acceder a la configuración de TMDB",
+          message: "La Biblioteca local sigue disponible. Reintentá el acceso a la configuración.",
+        }
+      : null;
+
+  const currentResource = `${type ?? ""}/${id ?? ""}`;
+  const visibleLoadError = snapshot.status === "configured"
+    && loadErrorContext?.resource === currentResource
+    && loadErrorContext.generation === snapshot.generation
+    && loadErrorContext.retry === loadRetry
+      ? loadError
+      : null;
+  const hasCurrentData = snapshot.status === "configured"
+    && data !== null
+    && loadedRemoteIdentity?.resource === currentResource
+    && loadedRemoteIdentity.generation === snapshot.generation;
+  const visibleLoading = isTmdbDetailLoadingVisible({
+    validRoute: Boolean(type && id),
+    status: snapshot.status,
+    hasCurrentData,
+    hasCurrentError: visibleLoadError !== null,
+  });
+
+  const actionButton = (label: string, onPress: () => void) => (
+    <Pressable
+      accessibilityLabel={label}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => ({
+        alignItems: "center",
+        backgroundColor: colors.card2,
+        borderColor: colors.border2,
+        borderRadius: 12,
+        borderWidth: 1,
+        justifyContent: "center",
+        minHeight: 44,
+        opacity: pressed ? 0.78 : 1,
+        paddingHorizontal: 14,
+      })}
+    >
+      <Text style={{ color: colors.text, fontWeight: "900" }}>{label}</Text>
+    </Pressable>
+  );
+
   return (
     <>
       <Stack.Screen
@@ -279,17 +390,37 @@ export default function TmdbDetailScreen() {
       />
 
       <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 40 }}>
-        {loading ? (
+        {visibleLoading ? (
           <View style={{ gap: 10, alignItems: "center", paddingTop: 30 }}>
             <ActivityIndicator />
-            <Text style={{ color: colors.muted, fontWeight: "700" }}>Cargando…</Text>
+            <Text style={{ color: colors.muted, fontWeight: "700" }}>
+              {snapshot.status === "initializing" ? "Comprobando la configuración de TMDB…" : "Cargando…"}
+            </Text>
           </View>
-        ) : !data ? (
+        ) : !hasCurrentData ? (
           <View style={{ gap: 10 }}>
             <Text style={{ color: colors.text, fontWeight: "900", fontSize: 18 }}>
-              No se pudo cargar
+              {unavailableState?.title ?? visibleLoadError?.title ?? "No se pudo cargar"}
             </Text>
-            <Text style={{ color: colors.muted }}>Probá volver y entrar de nuevo.</Text>
+            <Text style={{ color: colors.muted }}>
+              {unavailableState?.message ?? visibleLoadError?.message ?? "Intentá nuevamente."}
+            </Text>
+            {snapshot.status === "not-configured" && (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {actionButton("Configurar TMDB", () => router.push(TMDB_SETTINGS_ROUTE))}
+                {actionButton("Obtener token", () => void openTokenPage())}
+              </View>
+            )}
+            {snapshot.status === "storage-error" && (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {actionButton("Reintentar acceso", () => void retryCredentialAccess())}
+                {actionButton("Configurar TMDB", () => router.push(TMDB_SETTINGS_ROUTE))}
+              </View>
+            )}
+            {snapshot.status === "configured" && visibleLoadError?.action === "change" &&
+              actionButton("Cambiar token", () => router.push(TMDB_SETTINGS_ROUTE))}
+            {snapshot.status === "configured" && visibleLoadError?.action === "retry" &&
+              actionButton("Reintentar", () => setLoadRetry((value) => value + 1))}
           </View>
         ) : (
           <>

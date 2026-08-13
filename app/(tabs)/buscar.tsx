@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Pressable, Text, TextInput, View, Image, Platform, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Pressable, Text, TextInput, View, Image, Linking, Platform, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { posterUrl, searchMulti } from "../../src/providers/tmdb/tmdbApi";
@@ -19,15 +19,33 @@ import {
   type ViewOptionsSection,
 } from "../../src/components/browsing";
 import { colors } from "../../src/theme/colors";
+import { useTmdbCredential } from "../../src/providers/tmdb/credential/TmdbCredentialProvider";
+import {
+  presentTmdbRemoteError,
+  TMDB_SETTINGS_ROUTE,
+  TMDB_TOKEN_URL,
+  type TmdbRemoteErrorPresentation,
+} from "../../src/providers/tmdb/credential/tmdbCredentialUi";
+import {
+  sameTmdbRemoteRequest,
+  isTmdbSearchDebounceSettled,
+  isTmdbSearchObservationEqual,
+  shouldRunTmdbSearch,
+  type TmdbRemoteRequestIdentity,
+  type TmdbSearchObservation,
+} from "../../src/providers/tmdb/credential/tmdbRemoteRequestIdentity";
 
 export default function ExploreScreen() {
   const router = useRouter();
+  const { snapshot, retryInitialization } = useTmdbCredential();
   const { width: windowWidth } = useWindowDimensions();
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
   const [items, setItems] = useState<TmdbSearchItem[]>([]);
+  const [itemsIdentity, setItemsIdentity] = useState<{ query: string; generation: number } | null>(null);
   const [loading, setLoading] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchError, setSearchError] = useState<TmdbRemoteErrorPresentation | null>(null);
+  const [searchRetry, setSearchRetry] = useState(0);
   const [viewMode, setViewMode] = useState<SearchViewMode>(
     VIEW_PREFERENCE_DEFAULTS["search.viewMode"]
   );
@@ -42,6 +60,9 @@ export default function ExploreScreen() {
   const viewModeWriteQueue = useRef<Promise<void>>(Promise.resolve());
   const viewModeSelectionId = useRef(0);
   const mounted = useRef(true);
+  const searchSequence = useRef(0);
+  const currentSearchIdentity = useRef<TmdbRemoteRequestIdentity>({ sequence: 0, resource: "", generation: 0 });
+  const previousSearchObservation = useRef<TmdbSearchObservation | null>(null);
 
   const showPreferenceError = useCallback(() => {
     const message = "No se pudo guardar la apariencia. Se restauró el último valor guardado.";
@@ -157,11 +178,37 @@ export default function ExploreScreen() {
   }, [q]);
 
   useEffect(() => {
-    let cancelled = false;
+    const currentQuery = q.trim();
+    const debounceSettled = isTmdbSearchDebounceSettled(currentQuery, debounced);
+    const observation = {
+      rawQuery: currentQuery,
+      debouncedQuery: debounced,
+      status: snapshot.status,
+      generation: snapshot.generation,
+      retry: searchRetry,
+    } as const;
+    const previousObservation = previousSearchObservation.current;
+    if (isTmdbSearchObservationEqual(previousObservation, observation)) return;
+
+    const shouldRun = shouldRunTmdbSearch(previousObservation, observation);
+    previousSearchObservation.current = observation;
+    const sequence = ++searchSequence.current;
+    const identity = { sequence, resource: currentQuery, generation: snapshot.generation };
+    currentSearchIdentity.current = identity;
+    const isCurrent = () => mounted.current && sameTmdbRemoteRequest(identity, currentSearchIdentity.current);
 
     async function run() {
-      if (!debounced) {
+      if (!currentQuery) {
         setItems([]);
+        setItemsIdentity(null);
+        setSearchError(null);
+        setLoading(false);
+        return;
+      }
+      if (!shouldRun) {
+        if (snapshot.status === "configured" && debounceSettled) return;
+        setItems([]);
+        setItemsIdentity(null);
         setSearchError(null);
         setLoading(false);
         return;
@@ -169,25 +216,81 @@ export default function ExploreScreen() {
       setLoading(true);
       setSearchError(null);
       try {
-        const res = await searchMulti(debounced, 1);
+        const res = await searchMulti(currentQuery, 1);
         const filtered = res.results.filter((r) => r.media_type === "movie" || r.media_type === "tv");
-        if (!cancelled) setItems(filtered);
+        if (isCurrent()) {
+          setItems(filtered);
+          setItemsIdentity({ query: identity.resource, generation: identity.generation });
+        }
       } catch (e) {
-        console.error(e);
-        if (!cancelled) {
+        const presented = presentTmdbRemoteError(e);
+        if (isCurrent() && presented.message !== null) {
           setItems([]);
-          setSearchError("No se pudo completar la búsqueda. Probá de nuevo.");
+          setItemsIdentity(null);
+          setSearchError(presented);
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (isCurrent()) setLoading(false);
       }
     }
 
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [debounced]);
+    void run();
+  }, [q, debounced, searchRetry, snapshot.generation, snapshot.status]);
+
+  const openTokenPage = useCallback(async () => {
+    try {
+      await Linking.openURL(TMDB_TOKEN_URL);
+    } catch {
+      Alert.alert("No pudimos abrir TMDB", "Abrí la configuración de TMDB e intentá nuevamente.");
+    }
+  }, []);
+
+  const retryCredentialAccess = useCallback(async () => {
+    try {
+      await retryInitialization();
+    } catch {
+      // El provider publica storage-error; Search conserva la query y permite otro intento.
+    }
+  }, [retryInitialization]);
+
+  const credentialState = snapshot.status === "initializing"
+    ? { title: "Comprobando la configuración de TMDB…", message: "Tu búsqueda queda lista mientras comprobamos la credencial." }
+    : snapshot.status === "not-configured"
+      ? { title: "TMDB no está configurado", message: "Configurá tu token para buscar. La Biblioteca local sigue disponible." }
+      : snapshot.status === "storage-error"
+        ? { title: "No pudimos acceder a la configuración de TMDB", message: "La Biblioteca local sigue disponible. Podés reintentar el acceso." }
+        : null;
+  const currentQuery = q.trim();
+  const debounceSettled = isTmdbSearchDebounceSettled(currentQuery, debounced);
+  const visibleSearchError = debounceSettled ? searchError : null;
+  const visibleLoading = debounceSettled && loading;
+  const visibleItems = snapshot.status === "configured"
+    && debounceSettled
+    && itemsIdentity?.query === debounced
+    && itemsIdentity.generation === snapshot.generation
+      ? items
+      : [];
+
+  const actionButton = (label: string, onPress: () => void) => (
+    <Pressable
+      accessibilityLabel={label}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => ({
+        alignItems: "center",
+        backgroundColor: colors.card2,
+        borderColor: colors.border2,
+        borderRadius: 12,
+        borderWidth: 1,
+        justifyContent: "center",
+        minHeight: 44,
+        opacity: pressed ? 0.78 : 1,
+        paddingHorizontal: 14,
+      })}
+    >
+      <Text style={{ color: colors.text, fontWeight: "900" }}>{label}</Text>
+    </Pressable>
+  );
 
   return (
     <View
@@ -242,7 +345,7 @@ export default function ExploreScreen() {
         </Pressable>
       </View>
 
-      {loading && (
+      {visibleLoading && (
         <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
           <ActivityIndicator color={colors.text} />
           <Text style={{ color: colors.muted }}>Buscando…</Text>
@@ -251,12 +354,12 @@ export default function ExploreScreen() {
 
       <FlatList
         columnWrapperStyle={listColumns > 1 ? { gap: gridGap } : undefined}
-        data={items}
+        data={visibleItems}
         key={listLayoutKey}
         keyExtractor={(x) => `${x.media_type}-${x.id}`}
         numColumns={listColumns}
         contentContainerStyle={{
-          flexGrow: items.length === 0 ? 1 : undefined,
+          flexGrow: visibleItems.length === 0 ? 1 : undefined,
           gap: viewMode === "grid" ? gridGap : 10,
           paddingBottom: 24,
         }}
@@ -341,20 +444,40 @@ export default function ExploreScreen() {
           );
         }}
         ListEmptyComponent={
-          loading ? null : (
+          visibleLoading ? null : (
             <View style={{ gap: 8, paddingVertical: 20 }}>
               <Text style={{ color: colors.text, fontSize: 17, fontWeight: "900" }}>
-                {debounced.length === 0
+                {currentQuery.length === 0
                   ? "Buscá una película o serie"
-                  : searchError
-                    ? "No se pudo buscar"
+                  : credentialState
+                    ? credentialState.title
+                  : visibleSearchError
+                    ? visibleSearchError.title
                     : "No encontré resultados"}
               </Text>
               <Text style={{ color: colors.muted }}>
-                {debounced.length === 0
+                {currentQuery.length === 0
                   ? "Escribí un título para consultar TMDB."
-                  : searchError ?? "Probá con otro título."}
+                  : credentialState
+                    ? credentialState.message
+                    : visibleSearchError?.message ?? "Probá con otro título."}
               </Text>
+              {currentQuery.length > 0 && snapshot.status === "not-configured" && (
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                  {actionButton("Obtener token", () => void openTokenPage())}
+                  {actionButton("Configurar TMDB", () => router.push(TMDB_SETTINGS_ROUTE))}
+                </View>
+              )}
+              {currentQuery.length > 0 && snapshot.status === "storage-error" && (
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                  {actionButton("Reintentar acceso", () => void retryCredentialAccess())}
+                  {actionButton("Configurar TMDB", () => router.push(TMDB_SETTINGS_ROUTE))}
+                </View>
+              )}
+              {debounceSettled && currentQuery.length > 0 && snapshot.status === "configured" && visibleSearchError?.action === "change" &&
+                actionButton("Cambiar token", () => router.push(TMDB_SETTINGS_ROUTE))}
+              {debounceSettled && currentQuery.length > 0 && snapshot.status === "configured" && visibleSearchError?.action === "retry" &&
+                actionButton("Reintentar búsqueda", () => setSearchRetry((value) => value + 1))}
             </View>
           )
         }
