@@ -383,6 +383,10 @@ export default function SettingsScreen() {
 
       <PrimaryButton label="Exportar biblioteca" onPress={onExport} disabled={busy} />
       <PrimaryButton label="Importar biblioteca" onPress={onImport} disabled={busy} />
+      <PrimaryButton
+        label="Acerca de / Créditos"
+        onPress={() => router.push("/settings/about")}
+      />
 
       {busy && (
         <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>

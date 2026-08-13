@@ -41,6 +41,7 @@ export default function RootLayout() {
         >
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="settings/tmdb" options={{ title: "Configurar TMDB" }} />
+          <Stack.Screen name="settings/about" options={{ title: "Acerca de / Créditos" }} />
         </Stack>
       </ThemeProvider>
     </TmdbCredentialProvider>

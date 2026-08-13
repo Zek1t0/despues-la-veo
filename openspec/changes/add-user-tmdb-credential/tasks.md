@@ -42,22 +42,22 @@ Implementar una sola sección lógica por vez: dentro de esa sección completar 
 
 ## 4. Search y detalle remoto
 
-- [ ] 4.1 Integrar el snapshot en Search: durante initializing/retry no buscar; en not-configured conservar query y mostrar CTAs; en storage-error hacer zero requests y conectar Reintentar real; comprobar `initializing→configured` y `storage-error→retry→configured` ejecutan la query pendiente exactamente una vez aunque generation no cambie, mientras retry→null/failure no busca.
-- [ ] 4.2 Implementar deduplicación por transición/identidad coherente sin imponer mecanismo React: disparar una vez por condición no usable→configured, o por configured→configured con generation nueva tras replacement; comprobar que save desde not-configured no dispara dos veces aunque status y generation cambien juntos, y que delete exitoso sólo invalida resultados.
-- [ ] 4.3 Traducir en Search `credential-invalid` a CTA Cambiar, network/rate-limit/http recuperable a Reintentar y `aborted` a salida silenciosa; comprobar zero search requests sin token y ausencia de errores genéricos incorrectos.
-- [ ] 4.4 Adaptar el detalle remoto para estados amistosos absent/invalid/network/http sin referencias a `.env` ni bodies técnicos, conservando sin refactor el `Promise.all` atómico de detalles, créditos y proveedores y bloqueando save/update cuando no hay metadata cargada.
-- [ ] 4.5 Añadir harnesses de Search para startup hydration→configured+query una vez+generation unchanged, storage-error→retry→configured+query una vez, replacement configured→configured+generation nueva+query una vez, save absent→configured sin doble disparo, delete success sólo invalida, y cero búsqueda adicional por validation failure, candidate 401, network/timeout, retry failure/null, write/delete failure, snapshot/render repetido; conservar carreras delete pending y detalle remoto.
-- [ ] 4.6 Ejecutar regresiones de browsing cards, Search views, SavedTitle re-save y provider, más `npx.cmd tsc --noEmit` y OpenSpec strict; comprobar que no cambiaron sorting, views, rating, pins ni metadata personal.
-- [ ] 4.7 **STOP / REVIEW:** presentar máquina de estados de Search, conteos de requests, transiciones no-token→configured→removed, manejo del detalle y evidencia de carga atómica preservada antes de attribution.
+- [x] 4.1 Integrar el snapshot en Search: durante initializing/retry no buscar; en not-configured conservar query y mostrar CTAs; en storage-error hacer zero requests y conectar Reintentar real; comprobar `initializing→configured` y `storage-error→retry→configured` ejecutan la query pendiente exactamente una vez aunque generation no cambie, mientras retry→null/failure no busca.
+- [x] 4.2 Implementar deduplicación por transición/identidad coherente sin imponer mecanismo React: disparar una vez por condición no usable→configured, o por configured→configured con generation nueva tras replacement; comprobar que save desde not-configured no dispara dos veces aunque status y generation cambien juntos, y que delete exitoso sólo invalida resultados.
+- [x] 4.3 Traducir en Search `credential-invalid` a CTA Cambiar, network/rate-limit/http recuperable a Reintentar y `aborted` a salida silenciosa; comprobar zero search requests sin token y ausencia de errores genéricos incorrectos.
+- [x] 4.4 Adaptar el detalle remoto para estados amistosos absent/invalid/network/http sin referencias a `.env` ni bodies técnicos, conservando sin refactor el `Promise.all` atómico de detalles, créditos y proveedores y bloqueando save/update cuando no hay metadata cargada.
+- [x] 4.5 Añadir harnesses de Search para startup hydration→configured+query una vez+generation unchanged, storage-error→retry→configured+query una vez, replacement configured→configured+generation nueva+query una vez, save absent→configured sin doble disparo, delete success sólo invalida, y cero búsqueda adicional por validation failure, candidate 401, network/timeout, retry failure/null, write/delete failure, snapshot/render repetido; conservar carreras delete pending y detalle remoto.
+- [x] 4.6 Ejecutar regresiones de browsing cards, Search views, SavedTitle re-save y provider, más `npx.cmd tsc --noEmit` y OpenSpec strict; comprobar que no cambiaron sorting, views, rating, pins ni metadata personal.
+- [x] 4.7 **STOP / REVIEW:** presentar máquina de estados de Search, conteos de requests, transiciones no-token→configured→removed, manejo del detalle y evidencia de carga atómica preservada antes de attribution.
 
 ## 5. Attribution y Créditos
 
-- [ ] 5.1 Identificar desde fuentes oficiales el logo TMDB aprobado y las reglas vigentes de uso; registrar procedencia/licencia aplicable y detenerse si no puede verificarse que el asset elegido es oficial y permitido.
-- [ ] 5.2 Incorporar el asset oficial sin redibujar, recolorear, deformar ni hacerlo más prominente que la marca de la app; comprobar dimensiones, proporción, contraste y atribución del archivo.
-- [ ] 5.3 Crear una screen o sección separada `Acerca de / Créditos` enlazada desde Ajustes con el notice exacto `This product uses the TMDB API but is not endorsed or certified by TMDB.`, link a TMDB e indicación de servicio externo.
-- [ ] 5.4 Comprobar estructuralmente que Credits no importa credential service/store, no muestra token/status y no crea infraestructura legal general.
-- [ ] 5.5 Ejecutar harnesses/validaciones de contenido y assets, `npx.cmd tsc --noEmit` y OpenSpec strict.
-- [ ] 5.6 **STOP / REVIEW:** presentar fuente y uso del logo, screen final, notice exacto, links, accesibilidad y resultados antes de validación final.
+- [x] 5.1 Identificar desde fuentes oficiales el logo TMDB aprobado y las reglas vigentes de uso; registrar procedencia/licencia aplicable y detenerse si no puede verificarse que el asset elegido es oficial y permitido.
+- [x] 5.2 Incorporar el asset oficial sin redibujar, recolorear, deformar ni hacerlo más prominente que la marca de la app; comprobar dimensiones, proporción, contraste y atribución del archivo.
+- [x] 5.3 Crear una screen o sección separada `Acerca de / Créditos` enlazada desde Ajustes con el notice exacto `This product uses the TMDB API but is not endorsed or certified by TMDB.`, link a TMDB e indicación de servicio externo.
+- [x] 5.4 Comprobar estructuralmente que Credits no importa credential service/store, no muestra token/status y no crea infraestructura legal general.
+- [x] 5.5 Ejecutar harnesses/validaciones de contenido y assets, `npx.cmd tsc --noEmit` y OpenSpec strict.
+- [x] 5.6 **STOP / REVIEW:** presentar fuente y uso del logo, screen final, notice exacto, links, accesibilidad y resultados antes de validación final.
 
 ## 6. Validación integral, manual y revisión externa
 
