@@ -11,6 +11,8 @@ const layout = read("app/_layout.tsx");
 const sourceRecord = read("docs/testing/tmdb-user-credential/tmdb-logo-source.md");
 const logoPath = path.join(root, "assets/tmdb-primary-full-blue.png");
 const exactNotice = "This product uses the TMDB API but is not endorsed or certified by TMDB.";
+const justWatchAttribution =
+  "Los datos de disponibilidad en streaming, alquiler y compra son provistos por JustWatch a través de TMDB.";
 const legacyEnvName = ["EXPO", "PUBLIC", "TMDB", "TOKEN"].join("_");
 
 function testNavigation() {
@@ -23,19 +25,27 @@ function testNavigation() {
 
 function testAttributionAndLink() {
   assert.equal((about.match(new RegExp(exactNotice.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g")) || []).length, 1);
+  assert.equal(about.includes(justWatchAttribution), true);
+  assert.match(about, /JustWatch/);
   assert.match(about, /const TMDB_URL = "https:\/\/www\.themoviedb\.org";/);
-  assert.doesNotMatch(about, /TMDB_URL[^\n]*(?:token|Authorization|\?)/i);
-  assert.doesNotMatch(about, /Linking\.canOpenURL\(TMDB_URL\)/);
-  assert.match(about, /await Linking\.openURL\(TMDB_URL\)/);
+  assert.match(about, /const JUSTWATCH_URL = "https:\/\/www\.justwatch\.com\/";/);
+  assert.doesNotMatch(about, /(?:TMDB_URL|JUSTWATCH_URL)[^\n]*(?:token|Authorization|\?)/i);
+  assert.doesNotMatch(about, /Linking\.canOpenURL/);
+  assert.match(about, /const openExternalLink = async \(url: string, failureMessage: string\)/);
+  assert.match(about, /await Linking\.openURL\(url\)/);
+  assert.match(about, /openExternalLink\(\s*TMDB_URL,/);
+  assert.match(about, /openExternalLink\(\s*JUSTWATCH_URL,/);
   assert.match(about, /catch \{/);
   assert.match(about, /if \(linkOpeningRef\.current\) return;/);
   assert.match(about, /linkOpeningRef\.current = true;/);
   assert.match(about, /finally \{\s*linkOpeningRef\.current = false;/);
   assert.match(about, /mountedRef\.current = true;[\s\S]*?return \(\) => \{\s*mountedRef\.current = false;/);
-  assert.match(about, /catch \{\s*if \(mountedRef\.current\) \{\s*setLinkError\("No pudimos abrir TMDB/);
+  assert.match(about, /catch \{\s*if \(mountedRef\.current\) \{\s*setLinkError\(failureMessage\)/);
   assert.match(about, /No pudimos abrir TMDB/);
-  assert.match(about, /accessibilityRole="link"/);
-  assert.match(about, /minHeight: 44/);
+  assert.match(about, /No pudimos abrir JustWatch\. Intentá nuevamente desde tu navegador\./);
+  assert.match(about, /accessibilityLabel="Abrir el sitio oficial de JustWatch"\s*accessibilityRole="link"/);
+  assert.equal((about.match(/accessibilityRole="link"/g) || []).length, 2);
+  assert.equal((about.match(/minHeight: 44/g) || []).length, 2);
 }
 
 function testApprovedLogo() {
@@ -50,6 +60,8 @@ function testApprovedLogo() {
   assert.match(sourceRecord, /Primary full \(blue\)/);
   assert.match(sourceRecord, /https:\/\/www\.themoviedb\.org\/about\/logos-attribution/);
   assert.equal(fs.readdirSync(path.join(root, "assets")).filter((name) => /^tmdb-/i.test(name)).length, 1);
+  assert.equal(fs.readdirSync(path.join(root, "assets")).filter((name) => /justwatch/i.test(name)).length, 0);
+  assert.doesNotMatch(about, /require\([^\n]*justwatch/i);
 }
 
 function testIndependenceAndSecurity() {

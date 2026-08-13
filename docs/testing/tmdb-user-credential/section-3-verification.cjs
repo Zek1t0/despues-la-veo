@@ -184,6 +184,11 @@ function testReactNativeSourceContracts() {
   assert.equal(ui.TMDB_TOKEN_URL, "https://www.themoviedb.org/settings/api");
   assert.equal(/[?&](token|credential|api_key)=/i.test(ui.TMDB_TOKEN_URL), false);
   assert.match(screen, /Linking\.openURL\(TMDB_TOKEN_URL\)/);
+  assert.doesNotMatch(screen, /Linking\.canOpenURL/);
+  assert.match(screen, /const openTokenPage = async \(\) => \{\s*if \(!beginOperation\("opening-link"\)\) return;\s*setFeedback\(null\);/);
+  assert.match(screen, /try \{\s*await Linking\.openURL\(TMDB_TOKEN_URL\);\s*\} catch \{\s*if \(mountedRef\.current\)/);
+  assert.match(screen, /No pudimos abrir la página de TMDB\. Intentá nuevamente desde tu navegador\./);
+  assert.match(screen, /finally \{\s*finishOperation\(\);\s*\}/);
 
   assert.match(screen, /accessibilityLabel="API Read Access Token de TMDB"/);
   assert.match(screen, /accessibilityLabel=\{hidden \? "Mostrar token" : "Ocultar token"\}/);

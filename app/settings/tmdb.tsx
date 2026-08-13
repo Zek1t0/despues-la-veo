@@ -152,8 +152,6 @@ export default function TmdbSettingsScreen() {
     if (!beginOperation("opening-link")) return;
     setFeedback(null);
     try {
-      const supported = await Linking.canOpenURL(TMDB_TOKEN_URL);
-      if (!supported) throw new Error("unsupported");
       await Linking.openURL(TMDB_TOKEN_URL);
     } catch {
       if (mountedRef.current) {

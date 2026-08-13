@@ -5,6 +5,7 @@ import { Stack } from "expo-router";
 import { colors } from "../../src/theme/colors";
 
 const TMDB_URL = "https://www.themoviedb.org";
+const JUSTWATCH_URL = "https://www.justwatch.com/";
 const TMDB_NOTICE = "This product uses the TMDB API but is not endorsed or certified by TMDB.";
 
 export default function AboutScreen() {
@@ -19,15 +20,15 @@ export default function AboutScreen() {
     };
   }, []);
 
-  const openTmdb = async () => {
+  const openExternalLink = async (url: string, failureMessage: string) => {
     if (linkOpeningRef.current) return;
     linkOpeningRef.current = true;
     if (mountedRef.current) setLinkError(null);
     try {
-      await Linking.openURL(TMDB_URL);
+      await Linking.openURL(url);
     } catch {
       if (mountedRef.current) {
-        setLinkError("No pudimos abrir TMDB. Intentá nuevamente desde tu navegador.");
+        setLinkError(failureMessage);
       }
     } finally {
       linkOpeningRef.current = false;
@@ -79,12 +80,20 @@ export default function AboutScreen() {
           <Text style={{ color: colors.muted, lineHeight: 21 }}>
             Los datos remotos de películas y series son provistos por TMDB, un servicio externo.
           </Text>
+          <Text style={{ color: colors.muted, lineHeight: 21 }}>
+            Los datos de disponibilidad en streaming, alquiler y compra son provistos por JustWatch a través de TMDB.
+          </Text>
           <Text style={{ color: colors.text, lineHeight: 21 }}>{TMDB_NOTICE}</Text>
 
           <Pressable
             accessibilityLabel="Abrir el sitio oficial de TMDB"
             accessibilityRole="link"
-            onPress={() => void openTmdb()}
+            onPress={() =>
+              void openExternalLink(
+                TMDB_URL,
+                "No pudimos abrir TMDB. Intentá nuevamente desde tu navegador."
+              )
+            }
             style={({ pressed }) => ({
               alignItems: "center",
               backgroundColor: colors.card2,
@@ -99,6 +108,31 @@ export default function AboutScreen() {
             })}
           >
             <Text style={{ color: colors.text, fontWeight: "900" }}>Visitar TMDB</Text>
+          </Pressable>
+
+          <Pressable
+            accessibilityLabel="Abrir el sitio oficial de JustWatch"
+            accessibilityRole="link"
+            onPress={() =>
+              void openExternalLink(
+                JUSTWATCH_URL,
+                "No pudimos abrir JustWatch. Intentá nuevamente desde tu navegador."
+              )
+            }
+            style={({ pressed }) => ({
+              alignItems: "center",
+              backgroundColor: colors.card2,
+              borderColor: colors.border2,
+              borderRadius: 14,
+              borderWidth: 1,
+              justifyContent: "center",
+              minHeight: 44,
+              opacity: pressed ? 0.78 : 1,
+              paddingHorizontal: 14,
+              paddingVertical: 12,
+            })}
+          >
+            <Text style={{ color: colors.text, fontWeight: "900" }}>Visitar JustWatch</Text>
           </Pressable>
 
           {linkError !== null && (
