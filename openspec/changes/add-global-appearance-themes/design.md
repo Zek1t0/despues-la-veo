@@ -51,14 +51,23 @@ Alternatives rejected: complete independent themes duplicate unchanged values an
 
 The first `ThemeDefinition` contains:
 
-- Global: `background`, `surface`, `surfaceSecondary`, `inputBackground`, `textPrimary`, `textSecondary`, `textMuted`, `border`, `borderStrong`, `accent`, `onAccent`, `selectedSurface`, `selectedBorder`.
+- Global: `background`, `surface`, `surfaceSecondary`, `inputBackground`, `textPrimary`, `textSecondary`, `textMuted`, `border`, `borderStrong`, `accent`, `onAccent`, `selectedSurface`, `selectedForeground`, `selectedBorder`.
 - Semantic: `dangerSurface`, `dangerBorder`, `dangerText`, `disabledSurface`, `disabledText`, plus background/foreground pairs for personal rating low, medium and high.
 - Structural image/modal: `imageOverlay`, `imageOverlayStrong`, `onImageOverlay`, `imageOverlayBorder`, `modalBackdrop`.
 - Runtime metadata: effective scheme or an equivalent semantic flag sufficient to derive StatusBar and web `color-scheme`.
 
-The global group is palette-overridable under controlled typing. Semantic and structural groups are selected by effective scheme and are not arbitrary palette overrides. `onAccent` is explicit because accents can be light. `selectedSurface`/`selectedBorder` avoid using a strong accent indiscriminately. Disabled tokens are justified by repeated `#303030/#3b3b3b` literals. No typography, spacing or motion tokens are introduced.
+The global group is palette-overridable under controlled typing. Semantic and structural groups are selected by effective scheme and are not arbitrary palette overrides. `onAccent` is explicit because accents can be light. Selection is an independent, palette-overridable trio: `selectedSurface`, `selectedForeground`, `selectedBorder`. `selectedForeground` is mandatory because neither `textPrimary` nor `onAccent` is generally valid over a selected surface; consumers never infer or alias it automatically. Dark + Original resolves that trio to current `primary #ffffff`, current `bg #0b0b0b`, current `primary #ffffff`. Colored palettes override `selectedForeground` whenever their selected surface requires it. Disabled tokens are justified by repeated `#303030/#3b3b3b` literals. No typography, spacing or motion tokens are introduced.
 
-DarkBase + Original uses the current values from `colors.ts`; the root navigation duplicate, CSS scrollbar values, disabled literals and overlay literals are recorded in a parity fixture before migration. Reclassification changes ownership, not Dark + Original output.
+DarkBase + Original uses the current values from `colors.ts`; the root navigation duplicate, CSS scrollbar values, disabled literals and overlay literals are recorded in a parity fixture before migration. Reclassification changes ownership, not Dark + Original output. The parity fixture also records semantic foregrounds by `consumer/file → current value → future responsibility/token`, rather than inferring their meaning from equal hex values elsewhere. At minimum it captures:
+
+- `app/settings/tmdb.tsx` feedback/error text `#f4b8b8` → candidate `dangerText` responsibility, independently of PersonalRating low background using the same value.
+- `app/title/[id].tsx` rating error text `#5a2a2a` → current danger-border-as-text presentation, to preserve explicitly or identify as a separately reviewed future accessibility correction before migration.
+- `app/settings/tmdb.tsx` disabled surface `#303030` with current foreground `colors.text #f2f2f2`, and `app/(tabs)/ajustes.tsx`, `app/title/[id].tsx` and `app/tmdb/[type]/[id].tsx` disabled surface `#3b3b3b` with their actual current `colors.text #f2f2f2` foregrounds → disabled surface/text responsibility.
+- Current danger surfaces using `colors.danger #4a1f1f` with `colors.text #f2f2f2` are catalogued separately from standalone feedback/error text.
+
+If one semantic foreground token cannot preserve multiple current presentations, implementation keeps the token catalog consumer-driven and minimal, documents the unmatched consumer and defers any visual correction to an explicit accessibility decision. It does not silently treat a rating color as proof of danger parity or normalize consumers during migration.
+
+Section 1 also applies a narrow, pure Light invariant based on WCAG relative luminance calculation `(0.2126 R + 0.7152 G + 0.0722 B)` after sRGB linearization. For every resolved Light palette, `background`, `surface`, `surfaceSecondary` and `inputBackground` each require relative luminance `>= 0.50`; `textPrimary` must have lower luminance than `background`, and their contrast ratio must be `>= 4.5:1`. These documented thresholds reject obviously dark definitions such as `#111111`/`#eeeeee` while remaining intentionally narrower than the complete Section 12 audit of every token/state pair.
 
 Alternative rejected: retaining names such as `bg/card/card2/primary` preserves ambiguous inverse-text coupling (`colors.bg` as content over `primary`) and cannot safely support colored accents.
 
@@ -327,7 +336,7 @@ No new dependency is justified or planned.
 - [A stale hydration retry overwrites a newer successful write] → Reads carry generation plus intent revision and publish only while current; stale results are discarded and rollback always uses live `confirmedPersisted`.
 - [Provider waits forever on SQLite] → Hydration always resolves to success/absence/invalid/error; error unlocks Dark + Original and exposes retry, without waiting for TMDB.
 - [Web displays React theme over stale DOM/CSS] → One effect writes effective variables and `color-scheme`; CSS contains only bootstrap fallbacks, not palette definitions; verify reload and runtime system changes.
-- [Twelve scheme/palette combinations multiply contrast work] → Validate the complete 2×6 resolved catalog, including semantic, focus, placeholder, selected and disabled pairs, before final review.
+- [Twelve scheme/palette combinations multiply contrast work] → In Section 1, validate the complete 2×6 resolved catalog plus the documented relative-luminance Light gate and explicit `selectedSurface`/`selectedForeground` pair; before final release, validate semantic, focus, placeholder, selected and disabled pairs comprehensively in Section 12.
 - [Palette overrides create incomplete themes] → Resolver always begins with a complete base and returns a complete typed definition; screens cannot access partial overrides.
 - [Theme context causes broad rerenders] → Theme changes are user/system-driven and rare; memoize definitions/context and keep non-color StyleSheets static.
 - [Changing `userInterfaceStyle` overwrites protected app.json work] → Inspect current diff, make one narrow hunk only when the relevant section begins, then confirm the personal hunk remains; package.json receives no edit.

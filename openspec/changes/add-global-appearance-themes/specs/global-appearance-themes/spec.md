@@ -72,7 +72,7 @@ El sistema MUST aplicar una única definición efectiva y completa a backgrounds
 
 ### Requirement: accent y selección mantienen roles semánticos
 
-El sistema MUST usar accent para identidad e interacción activa y MUST proporcionar un foreground contrastante que no se presuma siempre blanco. Las selecciones MUST poder distinguir surface y border seleccionados del accent fuerte, y el accent MUST NOT reemplazar indiscriminadamente todos los fondos, bordes o textos.
+El sistema MUST usar accent para identidad e interacción activa y MUST proporcionar un `onAccent` contrastante que no se presuma siempre blanco. Las selecciones MUST resolver explícitamente el trío palette-overridable `selectedSurface`, `selectedForeground` y `selectedBorder`; `textPrimary` y `onAccent` MUST NOT asumirse como foreground de una selección. Las selecciones MUST poder distinguir surface y border seleccionados del accent fuerte, y el accent MUST NOT reemplazar indiscriminadamente todos los fondos, bordes o textos. Dark + Original MUST conservar `selectedSurface: #ffffff`, `selectedForeground: #0b0b0b` y `selectedBorder: #ffffff`.
 
 #### Scenario: acción sobre accent
 - **WHEN** una acción primaria usa el accent de la palette
@@ -80,12 +80,26 @@ El sistema MUST usar accent para identidad e interacción activa y MUST proporci
 
 #### Scenario: elemento seleccionado
 - **WHEN** una opción queda seleccionada
-- **THEN** presenta estado visual de selección coherente
+- **THEN** presenta contenido con `selectedForeground` contrastante sobre `selectedSurface`
+- **AND** delimita la selección con `selectedBorder`
 - **AND** mantiene una señal no basada únicamente en el color
+
+#### Scenario: selección no reutiliza foregrounds incompatibles
+- **GIVEN** una palette donde `selectedSurface` difiere de `accent`
+- **WHEN** se renderiza contenido sobre la selección
+- **THEN** usa el `selectedForeground` resuelto por esa palette
+- **AND** no reutiliza automáticamente `textPrimary` ni `onAccent`
 
 ### Requirement: estados semánticos permanecen independientes de palettes
 
-El sistema MUST conservar significados propios para danger/error/destructive, disabled y PersonalRating low, medium y high. Las palettes MUST NOT reasignar esos significados, aunque el scheme pueda proporcionar variantes contrastantes. PersonalRating MUST conservar los rangos `10..74 low`, `75..84 medium` y `85..100 high` y MUST seguir comunicándose además del color.
+El sistema MUST conservar significados propios para danger/error/destructive, disabled y PersonalRating low, medium y high. Las palettes MUST NOT reasignar esos significados, aunque el scheme pueda proporcionar variantes contrastantes. Antes de migrar consumers, la baseline Dark + Original MUST inventariar cada foreground semántico actual mediante consumer/archivo, valor actual y responsabilidad/token futuro; la coincidencia accidental con un color de PersonalRating MUST NOT aceptarse como prueba de `dangerText`. Si un único token no puede preservar dos presentaciones actuales, el catálogo MUST permanecer consumer-driven y mínimo, o la divergencia MUST documentarse como corrección futura de accesibilidad antes de cambiar el consumer. PersonalRating MUST conservar los rangos `10..74 low`, `75..84 medium` y `85..100 high` y MUST seguir comunicándose además del color.
+
+#### Scenario: parity de foregrounds semánticos
+- **WHEN** se valida Dark + Original antes de migrar consumers
+- **THEN** el feedback de error `#f4b8b8` de `app/settings/tmdb.tsx` se ancla a su responsabilidad futura
+- **AND** el texto de error `#5a2a2a` de `app/title/[id].tsx` se cataloga separadamente
+- **AND** los foregrounds reales usados sobre disabled `#303030` y `#3b3b3b` se registran junto con sus surfaces
+- **AND** ninguna migración cambia esos foregrounds silenciosamente
 
 #### Scenario: rating high bajo Lavanda
 - **WHEN** una puntuación personal entre 85 y 100 se muestra con palette Lavanda
@@ -221,7 +235,13 @@ El sistema MUST mantener `html`, `body`, root, background del browser, scrollbar
 
 ### Requirement: todas las combinaciones mantienen accesibilidad funcional
 
-El sistema MUST mantener contraste y señales adicionales al color para selected/unselected, tabs activas/inactivas, buttons, disabled, danger/error, links, rating, pin, inputs/placeholders, scheme/palette selection y focus web en todas las combinaciones soportadas.
+El sistema MUST mantener contraste y señales adicionales al color para selected/unselected, tabs activas/inactivas, buttons, disabled, danger/error, links, rating, pin, inputs/placeholders, scheme/palette selection y focus web en todas las combinaciones soportadas. Además, un gate puro de Section 1 MUST calcular relative luminance para rechazar cualquier combinación effective Light cuyos backgrounds/surfaces sean obviamente oscuros o cuya relación básica `textPrimary`/`background` sea incoherente. Este gate acotado MUST NOT sustituir el audit completo de contraste de release.
+
+#### Scenario: invariant puro de luminosidad Light
+- **WHEN** el harness recorre Light con las seis palettes
+- **THEN** verifica mediante relative luminance que `background`, `surface`, `surfaceSecondary` e `inputBackground` permanezcan en el rango claro documentado
+- **AND** verifica que `textPrimary` sea más oscuro que `background` y mantenga contraste básico suficiente
+- **AND** rechaza una definición como background `#111111` con text `#eeeeee` aunque ninguno sea negro o blanco puro
 
 #### Scenario: validación de catálogo completo
 - **WHEN** se valida una release con Light y Dark para las seis palettes
