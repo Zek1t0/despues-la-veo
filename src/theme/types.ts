@@ -58,7 +58,9 @@ export type StructuralThemeTokens = Readonly<{
   imageOverlay: string;
   imageOverlayMedium: string;
   imageOverlayStrong: string;
+  imageOverlayLabel: string;
   onImageOverlay: string;
+  onImageOverlaySecondary: string;
   imageOverlayBorder: string;
   modalBackdrop: string;
 }>;

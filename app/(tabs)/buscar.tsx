@@ -18,7 +18,7 @@ import {
   ViewOptionsPanel,
   type ViewOptionsSection,
 } from "../../src/components/browsing";
-import { colors } from "../../src/theme/colors";
+import { useAppTheme } from "../../src/theme/AppThemeProvider";
 import { useTmdbCredential } from "../../src/providers/tmdb/credential/TmdbCredentialProvider";
 import {
   presentTmdbRemoteError,
@@ -37,6 +37,7 @@ import {
 
 export default function ExploreScreen() {
   const router = useRouter();
+  const { theme } = useAppTheme();
   const { snapshot, retryInitialization } = useTmdbCredential();
   const { width: windowWidth } = useWindowDimensions();
   const [q, setQ] = useState("");
@@ -146,18 +147,18 @@ export default function ExploreScreen() {
             id: "detail",
             title: "Detalle",
             accessibilityLabel: "Mostrar resultados de Buscar en detalle",
-            indicator: <Ionicons color={colors.muted} name="list-outline" size={24} />,
+            indicator: <Ionicons color={theme.global.textSecondary} name="list-outline" size={24} />,
           },
           {
             id: "grid",
             title: "Mosaico",
             accessibilityLabel: "Mostrar resultados de Buscar en mosaico",
-            indicator: <Ionicons color={colors.muted} name="grid-outline" size={24} />,
+            indicator: <Ionicons color={theme.global.textSecondary} name="grid-outline" size={24} />,
           },
         ],
       },
     ],
-    [selectViewMode, viewMode]
+    [selectViewMode, theme.global.textSecondary, viewMode]
   );
 
   const gridGap = 12;
@@ -278,8 +279,8 @@ export default function ExploreScreen() {
       onPress={onPress}
       style={({ pressed }) => ({
         alignItems: "center",
-        backgroundColor: colors.card2,
-        borderColor: colors.border2,
+        backgroundColor: theme.global.surfaceSecondary,
+        borderColor: theme.global.borderStrong,
         borderRadius: 12,
         borderWidth: 1,
         justifyContent: "center",
@@ -288,7 +289,7 @@ export default function ExploreScreen() {
         paddingHorizontal: 14,
       })}
     >
-      <Text style={{ color: colors.text, fontWeight: "900" }}>{label}</Text>
+      <Text style={{ color: theme.global.textPrimary, fontWeight: "900" }}>{label}</Text>
     </Pressable>
   );
 
@@ -296,6 +297,7 @@ export default function ExploreScreen() {
     <View
       style={{
         alignSelf: "center",
+        backgroundColor: theme.global.background,
         flex: 1,
         gap: 12,
         maxWidth: 1200,
@@ -309,16 +311,16 @@ export default function ExploreScreen() {
           value={q}
           onChangeText={setQ}
           placeholder="Buscar película o serie…"
-          placeholderTextColor={colors.subtle}
+          placeholderTextColor={theme.global.textMuted}
           style={{
             flex: 1,
             minHeight: 44,
             padding: 12,
             borderRadius: 12,
             borderWidth: 1,
-            borderColor: colors.border2,
-            backgroundColor: colors.input,
-            color: colors.text,
+            borderColor: theme.global.borderStrong,
+            backgroundColor: theme.global.inputBackground,
+            color: theme.global.textPrimary,
           }}
         />
         <Pressable
@@ -331,8 +333,8 @@ export default function ExploreScreen() {
           onPress={() => setOptionsVisible(true)}
           style={({ pressed }) => ({
             alignItems: "center",
-            backgroundColor: colors.card2,
-            borderColor: colors.border2,
+            backgroundColor: theme.global.surfaceSecondary,
+            borderColor: theme.global.borderStrong,
             borderRadius: 12,
             borderWidth: 1,
             justifyContent: "center",
@@ -341,14 +343,14 @@ export default function ExploreScreen() {
             opacity: !preferencesReady ? 0.5 : pressed ? 0.78 : 1,
           })}
         >
-          <Ionicons color={colors.text} name="options-outline" size={22} />
+          <Ionicons color={preferencesReady ? theme.global.textPrimary : theme.semantic.disabledText} name="options-outline" size={22} />
         </Pressable>
       </View>
 
       {visibleLoading && (
         <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-          <ActivityIndicator color={colors.text} />
-          <Text style={{ color: colors.muted }}>Buscando…</Text>
+          <ActivityIndicator color={theme.global.textPrimary} />
+          <Text style={{ color: theme.global.textSecondary }}>Buscando…</Text>
         </View>
       )}
 
@@ -401,8 +403,8 @@ export default function ExploreScreen() {
                 padding: 12,
                 borderRadius: 14,
                 borderWidth: 1,
-                borderColor: colors.border,
-                backgroundColor: colors.card,
+                borderColor: theme.global.border,
+                backgroundColor: theme.global.surface,
                 alignItems: "flex-start",
               }}
             >
@@ -418,25 +420,25 @@ export default function ExploreScreen() {
                     width: 80,
                     height: 120,
                     borderRadius: 10,
-                    backgroundColor: colors.card2,
+                    backgroundColor: theme.global.surfaceSecondary,
                     alignItems: "center",
                     justifyContent: "center",
                     borderWidth: 1,
-                    borderColor: colors.border,
+                    borderColor: theme.global.border,
                   }}
                 >
-                  <Text style={{ color: colors.muted, fontSize: 12 }}>Sin póster</Text>
+                  <Text style={{ color: theme.global.textSecondary, fontSize: 12 }}>Sin póster</Text>
                 </View>
               )}
 
               <View style={{ flex: 1, gap: 4 }}>
-                <Text style={{ fontSize: 16, fontWeight: "800", color: colors.text }}>
+                <Text style={{ fontSize: 16, fontWeight: "800", color: theme.global.textPrimary }}>
                   {title} {year ? `(${year})` : ""}
                 </Text>
-                <Text style={{ color: colors.subtle, fontWeight: "700" }}>
+                <Text style={{ color: theme.global.textMuted, fontWeight: "700" }}>
                   {titleTypeLabel(item.media_type)}
                 </Text>
-                <Text style={{ color: colors.muted }} numberOfLines={4}>
+                <Text style={{ color: theme.global.textSecondary }} numberOfLines={4}>
                   {item.overview || "Sin descripción."}
                 </Text>
               </View>
@@ -446,7 +448,7 @@ export default function ExploreScreen() {
         ListEmptyComponent={
           visibleLoading ? null : (
             <View style={{ gap: 8, paddingVertical: 20 }}>
-              <Text style={{ color: colors.text, fontSize: 17, fontWeight: "900" }}>
+              <Text style={{ color: theme.global.textPrimary, fontSize: 17, fontWeight: "900" }}>
                 {currentQuery.length === 0
                   ? "Buscá una película o serie"
                   : credentialState
@@ -455,7 +457,7 @@ export default function ExploreScreen() {
                     ? visibleSearchError.title
                     : "No encontré resultados"}
               </Text>
-              <Text style={{ color: colors.muted }}>
+              <Text style={{ color: visibleSearchError ? theme.semantic.dangerText : theme.global.textSecondary }}>
                 {currentQuery.length === 0
                   ? "Escribí un título para consultar TMDB."
                   : credentialState

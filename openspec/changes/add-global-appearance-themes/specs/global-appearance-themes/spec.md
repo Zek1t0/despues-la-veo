@@ -127,14 +127,24 @@ El sistema MUST conservar significados propios para danger/error/destructive, di
 
 ### Requirement: overlays y branding conservan responsabilidades propias
 
-El sistema MUST mantener separados del theme global los scrims, foregrounds y borders necesarios para legibilidad sobre posters arbitrarios. TitleGridCard MUST conservar las tres intensidades estructurales consumer-driven: `imageOverlay` para el título, `imageOverlayMedium` para el type badge e `imageOverlayStrong` para el pin. Estos tokens MUST permanecer oscuros sobre imágenes bajo Light y Dark, MUST NOT ser palette-overridable y MUST NOT abrir un catálogo preventivo de intensidades adicionales. El pin contextual MUST seguir siendo un diamond-outline pasivo top-right y MUST coexistir sin solaparse con el rating. El sistema MUST renderizar el logo oficial TMDB actual sin tint ni filtros y MUST preservar exactamente el notice TMDB y la atribución JustWatch existentes de forma legible en todos los themes.
+El sistema MUST mantener separados del theme global los scrims, foregrounds y borders necesarios para legibilidad sobre posters arbitrarios. TitleGridCard MUST conservar las tres intensidades estructurales consumer-driven: `imageOverlay` para el título, `imageOverlayMedium` para el type badge e `imageOverlayStrong` para el pin. TagGridCard MUST usar `imageOverlayLabel` exclusivamente para el nombre y contador colocados directamente sobre los cuatro posters arbitrarios de TagCollage, `onImageOverlay` para el nombre y `onImageOverlaySecondary` para el contador. Los foregrounds estructurales MUST NOT provenir de tokens globales palette-overridable. Estos tokens MUST conservar su responsabilidad sobre imágenes bajo Light y Dark, MUST NOT ser palette-overridable y MUST NOT abrir un catálogo preventivo de intensidades o foregrounds adicionales. El pin contextual MUST seguir siendo un diamond-outline pasivo top-right y MUST coexistir sin solaparse con el rating. El sistema MUST renderizar el logo oficial TMDB actual sin tint ni filtros y MUST preservar exactamente el notice TMDB y la atribución JustWatch existentes de forma legible en todos los themes.
 
 #### Scenario: paridad exacta de overlays de TitleGridCard
 - **WHEN** se resuelve Dark + Original
 - **THEN** `imageOverlay` es `rgba(11, 11, 11, 0.78)` para el title overlay
 - **AND** `imageOverlayMedium` es `rgba(11, 11, 11, 0.82)` para el type badge
 - **AND** `imageOverlayStrong` es `rgba(11, 11, 11, 0.90)` para el pin overlay
-- **AND** el `tagLabelOverlay` de opacidad `0.94` continúa fuera del contrato hasta migrar Etiquetas
+- **AND** `imageOverlayLabel` es `rgba(11, 11, 11, 0.94)` para el nombre y contador de TagGridCard sobre TagCollage
+- **AND** `onImageOverlay` es `#f2f2f2` para el nombre de TagGridCard
+- **AND** `onImageOverlaySecondary` es `#bdbdbd` para su contador
+- **AND** las cuatro intensidades permanecen structural y palette-independent
+
+#### Scenario: label de etiqueta sobre posters bajo Light
+- **WHEN** TagGridCard se muestra bajo un theme Light con cualquier palette
+- **THEN** su nombre y contador conservan `imageOverlayLabel rgba(11, 11, 11, 0.94)` como scrim oscuro
+- **AND** el nombre usa `onImageOverlay #f2f2f2` y el contador usa `onImageOverlaySecondary #bdbdbd`
+- **AND** ambos foregrounds permanecen structural y palette-independent
+- **AND** posición, padding, typography, contador, navegación, posters y press target no cambian
 
 #### Scenario: poster en theme claro
 - **WHEN** una TitleGridCard se muestra bajo un theme claro

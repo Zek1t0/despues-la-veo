@@ -77,18 +77,14 @@ function testAsyncActionsAndRecovery() {
   assert.match(screen, /!writeProblem/);
 }
 
-function testDependenciesAndLaterConsumersRemainScoped() {
+function testDependenciesRemainScoped() {
   const packageJson = JSON.parse(read("package.json"));
   assert.equal(packageJson.dependencies["@expo/vector-icons"], "^15.0.3");
-  const consumerSources = [
-    "app/(tabs)/buscar.tsx", "app/(tabs)/etiquetas.tsx",
-  ].map(read).join("\n");
-  assert.doesNotMatch(consumerSources, /useAppTheme/);
 }
 
 testRouteAndSettingsEntry();
 testCatalogAndRealPreviews();
 testSelectorsAccessibilityAndResponsiveLayout();
 testAsyncActionsAndRecovery();
-testDependenciesAndLaterConsumersRemainScoped();
+testDependenciesRemainScoped();
 console.log("Section 4 Appearance route, selectors, real previews, accessibility and recovery verification passed.");

@@ -76,7 +76,9 @@ function testRatingSemanticsAndParity() {
     imageOverlay: "rgba(11, 11, 11, 0.78)",
     imageOverlayMedium: "rgba(11, 11, 11, 0.82)",
     imageOverlayStrong: "rgba(11, 11, 11, 0.9)",
+    imageOverlayLabel: "rgba(11, 11, 11, 0.94)",
     onImageOverlay: "#f2f2f2",
+    onImageOverlaySecondary: "#bdbdbd",
     imageOverlayBorder: "rgba(255, 255, 255, 0.22)",
     modalBackdrop: "rgba(0, 0, 0, 0.68)",
   });
@@ -95,13 +97,11 @@ function testRatingSemanticsAndParity() {
     ) >= 4.5,
     true,
   );
-  assert.doesNotMatch(read("src/theme/palettes.ts"), /imageOverlayMedium|onDangerSurface/);
+  assert.doesNotMatch(read("src/theme/palettes.ts"), /imageOverlayMedium|imageOverlayLabel|onImageOverlaySecondary|onDangerSurface/);
 }
 
 function testScope() {
   for (const file of [
-    "app/(tabs)/buscar.tsx",
-    "app/(tabs)/etiquetas.tsx",
     "app/settings/tmdb.tsx",
     "app/settings/about.tsx",
   ]) {

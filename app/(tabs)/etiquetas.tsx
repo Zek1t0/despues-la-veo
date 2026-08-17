@@ -39,7 +39,7 @@ import { listSavedTitles } from "../../src/storage/savedTitlesRepo";
 import { setTitlePinState } from "../../src/storage/titlePinsRepo";
 import { getTagScreenSnapshot } from "../../src/storage/tagScreenSnapshot";
 import { getViewPreference, setViewPreference } from "../../src/storage/viewPreferencesRepo";
-import { colors } from "../../src/theme/colors";
+import { useAppTheme } from "../../src/theme/AppThemeProvider";
 
 type TagInfo = { tag: string; items: SavedTitle[]; count: number };
 
@@ -94,6 +94,7 @@ function TagGridCard({
   onPress: () => void;
   style?: StyleProp<ViewStyle>;
 }) {
+  const { theme } = useAppTheme();
   const collageItems = selectCollageTitles(info.items).map((item) => ({
     id: item.id,
     posterUrl: item.posterUrl,
@@ -107,8 +108,8 @@ function TagGridCard({
       onPress={onPress}
       style={({ pressed }) => [
         {
-          backgroundColor: colors.card2,
-          borderColor: colors.border,
+          backgroundColor: theme.global.surfaceSecondary,
+          borderColor: theme.global.border,
           borderRadius: 16,
           borderWidth: 1,
           opacity: pressed ? 0.82 : 1,
@@ -121,12 +122,12 @@ function TagGridCard({
       <View
         accessible={false}
         pointerEvents="none"
-        style={{ backgroundColor: "rgba(11, 11, 11, 0.94)", gap: 3, padding: 12 }}
+        style={{ backgroundColor: theme.structural.imageOverlayLabel, gap: 3, padding: 12 }}
       >
-        <Text numberOfLines={2} style={{ color: colors.text, fontSize: 16, fontWeight: "900" }}>
+        <Text numberOfLines={2} style={{ color: theme.structural.onImageOverlay, fontSize: 16, fontWeight: "900" }}>
           {info.tag}
         </Text>
-        <Text style={{ color: colors.muted, fontWeight: "700" }}>
+        <Text style={{ color: theme.structural.onImageOverlaySecondary, fontWeight: "700" }}>
           {tagCountLabel(info.count)}
         </Text>
       </View>
@@ -135,6 +136,7 @@ function TagGridCard({
 }
 
 function TagListRow({ info, onPress }: { info: TagInfo; onPress: () => void }) {
+  const { theme } = useAppTheme();
   return (
     <Pressable
       accessibilityLabel={`Abrir etiqueta ${info.tag}, ${tagCountLabel(info.count)}`}
@@ -143,8 +145,8 @@ function TagListRow({ info, onPress }: { info: TagInfo; onPress: () => void }) {
       onPress={onPress}
       style={({ pressed }) => ({
         alignItems: "center",
-        backgroundColor: colors.card2,
-        borderColor: colors.border,
+        backgroundColor: theme.global.surfaceSecondary,
+        borderColor: theme.global.border,
         borderRadius: 14,
         borderWidth: 1,
         flexDirection: "row",
@@ -155,14 +157,14 @@ function TagListRow({ info, onPress }: { info: TagInfo; onPress: () => void }) {
       })}
     >
       <View accessible={false} pointerEvents="none" style={{ flex: 1, gap: 3 }}>
-        <Text numberOfLines={1} style={{ color: colors.text, fontWeight: "900" }}>
+        <Text numberOfLines={1} style={{ color: theme.global.textPrimary, fontWeight: "900" }}>
           {info.tag}
         </Text>
-        <Text style={{ color: colors.muted, fontWeight: "700" }}>
+        <Text style={{ color: theme.global.textSecondary, fontWeight: "700" }}>
           {tagCountLabel(info.count)}
         </Text>
       </View>
-      <Ionicons color={colors.muted} name="chevron-forward" size={20} />
+      <Ionicons color={theme.global.textSecondary} name="chevron-forward" size={20} />
     </Pressable>
   );
 }
@@ -180,6 +182,7 @@ function DetailTitleRow({
   pinned: boolean;
   tag: string;
 }) {
+  const { theme } = useAppTheme();
   const personalRatingPresentation = getPersonalRatingPresentation(
     item.personalRating
   );
@@ -187,8 +190,8 @@ function DetailTitleRow({
   return (
     <View
       style={{
-        backgroundColor: colors.card2,
-        borderColor: colors.border,
+        backgroundColor: theme.global.surfaceSecondary,
+        borderColor: theme.global.border,
         borderRadius: 14,
         borderWidth: 1,
         gap: 10,
@@ -206,10 +209,10 @@ function DetailTitleRow({
         onPress={onPress}
         style={({ pressed }) => ({ gap: 5, opacity: pressed ? 0.82 : 1 })}
       >
-        <Text numberOfLines={2} style={{ color: colors.text, fontWeight: "900" }}>
+        <Text numberOfLines={2} style={{ color: theme.global.textPrimary, fontWeight: "900" }}>
           {item.title}{item.year ? ` (${item.year})` : ""}
         </Text>
-        <Text style={{ color: colors.muted, fontWeight: "700" }}>
+        <Text style={{ color: theme.global.textSecondary, fontWeight: "700" }}>
           {titleTypeLabel(item.type)} · {titleStatusLabel(item.status)}
         </Text>
         <PersonalRatingBadge value={item.personalRating} />
@@ -223,8 +226,8 @@ function DetailTitleRow({
           onPress={onTogglePin}
           style={({ pressed }) => ({
             alignItems: "center",
-            backgroundColor: colors.card,
-            borderColor: colors.border2,
+            backgroundColor: theme.global.surface,
+            borderColor: theme.global.borderStrong,
             borderRadius: 12,
             borderWidth: 1,
             justifyContent: "center",
@@ -234,7 +237,7 @@ function DetailTitleRow({
             paddingVertical: 8,
           })}
         >
-          <Text style={{ color: colors.text, fontWeight: "800" }}>
+          <Text style={{ color: theme.global.textPrimary, fontWeight: "800" }}>
             {pinned ? "Desfijar" : "Fijar"}
           </Text>
         </Pressable>
@@ -245,6 +248,7 @@ function DetailTitleRow({
 
 export default function EtiquetasScreen() {
   const router = useRouter();
+  const { theme } = useAppTheme();
   const { width: windowWidth } = useWindowDimensions();
   const [items, setItems] = useState<SavedTitle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -495,13 +499,13 @@ export default function EtiquetasScreen() {
             id: "grid",
             title: "Mosaico",
             accessibilityLabel: "Mostrar etiquetas en mosaico",
-            indicator: <Ionicons color={colors.muted} name="grid-outline" size={24} />,
+            indicator: <Ionicons color={theme.global.textSecondary} name="grid-outline" size={24} />,
           },
           {
             id: "list",
             title: "Lista",
             accessibilityLabel: "Mostrar etiquetas en lista",
-            indicator: <Ionicons color={colors.muted} name="list-outline" size={24} />,
+            indicator: <Ionicons color={theme.global.textSecondary} name="list-outline" size={24} />,
           },
         ],
       },
@@ -522,7 +526,7 @@ export default function EtiquetasScreen() {
         ],
       },
     ],
-    [selectSort, selectViewMode, sort, viewMode]
+    [selectSort, selectViewMode, sort, theme.global.textSecondary, viewMode]
   );
 
   const gap = 12;
@@ -621,8 +625,8 @@ export default function EtiquetasScreen() {
       onPress={() => setOptionsVisible(true)}
       style={({ pressed }) => ({
         alignItems: "center",
-        backgroundColor: withLabel ? colors.card2 : "transparent",
-        borderColor: colors.border2,
+        backgroundColor: withLabel ? theme.global.surfaceSecondary : "transparent",
+        borderColor: theme.global.borderStrong,
         borderRadius: 12,
         borderWidth: withLabel ? 1 : 0,
         flexDirection: "row",
@@ -634,15 +638,15 @@ export default function EtiquetasScreen() {
         paddingHorizontal: withLabel ? 12 : 0,
       })}
     >
-      <Ionicons color={colors.text} name="options-outline" size={22} />
-      {withLabel ? <Text style={{ color: colors.text, fontWeight: "800" }}>Opciones</Text> : null}
+      <Ionicons color={preferencesReady ? theme.global.textPrimary : theme.semantic.disabledText} name="options-outline" size={22} />
+      {withLabel ? <Text style={{ color: preferencesReady ? theme.global.textPrimary : theme.semantic.disabledText, fontWeight: "800" }}>Opciones</Text> : null}
     </Pressable>
   );
 
   const listHeader = selectedTag ? (
     <View style={{ gap: 10 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-        <Text numberOfLines={2} style={{ color: colors.text, flex: 1, flexShrink: 1, fontSize: 18, fontWeight: "900" }}>
+        <Text numberOfLines={2} style={{ color: theme.global.textPrimary, flex: 1, flexShrink: 1, fontSize: 18, fontWeight: "900" }}>
           Títulos con: {selectedTag}
         </Text>
         <Pressable
@@ -652,8 +656,8 @@ export default function EtiquetasScreen() {
           onPress={() => selectTagContext(null)}
           style={({ pressed }) => ({
             alignItems: "center",
-            backgroundColor: colors.card2,
-            borderColor: colors.border2,
+            backgroundColor: theme.global.surfaceSecondary,
+            borderColor: theme.global.borderStrong,
             borderRadius: 10,
             borderWidth: 1,
             minHeight: 44,
@@ -662,13 +666,13 @@ export default function EtiquetasScreen() {
             paddingHorizontal: 12,
           })}
         >
-          <Text style={{ color: colors.text, fontWeight: "800" }}>Volver</Text>
+          <Text style={{ color: theme.global.textPrimary, fontWeight: "800" }}>Volver</Text>
         </Pressable>
       </View>
     </View>
   ) : (
     <View>
-      <Text style={{ color: colors.muted }}>
+      <Text style={{ color: theme.global.textSecondary }}>
         {tagsSummaryLabel(visibleTags.length, allTags.length, q.trim().length > 0)}
       </Text>
     </View>
@@ -694,7 +698,7 @@ export default function EtiquetasScreen() {
                       opacity: pressed ? 0.7 : 1,
                     })}
                   >
-                    <Ionicons color={colors.text} name="arrow-back" size={24} />
+                    <Ionicons color={theme.global.textPrimary} name="arrow-back" size={24} />
                   </Pressable>
                 )
               : undefined,
@@ -705,13 +709,13 @@ export default function EtiquetasScreen() {
                   autoFocus
                   onChangeText={onChangeQuery}
                   placeholder="Buscar etiqueta…"
-                  placeholderTextColor={colors.subtle}
+                  placeholderTextColor={theme.global.textMuted}
                   style={{
-                    backgroundColor: colors.input,
-                    borderColor: colors.border2,
+                    backgroundColor: theme.global.inputBackground,
+                    borderColor: theme.global.borderStrong,
                     borderRadius: 10,
                     borderWidth: 1,
-                    color: colors.text,
+                    color: theme.global.textPrimary,
                     flex: 1,
                     paddingHorizontal: 10,
                     paddingVertical: 8,
@@ -720,7 +724,7 @@ export default function EtiquetasScreen() {
                   value={q}
                 />
               ) : (
-                <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900" }}>Etiquetas</Text>
+                <Text style={{ color: theme.global.textPrimary, fontSize: 18, fontWeight: "900" }}>Etiquetas</Text>
               ),
             headerRight: () => (
               <View style={{ flexDirection: "row", gap: 4 }}>
@@ -738,7 +742,7 @@ export default function EtiquetasScreen() {
                       opacity: pressed ? 0.7 : 1,
                     })}
                   >
-                    <Ionicons color={colors.text} name="search" size={22} />
+                    <Ionicons color={theme.global.textPrimary} name="search" size={22} />
                   </Pressable>
                 ) : null}
                 {openOptionsButton(false)}
@@ -751,6 +755,7 @@ export default function EtiquetasScreen() {
       <View
         style={{
           alignSelf: "center",
+          backgroundColor: theme.global.background,
           flex: 1,
           gap: 12,
           maxWidth: 1200,
@@ -764,13 +769,13 @@ export default function EtiquetasScreen() {
               accessibilityLabel="Buscar etiquetas"
               onChangeText={onChangeQuery}
               placeholder="Buscar etiqueta…"
-              placeholderTextColor={colors.subtle}
+              placeholderTextColor={theme.global.textMuted}
               style={{
-                backgroundColor: colors.input,
-                borderColor: colors.border2,
+                backgroundColor: theme.global.inputBackground,
+                borderColor: theme.global.borderStrong,
                 borderRadius: 12,
                 borderWidth: 1,
-                color: colors.text,
+                color: theme.global.textPrimary,
                 flex: 1,
                 minHeight: 44,
                 paddingHorizontal: 12,
@@ -783,27 +788,27 @@ export default function EtiquetasScreen() {
 
         {loading ? (
           <View style={{ alignItems: "center", gap: 10, paddingVertical: 32 }}>
-            <ActivityIndicator color={colors.text} />
-            <Text style={{ color: colors.muted }}>Cargando etiquetas…</Text>
+            <ActivityIndicator color={theme.global.textPrimary} />
+            <Text style={{ color: theme.global.textSecondary }}>Cargando etiquetas…</Text>
           </View>
         ) : selectedTag && tagLoadError ? (
           <View style={{ gap: 16 }}>
             {listHeader}
             <View style={{ gap: 8, paddingVertical: 24 }}>
-              <Text style={{ color: colors.text, fontSize: 17, fontWeight: "900" }}>
+              <Text style={{ color: theme.global.textPrimary, fontSize: 17, fontWeight: "900" }}>
                 No se pudo cargar esta etiqueta
               </Text>
-              <Text style={{ color: colors.muted }}>{tagLoadError}</Text>
+              <Text style={{ color: theme.semantic.dangerText }}>{tagLoadError}</Text>
             </View>
           </View>
         ) : selectedTag ? (
           <FlatList
             ListEmptyComponent={
               <View style={{ gap: 8, paddingVertical: 24 }}>
-                <Text style={{ color: colors.text, fontSize: 17, fontWeight: "900" }}>
+                <Text style={{ color: theme.global.textPrimary, fontSize: 17, fontWeight: "900" }}>
                   Esta etiqueta ya no tiene títulos
                 </Text>
-                <Text style={{ color: colors.muted }}>
+                <Text style={{ color: theme.global.textSecondary }}>
                   Volvé a la lista para elegir otra etiqueta.
                 </Text>
               </View>
@@ -852,10 +857,10 @@ export default function EtiquetasScreen() {
           <FlatList
             ListEmptyComponent={
               <View style={{ gap: 8, paddingVertical: 24 }}>
-                <Text style={{ color: colors.text, fontSize: 17, fontWeight: "900" }}>
+                <Text style={{ color: theme.global.textPrimary, fontSize: 17, fontWeight: "900" }}>
                   {allTags.length === 0 ? "Todavía no hay etiquetas" : "No hay coincidencias"}
                 </Text>
-                <Text style={{ color: colors.muted }}>
+                <Text style={{ color: theme.global.textSecondary }}>
                   {allTags.length === 0
                     ? "Agregá etiquetas desde el detalle de un título de tu biblioteca."
                     : "Probá con otro nombre de etiqueta."}

@@ -68,7 +68,9 @@ const POSTER_STRUCTURAL_TOKENS: StructuralThemeTokens = Object.freeze({
   imageOverlay: "rgba(11, 11, 11, 0.78)",
   imageOverlayMedium: "rgba(11, 11, 11, 0.82)",
   imageOverlayStrong: "rgba(11, 11, 11, 0.9)",
+  imageOverlayLabel: "rgba(11, 11, 11, 0.94)",
   onImageOverlay: "#f2f2f2",
+  onImageOverlaySecondary: "#bdbdbd",
   imageOverlayBorder: "rgba(255, 255, 255, 0.22)",
   modalBackdrop: "rgba(0, 0, 0, 0.68)",
 });

@@ -48,7 +48,7 @@ const semanticKeys = [
   "personalRatingHighBackground", "personalRatingHighForeground",
 ];
 const structuralKeys = [
-  "imageOverlay", "imageOverlayMedium", "imageOverlayStrong", "onImageOverlay",
+  "imageOverlay", "imageOverlayMedium", "imageOverlayStrong", "imageOverlayLabel", "onImageOverlay", "onImageOverlaySecondary",
   "imageOverlayBorder", "modalBackdrop",
 ];
 
@@ -148,6 +148,8 @@ function testCatalogAndAllCombinations() {
       );
       assert.strictEqual(theme.semantic, scheme === "dark" ? DARK_SEMANTIC_TOKENS : LIGHT_SEMANTIC_TOKENS);
       assert.strictEqual(theme.structural, scheme === "dark" ? DARK_STRUCTURAL_TOKENS : LIGHT_STRUCTURAL_TOKENS);
+      assert.equal(theme.structural.imageOverlayLabel, "rgba(11, 11, 11, 0.94)");
+      assert.equal(theme.structural.onImageOverlaySecondary, "#bdbdbd");
       if (scheme === "light") {
         assert.equal(theme.isDark, false);
         assert.doesNotThrow(() => assertLightThemeInvariant(theme.global));
@@ -224,7 +226,9 @@ function testDarkOriginalParity() {
   assert.equal(theme.structural.imageOverlay, DARK_ORIGINAL_BASELINE.structural.imageOverlay.value);
   assert.equal(theme.structural.imageOverlayMedium, DARK_ORIGINAL_BASELINE.structural.badgeOverlay.value);
   assert.equal(theme.structural.imageOverlayStrong, DARK_ORIGINAL_BASELINE.structural.imageOverlayStrong.value);
+  assert.equal(theme.structural.imageOverlayLabel, DARK_ORIGINAL_BASELINE.structural.tagLabelOverlay.value);
   assert.equal(theme.structural.onImageOverlay, shared.text.value);
+  assert.equal(theme.structural.onImageOverlaySecondary, DARK_ORIGINAL_BASELINE.structural.tagGridCountForeground.value);
   assert.equal(theme.structural.imageOverlayBorder, DARK_ORIGINAL_BASELINE.structural.imageOverlayBorder.value);
   assert.equal(theme.structural.modalBackdrop, DARK_ORIGINAL_BASELINE.structural.modalBackdrop.value);
 
@@ -234,6 +238,9 @@ function testDarkOriginalParity() {
   assert.equal(DARK_ORIGINAL_BASELINE.disabled.compactSurface.value, "#303030");
   assert.equal(DARK_ORIGINAL_BASELINE.structural.badgeOverlay.value, "rgba(11, 11, 11, 0.82)");
   assert.equal(DARK_ORIGINAL_BASELINE.structural.tagLabelOverlay.value, "rgba(11, 11, 11, 0.94)");
+  assert.equal(DARK_ORIGINAL_BASELINE.structural.tagLabelOverlay.resolvedToken, "structural.imageOverlayLabel");
+  assert.equal(DARK_ORIGINAL_BASELINE.structural.tagGridCountForeground.value, "#bdbdbd");
+  assert.equal(DARK_ORIGINAL_BASELINE.structural.tagGridCountForeground.resolvedToken, "structural.onImageOverlaySecondary");
 }
 
 function testSemanticForegroundInventory() {
