@@ -40,7 +40,7 @@ El sistema MUST usar `dark + original` ante una instalación nueva, una actualiz
 
 ### Requirement: System sigue cambios del runtime
 
-Cuando la preference de scheme sea `system`, el sistema MUST seguir reactivamente el scheme del sistema operativo o navegador y MUST NOT reescribir la preference ni la palette al cambiar la luminosidad del entorno.
+Cuando la preference de scheme sea `system`, el sistema MUST seguir reactivamente el scheme del sistema operativo o navegador y MUST NOT reescribir la preference ni la palette al cambiar la luminosidad del entorno. En Android native con Expo SDK 54, la integración MUST usar `userInterfaceStyle: "automatic"` y la versión compatible de `expo-system-ui`, incluido su config plugin cuando la configuración Expo/CNG real lo requiera. `useColorScheme` MUST continuar como fuente runtime React; `expo-system-ui` MUST limitarse a habilitar/configurar la integración native y MUST NOT introducir un segundo estado de theme.
 
 #### Scenario: cambio runtime de oscuro a claro
 - **GIVEN** `scheme: system`, palette Marea y un sistema inicialmente oscuro
@@ -52,6 +52,13 @@ Cuando la preference de scheme sea `system`, el sistema MUST seguir reactivament
 - **GIVEN** `scheme: dark`
 - **WHEN** el sistema operativo cambia a claro
 - **THEN** la aplicación permanece oscura
+
+#### Scenario: integración Android native habilita System real
+- **GIVEN** una build Android generada con Expo SDK 54, `userInterfaceStyle: "automatic"` y `expo-system-ui` compatible
+- **WHEN** la configuración Expo/CNG se inspecciona y el dispositivo cambia entre claro y oscuro
+- **THEN** la configuración native resultante permite que `useColorScheme` observe el cambio real
+- **AND** la preference persistida continúa siendo `scheme: system` con la misma palette
+- **AND** SystemUI no mantiene ni persiste una copia paralela de Appearance
 
 ### Requirement: el theme efectivo se aplica globalmente y en runtime
 

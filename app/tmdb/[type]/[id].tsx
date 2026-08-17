@@ -384,8 +384,6 @@ export default function TmdbDetailScreen() {
       <Stack.Screen
         options={{
           title: headerTitle,
-          headerStyle: { backgroundColor: colors.bg },
-          headerTintColor: colors.text
         }}
       />
 

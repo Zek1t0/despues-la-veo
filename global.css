@@ -1,8 +1,20 @@
-/* Fondo global en web (por si aparece blanco detrás) */
+/* Dark + Original bootstrap; React reemplaza estas variables después de hydration. */
+:root {
+  --app-background: #0b0b0b;
+  --app-foreground: #f2f2f2;
+  --app-surface: #101010;
+  --app-border: #242424;
+  --app-accent: #ffffff;
+  --app-scrollbar-track: #0f0f0f;
+  --app-scrollbar-thumb: #2b2b2b;
+  --app-scrollbar-thumb-hover: #3a3a3a;
+  color-scheme: dark;
+}
+
 html, body, #root {
   height: 100%;
-  background: #0b0b0b;
-  color: #f2f2f2;
+  background: var(--app-background);
+  color: var(--app-foreground);
 }
 
 /* Scrollbars (Chrome/Edge/Safari) */
@@ -12,21 +24,26 @@ html, body, #root {
 }
 
 *::-webkit-scrollbar-track {
-  background: #0f0f0f;
+  background: var(--app-scrollbar-track);
 }
 
 *::-webkit-scrollbar-thumb {
-  background: #2b2b2b;
+  background: var(--app-scrollbar-thumb);
   border-radius: 999px;
-  border: 2px solid #0f0f0f; /* hace que se vea “integrada” */
+  border: 2px solid var(--app-scrollbar-track);
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: #3a3a3a;
+  background: var(--app-scrollbar-thumb-hover);
 }
 
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #2b2b2b #0f0f0f;
+  scrollbar-color: var(--app-scrollbar-thumb) var(--app-scrollbar-track);
+}
+
+:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
 }

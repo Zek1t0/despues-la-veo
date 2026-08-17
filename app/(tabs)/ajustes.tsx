@@ -357,6 +357,11 @@ export default function SettingsScreen() {
     >
       <Text style={{ fontSize: 22, fontWeight: "900", color: colors.text }}>Ajustes</Text>
 
+      <PrimaryButton
+        label="Apariencia"
+        onPress={() => router.push("/settings/appearance")}
+      />
+
       <View
         accessibilityLabel="Configuración de TMDB"
         style={{ padding: 16, gap: 10, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }}

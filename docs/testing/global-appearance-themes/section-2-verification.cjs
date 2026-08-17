@@ -177,6 +177,37 @@ async function testNoTrustworthyConfirmed() {
   }
 }
 
+async function testInvalidHydrationIsRepairedBySuccessfulWrite() {
+  const direct = new AppearanceCoordinator(async () => {});
+  direct.completeHydration(direct.beginHydration(), { status: "invalid" });
+  assert.equal(direct.getState().hydrationStatus, "invalid");
+  await direct.select(B);
+  assert.deepEqual(direct.getState().displayed, B);
+  assert.deepEqual(direct.getState().confirmedPersisted, B);
+  assert.equal(direct.getState().hydrationStatus, "ready");
+  assert.equal(direct.getState().storageError, null);
+
+  let fail = true;
+  const retried = new AppearanceCoordinator(async () => {
+    if (fail) { fail = false; throw new Error("first write failed"); }
+  });
+  retried.completeHydration(retried.beginHydration(), { status: "invalid" });
+  await assert.rejects(retried.select(B));
+  assert.equal(retried.getState().hydrationStatus, "invalid");
+  assert.equal(await retried.retryWrite(), true);
+  assert.deepEqual(retried.getState().displayed, B);
+  assert.deepEqual(retried.getState().confirmedPersisted, B);
+  assert.equal(retried.getState().hydrationStatus, "ready");
+  assert.equal(retried.getState().storageError, null);
+
+  const readError = new AppearanceCoordinator(async () => {});
+  readError.completeHydration(readError.beginHydration(),
+    { status: "error", error: new Error("read failed") });
+  await readError.select(B);
+  assert.equal(readError.getState().hydrationStatus, "error");
+  assert.equal(readError.getState().storageError.operation, "read");
+}
+
 async function testPersistenceRetryUsesFailedIntent() {
   const writes = [];
   let fail = true;
@@ -340,6 +371,7 @@ async function testGlobalQueueRecovery() {
   await testCoalescingAndRapidIntents();
   await testSupersededResultsAndRetry();
   await testNoTrustworthyConfirmed();
+  await testInvalidHydrationIsRepairedBySuccessfulWrite();
   await testPersistenceRetryUsesFailedIntent();
   await testWriteCompletionInvalidatesReads();
   await testHydrationAndStaleReads();

@@ -52,11 +52,11 @@ export const DARK_ORIGINAL_BASELINE = Object.freeze({
     personalRatingHighText: entry("#123a20", "semantic", ["src/theme/colors.ts"], "semantic.personalRatingHighForeground"),
   }),
   navigation: Object.freeze({
-    background: entry("#0b0b0b", "global-theme", ["app/_layout.tsx"], "global.background"),
-    card: entry("#101010", "global-theme", ["app/_layout.tsx"], "global.surface"),
-    text: entry("#f2f2f2", "global-theme", ["app/_layout.tsx"], "global.textPrimary"),
-    border: entry("#242424", "global-theme", ["app/_layout.tsx"], "global.border"),
-    primary: entry("#ffffff", "global-theme", ["app/_layout.tsx"], "global.accent"),
+    background: entry("#0b0b0b", "global-theme", ["src/theme/navigationTheme.ts"], "global.background", undefined, "theme.global.background"),
+    card: entry("#101010", "global-theme", ["src/theme/navigationTheme.ts"], "global.surface", undefined, "theme.global.surface"),
+    text: entry("#f2f2f2", "global-theme", ["src/theme/navigationTheme.ts"], "global.textPrimary", undefined, "theme.global.textPrimary"),
+    border: entry("#242424", "global-theme", ["src/theme/navigationTheme.ts"], "global.border", undefined, "theme.global.border"),
+    primary: entry("#ffffff", "global-theme", ["src/theme/navigationTheme.ts"], "global.accent", undefined, "theme.global.accent"),
   }),
   disabled: Object.freeze({
     surface: entry("#3b3b3b", "semantic", ["app/(tabs)/ajustes.tsx", "app/title/[id].tsx", "app/tmdb/[type]/[id].tsx"], "semantic.disabledSurface"),

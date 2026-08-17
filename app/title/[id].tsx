@@ -42,6 +42,7 @@ import {
 import { getTitleDetailPinSnapshot } from "../../src/storage/titleDetailPinSnapshot";
 import { setTitlePinState } from "../../src/storage/titlePinsRepo";
 import { colors } from "../../src/theme/colors";
+import { useAppTheme } from "../../src/theme/AppThemeProvider";
 
 const STATUS_OPTIONS: { value: TitleStatus; label: string }[] = ([
   "planned",
@@ -167,6 +168,7 @@ function Card({ children }: { children: React.ReactNode }) {
 }
 
 export default function TitleDetailScreen() {
+  const { theme } = useAppTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
@@ -518,8 +520,6 @@ export default function TitleDetailScreen() {
         <Stack.Screen
           options={{
             title: "Título",
-            headerStyle: { backgroundColor: colors.bg },
-            headerTintColor: colors.text,
           }}
         />
         <View style={{ flex: 1, padding: 16, gap: 10 }}>
@@ -555,8 +555,6 @@ export default function TitleDetailScreen() {
       <Stack.Screen
         options={{
           title: headerTitle,
-          headerStyle: { backgroundColor: colors.bg },
-          headerTintColor: colors.text,
           headerRight: () =>
             tmdbHref ? (
               <Pressable
@@ -570,12 +568,12 @@ export default function TitleDetailScreen() {
                   paddingVertical: 6,
                   paddingHorizontal: 10,
                   borderRadius: 10,
-                  backgroundColor: colors.card,
+                  backgroundColor: theme.global.surface,
                   borderWidth: 1,
-                  borderColor: colors.border,
+                  borderColor: theme.global.border,
                 }}
               >
-                <Text style={{ color: colors.text, fontWeight: "900" }}>TMDB</Text>
+                <Text style={{ color: theme.global.textPrimary, fontWeight: "900" }}>TMDB</Text>
               </Pressable>
             ) : null,
         }}

@@ -104,7 +104,14 @@ export class AppearanceCoordinator {
   select(preference: AppearancePreference): Promise<void> {
     const id = this.state.revision + 1;
     const intent = Object.freeze({ id, preference });
-    this.publish({ latestIntent: intent, displayed: preference, revision: id, storageError: null });
+    this.publish({
+      latestIntent: intent,
+      displayed: preference,
+      revision: id,
+      storageError: this.state.storageError?.operation === "read"
+        ? this.state.storageError
+        : null,
+    });
     if (this.pending) {
       this.pending.resolve();
       this.pending = null;
@@ -138,9 +145,16 @@ export class AppearanceCoordinator {
         const patch: StatePatch = {
           confirmedPersisted: intent.preference,
         };
+        const repairedInvalidHydration = this.state.hydrationStatus === "invalid";
+        if (repairedInvalidHydration) {
+          patch.hydrationStatus = "ready";
+          if (this.state.storageError?.operation === "read") patch.storageError = null;
+        }
         if (this.state.latestIntent?.id === intent.id) {
           patch.displayed = intent.preference;
-          patch.storageError = null;
+          if (this.state.storageError?.operation !== "read" || repairedInvalidHydration) {
+            patch.storageError = null;
+          }
         }
         this.publish(patch);
         intent.resolve();

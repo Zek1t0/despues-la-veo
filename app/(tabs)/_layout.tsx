@@ -3,10 +3,11 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "../../src/theme/colors";
+import { useAppTheme } from "../../src/theme/AppThemeProvider";
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const { theme } = useAppTheme();
 
   return (
     <Tabs
@@ -42,14 +43,14 @@ export default function TabsLayout() {
         })();
 
         return {
-          headerStyle: { backgroundColor: colors.bg },
-          headerTintColor: colors.text,
+          headerStyle: { backgroundColor: theme.global.background },
+          headerTintColor: theme.global.textPrimary,
 
           tabBarLabel: label,
           tabBarLabelStyle: { fontSize: 12, fontWeight: "700" },
 
-          tabBarActiveTintColor: colors.text,
-          tabBarInactiveTintColor: colors.subtle,
+          tabBarActiveTintColor: theme.global.accent,
+          tabBarInactiveTintColor: theme.global.textMuted,
 
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
@@ -60,8 +61,8 @@ export default function TabsLayout() {
           ),
 
           tabBarStyle: {
-            backgroundColor: colors.bg,
-            borderTopColor: colors.border,
+            backgroundColor: theme.global.background,
+            borderTopColor: theme.global.border,
             borderTopWidth: 1,
 
             // ✅ evita conflicto con barra del sistema

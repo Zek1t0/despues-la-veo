@@ -4,7 +4,7 @@ See `proposal.md` for motivation and the three delta specs for behavior. The cur
 
 React Navigation receives a constant `navDark`; Tabs and detail headers override colors separately; the only effective Expo Router StatusBar is hardcoded `light`. No `useColorScheme`, `Appearance`, `PlatformColor`, `DynamicColorIOS`, CSS variables or `prefers-color-scheme` bridge exists. `app.json` currently declares `userInterfaceStyle: "dark"` and contains a protected personal hunk.
 
-`app_preferences(key TEXT PRIMARY KEY, value TEXT, updated_at INTEGER)` already exists at SQLite schema v3. `viewPreferencesRepo` is intentionally scoped to browsing and initializes SQLite asynchronously. The current backup is v3 `{ version, exportedAt, items, pins }`; export reads only titles and pins, and parsing/merge supports v1/v2/v3. `app.json` and `package.json` have protected unstaged changes; Apply must preserve them and add no dependency.
+`app_preferences(key TEXT PRIMARY KEY, value TEXT, updated_at INTEGER)` already exists at SQLite schema v3. `viewPreferencesRepo` is intentionally scoped to browsing and initializes SQLite asynchronously. The current backup is v3 `{ version, exportedAt, items, pins }`; export reads only titles and pins, and parsing/merge supports v1/v2/v3. `app.json` and `package.json` have protected unstaged changes. Apply must preserve them while installing the sole approved dependency, the Expo SDK 54-compatible `expo-system-ui`; no other dependency is authorized.
 
 ## Goals / Non-Goals
 
@@ -192,7 +192,9 @@ If the newer B write fails, rollback uses the `confirmedPersisted` current at fa
 
 Use React Native's reactive color-scheme source (`useColorScheme` or an equivalent subscription backed by Appearance/matchMedia) inside the provider. `systemScheme` changes recompute effective scheme only when persisted scheme is `system`; they never enqueue a preference write.
 
-`app.json` currently forces `userInterfaceStyle: "dark"`. During the navigation/runtime section, inspect the Expo-supported configuration for automatic system tracking and make the smallest legitimate hunk, preserving the existing personal hunk. No edit is made during Propose. Web relies on the runtime subscription and synchronizes DOM after hydration; CSS `prefers-color-scheme` is not treated as a second resolved theme catalog.
+`app.json` currently forces `userInterfaceStyle: "dark"`. During the navigation/runtime section, change it narrowly to `automatic` and install `expo-system-ui` through the Expo SDK 54-compatible version so Android native receives the required System UI integration. Inspect the resolved Expo config/CNG output and register the `expo-system-ui` config plugin only when the actual project configuration requires it. Preserve the existing personal `android.package` hunk and the personal scripts in `package.json`, plus the resulting lockfile changes attributable to this one dependency. Web relies on the runtime subscription and synchronizes DOM after hydration; CSS `prefers-color-scheme` is not treated as a second resolved theme catalog.
+
+`useColorScheme` remains the only runtime React source for the observed system scheme. `expo-system-ui` enables/configures the native Android behavior; the provider does not read or maintain a second SystemUI theme state, and a runtime system change does not enqueue an Appearance write. Expo config/introspection verifies generated configuration, while physical Android runtime validation verifies the actual light/dark transition and foreground/background coherence.
 
 Alternative rejected: reading scheme once at startup misses OS/browser changes.
 
@@ -320,11 +322,11 @@ Expected areas, subject to exact filenames established during Apply:
 - `app/_layout.tsx`, `app/(tabs)/_layout.tsx`, `app/settings/appearance.tsx`, `app/(tabs)/ajustes.tsx`: provider, navigation, StatusBar, route and entry.
 - Shared capture modules: `LayoutOption.tsx`, `PosterPlaceholder.tsx`, `TagCollage.tsx`, `TitleGridCard.tsx`, `ViewOptionsPanel.tsx`; semantic `PersonalRatingBadge.tsx`.
 - Screens: Biblioteca, Buscar, Etiquetas, saved title detail, TMDB detail, Settings, credential settings and About.
-- Web/config: `global.css`; selective `app.json` hunk only if required for System. `package.json` remains untouched.
+- Web/config: `global.css`; `userInterfaceStyle: "automatic"`; the Expo SDK 54-compatible `expo-system-ui` dependency and, only if required by actual Expo/CNG configuration, its config-plugin entry. Preserve unrelated personal hunks in `app.json`/`package.json` and keep lockfile changes attributable only to this dependency.
 - Backup: current core v1/v2/v3 contracts plus new v4 creator/parser, export snapshot, import orchestration/results and Settings copy.
 - Focused Node `.cjs` harnesses following the repository's existing pattern.
 
-No new dependency is justified or planned.
+`expo-system-ui` is the single justified dependency exception required for Android native System behavior on Expo SDK 54. No other dependency is justified or authorized.
 
 ## Risks / Trade-offs
 
@@ -339,7 +341,8 @@ No new dependency is justified or planned.
 - [Twelve scheme/palette combinations multiply contrast work] → In Section 1, validate the complete 2×6 resolved catalog plus the documented relative-luminance Light gate and explicit `selectedSurface`/`selectedForeground` pair; before final release, validate semantic, focus, placeholder, selected and disabled pairs comprehensively in Section 12.
 - [Palette overrides create incomplete themes] → Resolver always begins with a complete base and returns a complete typed definition; screens cannot access partial overrides.
 - [Theme context causes broad rerenders] → Theme changes are user/system-driven and rare; memoize definitions/context and keep non-color StyleSheets static.
-- [Changing `userInterfaceStyle` overwrites protected app.json work] → Inspect current diff, make one narrow hunk only when the relevant section begins, then confirm the personal hunk remains; package.json receives no edit.
+- [Installing `expo-system-ui` overwrites protected app/package work] → Inspect the pre-install diffs, install only the Expo SDK 54-compatible package, add its config plugin only if Expo/CNG introspection requires it, then verify the personal `android.package` and package scripts remain byte/logically intact. Stage only the feature-owned `userInterfaceStyle`, dependency/lockfile and required plugin hunks at the later checkpoint.
+- [Android accepts the enum but does not follow System at runtime] → Validate resolved Expo config/introspection after installing `expo-system-ui`, then verify a physical Android build follows light/dark changes while the persisted scheme remains `system`; do not treat schema acceptance alone as runtime proof.
 - [Backup Appearance write fails after data merge] → Treat it as an explicitly reported lower-priority partial failure; preserve restored data and `confirmedPersisted` local Appearance.
 - [Appearance read error causes export of a false Dark + Original choice] → Model Appearance availability explicitly; export v4 without `appearance`, preserve import destination Appearance and never block items/pins export.
 - [Older app cannot import newly exported v4] → This is the declared export-format break. Preserve v1-v3 import fixtures and document rollback/export compatibility before deployment.
