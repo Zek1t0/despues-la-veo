@@ -41,21 +41,35 @@ const globalKeys = [
   "selectedSurface", "selectedForeground", "selectedBorder",
 ];
 const semanticKeys = [
-  "dangerSurface", "dangerBorder", "dangerText", "disabledSurface", "disabledText",
+  "dangerSurface", "dangerBorder", "dangerText", "onDangerSurface",
+  "disabledSurface", "disabledText",
   "personalRatingLowBackground", "personalRatingLowForeground",
   "personalRatingMediumBackground", "personalRatingMediumForeground",
   "personalRatingHighBackground", "personalRatingHighForeground",
 ];
 const structuralKeys = [
-  "imageOverlay", "imageOverlayStrong", "onImageOverlay", "imageOverlayBorder", "modalBackdrop",
+  "imageOverlay", "imageOverlayMedium", "imageOverlayStrong", "onImageOverlay",
+  "imageOverlayBorder", "modalBackdrop",
 ];
 
 function read(relativePath) {
   return fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
 }
 
-function assertSourceContains(relativePath, value) {
-  assert.equal(read(relativePath).includes(value), true, `${relativePath} must contain ${value}`);
+function assertBaselineSource(relativePath, item) {
+  const source = read(relativePath);
+  const historicalNeedle = item.sourceNeedle ?? item.value;
+  if (source.includes(historicalNeedle)) return;
+  assert.notEqual(
+    item.resolvedToken,
+    undefined,
+    `${relativePath} removed unresolved historical value ${historicalNeedle}`,
+  );
+  assert.equal(
+    source.includes(`theme.${item.resolvedToken}`),
+    true,
+    `${relativePath} must migrate ${historicalNeedle} to theme.${item.resolvedToken}`,
+  );
 }
 
 function assertCompleteTheme(theme, scheme, paletteId) {
@@ -83,7 +97,7 @@ function testInventoryStillMatchesRepo() {
   for (const group of Object.values(DARK_ORIGINAL_BASELINE)) {
     for (const item of Object.values(group)) {
       for (const source of item.sources) {
-        assertSourceContains(source, item.sourceNeedle ?? item.value);
+        assertBaselineSource(source, item);
       }
     }
   }
@@ -187,6 +201,10 @@ function testDarkOriginalParity() {
     theme.semantic.dangerText,
     DARK_ORIGINAL_BASELINE.semanticForegroundConsumers.tmdbFeedbackError.value
   );
+  assert.equal(
+    theme.semantic.onDangerSurface,
+    DARK_ORIGINAL_BASELINE.semanticForegroundConsumers.dangerSurfaceForeground.value
+  );
 
   assert.equal(
     theme.semantic.disabledSurface,
@@ -204,6 +222,7 @@ function testDarkOriginalParity() {
   assert.equal(theme.semantic.personalRatingHighBackground, shared.personalRatingHighBackground.value);
   assert.equal(theme.semantic.personalRatingHighForeground, shared.personalRatingHighText.value);
   assert.equal(theme.structural.imageOverlay, DARK_ORIGINAL_BASELINE.structural.imageOverlay.value);
+  assert.equal(theme.structural.imageOverlayMedium, DARK_ORIGINAL_BASELINE.structural.badgeOverlay.value);
   assert.equal(theme.structural.imageOverlayStrong, DARK_ORIGINAL_BASELINE.structural.imageOverlayStrong.value);
   assert.equal(theme.structural.onImageOverlay, shared.text.value);
   assert.equal(theme.structural.imageOverlayBorder, DARK_ORIGINAL_BASELINE.structural.imageOverlayBorder.value);
@@ -236,11 +255,21 @@ function testSemanticForegroundInventory() {
 
   assert.equal(DARK_ORIGINAL_BASELINE.shared.danger.value, "#4a1f1f");
   assert.equal(consumers.dangerSurfaceForeground.value, "#f2f2f2");
+  assert.equal(consumers.dangerSurfaceForeground.resolvedToken, "semantic.onDangerSurface");
   assert.match(consumers.dangerSurfaceForeground.note, /#4a1f1f/);
   for (const source of consumers.dangerSurfaceForeground.sources) {
-    assertSourceContains(source, "colors.danger");
-    assertSourceContains(source, "colors.text");
+    assertBaselineSource(source, {
+      ...DARK_ORIGINAL_BASELINE.shared.danger,
+      sourceNeedle: "colors.danger",
+    });
+    assertBaselineSource(source, consumers.dangerSurfaceForeground);
   }
+
+  assert.equal(
+    contrastRatio(LIGHT_SEMANTIC_TOKENS.onDangerSurface, LIGHT_SEMANTIC_TOKENS.dangerSurface) >= 4.5,
+    true,
+    "Light onDangerSurface must contrast with dangerSurface",
+  );
 }
 
 testInventoryStillMatchesRepo();

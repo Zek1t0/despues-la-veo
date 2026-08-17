@@ -43,6 +43,7 @@ export type SemanticThemeTokens = Readonly<{
   dangerSurface: string;
   dangerBorder: string;
   dangerText: string;
+  onDangerSurface: string;
   disabledSurface: string;
   disabledText: string;
   personalRatingLowBackground: string;
@@ -55,6 +56,7 @@ export type SemanticThemeTokens = Readonly<{
 
 export type StructuralThemeTokens = Readonly<{
   imageOverlay: string;
+  imageOverlayMedium: string;
   imageOverlayStrong: string;
   onImageOverlay: string;
   imageOverlayBorder: string;

@@ -10,7 +10,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 
-import { colors } from "../../theme/colors";
+import { useAppTheme } from "../../theme/AppThemeProvider";
 import { LayoutOption } from "./LayoutOption";
 
 type BaseViewOptionDescriptor = {
@@ -64,6 +64,8 @@ function CompactOption({
   selected,
   onPress,
 }: CompactOptionProps) {
+  const { theme } = useAppTheme();
+
   return (
     <Pressable
       accessibilityLabel={accessibilityLabel ?? title}
@@ -73,7 +75,14 @@ function CompactOption({
       onPress={() => onPress(id)}
       style={({ pressed }) => [
         styles.compactOption,
-        selected && styles.compactOptionSelected,
+        {
+          backgroundColor: selected
+            ? theme.global.selectedSurface
+            : theme.global.surfaceSecondary,
+          borderColor: selected
+            ? theme.global.selectedBorder
+            : theme.global.borderStrong,
+        },
         pressed && styles.pressed,
       ]}
     >
@@ -82,7 +91,16 @@ function CompactOption({
           {indicator}
         </View>
       ) : null}
-      <Text style={[styles.compactTitle, selected && styles.compactTitleSelected]}>
+      <Text
+        style={[
+          styles.compactTitle,
+          {
+            color: selected
+              ? theme.global.selectedForeground
+              : theme.global.textPrimary,
+          },
+        ]}
+      >
         {title}
       </Text>
     </Pressable>
@@ -95,6 +113,7 @@ export function ViewOptionsPanel({
   sections,
   title = "Opciones",
 }: ViewOptionsPanelProps) {
+  const { theme } = useAppTheme();
   const { width } = useWindowDimensions();
   const compactWeb = Platform.OS === "web" && width >= 640;
   const populatedSections = sections.filter((section) => section.options.length > 0);
@@ -117,13 +136,29 @@ export function ViewOptionsPanel({
       transparent
       visible={visible}
     >
-      <View style={[styles.backdrop, compactWeb ? styles.backdropWeb : styles.backdropMobile]}>
+      <View
+        style={[
+          styles.backdrop,
+          { backgroundColor: theme.structural.modalBackdrop },
+          compactWeb ? styles.backdropWeb : styles.backdropMobile,
+        ]}
+      >
         <View
           accessibilityViewIsModal
-          style={[styles.panel, compactWeb ? styles.panelWeb : styles.panelMobile]}
+          style={[
+            styles.panel,
+            {
+              backgroundColor: theme.global.surface,
+              borderColor: theme.global.borderStrong,
+            },
+            compactWeb ? styles.panelWeb : styles.panelMobile,
+          ]}
         >
-          <View style={styles.header}>
-            <Text accessibilityRole="header" style={styles.panelTitle}>
+          <View style={[styles.header, { borderBottomColor: theme.global.border }]}>
+            <Text
+              accessibilityRole="header"
+              style={[styles.panelTitle, { color: theme.global.textPrimary }]}
+            >
               {title}
             </Text>
             <Pressable
@@ -132,16 +167,23 @@ export function ViewOptionsPanel({
               focusable
               hitSlop={8}
               onPress={onClose}
-              style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
+              style={({ pressed }) => [
+                styles.closeButton,
+                { borderColor: theme.global.borderStrong },
+                pressed && styles.pressed,
+              ]}
             >
-              <Text style={styles.closeText}>Cerrar</Text>
+              <Text style={[styles.closeText, { color: theme.global.textPrimary }]}>Cerrar</Text>
             </Pressable>
           </View>
 
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             {populatedSections.map((section) => (
               <View key={section.id} style={styles.section}>
-                <Text accessibilityRole="header" style={styles.sectionTitle}>
+                <Text
+                  accessibilityRole="header"
+                  style={[styles.sectionTitle, { color: theme.global.textSecondary }]}
+                >
                   {section.title}
                 </Text>
                 <View style={styles.options}>
@@ -180,7 +222,6 @@ export function ViewOptionsPanel({
 
 const styles = StyleSheet.create({
   backdrop: {
-    backgroundColor: "rgba(0, 0, 0, 0.68)",
     flex: 1,
   },
   backdropWeb: {
@@ -192,8 +233,6 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   panel: {
-    backgroundColor: colors.card,
-    borderColor: colors.border2,
     borderWidth: 1,
     maxHeight: "86%",
     overflow: "hidden",
@@ -211,7 +250,6 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    borderBottomColor: colors.border,
     borderBottomWidth: 1,
     flexDirection: "row",
     gap: 12,
@@ -219,14 +257,12 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   panelTitle: {
-    color: colors.text,
     flex: 1,
     fontSize: 18,
     fontWeight: "900",
   },
   closeButton: {
     alignItems: "center",
-    borderColor: colors.border2,
     borderRadius: 10,
     borderWidth: 1,
     justifyContent: "center",
@@ -234,7 +270,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   closeText: {
-    color: colors.text,
     fontWeight: "800",
   },
   pressed: {
@@ -248,7 +283,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sectionTitle: {
-    color: colors.muted,
     fontSize: 14,
     fontWeight: "800",
   },
@@ -259,8 +293,6 @@ const styles = StyleSheet.create({
   },
   compactOption: {
     alignItems: "center",
-    backgroundColor: colors.card2,
-    borderColor: colors.border2,
     borderRadius: 10,
     borderWidth: 1,
     flexDirection: "row",
@@ -270,20 +302,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     width: "100%",
   },
-  compactOptionSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
   compactIndicator: {
     alignItems: "center",
     justifyContent: "center",
   },
   compactTitle: {
-    color: colors.text,
     flex: 1,
     fontWeight: "800",
-  },
-  compactTitleSelected: {
-    color: colors.bg,
   },
 });

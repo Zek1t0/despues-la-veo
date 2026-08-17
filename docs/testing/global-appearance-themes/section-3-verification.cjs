@@ -107,16 +107,6 @@ function testConfigAndScope() {
     "react-native-safe-area-context", "react-native-screens", "react-native-web",
   ];
   assert.deepEqual(Object.keys(packageJson.dependencies).sort(), allowedDependencies.sort());
-  for (const file of [
-    "src/components/browsing/LayoutOption.tsx",
-    "src/components/browsing/PosterPlaceholder.tsx",
-    "src/components/browsing/TagCollage.tsx",
-    "src/components/browsing/TitleGridCard.tsx",
-    "src/components/browsing/ViewOptionsPanel.tsx",
-  ]) {
-    const source = read(file);
-    assert.doesNotMatch(source, /useAppTheme/);
-  }
 }
 
 testRootProviderAndNavigationTheme();

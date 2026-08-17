@@ -6,7 +6,7 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../../theme/colors";
+import { useAppTheme } from "../../theme/AppThemeProvider";
 
 export type LayoutOptionProps = {
   id: string;
@@ -25,6 +25,8 @@ export function LayoutOption({
   onPress,
   accessibilityLabel,
 }: LayoutOptionProps) {
+  const { theme } = useAppTheme();
+
   return (
     <Pressable
       accessibilityLabel={accessibilityLabel ?? title}
@@ -34,14 +36,32 @@ export function LayoutOption({
       onPress={() => onPress(id)}
       style={({ pressed }) => [
         styles.option,
-        selected && styles.optionSelected,
+        {
+          backgroundColor: selected
+            ? theme.global.selectedSurface
+            : theme.global.surfaceSecondary,
+          borderColor: selected
+            ? theme.global.selectedBorder
+            : theme.global.borderStrong,
+        },
         pressed && styles.pressed,
       ]}
     >
       <View accessible={false} pointerEvents="none" style={styles.indicator}>
         {indicator}
       </View>
-      <Text style={[styles.title, selected && styles.titleSelected]}>{title}</Text>
+      <Text
+        style={[
+          styles.title,
+          {
+            color: selected
+              ? theme.global.selectedForeground
+              : theme.global.textPrimary,
+          },
+        ]}
+      >
+        {title}
+      </Text>
     </Pressable>
   );
 }
@@ -49,8 +69,6 @@ export function LayoutOption({
 const styles = StyleSheet.create({
   option: {
     alignItems: "center",
-    backgroundColor: colors.card2,
-    borderColor: colors.border2,
     borderRadius: 12,
     borderWidth: 1,
     flex: 1,
@@ -61,10 +79,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  optionSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
   pressed: {
     opacity: 0.78,
   },
@@ -74,11 +88,7 @@ const styles = StyleSheet.create({
     minHeight: 24,
   },
   title: {
-    color: colors.text,
     fontWeight: "800",
     textAlign: "center",
-  },
-  titleSelected: {
-    color: colors.bg,
   },
 });

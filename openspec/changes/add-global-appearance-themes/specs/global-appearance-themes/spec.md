@@ -99,7 +99,7 @@ El sistema MUST usar accent para identidad e interacción activa y MUST proporci
 
 ### Requirement: estados semánticos permanecen independientes de palettes
 
-El sistema MUST conservar significados propios para danger/error/destructive, disabled y PersonalRating low, medium y high. Las palettes MUST NOT reasignar esos significados, aunque el scheme pueda proporcionar variantes contrastantes. Antes de migrar consumers, la baseline Dark + Original MUST inventariar cada foreground semántico actual mediante consumer/archivo, valor actual y responsabilidad/token futuro; la coincidencia accidental con un color de PersonalRating MUST NOT aceptarse como prueba de `dangerText`. Si un único token no puede preservar dos presentaciones actuales, el catálogo MUST permanecer consumer-driven y mínimo, o la divergencia MUST documentarse como corrección futura de accesibilidad antes de cambiar el consumer. PersonalRating MUST conservar los rangos `10..74 low`, `75..84 medium` y `85..100 high` y MUST seguir comunicándose además del color.
+El sistema MUST conservar significados propios para danger/error/destructive, disabled y PersonalRating low, medium y high. Las palettes MUST NOT reasignar esos significados, aunque el scheme pueda proporcionar variantes contrastantes. `dangerText` MUST representar texto standalone de error/feedback, mientras `onDangerSurface` MUST proporcionar el foreground scheme-aware y contrastante colocado sobre `dangerSurface`; ninguno MUST sustituir indiscriminadamente al otro. Antes de migrar consumers, la baseline Dark + Original MUST inventariar cada foreground semántico actual mediante consumer/archivo, valor actual y responsabilidad/token futuro; la coincidencia accidental con un color de PersonalRating MUST NOT aceptarse como prueba de `dangerText`. Si un único token no puede preservar dos presentaciones actuales, el catálogo MUST permanecer consumer-driven y mínimo, o la divergencia MUST documentarse como corrección futura de accesibilidad antes de cambiar el consumer. PersonalRating MUST conservar los rangos `10..74 low`, `75..84 medium` y `85..100 high` y MUST seguir comunicándose además del color.
 
 #### Scenario: parity de foregrounds semánticos
 - **WHEN** se valida Dark + Original antes de migrar consumers
@@ -107,6 +107,13 @@ El sistema MUST conservar significados propios para danger/error/destructive, di
 - **AND** el texto de error `#5a2a2a` de `app/title/[id].tsx` se cataloga separadamente
 - **AND** los foregrounds reales usados sobre disabled `#303030` y `#3b3b3b` se registran junto con sus surfaces
 - **AND** ninguna migración cambia esos foregrounds silenciosamente
+
+#### Scenario: foreground sobre danger surface
+- **GIVEN** Dark + Original con `dangerSurface #4a1f1f`
+- **WHEN** un texto o icono se coloca dentro de esa surface
+- **THEN** usa `onDangerSurface #f2f2f2`
+- **AND** el `dangerText #f4b8b8` permanece reservado para error o feedback standalone
+- **AND** bajo Light `onDangerSurface` conserva contraste adecuado con el `dangerSurface` claro
 
 #### Scenario: rating high bajo Lavanda
 - **WHEN** una puntuación personal entre 85 y 100 se muestra con palette Lavanda
@@ -120,7 +127,14 @@ El sistema MUST conservar significados propios para danger/error/destructive, di
 
 ### Requirement: overlays y branding conservan responsabilidades propias
 
-El sistema MUST mantener separados del theme global los scrims, foregrounds y borders necesarios para legibilidad sobre posters arbitrarios. El pin contextual MUST seguir siendo un diamond-outline pasivo top-right y MUST coexistir sin solaparse con el rating. El sistema MUST renderizar el logo oficial TMDB actual sin tint ni filtros y MUST preservar exactamente el notice TMDB y la atribución JustWatch existentes de forma legible en todos los themes.
+El sistema MUST mantener separados del theme global los scrims, foregrounds y borders necesarios para legibilidad sobre posters arbitrarios. TitleGridCard MUST conservar las tres intensidades estructurales consumer-driven: `imageOverlay` para el título, `imageOverlayMedium` para el type badge e `imageOverlayStrong` para el pin. Estos tokens MUST permanecer oscuros sobre imágenes bajo Light y Dark, MUST NOT ser palette-overridable y MUST NOT abrir un catálogo preventivo de intensidades adicionales. El pin contextual MUST seguir siendo un diamond-outline pasivo top-right y MUST coexistir sin solaparse con el rating. El sistema MUST renderizar el logo oficial TMDB actual sin tint ni filtros y MUST preservar exactamente el notice TMDB y la atribución JustWatch existentes de forma legible en todos los themes.
+
+#### Scenario: paridad exacta de overlays de TitleGridCard
+- **WHEN** se resuelve Dark + Original
+- **THEN** `imageOverlay` es `rgba(11, 11, 11, 0.78)` para el title overlay
+- **AND** `imageOverlayMedium` es `rgba(11, 11, 11, 0.82)` para el type badge
+- **AND** `imageOverlayStrong` es `rgba(11, 11, 11, 0.90)` para el pin overlay
+- **AND** el `tagLabelOverlay` de opacidad `0.94` continúa fuera del contrato hasta migrar Etiquetas
 
 #### Scenario: poster en theme claro
 - **WHEN** una TitleGridCard se muestra bajo un theme claro

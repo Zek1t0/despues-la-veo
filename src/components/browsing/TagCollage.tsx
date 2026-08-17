@@ -7,7 +7,7 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import { colors } from "../../theme/colors";
+import { useAppTheme } from "../../theme/AppThemeProvider";
 import { PosterPlaceholder } from "./PosterPlaceholder";
 
 export type TagCollageItem = {
@@ -24,7 +24,15 @@ function isValidPosterUrl(value: string | null | undefined): value is string {
   return typeof value === "string" && /^https?:\/\//i.test(value);
 }
 
-function CollageCell({ item }: { item?: TagCollageItem }) {
+function CollageCell({
+  item,
+  surfaceColor,
+  borderColor,
+}: {
+  item?: TagCollageItem;
+  surfaceColor: string;
+  borderColor: string;
+}) {
   const [imageFailed, setImageFailed] = useState(false);
 
   useEffect(() => {
@@ -39,7 +47,10 @@ function CollageCell({ item }: { item?: TagCollageItem }) {
       accessible={false}
       importantForAccessibility="no"
       pointerEvents="none"
-      style={styles.cell}
+      style={[
+        styles.cell,
+        { backgroundColor: surfaceColor, borderColor },
+      ]}
     >
       {showImage ? (
         <Image
@@ -57,6 +68,7 @@ function CollageCell({ item }: { item?: TagCollageItem }) {
 }
 
 export function TagCollage({ items, style }: TagCollageProps) {
+  const { theme } = useAppTheme();
   const cells = Array.from({ length: 4 }, (_, index) => items[index]);
 
   return (
@@ -64,10 +76,19 @@ export function TagCollage({ items, style }: TagCollageProps) {
       accessible={false}
       importantForAccessibility="no-hide-descendants"
       pointerEvents="none"
-      style={[styles.collage, style]}
+      style={[
+        styles.collage,
+        { backgroundColor: theme.global.surfaceSecondary },
+        style,
+      ]}
     >
       {cells.map((item, index) => (
-        <CollageCell item={item} key={item ? `${item.id}-${item.posterUrl ?? "none"}` : `empty-${index}`} />
+        <CollageCell
+          borderColor={theme.global.border}
+          item={item}
+          key={item ? `${item.id}-${item.posterUrl ?? "none"}` : `empty-${index}`}
+          surfaceColor={theme.global.surfaceSecondary}
+        />
       ))}
     </View>
   );
@@ -76,14 +97,11 @@ export function TagCollage({ items, style }: TagCollageProps) {
 const styles = StyleSheet.create({
   collage: {
     aspectRatio: 16 / 9,
-    backgroundColor: colors.card2,
     flexDirection: "row",
     flexWrap: "wrap",
     overflow: "hidden",
   },
   cell: {
-    backgroundColor: colors.card2,
-    borderColor: colors.border,
     borderWidth: StyleSheet.hairlineWidth,
     height: "50%",
     overflow: "hidden",

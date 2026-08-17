@@ -8,7 +8,7 @@ import {
 } from "react-native";
 
 import type { PersonalRating } from "../../core/personalRating";
-import { colors } from "../../theme/colors";
+import { useAppTheme } from "../../theme/AppThemeProvider";
 import {
   getPersonalRatingPresentation,
   type PersonalRatingTone,
@@ -23,21 +23,22 @@ export function PersonalRatingBadge({
   value,
   style,
 }: PersonalRatingBadgeProps) {
+  const { theme } = useAppTheme();
   const presentation = getPersonalRatingPresentation(value);
   if (presentation === null) return null;
 
   const toneColors: Record<PersonalRatingTone, { backgroundColor: string; color: string }> = {
     low: {
-      backgroundColor: colors.personalRatingLowBackground,
-      color: colors.personalRatingLowText,
+      backgroundColor: theme.semantic.personalRatingLowBackground,
+      color: theme.semantic.personalRatingLowForeground,
     },
     medium: {
-      backgroundColor: colors.personalRatingMediumBackground,
-      color: colors.personalRatingMediumText,
+      backgroundColor: theme.semantic.personalRatingMediumBackground,
+      color: theme.semantic.personalRatingMediumForeground,
     },
     high: {
-      backgroundColor: colors.personalRatingHighBackground,
-      color: colors.personalRatingHighText,
+      backgroundColor: theme.semantic.personalRatingHighBackground,
+      color: theme.semantic.personalRatingHighForeground,
     },
   };
   const visualColors = toneColors[presentation.tone];

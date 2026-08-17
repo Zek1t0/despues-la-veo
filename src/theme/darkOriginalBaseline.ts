@@ -98,14 +98,14 @@ export const DARK_ORIGINAL_BASELINE = Object.freeze({
       "#f2f2f2",
       "semantic",
       ["app/settings/tmdb.tsx", "app/title/[id].tsx", "app/(tabs)/libreria.tsx"],
-      undefined,
-      "Current foreground paired with danger surface #4a1f1f; catalogued separately from standalone danger/error feedback for later migration review.",
+      "semantic.onDangerSurface",
+      "Foreground paired with danger surface #4a1f1f; distinct from standalone danger/error feedback.",
       "colors.text"
     ),
   }),
   structural: Object.freeze({
     imageOverlay: entry("rgba(11, 11, 11, 0.78)", "structural-image-overlay", ["src/components/browsing/TitleGridCard.tsx"], "structural.imageOverlay"),
-    badgeOverlay: entry("rgba(11, 11, 11, 0.82)", "structural-image-overlay", ["src/components/browsing/TitleGridCard.tsx"], undefined, "Existing intermediate scrim remains inventoried for the later consumer migration."),
+    badgeOverlay: entry("rgba(11, 11, 11, 0.82)", "structural-image-overlay", ["src/components/browsing/TitleGridCard.tsx"], "structural.imageOverlayMedium", "Consumer-proven intermediate scrim for the TitleGridCard type badge."),
     imageOverlayStrong: entry("rgba(11, 11, 11, 0.9)", "structural-image-overlay", ["src/components/browsing/TitleGridCard.tsx"], "structural.imageOverlayStrong"),
     tagLabelOverlay: entry("rgba(11, 11, 11, 0.94)", "structural-image-overlay", ["app/(tabs)/etiquetas.tsx"], undefined, "Existing tag-label scrim remains inventoried for its later screen migration."),
     imageOverlayBorder: entry("rgba(255, 255, 255, 0.22)", "structural-image-overlay", ["src/components/browsing/TitleGridCard.tsx"], "structural.imageOverlayBorder"),

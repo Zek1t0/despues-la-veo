@@ -38,6 +38,7 @@ export const DARK_SEMANTIC_TOKENS: SemanticThemeTokens = Object.freeze({
   dangerSurface: "#4a1f1f",
   dangerBorder: "#5a2a2a",
   dangerText: "#f4b8b8",
+  onDangerSurface: "#f2f2f2",
   disabledSurface: "#3b3b3b",
   disabledText: "#f2f2f2",
   personalRatingLowBackground: "#f4b8b8",
@@ -52,6 +53,7 @@ export const LIGHT_SEMANTIC_TOKENS: SemanticThemeTokens = Object.freeze({
   dangerSurface: "#fbe8e8",
   dangerBorder: "#b54848",
   dangerText: "#7d2020",
+  onDangerSurface: "#7d2020",
   disabledSurface: "#e1e1e1",
   disabledText: "#737373",
   personalRatingLowBackground: "#f4b8b8",
@@ -64,6 +66,7 @@ export const LIGHT_SEMANTIC_TOKENS: SemanticThemeTokens = Object.freeze({
 
 const POSTER_STRUCTURAL_TOKENS: StructuralThemeTokens = Object.freeze({
   imageOverlay: "rgba(11, 11, 11, 0.78)",
+  imageOverlayMedium: "rgba(11, 11, 11, 0.82)",
   imageOverlayStrong: "rgba(11, 11, 11, 0.9)",
   onImageOverlay: "#f2f2f2",
   imageOverlayBorder: "rgba(255, 255, 255, 0.22)",

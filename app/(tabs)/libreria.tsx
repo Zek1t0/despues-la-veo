@@ -26,7 +26,7 @@ import {
   getViewPreference,
   setViewPreference,
 } from "../../src/storage/viewPreferencesRepo";
-import { colors } from "../../src/theme/colors";
+import { useAppTheme } from "../../src/theme/AppThemeProvider";
 import {
   getPersonalRatingPresentation,
   PersonalRatingBadge,
@@ -39,6 +39,8 @@ type StatusFilter = LibraryStatusFilter;
 type TypeFilter = LibraryTypeFilter;
 
 function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  const { theme } = useAppTheme();
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -52,12 +54,23 @@ function Chip({ label, active, onPress }: { label: string; active: boolean; onPr
         paddingVertical: 8,
         paddingHorizontal: 10,
         borderRadius: 999,
-        backgroundColor: active ? colors.primary : colors.card2,
+        backgroundColor: active
+          ? theme.global.selectedSurface
+          : theme.global.surfaceSecondary,
         borderWidth: 1,
-        borderColor: active ? colors.primary : colors.border2,
+        borderColor: active
+          ? theme.global.selectedBorder
+          : theme.global.borderStrong,
       }}
     >
-      <Text style={{ color: active ? colors.bg : colors.text, fontWeight: active ? "900" : "700" }}>
+      <Text
+        style={{
+          color: active
+            ? theme.global.selectedForeground
+            : theme.global.textPrimary,
+          fontWeight: active ? "900" : "700",
+        }}
+      >
         {label}
       </Text>
     </Pressable>
@@ -71,20 +84,22 @@ function Pill({
   accessibilityLabel?: string;
   text: string;
 }) {
+  const { theme } = useAppTheme();
+
   return (
     <View
       style={{
         paddingVertical: 6,
         paddingHorizontal: 10,
         borderRadius: 999,
-        backgroundColor: colors.card2,
+        backgroundColor: theme.global.surfaceSecondary,
         borderWidth: 1,
-        borderColor: colors.border2,
+        borderColor: theme.global.borderStrong,
       }}
     >
       <Text
         accessibilityLabel={accessibilityLabel}
-        style={{ color: colors.text, fontWeight: "800" }}
+        style={{ color: theme.global.textPrimary, fontWeight: "800" }}
       >
         {text}
       </Text>
@@ -94,6 +109,7 @@ function Pill({
 
 export default function LibraryScreen() {
   const router = useRouter();
+  const { theme } = useAppTheme();
   const { width: windowWidth } = useWindowDimensions();
 
   const [items, setItems] = useState<SavedTitle[]>([]);
@@ -252,13 +268,13 @@ export default function LibraryScreen() {
             id: "detail",
             title: "Detalle",
             accessibilityLabel: "Mostrar Biblioteca en detalle",
-            indicator: <Ionicons color={colors.muted} name="list-outline" size={24} />,
+            indicator: <Ionicons color={theme.global.textSecondary} name="list-outline" size={24} />,
           },
           {
             id: "grid",
             title: "Mosaico",
             accessibilityLabel: "Mostrar Biblioteca en mosaico",
-            indicator: <Ionicons color={colors.muted} name="grid-outline" size={24} />,
+            indicator: <Ionicons color={theme.global.textSecondary} name="grid-outline" size={24} />,
           },
         ],
       },
@@ -321,7 +337,7 @@ export default function LibraryScreen() {
         ],
       },
     ],
-    [selectSort, selectViewMode, sort, statusFilter, typeFilter, viewMode]
+    [selectSort, selectViewMode, sort, statusFilter, theme.global.textSecondary, typeFilter, viewMode]
   );
 
   const refresh = useCallback(async () => {
@@ -487,7 +503,7 @@ export default function LibraryScreen() {
         opacity: !preferencesReady ? 0.45 : pressed ? 0.7 : 1,
       })}
     >
-      <Ionicons color={colors.text} name="options-outline" size={23} />
+      <Ionicons color={theme.global.textPrimary} name="options-outline" size={23} />
     </Pressable>
   );
 
@@ -511,7 +527,7 @@ export default function LibraryScreen() {
                       opacity: pressed ? 0.7 : 1,
                     })}
                   >
-                    <Ionicons color={colors.text} name="arrow-back" size={24} />
+                    <Ionicons color={theme.global.textPrimary} name="arrow-back" size={24} />
                   </Pressable>
                 )
               : undefined,
@@ -522,13 +538,13 @@ export default function LibraryScreen() {
                   autoFocus
                   onChangeText={setQ}
                   placeholder="Buscar por título o etiqueta…"
-                  placeholderTextColor={colors.subtle}
+                  placeholderTextColor={theme.global.textMuted}
                   style={{
-                    backgroundColor: colors.input,
-                    borderColor: colors.border2,
+                    backgroundColor: theme.global.inputBackground,
+                    borderColor: theme.global.borderStrong,
                     borderRadius: 10,
                     borderWidth: 1,
-                    color: colors.text,
+                    color: theme.global.textPrimary,
                     flex: 1,
                     paddingHorizontal: 10,
                     paddingVertical: 8,
@@ -537,7 +553,7 @@ export default function LibraryScreen() {
                   value={q}
                 />
               ) : (
-                <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900" }}>
+                <Text style={{ color: theme.global.textPrimary, fontSize: 18, fontWeight: "900" }}>
                   Biblioteca
                 </Text>
               ),
@@ -557,7 +573,7 @@ export default function LibraryScreen() {
                       opacity: pressed ? 0.7 : 1,
                     })}
                   >
-                    <Ionicons color={colors.text} name="search" size={22} />
+                    <Ionicons color={theme.global.textPrimary} name="search" size={22} />
                   </Pressable>
                 ) : null}
                 {renderMobileOptionsButton()}
@@ -570,6 +586,7 @@ export default function LibraryScreen() {
       <View
         style={{
           alignSelf: "center",
+          backgroundColor: theme.global.background,
           flex: 1,
           gap: 12,
           maxWidth: 1200,
@@ -584,13 +601,13 @@ export default function LibraryScreen() {
               accessibilityLabel="Buscar en Biblioteca"
               onChangeText={setQ}
               placeholder="Buscar por título o etiqueta…"
-              placeholderTextColor={colors.subtle}
+              placeholderTextColor={theme.global.textMuted}
               style={{
-                backgroundColor: colors.input,
-                borderColor: colors.border2,
+                backgroundColor: theme.global.inputBackground,
+                borderColor: theme.global.borderStrong,
                 borderRadius: 12,
                 borderWidth: 1,
-                color: colors.text,
+                color: theme.global.textPrimary,
                 flex: 1,
                 minHeight: 44,
                 minWidth: 0,
@@ -608,8 +625,10 @@ export default function LibraryScreen() {
               onPress={() => setOptionsVisible(true)}
               style={({ pressed }) => ({
                 alignItems: "center",
-                backgroundColor: colors.card2,
-                borderColor: colors.border2,
+                backgroundColor: preferencesReady
+                  ? theme.global.surfaceSecondary
+                  : theme.semantic.disabledSurface,
+                borderColor: theme.global.borderStrong,
                 borderRadius: 12,
                 borderWidth: 1,
                 flexDirection: "row",
@@ -619,8 +638,19 @@ export default function LibraryScreen() {
                 paddingHorizontal: 12,
               })}
             >
-              <Ionicons color={colors.text} name="options-outline" size={20} />
-              <Text style={{ color: colors.text, fontWeight: "800" }}>Opciones</Text>
+              <Ionicons
+                color={preferencesReady ? theme.global.textPrimary : theme.semantic.disabledText}
+                name="options-outline"
+                size={20}
+              />
+              <Text
+                style={{
+                  color: preferencesReady ? theme.global.textPrimary : theme.semantic.disabledText,
+                  fontWeight: "800",
+                }}
+              >
+                Opciones
+              </Text>
             </Pressable>
           </View>
 
@@ -638,7 +668,7 @@ export default function LibraryScreen() {
             <Chip label="Series" active={typeFilter === "tv"} onPress={() => setTypeFilter("tv")} />
           </View>
 
-          <Text style={{ color: colors.subtle, fontWeight: "700" }}>
+          <Text style={{ color: theme.global.textMuted, fontWeight: "700" }}>
             Mostrando {visibleItems.length} de {items.length}
           </Text>
         </View>
@@ -658,7 +688,7 @@ export default function LibraryScreen() {
             <Chip label="Terminados" active={statusFilter === "done"} onPress={() => setStatusFilter("done")} />
             <Chip label="Abandonados" active={statusFilter === "dropped"} onPress={() => setStatusFilter("dropped")} />
           </ScrollView>
-          <Text style={{ color: colors.subtle, fontWeight: "700" }}>
+          <Text style={{ color: theme.global.textMuted, fontWeight: "700" }}>
             Mostrando {visibleItems.length} de {items.length}
           </Text>
         </View>
@@ -666,15 +696,15 @@ export default function LibraryScreen() {
 
       {loading ? (
         <View style={{ alignItems: "center", gap: 10, paddingVertical: 32 }}>
-          <ActivityIndicator color={colors.text} />
-          <Text style={{ color: colors.muted }}>Cargando Biblioteca…</Text>
+          <ActivityIndicator color={theme.global.textPrimary} />
+          <Text style={{ color: theme.global.textSecondary }}>Cargando Biblioteca…</Text>
         </View>
       ) : snapshotError || !snapshotReady ? (
         <View style={{ alignItems: "flex-start", gap: 10, paddingVertical: 24 }}>
-          <Text style={{ color: colors.text, fontSize: 17, fontWeight: "900" }}>
+          <Text style={{ color: theme.semantic.dangerText, fontSize: 17, fontWeight: "900" }}>
             No se pudo cargar la Biblioteca
           </Text>
-          <Text style={{ color: colors.muted }}>
+          <Text style={{ color: theme.global.textSecondary }}>
             {snapshotError ?? "El estado de la Biblioteca aún no está disponible."}
           </Text>
           <Pressable
@@ -684,8 +714,8 @@ export default function LibraryScreen() {
             onPress={() => void refresh()}
             style={({ pressed }) => ({
               alignItems: "center",
-              backgroundColor: colors.card2,
-              borderColor: colors.border2,
+              backgroundColor: theme.global.surfaceSecondary,
+              borderColor: theme.global.borderStrong,
               borderRadius: 12,
               borderWidth: 1,
               justifyContent: "center",
@@ -695,7 +725,7 @@ export default function LibraryScreen() {
               paddingVertical: 8,
             })}
           >
-            <Text style={{ color: colors.text, fontWeight: "900" }}>Reintentar</Text>
+            <Text style={{ color: theme.global.textPrimary, fontWeight: "900" }}>Reintentar</Text>
           </Pressable>
         </View>
       ) : (
@@ -742,8 +772,8 @@ export default function LibraryScreen() {
                   padding: 12,
                   borderRadius: 16,
                   borderWidth: 1,
-                  borderColor: colors.border,
-                  backgroundColor: colors.card,
+                  borderColor: theme.global.border,
+                  backgroundColor: theme.global.surface,
                   gap: 10,
                 }}
               >
@@ -776,19 +806,19 @@ export default function LibraryScreen() {
                           width: 70,
                           height: 105,
                           borderRadius: 12,
-                          backgroundColor: colors.card2,
+                          backgroundColor: theme.global.surfaceSecondary,
                           borderWidth: 1,
-                          borderColor: colors.border,
+                          borderColor: theme.global.border,
                           alignItems: "center",
                           justifyContent: "center",
                         }}
                       >
-                        <Text style={{ color: colors.muted, fontSize: 12 }}>Sin póster</Text>
+                        <Text style={{ color: theme.global.textSecondary, fontSize: 12 }}>Sin póster</Text>
                       </View>
                     )}
 
                     <View style={{ flex: 1, gap: 6 }}>
-                      <Text style={{ fontSize: 16, fontWeight: "900", color: colors.text }}>
+                      <Text style={{ fontSize: 16, fontWeight: "900", color: theme.global.textPrimary }}>
                         {item.title}
                         {item.year ? ` (${item.year})` : ""}
                       </Text>
@@ -801,13 +831,13 @@ export default function LibraryScreen() {
                       </View>
 
                       {!!overview && (
-                        <Text style={{ color: colors.muted }} numberOfLines={3}>
+                        <Text style={{ color: theme.global.textSecondary }} numberOfLines={3}>
                           {overview}
                         </Text>
                       )}
 
                       {tagsPreview.length > 0 && (
-                        <Text style={{ color: colors.subtle }} numberOfLines={1}>
+                        <Text style={{ color: theme.global.textMuted }} numberOfLines={1}>
                           Etiquetas: {tagsPreview.join(", ")}
                           {item.tags.length > 3 ? "…" : ""}
                         </Text>
@@ -832,12 +862,12 @@ export default function LibraryScreen() {
                       paddingVertical: 8,
                       paddingHorizontal: 10,
                       borderRadius: 12,
-                      backgroundColor: colors.card2,
+                      backgroundColor: theme.global.surfaceSecondary,
                       borderWidth: 1,
-                      borderColor: colors.border2,
+                      borderColor: theme.global.borderStrong,
                     }}
                   >
-                    <Text style={{ color: colors.text, fontWeight: "800" }}>
+                    <Text style={{ color: theme.global.textPrimary, fontWeight: "800" }}>
                       {item.status === "done"
                         ? "Marcar como planeado"
                         : "Marcar como terminado"}
@@ -856,8 +886,8 @@ export default function LibraryScreen() {
                     onPress={() => toggleLibraryPin(item.id)}
                     style={({ pressed }) => ({
                       alignItems: "center",
-                      backgroundColor: colors.card2,
-                      borderColor: colors.border2,
+                      backgroundColor: theme.global.surfaceSecondary,
+                      borderColor: theme.global.borderStrong,
                       borderRadius: 12,
                       borderWidth: 1,
                       justifyContent: "center",
@@ -867,7 +897,12 @@ export default function LibraryScreen() {
                       paddingVertical: 8,
                     })}
                   >
-                    <Text style={{ color: colors.text, fontWeight: "800" }}>
+                    <Text
+                      style={{
+                        color: theme.global.textPrimary,
+                        fontWeight: "800",
+                      }}
+                    >
                       {pinnedAtById.has(item.id) ? "Desfijar" : "Fijar"}
                     </Text>
                   </Pressable>
@@ -883,12 +918,12 @@ export default function LibraryScreen() {
                       paddingVertical: 8,
                       paddingHorizontal: 10,
                       borderRadius: 12,
-                      backgroundColor: colors.danger,
+                      backgroundColor: theme.semantic.dangerSurface,
                       borderWidth: 1,
-                      borderColor: colors.dangerBorder,
+                      borderColor: theme.semantic.dangerBorder,
                     }}
                   >
-                    <Text style={{ color: colors.text, fontWeight: "800" }}>Borrar</Text>
+                    <Text style={{ color: theme.semantic.onDangerSurface, fontWeight: "800" }}>Borrar</Text>
                   </Pressable>
                 </View>
               </View>
@@ -896,10 +931,10 @@ export default function LibraryScreen() {
           }}
           ListEmptyComponent={
             <View style={{ paddingVertical: 20, gap: 8 }}>
-              <Text style={{ color: colors.text, fontWeight: "900" }}>
+              <Text style={{ color: theme.global.textPrimary, fontWeight: "900" }}>
                 {items.length === 0 ? "Tu Biblioteca está vacía" : "No hay resultados"}
               </Text>
-              <Text style={{ color: colors.muted }}>
+              <Text style={{ color: theme.global.textSecondary }}>
                 {items.length === 0
                   ? "Los títulos que guardes aparecerán acá."
                   : "Probá cambiar la búsqueda o los filtros."}

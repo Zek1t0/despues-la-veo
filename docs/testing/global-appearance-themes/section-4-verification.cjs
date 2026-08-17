@@ -77,14 +77,11 @@ function testAsyncActionsAndRecovery() {
   assert.match(screen, /!writeProblem/);
 }
 
-function testNoDependenciesOrConsumerMigration() {
+function testDependenciesAndLaterConsumersRemainScoped() {
   const packageJson = JSON.parse(read("package.json"));
   assert.equal(packageJson.dependencies["@expo/vector-icons"], "^15.0.3");
   const consumerSources = [
-    "app/(tabs)/libreria.tsx", "app/(tabs)/buscar.tsx", "app/(tabs)/etiquetas.tsx",
-    "src/components/browsing/LayoutOption.tsx", "src/components/browsing/PosterPlaceholder.tsx",
-    "src/components/browsing/TagCollage.tsx", "src/components/browsing/TitleGridCard.tsx",
-    "src/components/browsing/ViewOptionsPanel.tsx",
+    "app/(tabs)/buscar.tsx", "app/(tabs)/etiquetas.tsx",
   ].map(read).join("\n");
   assert.doesNotMatch(consumerSources, /useAppTheme/);
 }
@@ -93,5 +90,5 @@ testRouteAndSettingsEntry();
 testCatalogAndRealPreviews();
 testSelectorsAccessibilityAndResponsiveLayout();
 testAsyncActionsAndRecovery();
-testNoDependenciesOrConsumerMigration();
+testDependenciesAndLaterConsumersRemainScoped();
 console.log("Section 4 Appearance route, selectors, real previews, accessibility and recovery verification passed.");
