@@ -60,7 +60,7 @@ export const DARK_ORIGINAL_BASELINE = Object.freeze({
   }),
   disabled: Object.freeze({
     surface: entry("#3b3b3b", "semantic", ["app/(tabs)/ajustes.tsx", "app/title/[id].tsx", "app/tmdb/[type]/[id].tsx"], "semantic.disabledSurface"),
-    compactSurface: entry("#303030", "semantic", ["app/settings/tmdb.tsx"], undefined, "Existing compact disabled variant remains inventoried; the minimal contract intentionally canonicalizes future disabled surfaces."),
+    compactSurface: entry("#303030", "semantic", ["app/settings/tmdb.tsx"], "semantic.disabledSurface", "Historical compact disabled variant remains inventoried; the approved minimal contract canonicalizes migrated disabled surfaces."),
   }),
   semanticForegroundConsumers: Object.freeze({
     tmdbFeedbackError: entry(
@@ -74,8 +74,8 @@ export const DARK_ORIGINAL_BASELINE = Object.freeze({
       "#5a2a2a",
       "semantic",
       ["app/title/[id].tsx"],
-      undefined,
-      "Current dangerBorder-as-text presentation requires an explicit accessibility decision during its later consumer migration; Section 1 does not normalize it.",
+      "semantic.personalRatingErrorText",
+      "PersonalRating persistence feedback keeps its Dark + Original output; Section 12 retains the explicit accessibility review boundary.",
       "colors.dangerBorder"
     ),
     compactDisabledForeground: entry(

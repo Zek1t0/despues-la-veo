@@ -42,6 +42,7 @@ const globalKeys = [
 ];
 const semanticKeys = [
   "dangerSurface", "dangerBorder", "dangerText", "onDangerSurface",
+  "personalRatingErrorText",
   "disabledSurface", "disabledText",
   "personalRatingLowBackground", "personalRatingLowForeground",
   "personalRatingMediumBackground", "personalRatingMediumForeground",
@@ -250,8 +251,14 @@ function testSemanticForegroundInventory() {
   assert.notStrictEqual(consumers.tmdbFeedbackError, DARK_ORIGINAL_BASELINE.shared.personalRatingLowBackground);
 
   assert.equal(consumers.titleDetailRatingError.value, "#5a2a2a");
-  assert.equal(consumers.titleDetailRatingError.resolvedToken, undefined);
-  assert.match(consumers.titleDetailRatingError.note, /accessibility decision/);
+  assert.equal(consumers.titleDetailRatingError.resolvedToken, "semantic.personalRatingErrorText");
+  assert.match(consumers.titleDetailRatingError.note, /Section 12/);
+  assert.equal(DARK_SEMANTIC_TOKENS.personalRatingErrorText, "#5a2a2a");
+  assert.equal(LIGHT_SEMANTIC_TOKENS.personalRatingErrorText, "#7d2020");
+  for (const palette of APPEARANCE_PALETTE_CATALOG) {
+    assert.equal(resolveAppearanceTheme({ version: 1, scheme: "dark", palette: palette.id }, "dark").semantic.personalRatingErrorText, "#5a2a2a");
+    assert.equal(resolveAppearanceTheme({ version: 1, scheme: "light", palette: palette.id }, "light").semantic.personalRatingErrorText, "#7d2020");
+  }
 
   assert.equal(DARK_ORIGINAL_BASELINE.disabled.compactSurface.value, "#303030");
   assert.equal(consumers.compactDisabledForeground.value, "#f2f2f2");

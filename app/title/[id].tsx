@@ -41,7 +41,6 @@ import {
 } from "../../src/storage/savedTitlesRepo";
 import { getTitleDetailPinSnapshot } from "../../src/storage/titleDetailPinSnapshot";
 import { setTitlePinState } from "../../src/storage/titlePinsRepo";
-import { colors } from "../../src/theme/colors";
 import { useAppTheme } from "../../src/theme/AppThemeProvider";
 
 const STATUS_OPTIONS: { value: TitleStatus; label: string }[] = ([
@@ -81,6 +80,7 @@ function Chip({
   active: boolean;
   onPress: () => void;
 }) {
+  const { theme } = useAppTheme();
   return (
     <Pressable
       accessibilityRole="button"
@@ -94,14 +94,14 @@ function Chip({
         paddingVertical: 8,
         paddingHorizontal: 12,
         borderRadius: 999,
-        backgroundColor: active ? colors.primary : colors.card2,
+        backgroundColor: active ? theme.global.selectedSurface : theme.global.surfaceSecondary,
         borderWidth: 1,
-        borderColor: active ? colors.primary : colors.border2,
+        borderColor: active ? theme.global.selectedBorder : theme.global.borderStrong,
       }}
     >
       <Text
         style={{
-          color: active ? colors.bg : colors.text,
+          color: active ? theme.global.selectedForeground : theme.global.textPrimary,
           fontWeight: active ? "900" : "700",
         }}
       >
@@ -112,6 +112,7 @@ function Chip({
 }
 
 function TagPill({ tag, onRemove }: { tag: string; onRemove: () => void }) {
+  const { theme } = useAppTheme();
   return (
     <View
       style={{
@@ -121,12 +122,12 @@ function TagPill({ tag, onRemove }: { tag: string; onRemove: () => void }) {
         paddingVertical: 8,
         paddingHorizontal: 10,
         borderRadius: 999,
-        backgroundColor: colors.card2,
+        backgroundColor: theme.global.surfaceSecondary,
         borderWidth: 1,
-        borderColor: colors.border2,
+        borderColor: theme.global.borderStrong,
       }}
     >
-      <Text style={{ color: colors.text, fontWeight: "700" }}>{tag}</Text>
+      <Text style={{ color: theme.global.textPrimary, fontWeight: "700" }}>{tag}</Text>
       <Pressable
         accessibilityLabel={`Quitar etiqueta ${tag}`}
         accessibilityRole="button"
@@ -139,26 +140,27 @@ function TagPill({ tag, onRemove }: { tag: string; onRemove: () => void }) {
           borderRadius: 999,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: colors.card,
+          backgroundColor: theme.global.surface,
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor: theme.global.border,
         }}
       >
-        <Text style={{ color: colors.text, fontWeight: "900" }}>✕</Text>
+        <Text style={{ color: theme.global.textPrimary, fontWeight: "900" }}>✕</Text>
       </Pressable>
     </View>
   );
 }
 
 function Card({ children }: { children: React.ReactNode }) {
+  const { theme } = useAppTheme();
   return (
     <View
       style={{
         padding: 14,
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: colors.card,
+        borderColor: theme.global.border,
+        backgroundColor: theme.global.surface,
         gap: 10,
       }}
     >
@@ -507,9 +509,9 @@ export default function TitleDetailScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, padding: 16, justifyContent: "center", gap: 10 }}>
-        <ActivityIndicator />
-        <Text style={{ color: colors.muted, textAlign: "center" }}>Cargando…</Text>
+      <View style={{ flex: 1, padding: 16, justifyContent: "center", gap: 10, backgroundColor: theme.global.background }}>
+        <ActivityIndicator color={theme.global.accent} />
+        <Text style={{ color: theme.global.textSecondary, textAlign: "center" }}>Cargando…</Text>
       </View>
     );
   }
@@ -522,11 +524,11 @@ export default function TitleDetailScreen() {
             title: "Título",
           }}
         />
-        <View style={{ flex: 1, padding: 16, gap: 10 }}>
-          <Text style={{ color: colors.text, fontWeight: "900", fontSize: 18 }}>
+        <View style={{ flex: 1, padding: 16, gap: 10, backgroundColor: theme.global.background }}>
+          <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 18 }}>
             No encontrado
           </Text>
-          <Text style={{ color: colors.muted }}>
+          <Text style={{ color: theme.global.textSecondary }}>
             Este ítem no existe (o fue borrado).
           </Text>
           <Pressable
@@ -537,13 +539,13 @@ export default function TitleDetailScreen() {
               minHeight: 44,
               padding: 12,
               borderRadius: 12,
-              backgroundColor: colors.card,
+              backgroundColor: theme.global.surface,
               borderWidth: 1,
-              borderColor: colors.border,
+              borderColor: theme.global.border,
               alignItems: "center",
             }}
           >
-            <Text style={{ color: colors.text, fontWeight: "900" }}>Volver</Text>
+            <Text style={{ color: theme.global.textPrimary, fontWeight: "900" }}>Volver</Text>
           </Pressable>
         </View>
       </>
@@ -580,6 +582,7 @@ export default function TitleDetailScreen() {
       />
 
       <ScrollView
+        style={{ backgroundColor: theme.global.background }}
         contentContainerStyle={{
           alignSelf: "center",
           gap: 16,
@@ -590,10 +593,10 @@ export default function TitleDetailScreen() {
         }}
       >
         <View style={{ gap: 6 }}>
-          <Text style={{ fontSize: 24, fontWeight: "900", color: colors.text }}>
+          <Text style={{ fontSize: 24, fontWeight: "900", color: theme.global.textPrimary }}>
             {item.title}
           </Text>
-          <Text style={{ color: colors.muted, fontWeight: "700" }}>
+          <Text style={{ color: theme.global.textSecondary, fontWeight: "700" }}>
             {titleTypeLabel(item.type)} • {item.provider.toUpperCase()}
           </Text>
         </View>
@@ -607,8 +610,8 @@ export default function TitleDetailScreen() {
               onPress={togglePin}
               style={({ pressed }) => ({
                 alignItems: "center",
-                backgroundColor: pinnedAt === null ? colors.primary : colors.card2,
-                borderColor: pinnedAt === null ? colors.primary : colors.border2,
+                backgroundColor: pinnedAt === null ? theme.global.accent : theme.global.surfaceSecondary,
+                borderColor: pinnedAt === null ? theme.global.accent : theme.global.borderStrong,
                 borderRadius: 12,
                 borderWidth: 1,
                 justifyContent: "center",
@@ -620,7 +623,7 @@ export default function TitleDetailScreen() {
             >
               <Text
                 style={{
-                  color: pinnedAt === null ? colors.bg : colors.text,
+                  color: pinnedAt === null ? theme.global.onAccent : theme.global.textPrimary,
                   fontWeight: "900",
                 }}
               >
@@ -631,7 +634,7 @@ export default function TitleDetailScreen() {
             </Pressable>
           ) : (
             <View style={{ gap: 10 }}>
-              <Text style={{ color: colors.muted }}>
+              <Text style={{ color: theme.global.textSecondary }}>
                 {pinReadError ?? "Cargando estado de fijado…"}
               </Text>
               {pinReadError ? (
@@ -641,8 +644,8 @@ export default function TitleDetailScreen() {
                   onPress={() => void load()}
                   style={({ pressed }) => ({
                     alignItems: "center",
-                    backgroundColor: colors.card2,
-                    borderColor: colors.border2,
+                    backgroundColor: theme.global.surfaceSecondary,
+                    borderColor: theme.global.borderStrong,
                     borderRadius: 12,
                     borderWidth: 1,
                     justifyContent: "center",
@@ -652,7 +655,7 @@ export default function TitleDetailScreen() {
                     paddingVertical: 10,
                   })}
                 >
-                  <Text style={{ color: colors.text, fontWeight: "900" }}>Reintentar</Text>
+                  <Text style={{ color: theme.global.textPrimary, fontWeight: "900" }}>Reintentar</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -668,14 +671,14 @@ export default function TitleDetailScreen() {
             }}
           >
             <View style={{ flex: 1, gap: 4 }}>
-              <Text style={{ color: colors.text, fontWeight: "900", fontSize: 16 }}>
+              <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 16 }}>
                 Tu puntuación
               </Text>
               <Text
                 accessibilityLabel={item.personalRating === null
                   ? "Mi puntuación: sin calificar"
                   : `Mi puntuación: ${formatPersonalRating(item.personalRating)} de 10`}
-                style={{ color: colors.text, fontSize: 26, fontWeight: "900" }}
+                style={{ color: theme.global.textPrimary, fontSize: 26, fontWeight: "900" }}
               >
                 {item.personalRating === null
                   ? "Sin calificar"
@@ -683,10 +686,10 @@ export default function TitleDetailScreen() {
               </Text>
             </View>
             <View style={{ flex: 1, gap: 4 }}>
-              <Text style={{ color: colors.text, fontWeight: "900", fontSize: 16 }}>
+              <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 16 }}>
                 TMDB
               </Text>
-              <Text style={{ color: colors.muted, fontSize: 26, fontWeight: "800" }}>
+              <Text style={{ color: theme.global.textSecondary, fontSize: 26, fontWeight: "800" }}>
                 {typeof item.voteAverage === "number" && Number.isFinite(item.voteAverage)
                   ? `${item.voteAverage.toFixed(1)} / 10`
                   : "— / 10"}
@@ -702,8 +705,8 @@ export default function TitleDetailScreen() {
               onPress={() => requestPersonalRating(INITIAL_PERSONAL_RATING)}
               style={({ pressed }) => ({
                 alignItems: "center",
-                backgroundColor: colors.primary,
-                borderColor: colors.primary,
+                backgroundColor: theme.global.accent,
+                borderColor: theme.global.accent,
                 borderRadius: 12,
                 borderWidth: 1,
                 justifyContent: "center",
@@ -713,7 +716,7 @@ export default function TitleDetailScreen() {
                 paddingVertical: 10,
               })}
             >
-              <Text style={{ color: colors.bg, fontWeight: "900" }}>Calificar con 7.0</Text>
+              <Text style={{ color: theme.global.onAccent, fontWeight: "900" }}>Calificar con 7.0</Text>
             </Pressable>
           ) : (
             <>
@@ -737,8 +740,8 @@ export default function TitleDetailScreen() {
                       onPress={() => adjustPersonalRating(control.delta)}
                       style={({ pressed }) => ({
                         alignItems: "center",
-                        backgroundColor: colors.card2,
-                        borderColor: colors.border2,
+                        backgroundColor: theme.global.surfaceSecondary,
+                        borderColor: theme.global.borderStrong,
                         borderRadius: 12,
                         borderWidth: 1,
                         flexGrow: 1,
@@ -750,7 +753,7 @@ export default function TitleDetailScreen() {
                         paddingVertical: 10,
                       })}
                     >
-                      <Text style={{ color: colors.text, fontWeight: "900" }}>{control.text}</Text>
+                      <Text style={{ color: theme.global.textPrimary, fontWeight: "900" }}>{control.text}</Text>
                     </Pressable>
                   );
                 })}
@@ -762,7 +765,7 @@ export default function TitleDetailScreen() {
                 onPress={() => requestPersonalRating(null)}
                 style={({ pressed }) => ({
                   alignItems: "center",
-                  borderColor: colors.border2,
+                  borderColor: theme.global.borderStrong,
                   borderRadius: 12,
                   borderWidth: 1,
                   justifyContent: "center",
@@ -772,17 +775,17 @@ export default function TitleDetailScreen() {
                   paddingVertical: 10,
                 })}
               >
-                <Text style={{ color: colors.text, fontWeight: "800" }}>Quitar puntuación</Text>
+                <Text style={{ color: theme.global.textPrimary, fontWeight: "800" }}>Quitar puntuación</Text>
               </Pressable>
             </>
           )}
           {ratingPending ? (
-            <Text accessibilityLiveRegion="polite" style={{ color: colors.subtle }}>
+            <Text accessibilityLiveRegion="polite" style={{ color: theme.global.textMuted }}>
               Guardando puntuación…
             </Text>
           ) : null}
           {ratingError ? (
-            <Text accessibilityLiveRegion="assertive" style={{ color: colors.dangerBorder }}>
+            <Text accessibilityLiveRegion="assertive" style={{ color: theme.semantic.personalRatingErrorText }}>
               {ratingError}
             </Text>
           ) : null}
@@ -790,7 +793,7 @@ export default function TitleDetailScreen() {
 
         {/* Estado */}
         <Card>
-          <Text style={{ color: colors.text, fontWeight: "900", fontSize: 16 }}>Estado</Text>
+          <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 16 }}>Estado</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {STATUS_OPTIONS.map((s) => (
               <Chip
@@ -801,15 +804,15 @@ export default function TitleDetailScreen() {
               />
             ))}
           </View>
-          <Text style={{ color: colors.subtle }}>Se guarda automáticamente.</Text>
+          <Text style={{ color: theme.global.textMuted }}>Se guarda automáticamente.</Text>
         </Card>
 
         {/* Etiquetas */}
         <Card>
           <View style={{ gap: 4 }}>
-            <Text style={{ color: colors.text, fontWeight: "900", fontSize: 16 }}>Etiquetas</Text>
-            <Text style={{ color: colors.subtle }}>Se guardan automáticamente al agregar o borrar.</Text>
-            {!!tagHint && <Text style={{ color: colors.muted, fontWeight: "800" }}>{tagHint}</Text>}
+            <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 16 }}>Etiquetas</Text>
+            <Text style={{ color: theme.global.textMuted }}>Se guardan automáticamente al agregar o borrar.</Text>
+            {!!tagHint && <Text style={{ color: theme.global.textSecondary, fontWeight: "800" }}>{tagHint}</Text>}
           </View>
 
           <View
@@ -824,7 +827,7 @@ export default function TitleDetailScreen() {
               accessibilityLabel="Nueva etiqueta"
               onChangeText={setNewTag}
               placeholder="Ej: Con: Martina"
-              placeholderTextColor={colors.subtle}
+              placeholderTextColor={theme.global.textMuted}
               onSubmitEditing={() => void addTag()}
               style={{
                 flex: 1,
@@ -834,9 +837,9 @@ export default function TitleDetailScreen() {
                 paddingVertical: 10,
                 borderRadius: 12,
                 borderWidth: 1,
-                borderColor: colors.border2,
-                backgroundColor: colors.input,
-                color: colors.text,
+                borderColor: theme.global.borderStrong,
+                backgroundColor: theme.global.inputBackground,
+                color: theme.global.textPrimary,
               }}
               returnKeyType="done"
             />
@@ -852,18 +855,18 @@ export default function TitleDetailScreen() {
                 paddingVertical: 10,
                 paddingHorizontal: 14,
                 borderRadius: 12,
-                backgroundColor: colors.primary,
+                backgroundColor: theme.global.accent,
                 borderWidth: 1,
-                borderColor: colors.primary,
+                borderColor: theme.global.accent,
               }}
             >
-              <Text style={{ color: colors.bg, fontWeight: "900" }}>Agregar</Text>
+              <Text style={{ color: theme.global.onAccent, fontWeight: "900" }}>Agregar</Text>
             </Pressable>
           </View>
 
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {tags.length === 0 ? (
-              <Text style={{ color: colors.muted }}>Todavía no hay etiquetas.</Text>
+              <Text style={{ color: theme.global.textSecondary }}>Todavía no hay etiquetas.</Text>
             ) : (
               tags.map((t) => <TagPill key={t} tag={t} onRemove={() => void removeTag(t)} />)
             )}
@@ -872,7 +875,7 @@ export default function TitleDetailScreen() {
 
         {/* Notas */}
         <Card>
-          <Text style={{ color: colors.text, fontWeight: "900", fontSize: 16 }}>Notas</Text>
+          <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 16 }}>Notas</Text>
 
           <TextInput
             value={notes}
@@ -883,7 +886,7 @@ export default function TitleDetailScreen() {
               setDirtyNotes(true);
             }}
             placeholder="Escribí una nota…"
-            placeholderTextColor={colors.subtle}
+            placeholderTextColor={theme.global.textMuted}
             multiline
             style={{
               minHeight: 140,
@@ -891,9 +894,9 @@ export default function TitleDetailScreen() {
               paddingVertical: 10,
               borderRadius: 12,
               borderWidth: 1,
-              borderColor: colors.border2,
-              backgroundColor: colors.input,
-              color: colors.text,
+              borderColor: theme.global.borderStrong,
+              backgroundColor: theme.global.inputBackground,
+              color: theme.global.textPrimary,
               textAlignVertical: "top",
             }}
           />
@@ -909,16 +912,16 @@ export default function TitleDetailScreen() {
               justifyContent: "center",
               paddingVertical: 12,
               borderRadius: 12,
-              backgroundColor: dirtyNotes ? colors.primary : "#3b3b3b",
+              backgroundColor: dirtyNotes ? theme.global.accent : theme.semantic.disabledSurface,
               alignItems: "center",
             }}
           >
-            <Text style={{ color: dirtyNotes ? colors.bg : colors.text, fontWeight: "900" }}>
+            <Text style={{ color: dirtyNotes ? theme.global.onAccent : theme.semantic.disabledText, fontWeight: "900" }}>
               {dirtyNotes ? "Guardar y volver" : "Sin cambios"}
             </Text>
           </Pressable>
 
-          <Text style={{ color: colors.subtle }}>
+          <Text style={{ color: theme.global.textMuted }}>
             {formattedUpdatedAt
               ? `Actualizado: ${formattedUpdatedAt}`
               : "Fecha de actualización no disponible."}
@@ -934,13 +937,13 @@ export default function TitleDetailScreen() {
             justifyContent: "center",
             paddingVertical: 14,
             borderRadius: 14,
-            backgroundColor: colors.danger,
+            backgroundColor: theme.semantic.dangerSurface,
             alignItems: "center",
             borderWidth: 1,
-            borderColor: colors.dangerBorder,
+            borderColor: theme.semantic.dangerBorder,
           }}
         >
-          <Text style={{ color: colors.text, fontWeight: "900" }}>Borrar</Text>
+          <Text style={{ color: theme.semantic.onDangerSurface, fontWeight: "900" }}>Borrar</Text>
         </Pressable>
       </ScrollView>
     </>

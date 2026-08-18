@@ -10,7 +10,7 @@ import type { BackupValidationError } from "../../src/core/libraryBackupV1";
 import { createLibraryBackupV3 } from "../../src/core/libraryBackupV3";
 import { getLibraryBackupExportData } from "../../src/storage/libraryBackupExport";
 import { mergeLibraryBackup } from "../../src/storage/savedTitlesRepo";
-import { colors } from "../../src/theme/colors";
+import { useAppTheme } from "../../src/theme/AppThemeProvider";
 import { useTmdbCredential } from "../../src/providers/tmdb/credential/TmdbCredentialProvider";
 import {
   presentTmdbCredentialStatus,
@@ -66,6 +66,7 @@ function PrimaryButton({
   onPress: () => void;
   disabled?: boolean;
 }) {
+  const { theme } = useAppTheme();
   return (
     <Pressable
       accessibilityRole="button"
@@ -75,18 +76,19 @@ function PrimaryButton({
       style={{
         padding: 14,
         borderRadius: 14,
-        backgroundColor: disabled ? "#3b3b3b" : colors.card,
+        backgroundColor: disabled ? theme.semantic.disabledSurface : theme.global.surface,
         borderWidth: 1,
-        borderColor: colors.border,
+        borderColor: theme.global.border,
         alignItems: "center",
       }}
     >
-      <Text style={{ color: colors.text, fontWeight: "900" }}>{label}</Text>
+      <Text style={{ color: disabled ? theme.semantic.disabledText : theme.global.textPrimary, fontWeight: "900" }}>{label}</Text>
     </Pressable>
   );
 }
 
 export default function SettingsScreen() {
+  const { theme } = useAppTheme();
   const [busy, setBusy] = useState(false);
   const [lastMsg, setLastMsg] = useState<string | null>(null);
   const [tmdbRetrying, setTmdbRetrying] = useState(false);
@@ -351,11 +353,11 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView
-      style={{ flex: 1 }}
+      style={{ flex: 1, backgroundColor: theme.global.background }}
       contentContainerStyle={{ padding: 16, gap: 12 }}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={{ fontSize: 22, fontWeight: "900", color: colors.text }}>Ajustes</Text>
+      <Text style={{ fontSize: 22, fontWeight: "900", color: theme.global.textPrimary }}>Ajustes</Text>
 
       <PrimaryButton
         label="Apariencia"
@@ -364,13 +366,13 @@ export default function SettingsScreen() {
 
       <View
         accessibilityLabel="Configuración de TMDB"
-        style={{ padding: 16, gap: 10, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }}
+        style={{ padding: 16, gap: 10, borderRadius: 14, backgroundColor: theme.global.surface, borderWidth: 1, borderColor: theme.global.border }}
       >
-        <Text style={{ color: colors.text, fontSize: 18, fontWeight: "900" }}>TMDB</Text>
-        <Text accessibilityLiveRegion="polite" style={{ color: colors.text, fontWeight: "700" }}>
+        <Text style={{ color: theme.global.textPrimary, fontSize: 18, fontWeight: "900" }}>TMDB</Text>
+        <Text accessibilityLiveRegion="polite" style={{ color: theme.global.textPrimary, fontWeight: "700" }}>
           Estado: {tmdbStatus.label}
         </Text>
-        {!!tmdbStatus.detail && <Text style={{ color: colors.muted }}>{tmdbStatus.detail}</Text>}
+        {!!tmdbStatus.detail && <Text style={{ color: theme.global.textSecondary }}>{tmdbStatus.detail}</Text>}
         {(tmdbSnapshot.status === "storage-error" || tmdbRetrying) && (
           <PrimaryButton
             label={tmdbRetrying ? "Reintentando..." : "Reintentar"}
@@ -395,12 +397,12 @@ export default function SettingsScreen() {
 
       {busy && (
         <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
-          <ActivityIndicator />
-          <Text style={{ color: colors.muted }}>Procesando…</Text>
+          <ActivityIndicator color={theme.global.accent} />
+          <Text style={{ color: theme.global.textSecondary }}>Procesando…</Text>
         </View>
       )}
 
-      {!!lastMsg && <Text style={{ color: colors.muted }}>{lastMsg}</Text>}
+      {!!lastMsg && <Text style={{ color: theme.global.textSecondary }}>{lastMsg}</Text>}
 
       {Platform.OS === "web" && (
         <input
@@ -412,7 +414,7 @@ export default function SettingsScreen() {
         />
       )}
 
-      <Text style={{ color: colors.subtle, marginTop: 6 }}>
+      <Text style={{ color: theme.global.textMuted, marginTop: 6 }}>
         Export genera un .json versionado. Import hace MERGE: no borra títulos locales ausentes del
         backup y evita duplicados por provider + externalId.
       </Text>

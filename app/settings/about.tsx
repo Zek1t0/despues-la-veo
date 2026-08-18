@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { Image, Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { Stack } from "expo-router";
 
-import { colors } from "../../src/theme/colors";
+import { useAppTheme } from "../../src/theme/AppThemeProvider";
 
 const TMDB_URL = "https://www.themoviedb.org";
 const JUSTWATCH_URL = "https://www.justwatch.com/";
 const TMDB_NOTICE = "This product uses the TMDB API but is not endorsed or certified by TMDB.";
 
 export default function AboutScreen() {
+  const { theme } = useAppTheme();
   const [linkError, setLinkError] = useState<string | null>(null);
   const linkOpeningRef = useRef(false);
   const mountedRef = useRef(true);
@@ -39,6 +40,7 @@ export default function AboutScreen() {
     <>
       <Stack.Screen options={{ title: "Acerca de / Créditos" }} />
       <ScrollView
+        style={{ backgroundColor: theme.global.background }}
         contentContainerStyle={{
           alignSelf: "center",
           gap: 18,
@@ -49,10 +51,10 @@ export default function AboutScreen() {
         }}
       >
         <View style={{ gap: 8 }}>
-          <Text style={{ color: colors.text, fontSize: 26, fontWeight: "900" }}>
+          <Text style={{ color: theme.global.textPrimary, fontSize: 26, fontWeight: "900" }}>
             Después la veo
           </Text>
-          <Text style={{ color: colors.muted, lineHeight: 21 }}>
+          <Text style={{ color: theme.global.textSecondary, lineHeight: 21 }}>
             Una aplicación local-first para encontrar películas y series y organizar tu biblioteca personal.
           </Text>
         </View>
@@ -60,15 +62,15 @@ export default function AboutScreen() {
         <View
           accessibilityLabel="Créditos de The Movie Database"
           style={{
-            backgroundColor: colors.card,
-            borderColor: colors.border,
+            backgroundColor: theme.global.surface,
+            borderColor: theme.global.border,
             borderRadius: 16,
             borderWidth: 1,
             gap: 14,
             padding: 18,
           }}
         >
-          <Text style={{ color: colors.text, fontSize: 20, fontWeight: "900" }}>Créditos</Text>
+          <Text style={{ color: theme.global.textPrimary, fontSize: 20, fontWeight: "900" }}>Créditos</Text>
           <View style={{ alignSelf: "center", maxWidth: 120, width: "100%" }}>
             <Image
               accessible={false}
@@ -77,13 +79,13 @@ export default function AboutScreen() {
               style={{ aspectRatio: 185.04 / 133.4, width: "100%" }}
             />
           </View>
-          <Text style={{ color: colors.muted, lineHeight: 21 }}>
+          <Text style={{ color: theme.global.textSecondary, lineHeight: 21 }}>
             Los datos remotos de películas y series son provistos por TMDB, un servicio externo.
           </Text>
-          <Text style={{ color: colors.muted, lineHeight: 21 }}>
+          <Text style={{ color: theme.global.textSecondary, lineHeight: 21 }}>
             Los datos de disponibilidad en streaming, alquiler y compra son provistos por JustWatch a través de TMDB.
           </Text>
-          <Text style={{ color: colors.text, lineHeight: 21 }}>{TMDB_NOTICE}</Text>
+          <Text style={{ color: theme.global.textPrimary, lineHeight: 21 }}>{TMDB_NOTICE}</Text>
 
           <Pressable
             accessibilityLabel="Abrir el sitio oficial de TMDB"
@@ -96,8 +98,8 @@ export default function AboutScreen() {
             }
             style={({ pressed }) => ({
               alignItems: "center",
-              backgroundColor: colors.card2,
-              borderColor: colors.border2,
+              backgroundColor: theme.global.surfaceSecondary,
+              borderColor: theme.global.borderStrong,
               borderRadius: 14,
               borderWidth: 1,
               justifyContent: "center",
@@ -107,7 +109,7 @@ export default function AboutScreen() {
               paddingVertical: 12,
             })}
           >
-            <Text style={{ color: colors.text, fontWeight: "900" }}>Visitar TMDB</Text>
+            <Text style={{ color: theme.global.textPrimary, fontWeight: "900" }}>Visitar TMDB</Text>
           </Pressable>
 
           <Pressable
@@ -121,8 +123,8 @@ export default function AboutScreen() {
             }
             style={({ pressed }) => ({
               alignItems: "center",
-              backgroundColor: colors.card2,
-              borderColor: colors.border2,
+              backgroundColor: theme.global.surfaceSecondary,
+              borderColor: theme.global.borderStrong,
               borderRadius: 14,
               borderWidth: 1,
               justifyContent: "center",
@@ -132,11 +134,11 @@ export default function AboutScreen() {
               paddingVertical: 12,
             })}
           >
-            <Text style={{ color: colors.text, fontWeight: "900" }}>Visitar JustWatch</Text>
+            <Text style={{ color: theme.global.textPrimary, fontWeight: "900" }}>Visitar JustWatch</Text>
           </Pressable>
 
           {linkError !== null && (
-            <Text accessibilityLiveRegion="polite" style={{ color: colors.muted, lineHeight: 21 }}>
+            <Text accessibilityLiveRegion="polite" style={{ color: theme.semantic.dangerText, lineHeight: 21 }}>
               {linkError}
             </Text>
           )}

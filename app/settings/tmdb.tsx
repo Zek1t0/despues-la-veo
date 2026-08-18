@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../../src/theme/colors";
+import { useAppTheme } from "../../src/theme/AppThemeProvider";
 import { useTmdbCredential } from "../../src/providers/tmdb/credential/TmdbCredentialProvider";
 import { tmdbCredentialService } from "../../src/providers/tmdb/credential/tmdbCredentialRuntime";
 import {
@@ -36,6 +36,7 @@ function ActionButton({
   disabled?: boolean;
   destructive?: boolean;
 }) {
+  const { theme } = useAppTheme();
   return (
     <Pressable
       accessibilityRole="button"
@@ -50,12 +51,12 @@ function ActionButton({
         justifyContent: "center",
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: destructive ? colors.dangerBorder : colors.border2,
-        backgroundColor: disabled ? "#303030" : destructive ? colors.danger : colors.card2,
+        borderColor: destructive ? theme.semantic.dangerBorder : theme.global.borderStrong,
+        backgroundColor: disabled ? theme.semantic.disabledSurface : destructive ? theme.semantic.dangerSurface : theme.global.surfaceSecondary,
         opacity: disabled ? 0.7 : 1,
       }}
     >
-      <Text style={{ color: colors.text, fontWeight: "900", textAlign: "center" }}>{label}</Text>
+      <Text style={{ color: disabled ? theme.semantic.disabledText : destructive ? theme.semantic.onDangerSurface : theme.global.textPrimary, fontWeight: "900", textAlign: "center" }}>{label}</Text>
     </Pressable>
   );
 }
@@ -84,6 +85,7 @@ async function confirmCredentialRemoval(): Promise<boolean> {
 }
 
 export default function TmdbSettingsScreen() {
+  const { theme } = useAppTheme();
   const { snapshot, retryInitialization } = useTmdbCredential();
   const [candidate, setCandidate] = useState("");
   const [hidden, setHidden] = useState(true);
@@ -186,28 +188,28 @@ export default function TmdbSettingsScreen() {
 
   return (
     <ScrollView
-      style={{ flex: 1 }}
+      style={{ flex: 1, backgroundColor: theme.global.background }}
       contentContainerStyle={{ padding: 16, gap: 16, width: "100%", maxWidth: 720, alignSelf: "center" }}
       keyboardShouldPersistTaps="handled"
     >
       <View style={{ gap: 8 }}>
-        <Text style={{ color: colors.muted, lineHeight: 21 }}>
+        <Text style={{ color: theme.global.textSecondary, lineHeight: 21 }}>
           La búsqueda y los datos remotos usan TMDB. Tu Biblioteca local continúa funcionando aunque no configures un token.
         </Text>
-        <Text accessibilityLiveRegion="polite" style={{ color: colors.text, fontWeight: "700" }}>
+        <Text accessibilityLiveRegion="polite" style={{ color: theme.global.textPrimary, fontWeight: "700" }}>
           Estado: {status.label}
         </Text>
       </View>
 
       {Platform.OS === "web" && (
-        <View accessibilityRole="alert" style={{ padding: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.dangerBorder, backgroundColor: colors.danger }}>
-          <Text style={{ color: colors.text, lineHeight: 20 }}>{TMDB_WEB_STORAGE_WARNING}</Text>
+        <View accessibilityRole="alert" style={{ padding: 14, borderRadius: 12, borderWidth: 1, borderColor: theme.semantic.dangerBorder, backgroundColor: theme.semantic.dangerSurface }}>
+          <Text style={{ color: theme.semantic.onDangerSurface, lineHeight: 20 }}>{TMDB_WEB_STORAGE_WARNING}</Text>
         </View>
       )}
 
       {snapshot.status === "storage-error" && (
         <View style={{ gap: 10 }}>
-          <Text style={{ color: colors.muted }}>No pudimos acceder a la configuración guardada. Esto es distinto de no tener un token configurado.</Text>
+          <Text style={{ color: theme.global.textSecondary }}>No pudimos acceder a la configuración guardada. Esto es distinto de no tener un token configurado.</Text>
           <ActionButton
             label={pending === "retrying-storage" ? "Reintentando acceso..." : "Reintentar acceso a la configuración"}
             onPress={retryStorage}
@@ -217,7 +219,7 @@ export default function TmdbSettingsScreen() {
       )}
 
       <View style={{ gap: 8 }}>
-        <Text nativeID="tmdb-token-label" style={{ color: colors.text, fontWeight: "800" }}>API Read Access Token de TMDB</Text>
+        <Text nativeID="tmdb-token-label" style={{ color: theme.global.textPrimary, fontWeight: "800" }}>API Read Access Token de TMDB</Text>
         <View style={{ flexDirection: "row", gap: 8, alignItems: "stretch" }}>
           <TextInput
             accessibilityLabel="API Read Access Token de TMDB"
@@ -234,22 +236,22 @@ export default function TmdbSettingsScreen() {
             }}
             onSubmitEditing={() => void saveCandidate()}
             placeholder="Pegá tu token"
-            placeholderTextColor={colors.subtle}
+            placeholderTextColor={theme.global.textMuted}
             secureTextEntry={hidden}
             value={candidate}
-            style={{ flex: 1, minWidth: 0, minHeight: 48, paddingHorizontal: 14, color: colors.text, backgroundColor: colors.input, borderWidth: 1, borderColor: colors.border2, borderRadius: 12 }}
+            style={{ flex: 1, minWidth: 0, minHeight: 48, paddingHorizontal: 14, color: operationPending ? theme.semantic.disabledText : theme.global.textPrimary, backgroundColor: operationPending ? theme.semantic.disabledSurface : theme.global.inputBackground, borderWidth: 1, borderColor: theme.global.borderStrong, borderRadius: 12 }}
           />
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={hidden ? "Mostrar token" : "Ocultar token"}
             disabled={operationPending}
             onPress={() => setHidden((value) => !value)}
-            style={{ minWidth: 88, minHeight: 48, paddingHorizontal: 12, alignItems: "center", justifyContent: "center", borderRadius: 12, borderWidth: 1, borderColor: colors.border2 }}
+            style={{ minWidth: 88, minHeight: 48, paddingHorizontal: 12, alignItems: "center", justifyContent: "center", borderRadius: 12, borderWidth: 1, borderColor: theme.global.borderStrong, backgroundColor: operationPending ? theme.semantic.disabledSurface : theme.global.surfaceSecondary }}
           >
-            <Text style={{ color: colors.text, fontWeight: "800" }}>{hidden ? "Mostrar" : "Ocultar"}</Text>
+            <Text style={{ color: operationPending ? theme.semantic.disabledText : theme.global.textPrimary, fontWeight: "800" }}>{hidden ? "Mostrar" : "Ocultar"}</Text>
           </Pressable>
         </View>
-        <Text style={{ color: colors.subtle }}>El token guardado nunca se muestra ni se completa en este campo.</Text>
+        <Text style={{ color: theme.global.textMuted }}>El token guardado nunca se muestra ni se completa en este campo.</Text>
       </View>
 
       <ActionButton label={pending === "opening-link" ? "Abriendo TMDB..." : "Obtener token"} onPress={openTokenPage} disabled={operationPending} />
@@ -261,19 +263,19 @@ export default function TmdbSettingsScreen() {
 
       {pending === "saving" && (
         <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
-          <ActivityIndicator />
-          <Text style={{ color: colors.muted }}>Validando y guardando...</Text>
+          <ActivityIndicator color={theme.global.accent} />
+          <Text style={{ color: theme.global.textSecondary }}>Validando y guardando...</Text>
         </View>
       )}
       {!!feedback && (
-        <Text accessibilityRole={feedback.tone === "error" ? "alert" : undefined} accessibilityLiveRegion="polite" style={{ color: feedback.tone === "error" ? "#f4b8b8" : colors.text, lineHeight: 21 }}>
+        <Text accessibilityRole={feedback.tone === "error" ? "alert" : undefined} accessibilityLiveRegion="polite" style={{ color: feedback.tone === "error" ? theme.semantic.dangerText : theme.global.textPrimary, lineHeight: 21 }}>
           {feedback.message}
         </Text>
       )}
 
       {snapshot.status === "configured" && (
         <View style={{ marginTop: 8, gap: 8 }}>
-          <Text style={{ color: colors.muted }}>Podés reemplazar la credencial escribiendo una nueva arriba. La actual seguirá activa hasta que la nueva se valide y guarde correctamente.</Text>
+          <Text style={{ color: theme.global.textSecondary }}>Podés reemplazar la credencial escribiendo una nueva arriba. La actual seguirá activa hasta que la nueva se valide y guarde correctamente.</Text>
           <ActionButton label={pending === "deleting" ? "Eliminando..." : "Eliminar credencial"} onPress={removeCredential} disabled={operationPending} destructive />
         </View>
       )}

@@ -105,7 +105,9 @@ function testScope() {
     "app/settings/tmdb.tsx",
     "app/settings/about.tsx",
   ]) {
-    assert.doesNotMatch(read(file), /useAppTheme/, `${file} belongs to a later section`);
+    const source = read(file);
+    assert.match(source, /useAppTheme/, `${file} must use the runtime theme after Section 10`);
+    assert.doesNotMatch(source, /theme\/colors|\bcolors\./, `${file} must not retain a static color capture`);
   }
 }
 

@@ -99,14 +99,24 @@ El sistema MUST usar accent para identidad e interacción activa y MUST proporci
 
 ### Requirement: estados semánticos permanecen independientes de palettes
 
-El sistema MUST conservar significados propios para danger/error/destructive, disabled y PersonalRating low, medium y high. Las palettes MUST NOT reasignar esos significados, aunque el scheme pueda proporcionar variantes contrastantes. `dangerText` MUST representar texto standalone de error/feedback, mientras `onDangerSurface` MUST proporcionar el foreground scheme-aware y contrastante colocado sobre `dangerSurface`; ninguno MUST sustituir indiscriminadamente al otro. Antes de migrar consumers, la baseline Dark + Original MUST inventariar cada foreground semántico actual mediante consumer/archivo, valor actual y responsabilidad/token futuro; la coincidencia accidental con un color de PersonalRating MUST NOT aceptarse como prueba de `dangerText`. Si un único token no puede preservar dos presentaciones actuales, el catálogo MUST permanecer consumer-driven y mínimo, o la divergencia MUST documentarse como corrección futura de accesibilidad antes de cambiar el consumer. PersonalRating MUST conservar los rangos `10..74 low`, `75..84 medium` y `85..100 high` y MUST seguir comunicándose además del color.
+El sistema MUST conservar significados propios para danger/error/destructive, disabled, feedback de persistencia de PersonalRating y PersonalRating low, medium y high. Las palettes MUST NOT reasignar esos significados, aunque el scheme pueda proporcionar variantes contrastantes. `dangerText` MUST representar texto standalone general de error/feedback, mientras `onDangerSurface` MUST proporcionar el foreground scheme-aware y contrastante colocado sobre `dangerSurface`; ninguno MUST sustituir indiscriminadamente al otro. El token semantic y scheme-aware `personalRatingErrorText` MUST representar exclusivamente el feedback/error standalone de persistencia de PersonalRating, MUST permanecer palette-independent y MUST NOT reemplazar `dangerText` ni los pares low/medium/high. Antes de migrar consumers, la baseline Dark + Original MUST inventariar cada foreground semántico actual mediante consumer/archivo, valor actual y responsabilidad/token futuro; la coincidencia accidental con un color de PersonalRating MUST NOT aceptarse como prueba de `dangerText`. Si un único token no puede preservar dos presentaciones actuales, el catálogo MUST permanecer consumer-driven y mínimo, o la divergencia MUST documentarse como corrección futura de accesibilidad antes de cambiar el consumer. PersonalRating MUST conservar los rangos `10..74 low`, `75..84 medium` y `85..100 high` y MUST seguir comunicándose además del color.
 
 #### Scenario: parity de foregrounds semánticos
 - **WHEN** se valida Dark + Original antes de migrar consumers
 - **THEN** el feedback de error `#f4b8b8` de `app/settings/tmdb.tsx` se ancla a su responsabilidad futura
-- **AND** el texto de error `#5a2a2a` de `app/title/[id].tsx` se cataloga separadamente
+- **AND** el `ratingError` de persistencia de PersonalRating en `app/title/[id].tsx` se resuelve como `semantic.personalRatingErrorText #5a2a2a`
 - **AND** los foregrounds reales usados sobre disabled `#303030` y `#3b3b3b` se registran junto con sus surfaces
 - **AND** ninguna migración cambia esos foregrounds silenciosamente
+
+#### Scenario: feedback de persistencia de PersonalRating conserva ownership y parity
+- **GIVEN** el consumer `ratingError` de `app/title/[id].tsx`
+- **WHEN** se migra Saved Title Detail en Section 9
+- **THEN** usa `theme.semantic.personalRatingErrorText`
+- **AND** Dark + Original conserva exactamente `#5a2a2a`
+- **AND** Light usa `#7d2020`, con contraste aproximado `10.00:1` sobre `surface #ffffff` y `9.26:1` sobre `background #f6f6f6`
+- **AND** ninguna palette puede modificar el token
+- **AND** dominio `10..100 integer | null`, queue, persistencia, optimistic behavior, rollback y lifecycle de error de PersonalRating permanecen intactos
+- **AND** la posible corrección accesible del valor Dark queda para una decisión explícita en Section 12
 
 #### Scenario: foreground sobre danger surface
 - **GIVEN** Dark + Original con `dangerSurface #4a1f1f`

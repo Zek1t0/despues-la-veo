@@ -29,7 +29,7 @@ import type {
 } from "../../../src/providers/tmdb/tmdbTypes";
 
 import { getByProviderExternal, saveTmdbTitle } from "../../../src/storage/savedTitlesRepo";
-import { colors } from "../../../src/theme/colors";
+import { useAppTheme } from "../../../src/theme/AppThemeProvider";
 import { useTmdbCredential } from "../../../src/providers/tmdb/credential/TmdbCredentialProvider";
 import {
   presentTmdbRemoteError,
@@ -66,29 +66,31 @@ function minutesToH(min?: number | null) {
 }
 
 function Pill({ text }: { text: string }) {
+  const { theme } = useAppTheme();
   return (
     <View
       style={{
         paddingVertical: 6,
         paddingHorizontal: 10,
         borderRadius: 999,
-        backgroundColor: colors.card2,
+        backgroundColor: theme.global.surfaceSecondary,
         borderWidth: 1,
-        borderColor: colors.border2,
+        borderColor: theme.global.borderStrong,
       }}
     >
-      <Text style={{ color: colors.text, fontWeight: "800" }}>{text}</Text>
+      <Text style={{ color: theme.global.textPrimary, fontWeight: "800" }}>{text}</Text>
     </View>
   );
 }
 
 function Card({ children }: { children: React.ReactNode }) {
+  const { theme } = useAppTheme();
   return (
     <View
       style={{
-        backgroundColor: colors.card,
+        backgroundColor: theme.global.surface,
         borderWidth: 1,
-        borderColor: colors.border,
+        borderColor: theme.global.border,
         borderRadius: 16,
         padding: 14,
         gap: 10,
@@ -112,6 +114,7 @@ function uniqByName(arr: { provider_name: string }[]) {
 }
 
 export default function TmdbDetailScreen() {
+  const { theme } = useAppTheme();
   const router = useRouter();
   const { snapshot, retryInitialization } = useTmdbCredential();
   const { type, id } = useLocalSearchParams<{ type: "movie" | "tv"; id: string }>();
@@ -365,8 +368,8 @@ export default function TmdbDetailScreen() {
       onPress={onPress}
       style={({ pressed }) => ({
         alignItems: "center",
-        backgroundColor: colors.card2,
-        borderColor: colors.border2,
+        backgroundColor: theme.global.surfaceSecondary,
+        borderColor: theme.global.borderStrong,
         borderRadius: 12,
         borderWidth: 1,
         justifyContent: "center",
@@ -375,7 +378,7 @@ export default function TmdbDetailScreen() {
         paddingHorizontal: 14,
       })}
     >
-      <Text style={{ color: colors.text, fontWeight: "900" }}>{label}</Text>
+      <Text style={{ color: theme.global.textPrimary, fontWeight: "900" }}>{label}</Text>
     </Pressable>
   );
 
@@ -387,20 +390,20 @@ export default function TmdbDetailScreen() {
         }}
       />
 
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 40 }}>
+      <ScrollView style={{ backgroundColor: theme.global.background }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 40 }}>
         {visibleLoading ? (
           <View style={{ gap: 10, alignItems: "center", paddingTop: 30 }}>
-            <ActivityIndicator />
-            <Text style={{ color: colors.muted, fontWeight: "700" }}>
+            <ActivityIndicator color={theme.global.accent} />
+            <Text style={{ color: theme.global.textSecondary, fontWeight: "700" }}>
               {snapshot.status === "initializing" ? "Comprobando la configuración de TMDB…" : "Cargando…"}
             </Text>
           </View>
         ) : !hasCurrentData ? (
           <View style={{ gap: 10 }}>
-            <Text style={{ color: colors.text, fontWeight: "900", fontSize: 18 }}>
+            <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 18 }}>
               {unavailableState?.title ?? visibleLoadError?.title ?? "No se pudo cargar"}
             </Text>
-            <Text style={{ color: colors.muted }}>
+            <Text style={{ color: theme.semantic.dangerText }}>
               {unavailableState?.message ?? visibleLoadError?.message ?? "Intentá nuevamente."}
             </Text>
             {snapshot.status === "not-configured" && (
@@ -432,7 +435,7 @@ export default function TmdbDetailScreen() {
                       height: 180,
                       borderRadius: 14,
                       borderWidth: 1,
-                      borderColor: colors.border,
+                      borderColor: theme.global.border,
                     }}
                     resizeMode="cover"
                   />
@@ -442,23 +445,23 @@ export default function TmdbDetailScreen() {
                       width: 120,
                       height: 180,
                       borderRadius: 14,
-                      backgroundColor: colors.card2,
+                      backgroundColor: theme.global.surfaceSecondary,
                       borderWidth: 1,
-                      borderColor: colors.border,
+                      borderColor: theme.global.border,
                       alignItems: "center",
                       justifyContent: "center",
                     }}
                   >
-                    <Text style={{ color: colors.muted }}>Sin póster</Text>
+                    <Text style={{ color: theme.global.textSecondary }}>Sin póster</Text>
                   </View>
                 )}
 
                 <View style={{ flex: 1, gap: 8 }}>
-                  <Text style={{ color: colors.text, fontWeight: "900", fontSize: 20 }}>
+                  <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 20 }}>
                     {title} {year ? `(${year})` : ""}
                   </Text>
 
-                  <Text style={{ color: colors.muted, fontWeight: "700" }}>
+                  <Text style={{ color: theme.global.textSecondary, fontWeight: "700" }}>
                     {type.toUpperCase()}
                     {runtimeText ? ` • ${runtimeText}` : ""}
                     {type === "tv" && data.number_of_seasons ? ` • ${data.number_of_seasons} temp` : ""}
@@ -472,14 +475,14 @@ export default function TmdbDetailScreen() {
                   </View>
 
                   {!!director && (
-                    <Text style={{ color: colors.subtle, fontWeight: "800" }}>
-                      Director: <Text style={{ color: colors.text }}>{director}</Text>
+                    <Text style={{ color: theme.global.textMuted, fontWeight: "800" }}>
+                      Director: <Text style={{ color: theme.global.textPrimary }}>{director}</Text>
                     </Text>
                   )}
 
                   {typeof data.overview === "string" && data.overview.trim().length > 0 ? (
                     <View style={{ gap: 6 }}>
-                      <Text style={{ color: colors.muted, lineHeight: 20 }}>
+                      <Text style={{ color: theme.global.textSecondary, lineHeight: 20 }}>
                         {overviewExpanded
                           ? data.overview
                           : String(data.overview).slice(0, 220) +
@@ -488,7 +491,7 @@ export default function TmdbDetailScreen() {
 
                       {String(data.overview).length > 220 && (
                         <Pressable onPress={() => setOverviewExpanded((v) => !v)}>
-                          <Text style={{ color: colors.text, fontWeight: "900" }}>
+                          <Text style={{ color: theme.global.accent, fontWeight: "900" }}>
                             {overviewExpanded ? "Ver menos" : "Ver más"}
                           </Text>
                         </Pressable>
@@ -505,11 +508,11 @@ export default function TmdbDetailScreen() {
               style={{
                 paddingVertical: 14,
                 borderRadius: 16,
-                backgroundColor: saving ? "#3b3b3b" : colors.primary,
+                backgroundColor: saving ? theme.semantic.disabledSurface : theme.global.accent,
                 alignItems: "center",
               }}
             >
-              <Text style={{ color: saving ? colors.text : colors.bg, fontWeight: "900" }}>
+              <Text style={{ color: saving ? theme.semantic.disabledText : theme.global.onAccent, fontWeight: "900" }}>
                 {saving ? "Guardando…" : savedId ? "Actualizar en Biblioteca" : "Guardar en Biblioteca"}
               </Text>
             </Pressable>
@@ -523,26 +526,26 @@ export default function TmdbDetailScreen() {
                 style={{
                   paddingVertical: 14,
                   borderRadius: 16,
-                  backgroundColor: colors.card2,
+                  backgroundColor: theme.global.surfaceSecondary,
                   borderWidth: 1,
-                  borderColor: colors.border2,
+                  borderColor: theme.global.borderStrong,
                   alignItems: "center",
                   opacity: saving ? 0.6 : 1,
                 }}
               >
-                <Text style={{ color: colors.text, fontWeight: "900" }}>
+                <Text style={{ color: theme.global.textPrimary, fontWeight: "900" }}>
                   Ir a Biblioteca
                 </Text>
               </Pressable>
             )}
 
             <Card>
-              <Text style={{ color: colors.text, fontWeight: "900", fontSize: 16 }}>
+              <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 16 }}>
                 Reparto principal
               </Text>
 
               {topCast.length === 0 ? (
-                <Text style={{ color: colors.muted }}>Sin datos de reparto.</Text>
+                <Text style={{ color: theme.global.textSecondary }}>Sin datos de reparto.</Text>
               ) : (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
                   {topCast.map((p) => {
@@ -553,9 +556,9 @@ export default function TmdbDetailScreen() {
                         style={{
                           width: 120,
                           borderRadius: 14,
-                          backgroundColor: colors.card2,
+                          backgroundColor: theme.global.surfaceSecondary,
                           borderWidth: 1,
-                          borderColor: colors.border2,
+                          borderColor: theme.global.borderStrong,
                           padding: 10,
                           gap: 8,
                         }}
@@ -572,21 +575,21 @@ export default function TmdbDetailScreen() {
                               width: "100%",
                               height: 120,
                               borderRadius: 12,
-                              backgroundColor: colors.card,
+                              backgroundColor: theme.global.surface,
                               borderWidth: 1,
-                              borderColor: colors.border,
+                              borderColor: theme.global.border,
                               alignItems: "center",
                               justifyContent: "center",
                             }}
                           >
-                            <Text style={{ color: colors.muted, fontSize: 12 }}>Sin foto</Text>
+                            <Text style={{ color: theme.global.textSecondary, fontSize: 12 }}>Sin foto</Text>
                           </View>
                         )}
 
-                        <Text style={{ color: colors.text, fontWeight: "900" }} numberOfLines={1}>
+                        <Text style={{ color: theme.global.textPrimary, fontWeight: "900" }} numberOfLines={1}>
                           {p.name}
                         </Text>
-                        <Text style={{ color: colors.muted }} numberOfLines={2}>
+                        <Text style={{ color: theme.global.textSecondary }} numberOfLines={2}>
                           {p.character ? p.character : ""}
                         </Text>
                       </View>
@@ -597,19 +600,19 @@ export default function TmdbDetailScreen() {
             </Card>
 
             <Card>
-              <Text style={{ color: colors.text, fontWeight: "900", fontSize: 16 }}>
+              <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 16 }}>
                 Dónde ver
               </Text>
 
               {topStreaming.length === 0 && topRent.length === 0 && topBuy.length === 0 ? (
-                <Text style={{ color: colors.muted }}>
+                <Text style={{ color: theme.global.textSecondary }}>
                   No hay datos de plataformas para tu región.
                 </Text>
               ) : (
                 <View style={{ gap: 12 }}>
                   {topStreaming.length > 0 && (
                     <View style={{ gap: 8 }}>
-                      <Text style={{ color: colors.subtle, fontWeight: "800" }}>Streaming</Text>
+                      <Text style={{ color: theme.global.textMuted, fontWeight: "800" }}>Streaming</Text>
                       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
                         {topStreaming.map((p: any) => {
                           const logo = providerLogoUrl(p.logo_path, "w92");
@@ -620,9 +623,9 @@ export default function TmdbDetailScreen() {
                                 width: 86,
                                 padding: 10,
                                 borderRadius: 14,
-                                backgroundColor: colors.card2,
+                                backgroundColor: theme.global.surfaceSecondary,
                                 borderWidth: 1,
-                                borderColor: colors.border2,
+                                borderColor: theme.global.borderStrong,
                                 alignItems: "center",
                                 gap: 8,
                               }}
@@ -630,9 +633,9 @@ export default function TmdbDetailScreen() {
                               {logo ? (
                                 <Image source={{ uri: logo }} style={{ width: 44, height: 44, borderRadius: 10 }} />
                               ) : (
-                                <View style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: colors.card }} />
+                                <View style={{ width: 44, height: 44, borderRadius: 10, backgroundColor: theme.global.surface }} />
                               )}
-                              <Text style={{ color: colors.text, fontWeight: "800" }} numberOfLines={2}>
+                              <Text style={{ color: theme.global.textPrimary, fontWeight: "800" }} numberOfLines={2}>
                                 {p.provider_name}
                               </Text>
                             </View>
@@ -643,13 +646,13 @@ export default function TmdbDetailScreen() {
                   )}
 
                   {topRent.length > 0 && (
-                    <Text style={{ color: colors.muted }}>
+                    <Text style={{ color: theme.global.textSecondary }}>
                       Alquiler: {topRent.map((x: any) => x.provider_name).join(", ")}
                     </Text>
                   )}
 
                   {topBuy.length > 0 && (
-                    <Text style={{ color: colors.muted }}>
+                    <Text style={{ color: theme.global.textSecondary }}>
                       Compra: {topBuy.map((x: any) => x.provider_name).join(", ")}
                     </Text>
                   )}
@@ -663,18 +666,18 @@ export default function TmdbDetailScreen() {
                     marginTop: 8,
                     paddingVertical: 12,
                     borderRadius: 14,
-                    backgroundColor: colors.primary,
+                    backgroundColor: theme.global.accent,
                     alignItems: "center",
                   }}
                 >
-                  <Text style={{ color: colors.bg, fontWeight: "900" }}>
+                  <Text style={{ color: theme.global.onAccent, fontWeight: "900" }}>
                     Ver enlaces de plataformas
                   </Text>
                 </Pressable>
               )}
             </Card>
 
-            <Text style={{ color: colors.subtle }}>
+            <Text style={{ color: theme.global.textMuted }}>
               Tip: al guardarlo, después editás status/tags/notas en tu Biblioteca.
             </Text>
           </>

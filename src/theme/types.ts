@@ -44,6 +44,7 @@ export type SemanticThemeTokens = Readonly<{
   dangerBorder: string;
   dangerText: string;
   onDangerSurface: string;
+  personalRatingErrorText: string;
   disabledSurface: string;
   disabledText: string;
   personalRatingLowBackground: string;
