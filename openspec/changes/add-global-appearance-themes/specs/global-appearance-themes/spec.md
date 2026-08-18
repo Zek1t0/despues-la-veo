@@ -169,7 +169,7 @@ El sistema MUST mantener separados del theme global los scrims, foregrounds y bo
 
 ### Requirement: Appearance se persiste con última intención y error recuperable
 
-El sistema MUST persistir scheme y palette como una sola intención local independiente de TMDB, red, cuentas y browsing preferences. La coordinación MUST distinguir la intención más reciente mostrada de `confirmedPersisted`, entendido como el último valor que se sabe realmente escrito. Cada write exitoso MUST actualizar `confirmedPersisted` al valor escrito aunque su intención ya haya sido superseded, pero MUST NOT reemplazar la UI si existe una intención posterior. Si el write de la intención más reciente falla, la UI MUST volver exactamente a `confirmedPersisted`, informar el error y no afectar la biblioteca. Los writes de Appearance MUST componerse de forma serializada con las demás mutaciones SQLite públicas sin anidar la serialización ni la transacción.
+El sistema MUST persistir scheme y palette como una sola intención local independiente de TMDB, red, cuentas y browsing preferences. La coordinación MUST distinguir la intención más reciente mostrada de `confirmedPersisted`, entendido como el último valor que se sabe realmente escrito. Selecciones normales y reservas diferidas de import MUST compartir una única secuencia monotónica administrada por el mismo coordinator; consumers MUST NOT fabricar IDs ni decidir precedencia. El coordinator MUST distinguir el watermark causal que decide si una reserva puede activarse del lifecycle displayed/write normal ya activo, sin crear otro contador o sistema de precedencia. Una reserva no activada MUST NOT coalescer, cancelar ni suprimir por sí sola el success/failure/rollback de una selección normal previa. Cada write exitoso MUST actualizar `confirmedPersisted` al valor escrito aunque su intención ya haya sido superseded, pero MUST NOT reemplazar la UI si existe una intención normal posterior. Si un normal write que todavía sustenta `displayed` falla, la UI MUST volver exactamente a `confirmedPersisted` aunque exista una reserva diferida causalmente posterior todavía no activada. Los writes de Appearance MUST componerse de forma serializada con las demás mutaciones SQLite públicas sin anidar la serialización ni la transacción.
 
 #### Scenario: reinicio conserva Appearance
 - **WHEN** el usuario selecciona Claro + Crepúsculo de medianoche y reinicia la aplicación
@@ -210,6 +210,66 @@ El sistema MUST persistir scheme y palette como una sola intención local indepe
 - **THEN** la restauración de biblioteca/pins conserva su resultado exitoso
 - **AND** la Appearance final mostrada, persistida y recuperada al reiniciar es B
 - **AND** A no se convierte artificialmente en la intención más reciente por terminar tarde el merge
+
+#### Scenario: reserva diferida no adelanta efectos
+- **GIVEN** `displayed` y `confirmedPersisted` son C
+- **WHEN** el coordinator reserva una Appearance importada A
+- **THEN** la reserva consume el siguiente orden monotónico compartido y devuelve un handle propio
+- **AND** `displayed`, `confirmedPersisted` y storage permanecen C
+- **AND** no comienza ningún write ni mutación SQLite
+
+#### Scenario: reserva no coalesce una selección normal queued
+- **GIVEN** `select(B)` obtuvo orden N, muestra B y su write continúa queued
+- **WHEN** A se reserva con orden N+1 pero aún no se activa
+- **THEN** B conserva su lifecycle normal de persistencia
+- **AND** no se elimina ni se coalesce únicamente por la reserva A
+
+#### Scenario: normal write exitoso durante una reserva
+- **GIVEN** `confirmedPersisted` es C, B está displayed y su write está pendiente
+- **WHEN** se reserva A y después el write de B termina exitosamente
+- **THEN** `displayed`, `confirmedPersisted` y storage son B mientras A siga sin activar
+- **AND** descartar A conserva B como resultado final
+- **AND** activar A puede aplicar A con su orden original si A continúa causalmente latest
+
+#### Scenario: normal write fallido durante una reserva
+- **GIVEN** `confirmedPersisted` y storage son C, B está displayed y su write está pendiente
+- **WHEN** se reserva A y después el write de B falla
+- **THEN** `displayed` vuelve inmediatamente a C aunque A siga reservada
+- **AND** `confirmedPersisted` y storage permanecen C
+- **AND** descartar A conserva C y no revive B
+
+#### Scenario: export durante reserva usa success confirmado
+- **GIVEN** B terminó exitosamente y `confirmedPersisted` es B
+- **WHEN** A permanece reservada pero no activada y se exporta
+- **THEN** la Appearance portable es B
+- **AND** no se exportan C ni A
+
+#### Scenario: activación conserva el orden reservado
+- **GIVEN** A fue reservada con orden N y no apareció ningún intent posterior
+- **WHEN** su merge termina exitosamente y la reserva se activa después de salir de la mutación principal
+- **THEN** A conserva el orden N en vez de recibir un orden nuevo
+- **AND** adopta el pipeline optimista y de persistencia normal de Appearance
+- **AND** su write usa la boundary pública de mutación global existente
+
+#### Scenario: descarte no recicla orden
+- **GIVEN** A fue reservada con orden N
+- **WHEN** el restore se rechaza, aborta o lanza y la reserva se descarta
+- **THEN** A no puede activarse ni escribir posteriormente
+- **AND** `displayed` y `confirmedPersisted` no cambian
+- **AND** el próximo intent obtiene un orden posterior a N
+
+#### Scenario: imports repetidos comparten precedencia
+- **GIVEN** el import A se reservó con orden N
+- **WHEN** otro import D se reserva con orden N+1 antes de activar A
+- **THEN** activar A informa supersession y no escribe
+- **AND** D puede activarse si continúa siendo el intent lógico más reciente
+
+#### Scenario: fallo al activar no revierte datos restaurados
+- **GIVEN** items y pins terminaron de importarse y la reserva sigue vigente
+- **WHEN** la activación intenta persistir Appearance y el write falla
+- **THEN** el coordinator aplica su rollback normal al `confirmedPersisted` real
+- **AND** items y pins permanecen importados
+- **AND** el resultado informa el fallo de Appearance por separado
 
 ### Requirement: hidratación evita un primer paint principal incorrecto
 

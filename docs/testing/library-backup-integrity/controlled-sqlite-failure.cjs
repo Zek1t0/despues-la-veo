@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const Module = require("node:module");
 const { DatabaseSync } = require("node:sqlite");
 const ts = require("typescript");
 
@@ -18,10 +19,16 @@ require.extensions[".ts"] = function compileTypeScript(module, filename) {
   module._compile(output.outputText, filename);
 };
 
+const originalModuleLoad = Module._load;
+Module._load = function loadForStorage(request, parent, isMain) {
+  if (request === "expo-sqlite") return {};
+  return originalModuleLoad.call(this, request, parent, isMain);
+};
 const { parseLibraryBackupV1 } = require("../../../src/core/libraryBackupV1.ts");
 const {
   mergeLibraryBackupItemsWithDb,
 } = require("../../../src/storage/libraryBackupMerge.ts");
+Module._load = originalModuleLoad;
 
 const databasePath = path.join(
   os.tmpdir(),
@@ -63,6 +70,14 @@ async function main() {
 
     CREATE UNIQUE INDEX idx_saved_titles_provider_external
       ON saved_titles(provider, external_id);
+
+    CREATE TABLE title_pins (
+      saved_title_id TEXT NOT NULL,
+      context_type TEXT NOT NULL,
+      context_key TEXT NOT NULL,
+      pinned_at INTEGER NOT NULL,
+      PRIMARY KEY(saved_title_id, context_type, context_key)
+    );
 
     CREATE TRIGGER controlled_import_failure
     BEFORE INSERT ON saved_titles

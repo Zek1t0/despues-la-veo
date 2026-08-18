@@ -70,6 +70,23 @@ function backupItemReference(item: NormalizedBackupSavedTitle): string {
   return `${item.title} [${item.provider}/${item.type}/${item.externalId}]`;
 }
 
+async function withBackupSavepoint<T>(
+  db: LibraryBackupMergeDb,
+  name: "backup_item" | "backup_pin",
+  task: () => Promise<T>
+): Promise<T> {
+  await db.runAsync(`SAVEPOINT ${name};`);
+  try {
+    const result = await task();
+    await db.runAsync(`RELEASE SAVEPOINT ${name};`);
+    return result;
+  } catch (error) {
+    await db.runAsync(`ROLLBACK TO SAVEPOINT ${name};`);
+    await db.runAsync(`RELEASE SAVEPOINT ${name};`);
+    throw error;
+  }
+}
+
 async function findAvailableInsertId(
   db: LibraryBackupMergeDb,
   preferredId: string,
@@ -161,18 +178,18 @@ export async function mergeLibraryBackupItemsWithDb(
         }
 
         const updated = materializeSavedTitleForUpdate(local, incoming);
-        await db.withTransactionAsync(async () => {
-          await upsertSavedTitleAndCleanPinsWithDb(db, updated);
-        });
+        await withBackupSavepoint(db, "backup_item", () =>
+          upsertSavedTitleAndCleanPinsWithDb(db, updated)
+        );
         result.updated++;
         continue;
       }
 
       const materialized = materializeSavedTitleForInsert(incoming, generateId);
       materialized.id = await findAvailableInsertId(db, materialized.id, generateId);
-      await db.withTransactionAsync(async () => {
-        await upsertSavedTitleAndCleanPinsWithDb(db, materialized);
-      });
+      await withBackupSavepoint(db, "backup_item", () =>
+        upsertSavedTitleAndCleanPinsWithDb(db, materialized)
+      );
       result.inserted++;
     } catch (error) {
       result.failed.push({
@@ -241,9 +258,9 @@ export async function mergeLibraryBackupWithDb(
       }
       try {
         let outcome: "inserted" | "preserved" = "preserved";
-        await db.withTransactionAsync(async () => {
-          outcome = await mergeBackupPinWithDb(db, row.id, context, pin.pinnedAt);
-        });
+        outcome = await withBackupSavepoint(db, "backup_pin", () =>
+          mergeBackupPinWithDb(db, row.id, context, pin.pinnedAt)
+        );
         pinResult[outcome]++;
       } catch (error) {
         pinResult.failed.push({

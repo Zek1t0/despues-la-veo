@@ -121,6 +121,18 @@ Alternatives rejected: two keys allow torn logical state; reuse of `viewPreferen
 
 The provider owns one intent coordinator rather than screen-local write queues. It maintains separate state for `latestIntent`/`displayed` and `confirmedPersisted`. `confirmedPersisted` is the last Appearance known to have been written successfully (or the contractual default after a successful read proving the row is absent), not merely the last non-superseded UI intent. Each selection creates a monotonically increasing intent ID, updates `displayed` immediately, then enters a serialized promise chain. Before a write begins the coordinator may coalesce superseded queued intents; a coalesced value never changes `confirmedPersisted`. Every write that actually finishes successfully MUST update `confirmedPersisted` to the value it wrote, even when superseded. That success MUST NOT replace `displayed` while a newer intent exists. The chain catches each failure so it remains usable.
 
+The same coordinator also owns the minimal deferred-intent boundary required by backup import: `reserveDeferred(preference)`, `activateDeferred(handle)` and `discardDeferred(handle)`, with names adaptable to the implementation style. A normal selection and a deferred reservation consume IDs from the same monotonic sequence; there is no backup-specific counter, timestamp ordering, promise-completion ordering or caller-side precedence comparison. `reserveDeferred` validates or receives an already valid preference, consumes the next order, records it as the latest logical intent and returns a typed opaque handle bound to that reservation and coordinator lifecycle. The caller cannot fabricate or compare raw IDs. Reservation does not change `displayed` or `confirmedPersisted`, does not enqueue a write and does not enter storage, the global mutation queue or a transaction.
+
+`activateDeferred(handle)` is called only after the main backup mutation has fully exited. It first asks the coordinator whether the original reserved order is still the latest applicable logical intent. If it is, activation retains that exact order—never allocates a new one—then adopts the reserved preference as the displayed optimistic intent and reuses the normal coordinator persistence state machine and public Appearance writer. If a newer selection or deferred reservation exists, or the handle was discarded or is otherwise no longer valid, activation performs no write and reports a non-applied outcome such as `superseded` or `discarded`; the coordinator, not Settings or backup code, decides this. `discardDeferred(handle)` permanently invalidates the reservation without changing `displayed`, `confirmedPersisted` or storage. Orders are historical causal watermarks and are never rewound or reused after discard.
+
+Repeated imports follow the same rule: reserving A at N and D at N+1 supersedes A; activating A cannot write, while D may activate only if no later logical intent appeared. A pending reservation is neither displayed nor confirmed persisted and therefore cannot become an export source. Once activated, success, failure, rollback, coalescing, storage-epoch invalidation and hydration/retry guards reuse the existing state machine rather than duplicating it.
+
+Advancing the causal watermark with an unactivated deferred reservation does not replace the normal displayed/write lifecycle already in progress. The coordinator may distinguish internally between the latest causal order used to decide deferred activation and the normal displayed write whose persistence outcome still owns the current optimistic UI, but both identities come from the same monotonic sequence and remain inside the same coordinator. A reservation alone MUST NOT coalesce, cancel or reclassify as superseded a previously displayed normal write. Normal-selection coalescing retains its existing semantics only when another applicable normal displayed/write intent replaces it.
+
+Consequently, if `select(B)` at N is queued or in flight and `reserveDeferred(A)` advances causal order to N+1, B still completes its normal lifecycle. B success updates `confirmedPersisted` and storage to B and leaves `displayed` at B while A remains unactivated. B failure rolls `displayed` back immediately to the live `confirmedPersisted`, even though A is causally newer, because A is not yet a displayed write or rollback target. Discarding A afterward preserves whichever real B outcome occurred: B/B/B after success, or C/C/C after failure from confirmed C. It never revives an unpersisted optimistic value. If A remains causally latest and later activates, it may then adopt displayed and write using its original N+1 order; a later `select(D)` at N+2 still supersedes A.
+
+Export remains based only on trustworthy `confirmedPersisted` or the known no-row default. A pending reservation neither blocks a normal write from updating `confirmedPersisted` nor becomes an export source: after B succeeds and A is reserved but unactivated, export includes B, not C or A.
+
 Required invariant:
 
 ```text
@@ -266,16 +278,18 @@ Import ordering:
 
 ```text
 parse/preview backup
-→ user confirms and reserves a monotonic deferred Appearance intent ID
+→ user confirms and calls the coordinator deferred-reservation boundary, receiving an opaque handle whose order comes from the same monotonic sequence as normal selections
 → merge items and pins under existing serialized storage contract
 → merge returns its real completed result (including reported partial item/pin issues)
-→ if main restoration completed and reserved intent is still latest, activate it
+→ if main restoration throws, is rejected or aborts after reservation, discard that handle
+→ if main restoration completed, after fully exiting its mutation boundary activate that handle
+→ the coordinator applies it only if its original reserved order is still latest; activation never allocates a new order
 → activated intent persists through central coordinator/public Appearance mutation
 → provider updates `confirmedPersisted` and UI after the Appearance write succeeds
 → show combined result
 ```
 
-Reserving the ID at user confirmation records the real time of the imported intent without displaying or writing it before the main merge succeeds. Cancel, rejected envelope or thrown merge discards the reservation. Any user selection after confirmation receives a greater ID and permanently supersedes the reserved import; late merge success then restores items/pins but discards the older Appearance intent.
+Reserving at user confirmation records the real causal order of the imported intent without displaying or writing it before the main merge succeeds. Cancellation before confirmation creates no reservation; rejection, abort or thrown merge after reservation discards its handle. Any user selection or later imported reservation receives a greater ID from the same coordinator sequence and permanently supersedes the older import; late merge success then restores items/pins but activation reports `superseded` and does not write the older Appearance.
 
 ```text
 confirm import A → reserve intent 10; do not display/write A
@@ -287,7 +301,7 @@ confirm import A → reserve intent 10; do not display/write A
 → displayed/storage/confirmedPersisted/restart remain B
 ```
 
-The main backup restoration completes and exits its existing queue/transaction before the Appearance public setter is invoked. Appearance therefore enters the global mutation queue as a new independent operation; it is never nested inside the backup queue entry or transaction.
+The main backup restoration completes and exits its existing queue/transaction before `activateDeferred(handle)` may reach the Appearance public setter. Appearance therefore enters the global mutation queue as a new independent operation; reserve/discard never enter it, and activation is never nested inside the backup queue entry or transaction. The real write still follows `initDb()` → `runSerializedStorageMutation` → `db.withTransactionAsync` → `setAppearancePreferenceWithDb`; backup code never calls `*WithDb` directly.
 
 “Successful restoration” here means the accepted main import operation returned a result instead of throwing/being rejected; existing per-item partial failures remain reportable and do not erase successful work. If the post-merge Appearance write fails, restored library/pins remain committed, local `confirmedPersisted` Appearance is preserved and the result reports the separate Appearance failure. Applying Appearance is not folded into the item/pin SQLite transaction because the runtime coordinator and UI confirmation must share one source of truth; this deliberate partial boundary matches the requirement that Appearance is lower priority than data.
 
@@ -337,6 +351,8 @@ Expected areas, subject to exact filenames established during Apply:
 - [A superseded success is ignored and a later failure rolls UI behind storage] → Every successful write updates `confirmedPersisted` even when superseded; only `displayed` obeys latest intent, and the explicit A-success/B-failure harness proves rollback to A.
 - [Appearance intent serialization bypasses the product-wide SQLite queue] → Public setter enters the global queue and one transaction exactly once; `*WithDb` is queue/transaction-free and structural tests reject nesting.
 - [A late backup merge creates a new latest Appearance after a newer user choice] → Reserve the import intent ID at confirmation, activate only after successful merge and discard it if any newer intent exists.
+- [Deferred import introduces a second precedence system] → Put typed reserve/activate/discard operations on the existing Appearance coordinator, consume the same monotonic sequence as `select()`, retain the reserved order during activation and forbid caller-side ID construction/comparison.
+- [An unactivated reservation suppresses a previously displayed normal write] → Separate the causal activation watermark from the active displayed/write lifecycle inside the same coordinator and sequence; reservation alone cannot coalesce B or suppress B's success/failure reconciliation, and discard preserves B's real outcome.
 - [A stale hydration retry overwrites a newer successful write] → Reads carry generation plus intent revision and publish only while current; stale results are discarded and rollback always uses live `confirmedPersisted`.
 - [Provider waits forever on SQLite] → Hydration always resolves to success/absence/invalid/error; error unlocks Dark + Original and exposes retry, without waiting for TMDB.
 - [Web displays React theme over stale DOM/CSS] → One effect writes effective variables and `color-scheme`; CSS contains only bootstrap fallbacks, not palette definitions; verify reload and runtime system changes.

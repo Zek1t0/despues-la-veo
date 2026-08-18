@@ -253,7 +253,9 @@ function testParserAndDispatch() {
 
   assert.equal(parseLibraryBackupV3Value({ version: 3, items: {}, pins: [] }).ok, false);
   assert.equal(parseLibraryBackupV3Value({ version: 3, items: [], pins: {} }).ok, false);
-  assert.equal(parseLibraryBackup(JSON.stringify({ version: 4, items: [], pins: [] })).ok, false);
+  const v4 = parseLibraryBackup(JSON.stringify({ version: 4, items: [], pins: [] }));
+  assert.equal(v4.ok, true);
+  assert.equal(v4.payload.appearance.status, "absent");
 
   for (const version of [1, 2, 3]) {
     const item = backupItem({ externalId: `dispatch-${version}` });

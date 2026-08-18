@@ -212,9 +212,14 @@ export async function mergeLibraryBackupItems(
   generateId: () => string
 ): Promise<LibraryImportMergeResult> {
   const db = await initDb();
-  return runSerializedStorageMutation(() =>
-    mergeLibraryBackupItemsWithDb(db, items, generateId)
-  );
+  return runSerializedStorageMutation(async () => {
+    let result: LibraryImportMergeResult | null = null;
+    await db.withTransactionAsync(async () => {
+      result = await mergeLibraryBackupItemsWithDb(db, items, generateId);
+    });
+    if (!result) throw new Error("No se pudo completar el merge de títulos.");
+    return result;
+  });
 }
 
 export async function mergeLibraryBackup(
@@ -222,14 +227,19 @@ export async function mergeLibraryBackup(
   generateId: () => string
 ): Promise<LibraryBackupMergeResult> {
   const db = await initDb();
-  return runSerializedStorageMutation(() =>
-    mergeLibraryBackupWithDb(
-      db,
-      payload.items,
-      payload.version === 1 ? null : payload.pins,
-      generateId
-    )
-  );
+  return runSerializedStorageMutation(async () => {
+    let result: LibraryBackupMergeResult | null = null;
+    await db.withTransactionAsync(async () => {
+      result = await mergeLibraryBackupWithDb(
+        db,
+        payload.items,
+        payload.version === 1 ? null : payload.pins,
+        generateId
+      );
+    });
+    if (!result) throw new Error("No se pudo completar la importación del backup.");
+    return result;
+  });
 }
 
 export async function deleteSavedTitle(id: string): Promise<void> {

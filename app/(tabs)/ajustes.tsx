@@ -7,10 +7,14 @@ import * as DocumentPicker from "expo-document-picker";
 
 import { parseLibraryBackup } from "../../src/core/libraryBackup";
 import type { BackupValidationError } from "../../src/core/libraryBackupV1";
-import { createLibraryBackupV3 } from "../../src/core/libraryBackupV3";
+import {
+  createLibraryBackupV4,
+  type BackupAppearanceImportOutcome,
+} from "../../src/core/libraryBackupV4";
 import { getLibraryBackupExportData } from "../../src/storage/libraryBackupExport";
 import { mergeLibraryBackup } from "../../src/storage/savedTitlesRepo";
 import { useAppTheme } from "../../src/theme/AppThemeProvider";
+import type { DeferredAppearanceHandle } from "../../src/theme/appearanceCoordinator";
 import { useTmdbCredential } from "../../src/providers/tmdb/credential/TmdbCredentialProvider";
 import {
   presentTmdbCredentialStatus,
@@ -43,6 +47,21 @@ function formatProblemDetails(label: string, details: ImportProblemDetail[]): st
   if (hiddenCount > 0) visible.push(`- Hay ${hiddenCount} elemento(s) más no mostrado(s).`);
 
   return `${label}:\n${visible.join("\n")}`;
+}
+
+function appearanceOutcomeCopy(outcome: BackupAppearanceImportOutcome): string {
+  switch (outcome.status) {
+    case "applied":
+      return "Apariencia: se aplicó y guardó la incluida en el backup.";
+    case "superseded":
+      return "Apariencia: se conservó una elección más reciente realizada en este dispositivo.";
+    case "absent":
+      return "Apariencia: el backup no la incluía; se conservó la configuración local.";
+    case "incompatible":
+      return "Apariencia: la incluida no es compatible; los datos se importaron y se conservó la local.";
+    case "persistence-failure":
+      return "Apariencia: los datos se importaron, pero la apariencia del backup no pudo guardarse.";
+  }
 }
 
 function uuid() {
@@ -88,7 +107,13 @@ function PrimaryButton({
 }
 
 export default function SettingsScreen() {
-  const { theme } = useAppTheme();
+  const {
+    theme,
+    backupAvailability,
+    reserveDeferred,
+    activateDeferred,
+    discardDeferred,
+  } = useAppTheme();
   const [busy, setBusy] = useState(false);
   const [lastMsg, setLastMsg] = useState<string | null>(null);
   const [tmdbRetrying, setTmdbRetrying] = useState(false);
@@ -125,8 +150,9 @@ export default function SettingsScreen() {
       setBusy(true);
       setLastMsg(null);
 
-      const { items, pins } = await getLibraryBackupExportData();
-      const payload = createLibraryBackupV3(items, pins);
+      const { items, pins, appearanceAvailability } =
+        await getLibraryBackupExportData(backupAvailability);
+      const payload = createLibraryBackupV4(items, pins, appearanceAvailability);
 
       const json = JSON.stringify(payload, null, 2);
       const filename = `despues-la-veo-backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
@@ -141,7 +167,10 @@ export default function SettingsScreen() {
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
-        setLastMsg(`Export listo: ${items.length} títulos y ${pins.length} pins.`);
+        setLastMsg(
+          `Export v4 listo: ${items.length} títulos y ${pins.length} pins.` +
+          (payload.appearance ? " Apariencia incluida." : " Apariencia omitida por no estar confirmada.")
+        );
         return;
       }
 
@@ -160,7 +189,10 @@ export default function SettingsScreen() {
         UTI: "public.json",
       });
 
-      setLastMsg(`Export listo: ${items.length} títulos y ${pins.length} pins.`);
+      setLastMsg(
+        `Export v4 listo: ${items.length} títulos y ${pins.length} pins.` +
+        (payload.appearance ? " Apariencia incluida." : " Apariencia omitida por no estar confirmada.")
+      );
     } catch (e: any) {
       Alert.alert("Error exportando", e?.message ?? "Error desconocido");
     } finally {
@@ -190,6 +222,13 @@ export default function SettingsScreen() {
             `Pins estructuralmente inválidos: ${payload.invalidPins.length}`,
           ]
         : ["Este backup v1 no contiene ni modifica pins por ausencia."]),
+      ...(payload.version === 4
+        ? [payload.appearance.status === "valid"
+            ? "Apariencia: se aplicará después de completar el merge, salvo que elijas otra mientras tanto."
+            : payload.appearance.status === "absent"
+              ? "Apariencia: el backup no la incluye; se conservará la local."
+              : "Apariencia: no es compatible; se conservará la local y los datos podrán importarse."]
+        : ["Apariencia: este backup histórico no la modifica."]),
       "",
       "La importación hace merge: no borra títulos locales ausentes del backup.",
       "Sólo actualiza coincidencias del mismo tipo cuando el backup es más reciente; conserva los cambios locales iguales o más recientes.",
@@ -211,11 +250,27 @@ export default function SettingsScreen() {
 
     if (!proceed) return;
 
+    let deferredHandle: DeferredAppearanceHandle | null = null;
+    let appearanceOutcome: BackupAppearanceImportOutcome = payload.version === 4
+      ? payload.appearance.status === "incompatible"
+        ? { status: "incompatible", reason: payload.appearance.reason }
+        : { status: "absent" }
+      : { status: "absent" };
+    if (payload.version === 4 && payload.appearance.status === "valid") {
+      deferredHandle = reserveDeferred(payload.appearance.preference);
+    }
+
     setBusy(true);
     setLastMsg(null);
 
     try {
       const result = await mergeLibraryBackup(payload, uuid);
+      if (deferredHandle) {
+        const activation = await activateDeferred(deferredHandle);
+        appearanceOutcome = activation.status === "discarded"
+          ? { status: "superseded" }
+          : activation;
+      }
       const structurallyInvalidPins = payload.version !== 1
         ? payload.invalidPins.map((error) => ({
             reference: `Pin ${error.index + 1}`,
@@ -288,6 +343,8 @@ export default function SettingsScreen() {
         outcome,
         "",
         ...countLines,
+        "",
+        appearanceOutcomeCopy(appearanceOutcome),
         ...(detailSections.length > 0 ? ["", ...detailSections] : []),
       ].join("\n");
       setLastMsg(finalMsg);
@@ -297,11 +354,14 @@ export default function SettingsScreen() {
           "",
           ...countLines,
           "",
+          appearanceOutcomeCopy(appearanceOutcome),
+          "",
           "Los detalles están visibles en Ajustes.",
         ].join("\n");
         Alert.alert("Resultado de importación", mobileSummary);
       }
     } catch (e: any) {
+      if (deferredHandle) discardDeferred(deferredHandle);
       Alert.alert("Error importando", e?.message ?? "Error desconocido");
     } finally {
       setBusy(false);
@@ -415,7 +475,7 @@ export default function SettingsScreen() {
       )}
 
       <Text style={{ color: theme.global.textMuted, marginTop: 6 }}>
-        Export genera un .json versionado. Import hace MERGE: no borra títulos locales ausentes del
+        Export genera un .json v4 versionado. Import acepta v1–v4 y hace MERGE: no borra títulos locales ausentes del
         backup y evita duplicados por provider + externalId.
       </Text>
     </ScrollView>

@@ -15,6 +15,7 @@ require.extensions[".ts"] = function compileTypeScript(module, filename) {
 const repoRoot = path.resolve(__dirname, "../../..");
 const preferenceModule = require("../../../src/theme/appearancePreference.ts");
 const { AppearanceCoordinator } = require("../../../src/theme/appearanceCoordinator.ts");
+const { getAppearanceBackupAvailability } = require("../../../src/theme/appearanceBackupAvailability.ts");
 const { resolveAppearanceTheme, resolveEffectiveScheme } = require("../../../src/theme/resolver.ts");
 const { runSerializedStorageMutation } = require("../../../src/storage/storageMutationQueue.ts");
 const { DEFAULT_APPEARANCE_PREFERENCE, parseSerializedAppearance,
@@ -324,6 +325,95 @@ async function testHydrationAndStaleReads() {
     { status: "valid", preference: A, updatedAt: 2 }), false);
 }
 
+async function testDeferredCoordinatorBoundary() {
+  const writes = [];
+  const coordinator = hydratedCoordinator(async (value) => { writes.push(value); });
+  const initial = coordinator.getState();
+  const reservedA = coordinator.reserveDeferred(A);
+  assert.deepEqual(coordinator.getState().displayed, initial.displayed);
+  assert.deepEqual(coordinator.getState().confirmedPersisted, initial.confirmedPersisted);
+  assert.equal(writes.length, 0);
+  assert.equal(coordinator.getState().revision, initial.revision + 1);
+  const applied = await coordinator.activateDeferred(reservedA);
+  assert.equal(applied.status, "applied");
+  assert.deepEqual(writes, [A]);
+  assert.deepEqual(coordinator.getState().displayed, A);
+  assert.deepEqual(coordinator.getState().confirmedPersisted, A);
+  assert.equal(coordinator.getState().latestIntent.id, initial.revision + 1);
+  assert.equal(coordinator.getState().revision, initial.revision + 1);
+
+  const superseded = hydratedCoordinator(async (value) => { writes.push(value); });
+  const old = superseded.reserveDeferred(A);
+  await superseded.select(B);
+  assert.equal((await superseded.activateDeferred(old)).status, "superseded");
+  assert.deepEqual(superseded.getState().displayed, B);
+
+  const repeated = hydratedCoordinator(async () => {});
+  const first = repeated.reserveDeferred(A);
+  const firstOrder = repeated.getState().revision;
+  const second = repeated.reserveDeferred(B);
+  assert.equal(repeated.getState().revision, firstOrder + 1);
+  assert.equal((await repeated.activateDeferred(first)).status, "superseded");
+  assert.equal((await repeated.activateDeferred(second)).status, "applied");
+
+  const discarded = hydratedCoordinator(async () => { throw new Error("must not write"); });
+  const discardedHandle = discarded.reserveDeferred(A);
+  const discardedOrder = discarded.getState().revision;
+  const beforeDiscard = discarded.getState();
+  assert.equal(discarded.discardDeferred(discardedHandle), true);
+  assert.deepEqual(discarded.getState(), beforeDiscard);
+  assert.equal((await discarded.activateDeferred(discardedHandle)).status, "discarded");
+  const afterDiscard = discarded.reserveDeferred(B);
+  assert.equal(discarded.getState().revision, discardedOrder + 1);
+  discarded.discardDeferred(afterDiscard);
+
+  const failing = hydratedCoordinator(async () => { throw new Error("activation failed"); }, C);
+  const failure = await failing.activateDeferred(failing.reserveDeferred(A));
+  assert.equal(failure.status, "persistence-failure");
+  assert.deepEqual(failing.getState().displayed, C);
+  assert.deepEqual(failing.getState().confirmedPersisted, C);
+}
+
+async function testNormalWriteLifecycleDuringDeferredReservation() {
+  const successfulWrites = [];
+  const success = hydratedCoordinator(async (value) => { successfulWrites.push(value); });
+  const writeB = success.select(B);
+  const reservedA = success.reserveDeferred(A);
+  await writeB;
+  assert.deepEqual(successfulWrites, [B]);
+  assert.deepEqual(success.getState().displayed, B);
+  assert.deepEqual(success.getState().confirmedPersisted, B);
+  assert.equal(getAppearanceBackupAvailability(success.getState()).preference, B);
+  success.discardDeferred(reservedA);
+  assert.deepEqual(success.getState().displayed, B);
+  assert.deepEqual(success.getState().confirmedPersisted, B);
+
+  const failedWrite = deferred();
+  const failure = hydratedCoordinator(() => failedWrite.promise, C);
+  const failingB = failure.select(B);
+  await tick();
+  const pendingA = failure.reserveDeferred(A);
+  failedWrite.reject(new Error("B failed"));
+  await assert.rejects(failingB);
+  assert.deepEqual(failure.getState().displayed, C);
+  assert.deepEqual(failure.getState().confirmedPersisted, C);
+  failure.discardDeferred(pendingA);
+  assert.deepEqual(failure.getState().displayed, C);
+
+  const activationWrites = [];
+  const activation = hydratedCoordinator(async (value) => { activationWrites.push(value); }, C);
+  await activation.select(B);
+  const laterA = activation.reserveDeferred(A);
+  assert.equal((await activation.activateDeferred(laterA)).status, "applied");
+  assert.deepEqual(activationWrites, [B, A]);
+  assert.deepEqual(activation.getState().confirmedPersisted, A);
+
+  const laterSelection = hydratedCoordinator(async () => {});
+  const importA = laterSelection.reserveDeferred(A);
+  await laterSelection.select(B);
+  assert.equal((await laterSelection.activateDeferred(importA)).status, "superseded");
+}
+
 async function testReusableEffectLifecycleAndPureBoundary() {
   const coordinator = new AppearanceCoordinator(async () => {});
   let publications = 0;
@@ -375,6 +465,8 @@ async function testGlobalQueueRecovery() {
   await testPersistenceRetryUsesFailedIntent();
   await testWriteCompletionInvalidatesReads();
   await testHydrationAndStaleReads();
+  await testDeferredCoordinatorBoundary();
+  await testNormalWriteLifecycleDuringDeferredReservation();
   await testReusableEffectLifecycleAndPureBoundary();
   await testSystemRuntime();
   await testGlobalQueueRecovery();

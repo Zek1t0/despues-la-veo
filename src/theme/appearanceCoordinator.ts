@@ -25,6 +25,19 @@ type StatePatch = { -readonly [Key in keyof AppearanceCoordinatorState]?: Appear
 type PendingIntent = AppearanceIntent & {
   resolve: () => void;
   reject: (error: unknown) => void;
+  coalesced: boolean;
+};
+const deferredHandleBrand: unique symbol = Symbol("DeferredAppearanceHandle");
+export type DeferredAppearanceHandle = Readonly<{ [deferredHandleBrand]: true }>;
+export type DeferredAppearanceActivationResult =
+  | Readonly<{ status: "applied" }>
+  | Readonly<{ status: "superseded" }>
+  | Readonly<{ status: "discarded" }>
+  | Readonly<{ status: "persistence-failure"; error: unknown }>;
+type DeferredReservation = {
+  order: number;
+  preference: AppearancePreference;
+  status: "reserved" | "activated" | "discarded";
 };
 export type HydrationToken = Readonly<{
   generation: number;
@@ -46,6 +59,7 @@ export class AppearanceCoordinator {
   private generation = 0;
   private storageEpoch = 0;
   private pending: PendingIntent | null = null;
+  private deferredReservations = new WeakMap<DeferredAppearanceHandle, DeferredReservation>();
   private pumping = false;
   private disposed = false;
 
@@ -101,6 +115,27 @@ export class AppearanceCoordinator {
     return true;
   }
 
+  private enqueue(intent: AppearanceIntent): Readonly<{
+    promise: Promise<void>;
+    pending: PendingIntent;
+  }> {
+    if (this.pending) {
+      this.pending.coalesced = true;
+      this.pending.resolve();
+      this.pending = null;
+    }
+    let pending!: PendingIntent;
+    const promise = new Promise<void>((resolve, reject) => {
+      pending = { ...intent, resolve, reject, coalesced: false };
+      this.pending = pending;
+    });
+    if (!this.pumping) {
+      this.pumping = true;
+      void Promise.resolve().then(() => this.pump());
+    }
+    return { promise, pending };
+  }
+
   select(preference: AppearancePreference): Promise<void> {
     const id = this.state.revision + 1;
     const intent = Object.freeze({ id, preference });
@@ -112,18 +147,53 @@ export class AppearanceCoordinator {
         ? this.state.storageError
         : null,
     });
-    if (this.pending) {
-      this.pending.resolve();
-      this.pending = null;
+    return this.enqueue(intent).promise;
+  }
+
+  reserveDeferred(preference: AppearancePreference): DeferredAppearanceHandle {
+    const order = this.state.revision + 1;
+    const handle = Object.freeze({ [deferredHandleBrand]: true }) as DeferredAppearanceHandle;
+    this.deferredReservations.set(handle, { order, preference, status: "reserved" });
+    this.publish({ revision: order });
+    return handle;
+  }
+
+  discardDeferred(handle: DeferredAppearanceHandle): boolean {
+    const reservation = this.deferredReservations.get(handle);
+    if (!reservation || reservation.status !== "reserved") return false;
+    reservation.status = "discarded";
+    return true;
+  }
+
+  async activateDeferred(
+    handle: DeferredAppearanceHandle
+  ): Promise<DeferredAppearanceActivationResult> {
+    const reservation = this.deferredReservations.get(handle);
+    if (!reservation || reservation.status !== "reserved") return { status: "discarded" };
+    if (reservation.order !== this.state.revision) {
+      reservation.status = "discarded";
+      return { status: "superseded" };
     }
-    const promise = new Promise<void>((resolve, reject) => {
-      this.pending = { ...intent, resolve, reject };
+
+    reservation.status = "activated";
+    const intent = Object.freeze({ id: reservation.order, preference: reservation.preference });
+    this.publish({
+      latestIntent: intent,
+      displayed: reservation.preference,
+      storageError: this.state.storageError?.operation === "read"
+        ? this.state.storageError
+        : null,
     });
-    if (!this.pumping) {
-      this.pumping = true;
-      void Promise.resolve().then(() => this.pump());
+    try {
+      const enqueued = this.enqueue(intent);
+      await enqueued.promise;
+      if (enqueued.pending.coalesced || this.state.latestIntent?.id !== intent.id) {
+        return { status: "superseded" };
+      }
+      return { status: "applied" };
+    } catch (error) {
+      return { status: "persistence-failure", error };
     }
-    return promise;
   }
 
   async retryWrite(): Promise<boolean> {
@@ -180,6 +250,7 @@ export class AppearanceCoordinator {
     this.disposed = true;
     this.generation += 1;
     this.listeners.clear();
+    if (this.pending) this.pending.coalesced = true;
     this.pending?.resolve();
     this.pending = null;
   }
