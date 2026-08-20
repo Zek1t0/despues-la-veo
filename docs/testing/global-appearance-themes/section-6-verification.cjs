@@ -19,6 +19,7 @@ const libraryView = read("src/core/libraryView.ts");
 const viewPreferences = read("src/core/viewPreferences.ts");
 const personalRating = read("src/core/personalRating.ts");
 const { resolveTheme } = require("../../../src/theme/resolver.ts");
+const { DARK_ORIGINAL_BASELINE } = require("../../../src/theme/darkOriginalBaseline.ts");
 
 function testLibraryThemeCoverage() {
   assert.match(library, /useAppTheme\(\)/);
@@ -97,7 +98,11 @@ function testThemeReactivityDoesNotChangeDataContracts() {
   assert.equal(dark.global.surfaceSecondary, "#141414");
   assert.equal(dark.global.inputBackground, "#0f0f0f");
   assert.equal(dark.global.border, "#242424");
-  assert.equal(dark.global.borderStrong, "#2c2c2c");
+  assert.equal(DARK_ORIGINAL_BASELINE.shared.border2.value, "#2c2c2c");
+  assert.equal(
+    dark.global.borderStrong,
+    DARK_ORIGINAL_BASELINE.shared.border2.finalAccessibleValue,
+  );
 }
 
 testLibraryThemeCoverage();

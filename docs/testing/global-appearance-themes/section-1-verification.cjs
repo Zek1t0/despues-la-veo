@@ -60,6 +60,7 @@ function read(relativePath) {
 function assertBaselineSource(relativePath, item) {
   const source = read(relativePath);
   const historicalNeedle = item.sourceNeedle ?? item.value;
+  if (item.finalAccessibleValue && source.includes(item.finalAccessibleValue)) return;
   if (source.includes(historicalNeedle)) return;
   assert.notEqual(
     item.resolvedToken,
@@ -123,8 +124,13 @@ function testEffectiveSchemeResolution() {
 
 function testCatalogAndAllCombinations() {
   assert.deepEqual(APPEARANCE_PALETTE_CATALOG.map((palette) => palette.id), APPEARANCE_PALETTE_IDS);
-  assert.equal(APPEARANCE_PALETTE_CATALOG.length, 6);
+  assert.equal(APPEARANCE_PALETTE_CATALOG.length, 7);
+  assert.deepEqual(APPEARANCE_PALETTE_IDS, [
+    "original", "green-apple", "tide", "midnight-twilight", "lavender", "obsidian",
+    "pinky-clouds",
+  ]);
   assert.equal(isAppearancePaletteId("lavender"), true);
+  assert.equal(isAppearancePaletteId("pinky-clouds"), true);
   assert.equal(isAppearancePaletteId("unknown"), false);
   assert.throws(() => resolveTheme("dark", "unknown"), /Unknown appearance palette/);
 
@@ -160,6 +166,47 @@ function testCatalogAndAllCombinations() {
 
   const original = APPEARANCE_PALETTE_CATALOG.find((palette) => palette.id === "original");
   assert.deepEqual(original.overrides, { light: {}, dark: {} });
+
+  const pinky = APPEARANCE_PALETTE_CATALOG.at(6);
+  assert.equal(pinky.id, "pinky-clouds");
+  assert.equal(pinky.displayName, "Pinky Clouds");
+  assert.deepEqual(pinky.overrides.light, {
+    background: "#FFF3F9",
+    surface: "#FFE4F1",
+    surfaceSecondary: "#FFCEE7",
+    inputBackground: "#FFF7FB",
+    textMuted: "#6B4F5D",
+    border: "#FDA6D2",
+    borderStrong: "#B24A7D",
+    accent: "#AA4275",
+    onAccent: "#FFFFFF",
+    selectedSurface: "#FDA6D2",
+    selectedForeground: "#5A1838",
+    selectedBorder: "#DB5A7B",
+  });
+  assert.deepEqual(pinky.overrides.dark, {
+    background: "#160B12",
+    surface: "#211019",
+    surfaceSecondary: "#321624",
+    inputBackground: "#28111D",
+    border: "#55263D",
+    borderStrong: "#8D5A70",
+    accent: "#FD7690",
+    onAccent: "#211019",
+    selectedSurface: "#5C2440",
+    selectedForeground: "#F2F2F2",
+    selectedBorder: "#DB5A7B",
+  });
+  const lightPinky = resolveTheme("light", "pinky-clouds");
+  const darkPinky = resolveTheme("dark", "pinky-clouds");
+  assert.equal(lightPinky.global.textPrimary, "#171717");
+  assert.equal(lightPinky.global.textSecondary, "#4f4f4f");
+  assert.equal(darkPinky.global.textPrimary, "#f2f2f2");
+  assert.equal(darkPinky.global.textSecondary, "#bdbdbd");
+  assert.strictEqual(lightPinky.semantic, LIGHT_SEMANTIC_TOKENS);
+  assert.strictEqual(darkPinky.semantic, DARK_SEMANTIC_TOKENS);
+  assert.strictEqual(lightPinky.structural, LIGHT_STRUCTURAL_TOKENS);
+  assert.strictEqual(darkPinky.structural, DARK_STRUCTURAL_TOKENS);
 }
 
 function testLightInvariant() {
@@ -190,7 +237,7 @@ function testDarkOriginalParity() {
     textSecondary: shared.muted.value,
     textMuted: shared.subtle.value,
     border: shared.border.value,
-    borderStrong: shared.border2.value,
+    borderStrong: shared.border2.finalAccessibleValue,
     accent: shared.primary.value,
     onAccent: shared.bg.value,
     selectedSurface: shared.primary.value,
@@ -199,6 +246,8 @@ function testDarkOriginalParity() {
   });
   assert.equal(theme.semantic.dangerSurface, shared.danger.value);
   assert.equal(theme.semantic.dangerBorder, shared.dangerBorder.value);
+  assert.equal(shared.border2.value, "#2c2c2c");
+  assert.equal(shared.border2.finalAccessibleValue, "#646464");
 
   assert.equal(
     theme.semantic.dangerText,
@@ -251,12 +300,13 @@ function testSemanticForegroundInventory() {
   assert.notStrictEqual(consumers.tmdbFeedbackError, DARK_ORIGINAL_BASELINE.shared.personalRatingLowBackground);
 
   assert.equal(consumers.titleDetailRatingError.value, "#5a2a2a");
+  assert.equal(consumers.titleDetailRatingError.finalAccessibleValue, "#9b7b7b");
   assert.equal(consumers.titleDetailRatingError.resolvedToken, "semantic.personalRatingErrorText");
   assert.match(consumers.titleDetailRatingError.note, /Section 12/);
-  assert.equal(DARK_SEMANTIC_TOKENS.personalRatingErrorText, "#5a2a2a");
+  assert.equal(DARK_SEMANTIC_TOKENS.personalRatingErrorText, "#9b7b7b");
   assert.equal(LIGHT_SEMANTIC_TOKENS.personalRatingErrorText, "#7d2020");
   for (const palette of APPEARANCE_PALETTE_CATALOG) {
-    assert.equal(resolveAppearanceTheme({ version: 1, scheme: "dark", palette: palette.id }, "dark").semantic.personalRatingErrorText, "#5a2a2a");
+    assert.equal(resolveAppearanceTheme({ version: 1, scheme: "dark", palette: palette.id }, "dark").semantic.personalRatingErrorText, "#9b7b7b");
     assert.equal(resolveAppearanceTheme({ version: 1, scheme: "light", palette: palette.id }, "light").semantic.personalRatingErrorText, "#7d2020");
   }
 
@@ -292,4 +342,4 @@ testCatalogAndAllCombinations();
 testLightInvariant();
 testDarkOriginalParity();
 testSemanticForegroundInventory();
-console.log("Section 1 theme domain, 12 combinations, selectedForeground, semantic foreground inventory, Light luminance and Dark + Original parity verification passed.");
+console.log("Section 1 historical baseline plus final 14 combinations, Pinky Clouds exact values, selectedForeground, semantic foreground inventory, Light luminance and Dark + Original parity verification passed.");

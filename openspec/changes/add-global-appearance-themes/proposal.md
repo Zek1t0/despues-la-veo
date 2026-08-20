@@ -6,7 +6,7 @@ La aplicación necesita una Appearance local-first que preserve exactamente la i
 
 ## What Changes
 
-- Agregar una preferencia global e independiente de browsing con dos dimensiones persistentes: `scheme` (`system`, `light`, `dark`) y `palette` (`original`, `green-apple`, `tide`, `midnight-twilight`, `lavender`, `obsidian`), con default absoluto `dark + original`.
+- Agregar una preferencia global e independiente de browsing con dos dimensiones persistentes: `scheme` (`system`, `light`, `dark`) y `palette` (`original`, `green-apple`, `tide`, `midnight-twilight`, `lavender`, `obsidian`, `pinky-clouds`), con default absoluto `dark + original`.
 - Resolver una `ThemeDefinition` tipada, inmutable y completa mediante `LightBase`/`DarkBase` más overrides parciales de palette y estados semánticos; `Dark + Original` preservará prácticamente exacta la baseline visual actual.
 - Incorporar una fuente reactiva única para React Navigation, Stack, Tabs, headers, StatusBar, screens, componentes, previews y web; `system` seguirá cambios del OS/browser sin reescribir la preferencia.
 - Separar tokens globales, estados semánticos, overlays estructurales sobre imágenes y branding externo. Ratings conservarán sus rangos y señales no basadas sólo en color; el logo y los textos oficiales de TMDB/JustWatch no se recolorearán ni alterarán.
@@ -54,4 +54,4 @@ La aplicación necesita una Appearance local-first que preserve exactamente la i
 - **Navigation/UI:** root Stack, Tabs, StatusBar, Settings, nueva route, shared browsing components y todas las screens que hoy consumen colores.
 - **Web/config:** `global.css`, `userInterfaceStyle: "automatic"` e integración native de Android mediante `expo-system-ui`; Android, iOS y web deben compartir la misma resolución efectiva, mientras `useColorScheme` continúa siendo la fuente runtime React.
 - **Persistence/backup:** `app_preferences`, exportadores/parsers/merge de backup y UI de importación/exportación; no se modifica la credencial TMDB ni se introduce red.
-- **Riesgos principales:** captura estática de colores, carreras entre intents/writes/imports/retries, composición con otras mutaciones SQLite, flash de hidratación, contraste entre 12 combinaciones scheme/palette, divergencia React/CSS, regresión visual de Dark+Original y restauraciones parciales. Design y tasks exigirán secuencias, harnesses y checkpoints específicos para cada riesgo.
+- **Riesgos principales:** captura estática de colores, carreras entre intents/writes/imports/retries, composición con otras mutaciones SQLite, flash de hidratación, contraste entre 14 combinaciones scheme/palette, divergencia React/CSS, regresión visual de Dark+Original y restauraciones parciales. Design y tasks exigirán secuencias, harnesses y checkpoints específicos para cada riesgo.

@@ -21,12 +21,12 @@ assert.match(grid, /getPersonalRatingPresentation\(personalRating\)/);
 assert.match(grid, /personalRatingPresentation\?\.accessibilityLabel/);
 assert.match(grid, /accessibilityLabel=\{composedAccessibilityLabel\}/);
 assert.match(grid, /isPinned \? "fijado" : null/);
-assert.match(grid, /<PersonalRatingBadge value=\{personalRating\} style=\{styles\.ratingBadge\} \/>/);
-assert.match(grid, /<PersonalRatingBadge[\s\S]*?<Text ellipsizeMode="tail" numberOfLines=\{2\}/);
+assert.match(grid, /<PersonalRatingBadge[\s\S]*?value=\{personalRating\}[\s\S]*?style=\{styles\.ratingBadge\}[\s\S]*?\/>/);
+assert.match(grid, /<PersonalRatingBadge[\s\S]*?<Text[\s\S]*?ellipsizeMode="tail"[\s\S]*?numberOfLines=\{2\}/);
 assert.match(grid, /marginBottom: 5/);
 assert.match(grid, /showImage \? \([\s\S]*?<Image[\s\S]*?onError=\{\(\) => setImageFailed\(true\)\}[\s\S]*?: \([\s\S]*?<PosterPlaceholder/);
-assert.match(grid, /<View accessible=\{false\} pointerEvents="none" style=\{styles\.badge\}>/);
-assert.match(grid, /<View accessible=\{false\} pointerEvents="none" style=\{styles\.pinBadge\}>/);
+assert.match(grid, /<View[\s\S]*?accessible=\{false\}[\s\S]*?pointerEvents="none"[\s\S]*?styles\.badge[\s\S]*?>/);
+assert.match(grid, /<View[\s\S]*?accessible=\{false\}[\s\S]*?pointerEvents="none"[\s\S]*?styles\.pinBadge[\s\S]*?>/);
 assert.doesNotMatch(grid, /library|tags|search|voteAverage/);
 
 assert.doesNotMatch(badge, /Pressable|accessibilityLabel/);
@@ -37,7 +37,7 @@ assert.equal((presentation.match(/accessibilityLabel: `/g) ?? []).length, 1);
 for (const source of [library, tags]) {
   assert.match(source, /getPersonalRatingPresentation/);
   assert.match(source, /personalRatingPresentation\.accessibilityLabel/);
-  assert.match(source, /<PersonalRatingBadge value=\{item\.personalRating\} \/>/);
+  assert.match(source, /<PersonalRatingBadge[\s\S]*?value=\{item\.personalRating\}[\s\S]*?\/>/);
   assert.match(source, /<TitleGridCard[\s\S]*?personalRating=\{item\.personalRating\}/);
   assert.doesNotMatch(source, /formatPersonalRating\(item\.personalRating\)/);
 }

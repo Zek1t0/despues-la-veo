@@ -18,9 +18,15 @@ for (const source of [saved, remote]) {
 }
 
 assert.match(types, /personalRatingErrorText: string/);
-assert.match(bases, /personalRatingErrorText: "#5a2a2a"/);
+assert.match(bases, /personalRatingErrorText: "#9b7b7b"/);
 assert.match(bases, /personalRatingErrorText: "#7d2020"/);
-assert.match(baseline, /titleDetailRatingError:[\s\S]*semantic\.personalRatingErrorText/);
+const ratingErrorBaseline = baseline.slice(
+  baseline.indexOf("titleDetailRatingError:"),
+  baseline.indexOf("compactDisabledForeground:"),
+);
+assert.match(ratingErrorBaseline, /"#5a2a2a"/);
+assert.match(ratingErrorBaseline, /"semantic\.personalRatingErrorText"/);
+assert.match(ratingErrorBaseline, /"#9b7b7b"/);
 assert.match(saved, /ratingError[\s\S]*theme\.semantic\.personalRatingErrorText/);
 assert.doesNotMatch(saved, /ratingError[\s\S]{0,160}theme\.semantic\.(?:dangerBorder|dangerText|onDangerSurface)/);
 assert.match(saved, /theme\.semantic\.dangerSurface/);

@@ -11,6 +11,7 @@ export const APPEARANCE_PALETTE_IDS = [
   "midnight-twilight",
   "lavender",
   "obsidian",
+  "pinky-clouds",
 ] as const;
 export type AppearancePaletteId = (typeof APPEARANCE_PALETTE_IDS)[number];
 

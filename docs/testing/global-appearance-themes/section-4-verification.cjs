@@ -28,13 +28,16 @@ function testRouteAndSettingsEntry() {
 
 function testCatalogAndRealPreviews() {
   const screen = read("app/settings/appearance.tsx");
-  assert.equal(APPEARANCE_PALETTE_CATALOG.length, 6);
+  assert.equal(APPEARANCE_PALETTE_CATALOG.length, 7);
   assert.deepEqual(APPEARANCE_PALETTE_CATALOG.map((palette) => palette.displayName), [
     "Original", "Manzana verde", "Marea", "Crepúsculo de medianoche", "Lavanda", "Obsidiana",
+    "Pinky Clouds",
   ]);
+  assert.equal(APPEARANCE_PALETTE_CATALOG.at(6).id, "pinky-clouds");
   assert.match(screen, /APPEARANCE_PALETTE_CATALOG\.map/);
   assert.match(screen, /resolveTheme\(effectiveScheme, palette\.id\)/);
-  assert.doesNotMatch(screen, /"green-apple"|"tide"|"midnight-twilight"|"lavender"|"obsidian"/);
+  assert.doesNotMatch(screen,
+    /"green-apple"|"tide"|"midnight-twilight"|"lavender"|"obsidian"|"pinky-clouds"/);
   for (const scheme of ["light", "dark"]) {
     for (const palette of APPEARANCE_PALETTE_CATALOG) {
       const preview = resolveTheme(scheme, palette.id);

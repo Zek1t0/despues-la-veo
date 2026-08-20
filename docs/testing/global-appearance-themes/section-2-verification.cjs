@@ -25,6 +25,7 @@ const pref = (scheme, palette) => ({ version: 1, scheme, palette });
 const C = pref("dark", "original");
 const A = pref("light", "tide");
 const B = pref("system", "lavender");
+const P = pref("system", "pinky-clouds");
 
 function deferred() {
   let resolve, reject;
@@ -36,6 +37,9 @@ const tick = () => new Promise((resolve) => setImmediate(resolve));
 async function testParser() {
   assert.deepEqual(DEFAULT_APPEARANCE_PREFERENCE, C);
   assert.equal(parseSerializedAppearance(JSON.stringify(B)).status, "valid");
+  assert.deepEqual(parseSerializedAppearance(JSON.stringify(P)), {
+    status: "valid", preference: P,
+  });
   for (const value of ["{", JSON.stringify({ ...B, version: 2 }),
     JSON.stringify({ ...B, scheme: "auto" }), JSON.stringify({ ...B, palette: "unknown" }),
     JSON.stringify({ ...B, extra: true })]) {
@@ -46,6 +50,8 @@ async function testParser() {
   assert.deepEqual(input, B);
   assert.equal(serializeAppearancePreference(B),
     '{"version":1,"scheme":"system","palette":"lavender"}');
+  assert.equal(serializeAppearancePreference(P),
+    '{"version":1,"scheme":"system","palette":"pinky-clouds"}');
 }
 
 async function loadRepoFixture() {
@@ -447,6 +453,17 @@ async function testSystemRuntime() {
   assert.equal(resolveAppearanceTheme(B, "light").paletteId, "lavender");
   assert.equal(resolveAppearanceTheme(B, "dark").paletteId, "lavender");
   assert.equal(B.scheme, "system");
+  assert.equal(resolveAppearanceTheme(P, "light").paletteId, "pinky-clouds");
+  assert.equal(resolveAppearanceTheme(P, "light").effectiveScheme, "light");
+  assert.equal(resolveAppearanceTheme(P, "dark").paletteId, "pinky-clouds");
+  assert.equal(resolveAppearanceTheme(P, "dark").effectiveScheme, "dark");
+
+  let restartedPreference = C;
+  const persisted = hydratedCoordinator(async (value) => { restartedPreference = value; });
+  await persisted.select(P);
+  const restarted = hydratedCoordinator(async () => {}, restartedPreference);
+  assert.deepEqual(restarted.getState().displayed, P);
+  assert.deepEqual(restarted.getState().confirmedPersisted, P);
 }
 
 async function testGlobalQueueRecovery() {

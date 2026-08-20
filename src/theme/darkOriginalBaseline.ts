@@ -12,6 +12,7 @@ export type BaselineColorEntry = Readonly<{
   resolvedToken?: string;
   note?: string;
   sourceNeedle?: string;
+  finalAccessibleValue?: string;
 }>;
 
 const entry = (
@@ -20,7 +21,8 @@ const entry = (
   sources: readonly string[],
   resolvedToken?: string,
   note?: string,
-  sourceNeedle?: string
+  sourceNeedle?: string,
+  finalAccessibleValue?: string
 ): BaselineColorEntry => Object.freeze({
   value,
   category,
@@ -28,6 +30,7 @@ const entry = (
   resolvedToken,
   note,
   sourceNeedle,
+  finalAccessibleValue,
 });
 
 export const DARK_ORIGINAL_BASELINE = Object.freeze({
@@ -40,7 +43,15 @@ export const DARK_ORIGINAL_BASELINE = Object.freeze({
     muted: entry("#bdbdbd", "global-theme", ["src/theme/colors.ts"], "global.textSecondary"),
     subtle: entry("#9a9a9a", "global-theme", ["src/theme/colors.ts"], "global.textMuted"),
     border: entry("#242424", "global-theme", ["src/theme/colors.ts"], "global.border"),
-    border2: entry("#2c2c2c", "global-theme", ["src/theme/colors.ts"], "global.borderStrong"),
+    border2: entry(
+      "#2c2c2c",
+      "global-theme",
+      ["src/theme/colors.ts"],
+      "global.borderStrong",
+      "Historical strong border retained as migration evidence; Section 12 deliberately resolves the accessible Dark final value.",
+      undefined,
+      "#646464"
+    ),
     primary: entry("#ffffff", "global-theme", ["src/theme/colors.ts"], "global.accent"),
     danger: entry("#4a1f1f", "semantic", ["src/theme/colors.ts"], "semantic.dangerSurface"),
     dangerBorder: entry("#5a2a2a", "semantic", ["src/theme/colors.ts"], "semantic.dangerBorder"),
@@ -75,8 +86,9 @@ export const DARK_ORIGINAL_BASELINE = Object.freeze({
       "semantic",
       ["app/title/[id].tsx"],
       "semantic.personalRatingErrorText",
-      "PersonalRating persistence feedback keeps its Dark + Original output; Section 12 retains the explicit accessibility review boundary.",
-      "colors.dangerBorder"
+      "Historical PersonalRating persistence feedback retained as migration evidence; Section 12 deliberately resolves the semantic Dark token to the accessible final value.",
+      "colors.dangerBorder",
+      "#9b7b7b"
     ),
     compactDisabledForeground: entry(
       "#f2f2f2",
@@ -116,8 +128,24 @@ export const DARK_ORIGINAL_BASELINE = Object.freeze({
     rootBackground: entry("#0b0b0b", "bootstrap-only", ["global.css"]),
     rootText: entry("#f2f2f2", "bootstrap-only", ["global.css"]),
     scrollbarTrack: entry("#0f0f0f", "bootstrap-only", ["global.css"]),
-    scrollbarThumb: entry("#2b2b2b", "bootstrap-only", ["global.css"]),
-    scrollbarThumbHover: entry("#3a3a3a", "bootstrap-only", ["global.css"]),
+    scrollbarThumb: entry(
+      "#2b2b2b",
+      "bootstrap-only",
+      ["global.css"],
+      undefined,
+      "Historical pre-Section-12 bootstrap value; the accessible borderStrong derivation requires bootstrap/runtime synchronization.",
+      undefined,
+      "#5c5c5c"
+    ),
+    scrollbarThumbHover: entry(
+      "#3a3a3a",
+      "bootstrap-only",
+      ["global.css"],
+      undefined,
+      "Historical pre-Section-12 bootstrap value; final bootstrap matches the Dark + Original hydrated runtime.",
+      undefined,
+      "#646464"
+    ),
   }),
   externalBranding: Object.freeze({
     tmdbLogo: entry("assets/tmdb-primary-full-blue.png", "external-branding", ["app/settings/about.tsx"], undefined, "Official asset; deliberately not a theme token and never tinted."),

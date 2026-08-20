@@ -35,6 +35,7 @@ const C = pref("dark", "original");
 const A = pref("light", "tide");
 const B = pref("system", "lavender");
 const D = pref("dark", "obsidian");
+const P = pref("system", "pinky-clouds");
 const availability = (preference) => ({ status: "confirmed", preference });
 const unavailable = (reason) => ({ status: "unavailable", reason });
 const tick = () => new Promise((resolve) => setImmediate(resolve));
@@ -172,6 +173,15 @@ function testV4CreatorAndParser() {
   assert.equal(roundTrip.payload.version, 4);
   assert.equal(roundTrip.payload.appearance.status, "valid");
   assert.deepEqual(roundTrip.payload.appearance.preference, B);
+
+  const pinky = createLibraryBackupV4([savedTitle()], [], availability(P),
+    "2030-01-01T00:00:00.000Z");
+  assert.equal(pinky.version, 4);
+  assert.deepEqual(pinky.appearance, { scheme: "system", palette: "pinky-clouds" });
+  const pinkyRoundTrip = parseLibraryBackup(JSON.stringify(pinky));
+  assert.equal(pinkyRoundTrip.ok, true);
+  assert.equal(pinkyRoundTrip.payload.appearance.status, "valid");
+  assert.deepEqual(pinkyRoundTrip.payload.appearance.preference, P);
 
   for (const reason of ["pending", "invalid", "read-error"]) {
     const absent = createLibraryBackupV4([], [], unavailable(reason));
@@ -344,7 +354,9 @@ async function testRealImportLifecycle() {
   const appliedFixture = createMergeFixture("applied");
   let appliedStorage = C;
   try {
-    const parsed = parseLibraryBackup(JSON.stringify(v4({ pins: [pin()] })));
+    const parsed = parseLibraryBackup(JSON.stringify(v4({
+      pins: [pin()], appearance: { scheme: "system", palette: "pinky-clouds" },
+    })));
     assert.equal(parsed.ok, true);
     const applied = hydratedCoordinator(async (value) => { appliedStorage = value; }, C);
     const handle = applied.reserveDeferred(parsed.payload.appearance.preference);
@@ -353,7 +365,7 @@ async function testRealImportLifecycle() {
     assert.equal(dataResult.pins.inserted, 1);
     assertDataPersisted(appliedFixture);
     assert.equal((await applied.activateDeferred(handle)).status, "applied");
-    assert.deepEqual(appliedStorage, A);
+    assert.deepEqual(appliedStorage, P);
   } finally {
     appliedFixture.close();
   }

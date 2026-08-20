@@ -45,6 +45,8 @@ complete immutable ThemeDefinition
 
 `AppearanceScheme` is `system | light | dark`; `EffectiveScheme` is only `light | dark`; `AppearancePaletteId` is a closed catalog. Screens receive the complete `ThemeDefinition` and never branch on palette IDs. A palette definition contains partial light/dark overrides, not duplicate complete themes. The resolver starts from the selected base, applies only allowed palette overrides, then attaches scheme-specific semantic and structural tokens and returns a complete immutable value.
 
+The final closed display catalog for this feature is ordered `Original`, `Manzana verde`, `Marea`, `Crepúsculo de medianoche`, `Lavanda`, `Obsidiana`, `Pinky Clouds`. Their stable internal IDs remain `original`, `green-apple`, `tide`, `midnight-twilight`, `lavender`, `obsidian`, `pinky-clouds`, so the final resolved matrix is Light/Dark × seven palettes = 14 `ThemeDefinition` values. This is the last product expansion of the palette catalog for this feature; further palette design requires a separate product decision rather than extending this change again.
+
 Alternatives rejected: complete independent themes duplicate unchanged values and make light/dark parity drift; scheme-specific palette preferences violate the approved model; a mutable `colors` singleton neither notifies React nor updates captured StyleSheets; runtime-generated Material You expands product and accessibility scope.
 
 ### 2. Use a minimal consumer-driven token contract
@@ -58,14 +60,158 @@ The first `ThemeDefinition` contains:
 
 The global group is palette-overridable under controlled typing. Semantic and structural groups are selected by effective scheme and are not arbitrary palette overrides. `onAccent` is explicit because accents can be light. Selection is an independent, palette-overridable trio: `selectedSurface`, `selectedForeground`, `selectedBorder`. `selectedForeground` is mandatory because neither `textPrimary` nor `onAccent` is generally valid over a selected surface; consumers never infer or alias it automatically. Dark + Original resolves that trio to current `primary #ffffff`, current `bg #0b0b0b`, current `primary #ffffff`. Colored palettes override `selectedForeground` whenever their selected surface requires it. Disabled tokens are justified by repeated `#303030/#3b3b3b` literals. `dangerText` represents general standalone danger/error feedback, while scheme-aware `onDangerSurface` is the contrasting foreground placed on `dangerSurface`; palettes cannot override either semantic role. The consumer-proven `personalRatingErrorText` represents only standalone persistence error/feedback for PersonalRating: it is scheme-aware, palette-independent, does not replace `dangerText`, and is distinct from the low/medium/high rating range pairs. `imageOverlay`, `imageOverlayMedium` and `imageOverlayStrong` represent the three consumer-proven TitleGridCard scrim intensities. `imageOverlayLabel` represents exclusively the consumer-proven label/count scrim placed over the four arbitrary posters in `TagGridCard`/`TagCollage`. `onImageOverlay` is the primary foreground over structural image scrims, while `onImageOverlaySecondary` is the secondary metadata foreground proven by the TagGridCard count; neither role may be sourced from palette-overridable global text tokens. All remain structural and palette-independent in both schemes; the scrims remain dark over arbitrary images, and these proven responsibilities do not authorize additional preventive levels. No typography, spacing or motion tokens are introduced.
 
+Section 12 confirms that `borderStrong` is the existing global, palette-overridable responsibility for visually necessary control/input boundaries. Because `inputBackground` and the surrounding surface are too close to identify those controls without their boundary, every resolved `borderStrong` used for that responsibility must reach WCAG non-text contrast `>= 3.0:1` against the relevant surface, with a preferred implementation margin around `>= 3.2:1`. This correction strengthens only `borderStrong`; it does not change `border`, `inputBackground`, add an input-specific token or authorize consumer-side colors. `border` remains available for subtle/decorative separation where a functional `3:1` boundary is not required. Before applying the values, implementation inventories every `theme.global.borderStrong` consumer and confirms it genuinely needs a strong boundary; any consumer deliberately depending on subtle presentation is a STOP requiring contract review rather than an automatic new token.
+
+The following table remains the historical Section 12 audit of the six-palette catalog as it existed when that audit was completed. It preserves the evidence for the accessibility corrections made at that checkpoint; it is not the final palette table after the later user-authored visual adjustments:
+
+| Scheme | Palette | Previous | Final | Comparison surface | Previous ratio | Final ratio |
+| --- | --- | --- | --- | --- | ---: | ---: |
+| Light | Original | `#bdbdbd` | `#8f8f8f` | `#ffffff` | `1.8788:1` | `3.2340:1` |
+| Light | Manzana verde | `#bdbdbd` | `#8f8f8f` | `#ffffff` | `1.8788:1` | `3.2340:1` |
+| Light | Marea | `#94bcbc` | `#769595` | `#fbffff` | `2.0484:1` | `3.2061:1` |
+| Light | Crepúsculo de medianoche | `#aaa0cd` | `#9289af` | `#fdfcff` | `2.3836:1` | `3.2004:1` |
+| Light | Lavanda | `#bda9cf` | `#9a89a8` | `#ffffff` | `2.1561:1` | `3.2220:1` |
+| Light | Obsidiana | `#a8a8a8` | `#8f8f8f` | `#ffffff` | `2.3779:1` | `3.2340:1` |
+| Dark | Original | `#2c2c2c` | `#646464` | `#101010` | `1.3625:1` | `3.2155:1` |
+| Dark | Manzana verde | `#2c2c2c` | `#646464` | `#101010` | `1.3625:1` | `3.2155:1` |
+| Dark | Marea | `#2d5056` | `#4f6c72` | `#0c181b` | `2.0595:1` | `3.2015:1` |
+| Dark | Crepúsculo de medianoche | `#3b3f68` | `#606485` | `#101226` | `1.8449:1` | `3.2193:1` |
+| Dark | Lavanda | `#4a3857` | `#6f6179` | `#17121b` | `1.7514:1` | `3.2156:1` |
+| Dark | Obsidiana | `#353535` | `#616161` | `#090909` | `1.6233:1` | `3.2151:1` |
+
+After that historical audit, the user intentionally refined the global surfaces of Manzana verde, Marea and Crepúsculo de medianoche. Those values are now product contract and MUST NOT be normalized back to the historical table. The only rejected parts of the manual state are the three Dark `borderStrong` values below, which fall below `3:1`; implementation restores their already-approved accessible hues while retaining every manual surface/input adjustment. The final partial overrides are:
+
+| Palette/scheme | Final overrides |
+| --- | --- |
+| Manzana verde Light | `background #f4f5f4`; `surface #f6f9f6`; `surfaceSecondary #f2f8f2`; `inputBackground #f6f9f6`; `textMuted #707070` inherited; `border #c7d8c7`; `borderStrong #5a7b5a`; `accent #397a22`; `onAccent #ffffff`; `selectedSurface #e1f2d9`; inherited `selectedForeground #171717`; `selectedBorder #397a22` |
+| Manzana verde Dark | `background #070a05`; `surface #0b0f09`; `surfaceSecondary #0f160f`; `inputBackground #0a0f08`; inherited `textMuted #9a9a9a`; `border #1d271d`; final `borderStrong #646464`; `accent #9be56f`; `onAccent #102108`; `selectedSurface #21351a`; `selectedForeground #f2f2f2`; `selectedBorder #78bd52` |
+| Marea Light | `background #f1f8f8`; `surface #fbffff`; `surfaceSecondary #e2f0f0`; `inputBackground #fbffff`; inherited `textMuted #707070`; `border #c4dddd`; `borderStrong #769595`; `accent #087b83`; `onAccent #ffffff`; `selectedSurface #d2ecee`; inherited `selectedForeground #171717`; `selectedBorder #087b83` |
+| Marea Dark | `background #081113`; `surface #0b1518`; `surfaceSecondary #112125`; `inputBackground #0a1618`; inherited `textMuted #9a9a9a`; `border #21383d`; final `borderStrong #4f6c72`; `accent #62d3d5`; `onAccent #062426`; `selectedSurface #15383c`; `selectedForeground #f2f2f2`; `selectedBorder #4bbabd` |
+| Crepúsculo de medianoche Light | `background #f5f4fd`; `surface #fcfbff`; `surfaceSecondary #f8f5ff`; `inputBackground #fcfbff`; `textMuted #6e6e6e`; `border #d2cce7`; `borderStrong #9289af`; `accent #5546a6`; `onAccent #ffffff`; `selectedSurface #e2ddf4`; inherited `selectedForeground #171717`; `selectedBorder #5546a6` |
+| Crepúsculo de medianoche Dark | `background #090a18`; `surface #0e0f20`; `surfaceSecondary #161933`; `inputBackground #0d0f21`; inherited `textMuted #9a9a9a`; `border #282b4b`; final `borderStrong #606485`; `accent #aaa0ff`; `onAccent #171331`; `selectedSurface #292552`; `selectedForeground #f2f2f2`; `selectedBorder #8e83ed` |
+
+The manual-to-final accessibility corrections are narrowly scoped: Manzana verde Dark `borderStrong #202920 → #646464`, Marea Dark `#304144 → #4f6c72`, and Crepúsculo de medianoche Dark `#454864 → #606485`. Their final functional contrasts are respectively `3.2662:1`/`3.2715:1`, `3.2788:1`/`3.2611:1`, and `3.3027:1`/`3.3041:1` against the actual `surface`/`inputBackground`. Manzana verde Light deliberately retains `borderStrong #5a7b5a`, measuring `4.4841:1` against its actual `surface/inputBackground #f6f9f6`. Marea Light remains `#769595` on `#fbffff` (`3.2061:1`), while Crepúsculo Light remains `#9289af` on its adjusted `#fcfbff` (`3.1750:1`). No surface is changed to obtain these ratios.
+
+The Section 12 consumer mapping also confirms one real normal-text failure for the global, palette-overridable `textMuted`: Light + Crepúsculo de medianoche historically used inherited `#707070` on the then-current `background #f4f3fa`, producing only `4.4917:1` against the required `4.5:1`. The correction remains palette-local: the Light override is neutral gray `#6e6e6e`. With the final user-adjusted surfaces it produces `4.6718:1` on `background #f5f4fd` and `4.9488:1` on both real `surface #fcfbff` and `inputBackground #fcfbff`. This preserves the auxiliary neutral role, changes no Dark value, adds no token and requires no consumer branch. Original, Manzana verde, Marea, Lavanda, Obsidiana and Pinky Clouds retain their current resolved `textMuted` values. The mapping found no real `textMuted` consumer on `surfaceSecondary`; nearby secondary surfaces belong to sibling chips, buttons or poster placeholders and do not justify a synthetic token/surface change. Likewise, the sole `personalRatingErrorText` consumer remains on Card `surface`, not colored `surfaceSecondary`.
+
+| Light Crepúsculo de medianoche `textMuted` consumer responsibility | Actual background | Previous `#707070` | Final `#6e6e6e` |
+| --- | --- | ---: | ---: |
+| Auxiliary screen/help text | final `background #f5f4fd` | historical failing pair `#707070/#f4f3fa = 4.4917:1` | `4.6718:1` |
+| Auxiliary Card/tab/navigation text | `surface #fcfbff` | historical `#707070/#fdfcff = 4.8448:1` | `4.9488:1` |
+| Input placeholders | `inputBackground #fcfbff` | historical `#707070/#fdfcff = 4.8448:1` | `4.9488:1` |
+
+#### Pinky Clouds exact palette contract
+
+Pinky Clouds is a normal base-plus-overrides palette, not a parallel theme system. Its pink identity reaches `background`, `surface`, `surfaceSecondary` and `inputBackground`, as well as accent, selection and borders, so cards remain visibly pink-tinted even when accent is not visible. It adds no token and authorizes no `if palette === "pinky-clouds"` consumer branch. The five user-selected anchors are Deep `#B24A7D`, Medium `#DB5A7B`, Vivid `#FD7690`, Soft `#FDA6D2` and Cloud `#FFCEE7`.
+
+Light uses the following complete override set; unlisted global text tokens inherit `LightBase`, while `textMuted` is overridden only because its real normal-text and placeholder responsibilities need reliable contrast across the pink surfaces.
+
+| Light token override | Exact value | Reason |
+| --- | --- | --- |
+| `background` | `#FFF3F9` | Extremely light pink cloud for the main canvas. |
+| `surface` | `#FFE4F1` | Perceptibly pink card mass, distinct from background. |
+| `surfaceSecondary` | `#FFCEE7` | Direct Cloud anchor for elevated/secondary pink surfaces. |
+| `inputBackground` | `#FFF7FB` | Related near-white pink input fill. |
+| `textMuted` | `#6B4F5D` | Muted berry-neutral foreground that passes on its real backgrounds. |
+| `border` | `#FDA6D2` | Direct Soft anchor for subtle pink separation. |
+| `borderStrong` | `#B24A7D` | Direct Deep anchor and functional boundary above 3:1. |
+| `accent` | `#AA4275` | Slightly deeper anchor-derived magenta required for normal link text on `surface`; distinct from `borderStrong`. |
+| `onAccent` | `#FFFFFF` | Accessible foreground on the Light accent. |
+| `selectedSurface` | `#FDA6D2` | Direct Soft anchor for a clearly visible selection. |
+| `selectedForeground` | `#5A1838` | Derived deep berry foreground with accessible selection contrast. |
+| `selectedBorder` | `#DB5A7B` | Direct Medium anchor and functional selected boundary. |
+
+Dark remains genuinely dark through derived plum, pink-charcoal and berry-black surfaces rather than reusing the light swatches as backgrounds.
+
+| Dark token override | Exact value | Reason |
+| --- | --- | --- |
+| `background` | `#160B12` | Derived berry-black main canvas. |
+| `surface` | `#211019` | Derived dark plum card surface, visibly distinct from background. |
+| `surfaceSecondary` | `#321624` | Derived elevated berry/plum surface. |
+| `inputBackground` | `#28111D` | Derived pink-charcoal input fill aligned with cards. |
+| `border` | `#55263D` | Derived subtle plum separator. |
+| `borderStrong` | `#8D5A70` | Derived lighter plum functional boundary above 3:1. |
+| `accent` | `#FD7690` | Direct Vivid anchor for immediate Pinky Clouds identity. |
+| `onAccent` | `#211019` | Dark derived foreground with accessible contrast on Vivid. |
+| `selectedSurface` | `#5C2440` | Derived deep berry selection surface. |
+| `selectedForeground` | `#F2F2F2` | Inherited Dark foreground value made explicit for the selected pair. |
+| `selectedBorder` | `#DB5A7B` | Direct Medium anchor for selected boundary. |
+
+The five anchors remain directly represented: Deep in Light `borderStrong`, Medium in both `selectedBorder` values, Vivid in Dark `accent`, Soft in Light `border` and `selectedSurface`, and Cloud in Light `surfaceSecondary`. `#AA4275` is the explicitly approved deeper Light accent derivation; the remaining non-base values are light tints or dark plum/berry derivations required for hierarchy and contrast.
+
+The consumer-driven contrast audit below uses WCAG relative luminance. Normal text requires `>= 4.5:1`; functional non-text boundaries require `>= 3.0:1`. `accent/surfaceSecondary` is deliberately not asserted as a text pair: structural inventory finds no normal-text accent consumer on that surface, so its synthetic `4.0675:1` measurement is not a product failure. Real accent consumers occur on `background`, `surface`, `inputBackground`, or as `onAccent/accent`; the preview accent swatch on `surfaceSecondary` is non-textual.
+
+| Pinky Clouds Light responsibility | Ratio | Threshold/result |
+| --- | ---: | --- |
+| `textPrimary/background` | `16.5962:1` | `>=4.5` PASS |
+| `textPrimary/surface` | `15.0419:1` | `>=4.5` PASS |
+| `textPrimary/surfaceSecondary` | `13.0057:1` | `>=4.5` PASS |
+| `textSecondary/background` | `7.5827:1` | `>=4.5` PASS |
+| `textSecondary/surface` | `6.8726:1` | `>=4.5` PASS |
+| `textSecondary/surfaceSecondary` | `5.9422:1` | `>=4.5` PASS |
+| `textMuted/background` | `6.6998:1` | `>=4.5` PASS |
+| `textMuted/surface` | `6.0723:1` | `>=4.5` PASS |
+| `textPrimary/inputBackground` | `17.0309:1` | `>=4.5` PASS |
+| `textMuted/inputBackground` placeholder | `6.8752:1` | `>=4.5` PASS |
+| `onAccent/accent` | `5.6069:1` | `>=4.5` PASS |
+| `selectedForeground/selectedSurface` | `7.1259:1` | `>=4.5` PASS |
+| `accent/background` real accent content | `5.1905:1` | `>=4.5` PASS |
+| `accent/surface` real link/navigation content | `4.7044:1` | `>=4.5` PASS |
+| `accent/inputBackground` real accent content | `5.3264:1` | `>=4.5` PASS |
+| `accent/surface` focus indicator | `4.7044:1` | `>=3.0` PASS |
+| `selectedBorder/surface` | `3.0587:1` | `>=3.0` PASS |
+| `borderStrong/surface` | `4.2267:1` | `>=3.0` PASS |
+| `borderStrong/inputBackground` | `4.7856:1` | `>=3.0` PASS |
+| `dangerText/background` | `9.2596:1` | `>=4.5` PASS |
+| `dangerText/surface` | `8.3924:1` | `>=4.5` PASS |
+| `onDangerSurface/dangerSurface` | `8.4830:1` | `>=4.5` PASS |
+| `personalRatingErrorText/surface` | `8.3924:1` | `>=4.5` PASS |
+| `disabledText/disabledSurface` | `3.6260:1` | documented disabled signal `>=3.0` PASS |
+| personal rating low pair | `8.9855:1` | `>=4.5` PASS |
+| personal rating medium pair | `9.5444:1` | `>=4.5` PASS |
+| personal rating high pair | `8.3122:1` | `>=4.5` PASS |
+
+| Pinky Clouds Dark responsibility | Ratio | Threshold/result |
+| --- | ---: | --- |
+| `textPrimary/background` | `17.1983:1` | `>=4.5` PASS |
+| `textPrimary/surface` | `16.2718:1` | `>=4.5` PASS |
+| `textPrimary/surfaceSecondary` | `14.7026:1` | `>=4.5` PASS |
+| `textSecondary/background` | `10.2480:1` | `>=4.5` PASS |
+| `textSecondary/surface` | `9.6959:1` | `>=4.5` PASS |
+| `textSecondary/surfaceSecondary` | `8.7609:1` | `>=4.5` PASS |
+| `textMuted/background` | `6.8422:1` | `>=4.5` PASS |
+| `textMuted/surface` | `6.4736:1` | `>=4.5` PASS |
+| `textPrimary/inputBackground` | `15.7880:1` | `>=4.5` PASS |
+| `textMuted/inputBackground` placeholder | `6.2811:1` | `>=4.5` PASS |
+| `onAccent/accent` | `7.0875:1` | `>=4.5` PASS |
+| `selectedForeground/selectedSurface` | `10.5299:1` | `>=4.5` PASS |
+| `accent/background` real accent content | `7.4911:1` | `>=4.5` PASS |
+| `accent/surface` real link/navigation content | `7.0875:1` | `>=4.5` PASS |
+| `accent/surfaceSecondary` | `6.4040:1` | `>=4.5` PASS |
+| `accent/inputBackground` | `6.8768:1` | `>=4.5` PASS |
+| `accent/surface` focus indicator | `7.0875:1` | `>=3.0` PASS |
+| `selectedBorder/surface` | `4.9969:1` | `>=3.0` PASS |
+| `borderStrong/surface` | `3.3214:1` | `>=3.0` PASS |
+| `borderStrong/inputBackground` | `3.2227:1` | `>=3.0` PASS |
+| `dangerText/background` | `11.3640:1` | `>=4.5` PASS |
+| `dangerText/surface` | `10.7519:1` | `>=4.5` PASS |
+| `onDangerSurface/dangerSurface` | `12.4480:1` | `>=4.5` PASS |
+| `personalRatingErrorText/surface` | `4.7821:1` | `>=4.5` PASS |
+| `disabledText/disabledSurface` | `10.0061:1` | documented disabled signal `>=3.0` PASS |
+| personal rating low pair | `8.9855:1` | `>=4.5` PASS |
+| personal rating medium pair | `9.5444:1` | `>=4.5` PASS |
+| personal rating high pair | `8.3122:1` | `>=4.5` PASS |
+
+Semantic rating/danger/disabled values and all structural image-overlay values remain scheme-selected and palette-independent. Their existing audited contracts are reused unchanged; Pinky Clouds does not override `danger*`, `disabled*`, `personalRating*`, `imageOverlay*`, `onImageOverlay*` or `imageOverlayBorder`.
+
 DarkBase + Original uses the current values from `colors.ts`; the root navigation duplicate, CSS scrollbar values, disabled literals and overlay literals are recorded in a parity fixture before migration. Reclassification changes ownership, not Dark + Original output. The parity fixture also records semantic foregrounds by `consumer/file → current value → future responsibility/token`, rather than inferring their meaning from equal hex values elsewhere. At minimum it captures:
 
 - `app/settings/tmdb.tsx` feedback/error text `#f4b8b8` → candidate `dangerText` responsibility, independently of PersonalRating low background using the same value.
-- `app/title/[id].tsx` PersonalRating persistence `ratingError` foreground `#5a2a2a` → `semantic.personalRatingErrorText`; the historical `colors.dangerBorder` source is a chromatic association, not the consumer's semantic responsibility.
+- `app/title/[id].tsx` PersonalRating persistence `ratingError` historical foreground `#5a2a2a` → final accessible Dark `semantic.personalRatingErrorText #9b7b7b`; the historical `colors.dangerBorder` source is retained as evidence of the baseline but is a chromatic association, not the consumer's semantic responsibility.
 - `app/settings/tmdb.tsx` disabled surface `#303030` with current foreground `colors.text #f2f2f2`, and `app/(tabs)/ajustes.tsx`, `app/title/[id].tsx` and `app/tmdb/[type]/[id].tsx` disabled surface `#3b3b3b` with their actual current `colors.text #f2f2f2` foregrounds → disabled surface/text responsibility.
 - Current danger surfaces using `colors.danger #4a1f1f` with `colors.text #f2f2f2` resolve separately to `dangerSurface` and `onDangerSurface`, rather than reusing standalone `dangerText`.
 
-For Dark + Original, the exact semantic danger values are `dangerSurface #4a1f1f`, `dangerBorder #5a2a2a`, standalone `dangerText #f4b8b8`, `onDangerSurface #f2f2f2` and PersonalRating persistence feedback `personalRatingErrorText #5a2a2a`. Reclassification of `ratingError` changes ownership, not output: Section 9 migrates it to `theme.semantic.personalRatingErrorText`, never to `theme.semantic.dangerBorder`. Light resolves `personalRatingErrorText` to `#7d2020`, which has a WCAG contrast ratio of approximately `10.00:1` on the actual `surface #ffffff` and `9.26:1` on `background #f6f6f6`; palettes cannot override it. The historical Dark value remains an explicit Section 12 accessibility-review boundary and is not silently corrected during Sections 9 + 10. Light also defines a scheme-appropriate `onDangerSurface` with adequate contrast against its Light `dangerSurface`. The exact structural values are `imageOverlay rgba(11, 11, 11, 0.78)` for the TitleGridCard title scrim, `imageOverlayMedium rgba(11, 11, 11, 0.82)` for its type badge, `imageOverlayStrong rgba(11, 11, 11, 0.90)` for its pin and `imageOverlayLabel rgba(11, 11, 11, 0.94)` for the TagGridCard name/count directly over TagCollage. The primary structural foreground `onImageOverlay` is `#f2f2f2`; the TagGridCard name uses it, while its count uses the secondary structural foreground `onImageOverlaySecondary #bdbdbd`. Light and Dark share these structural values because they protect content over images, not general app surfaces. The former `tagLabelOverlay` inventory is therefore resolved to `structural.imageOverlayLabel`, and the TagGridCard count foreground is resolved to `structural.onImageOverlaySecondary`; no additional overlay or foreground level is introduced preventively.
+For Dark + Original, the exact semantic danger values remain `dangerSurface #4a1f1f`, `dangerBorder #5a2a2a`, standalone `dangerText #f4b8b8` and `onDangerSurface #f2f2f2`. PersonalRating persistence feedback is the single deliberate accessibility exception to exact Dark + Original parity: Sections 9 + 10 first preserve and migrate the historical `ratingError #5a2a2a` to its correct owner, `theme.semantic.personalRatingErrorText`, never to `theme.semantic.dangerBorder`; Section 12 then changes only the Dark resolved value to `#9b7b7b` because the historical value measures approximately `1.63:1` on its actual `surface #101010` and fails the `4.5:1` normal-text requirement. The final Dark value measures approximately `5.00:1` on `surface #101010`, `5.17:1` on `background #0b0b0b` and `4.84:1` on `surfaceSecondary #141414`. Light remains `#7d2020`, with approximately `10.00:1` on `surface #ffffff` and `9.26:1` on `background #f6f6f6`. `personalRatingErrorText` remains semantic, scheme-aware and palette-independent: every Dark palette resolves `#9b7b7b`, every Light palette resolves `#7d2020`, and `dangerText` remains a separate general-feedback role. This is an intentional, documented accessibility correction rather than accidental parity drift. Light also defines a scheme-appropriate `onDangerSurface` with adequate contrast against its Light `dangerSurface`. The exact structural values are `imageOverlay rgba(11, 11, 11, 0.78)` for the TitleGridCard title scrim, `imageOverlayMedium rgba(11, 11, 11, 0.82)` for its type badge, `imageOverlayStrong rgba(11, 11, 11, 0.90)` for its pin and `imageOverlayLabel rgba(11, 11, 11, 0.94)` for the TagGridCard name/count directly over TagCollage. The primary structural foreground `onImageOverlay` is `#f2f2f2`; the TagGridCard name uses it, while its count uses the secondary structural foreground `onImageOverlaySecondary #bdbdbd`. Light and Dark share these structural values because they protect content over images, not general app surfaces. The former `tagLabelOverlay` inventory is therefore resolved to `structural.imageOverlayLabel`, and the TagGridCard count foreground is resolved to `structural.onImageOverlaySecondary`; no additional overlay or foreground level is introduced preventively.
 
 If one semantic foreground token cannot preserve multiple current presentations, implementation keeps the token catalog consumer-driven and minimal, documents the unmatched consumer and defers any visual correction to an explicit accessibility decision. It does not silently treat a rating color as proof of danger parity or normalize consumers during migration.
 
@@ -230,7 +376,7 @@ palette changes
 
 ### 10. Appearance screen uses real resolved previews
 
-Add `app/settings/appearance.tsx` as a normal Stack screen and a Settings entry. Scheme controls display Spanish labels `Del sistema`, `Claro`, `Oscuro`; palette labels use the approved product names, with Obsidiana's display name isolated as catalog metadata so copy can change without an architecture change.
+Add `app/settings/appearance.tsx` as a normal Stack screen and a Settings entry. Scheme controls display Spanish labels `Del sistema`, `Claro`, `Oscuro`; final palette catalog labels are `Original`, `Manzana verde`, `Marea`, `Crepúsculo de medianoche`, `Lavanda`, `Obsidiana`, `Pinky Clouds`, with display copy isolated as catalog metadata so copy never changes persistence or architecture.
 
 Each preview resolves the catalog palette against the current effective scheme and draws an abstract composition using background, surface, surfaceSecondary, text, accent and border/selection tokens. Mobile uses a horizontal accessible collection. Wide layouts use measured available width and wrapping/grid behavior rather than a frozen arbitrary breakpoint; resize/rotation is part of validation.
 
@@ -245,6 +391,8 @@ Danger/error/destructive and rating pairs are resolved by scheme outside palette
 ### 12. Backup v4 treats Appearance as lower-priority portable intent
 
 Add pure v4 types/parser/creator alongside v1-v3. Export snapshots items and pins plus Appearance only when the export layer has a reliable portable intention:
+
+Pinky Clouds expands only the valid palette-ID domain. Appearance persistence remains `{ version: 1, scheme, palette }`, the stable key and hydration behavior do not change, and the default remains Dark + Original. Backup remains `version: 4`: `appearance.palette: "pinky-clouds"` MUST export, parse, import and restore normally through the existing deferred-intent/coordinator path. Unknown-palette fixtures MUST use another deliberately invalid ID after this feature. v1/v2/v3 continue preserving local Appearance, and no hydration, last-intent-wins, reserve/activate/discard, rollback, queue or transaction semantic changes.
 
 ```json
 {
@@ -344,6 +492,8 @@ Expected areas, subject to exact filenames established during Apply:
 
 `expo-system-ui` is the single justified dependency exception required for Android native System behavior on Expo SDK 54. No other dependency is justified or authorized.
 
+Pinky Clouds adds no CSS-specific palette definition. Browser chrome continues deriving from the resolved `ThemeDefinition`; `global.css` remains only the Dark + Original bootstrap fallback plus runtime-fed variables, never seven duplicated palette tables.
+
 ## Risks / Trade-offs
 
 - [Dark + Original drifts during semantic renaming] → Capture the current token/literal mapping first, add a parity harness where structurally possible and visually review navigation, overlays, disabled, ratings, pins and branding before adding expressive palettes.
@@ -356,7 +506,7 @@ Expected areas, subject to exact filenames established during Apply:
 - [A stale hydration retry overwrites a newer successful write] → Reads carry generation plus intent revision and publish only while current; stale results are discarded and rollback always uses live `confirmedPersisted`.
 - [Provider waits forever on SQLite] → Hydration always resolves to success/absence/invalid/error; error unlocks Dark + Original and exposes retry, without waiting for TMDB.
 - [Web displays React theme over stale DOM/CSS] → One effect writes effective variables and `color-scheme`; CSS contains only bootstrap fallbacks, not palette definitions; verify reload and runtime system changes.
-- [Twelve scheme/palette combinations multiply contrast work] → In Section 1, validate the complete 2×6 resolved catalog plus the documented relative-luminance Light gate and explicit `selectedSurface`/`selectedForeground` pair; before final release, validate semantic, focus, placeholder, selected and disabled pairs comprehensively in Section 12.
+- [Fourteen scheme/palette combinations multiply contrast work] → Preserve the completed historical 2×6 audit, then extend the complete resolved catalog to 2×7 with Pinky Clouds plus the documented relative-luminance Light gate and explicit `selectedSurface`/`selectedForeground` pair; before final release, validate semantic, focus, placeholder, selected and disabled pairs comprehensively in Section 12.
 - [Palette overrides create incomplete themes] → Resolver always begins with a complete base and returns a complete typed definition; screens cannot access partial overrides.
 - [Theme context causes broad rerenders] → Theme changes are user/system-driven and rare; memoize definitions/context and keep non-color StyleSheets static.
 - [Installing `expo-system-ui` overwrites protected app/package work] → Inspect the pre-install diffs, install only the Expo SDK 54-compatible package, add its config plugin only if Expo/CNG introspection requires it, then verify the personal `android.package` and package scripts remain byte/logically intact. Stage only the feature-owned `userInterfaceStyle`, dependency/lockfile and required plugin hunks at the later checkpoint.
@@ -374,12 +524,12 @@ Expected areas, subject to exact filenames established during Apply:
 3. Connect root Navigation, Tabs, StatusBar, web variables and any necessary narrow System config change; verify runtime switching with a temporary/internal harness before screen rollout.
 4. Add Settings route and real previews, then migrate shared static captures and screens in bounded groups, keeping Dark + Original as the checkpoint baseline.
 5. Add backup v4 after the central `confirmedPersisted`/availability/deferred-intent API exists; retain all v1-v3 fixtures and add late-merge supersession, absent-Appearance, read-error, unknown-palette and partial-failure reporting.
-6. Complete the 2×6 contrast/platform matrix, focused harnesses, TypeScript, strict OpenSpec and external diff review before Archive.
+6. Preserve the completed 2×6 evidence, implement Pinky Clouds once, then complete the final 2×7 contrast/platform matrix, focused harnesses, TypeScript, strict OpenSpec and one external review of the accumulated Section 12 technical diff before Archive.
 
 Rollback within the same SQLite schema leaves the stable `appearance` row unused and preserves all existing data. Reverting UI/runtime sections restores Dark + Original constants without data migration. Reverting after v4 export requires retaining a v4-capable importer or warning that older code cannot import new files; never down-convert or delete user backups automatically. Every Apply section stops for diff/test review and checkpoint before continuing.
 
 ## Open Questions
 
-- The provisional display name “Obsidiana” may change as catalog copy without changing the palette ID, persistence, specs or architecture.
-- Exact palette hex values and the precise responsive width at which previews wrap remain implementation/design-review details, constrained by contrast tests and measured layout rather than a product-contract change.
+- The existing display name `Obsidiana` remains unchanged; its stable internal ID remains `obsidian`.
+- The precise responsive width at which previews wrap remains an implementation/design-review detail constrained by measured layout. Pinky Clouds hex values are final in this design and MUST NOT be deferred to implementation.
 - Browser `theme-color` support can be adopted if Expo/web metadata permits runtime updates without a second theme source; otherwise correct document background and `color-scheme` remain the required baseline.

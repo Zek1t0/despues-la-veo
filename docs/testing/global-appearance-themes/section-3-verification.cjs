@@ -15,6 +15,13 @@ const repoRoot = path.resolve(__dirname, "../../..");
 const read = (relativePath) => fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
 const { deriveBrowserChromeTheme } = require("../../../src/theme/browserChromeTheme.ts");
 const { resolveTheme } = require("../../../src/theme/resolver.ts");
+const { DARK_ORIGINAL_BASELINE } = require("../../../src/theme/darkOriginalBaseline.ts");
+
+function cssVariable(source, name) {
+  const match = new RegExp(`${name}:\\s*(#[0-9a-f]{6})`, "i").exec(source);
+  assert.ok(match, `Missing CSS bootstrap variable ${name}`);
+  return match[1].toLowerCase();
+}
 
 function testRootProviderAndNavigationTheme() {
   const root = read("app/_layout.tsx");
@@ -65,24 +72,33 @@ function testWebRuntimeAndBootstrap() {
   assert.match(css, /--app-background: #0b0b0b/);
   assert.match(css, /--app-foreground: #f2f2f2/);
   assert.match(css, /--app-scrollbar-track: #0f0f0f/);
-  assert.match(css, /--app-scrollbar-thumb: #2b2b2b/);
-  assert.match(css, /--app-scrollbar-thumb-hover: #3a3a3a/);
+  const bootstrapThumb = DARK_ORIGINAL_BASELINE.bootstrap.scrollbarThumb;
+  const bootstrapHover = DARK_ORIGINAL_BASELINE.bootstrap.scrollbarThumbHover;
+  assert.equal(bootstrapThumb.value, "#2b2b2b");
+  assert.equal(bootstrapThumb.finalAccessibleValue, "#5c5c5c");
+  assert.equal(bootstrapHover.value, "#3a3a3a");
+  assert.equal(bootstrapHover.finalAccessibleValue, "#646464");
+  assert.equal(cssVariable(css, "--app-scrollbar-thumb"), bootstrapThumb.finalAccessibleValue);
+  assert.equal(cssVariable(css, "--app-scrollbar-thumb-hover"), bootstrapHover.finalAccessibleValue);
   assert.match(css, /background: var\(--app-scrollbar-thumb-hover\)/);
   assert.doesNotMatch(css, /color-mix/);
   assert.match(css, /background: var\(--app-background\)/);
   assert.match(css, /color-scheme: dark/);
   assert.match(css, /:focus-visible/);
   assert.doesNotMatch(css, /green-apple|midnight-twilight|lavender|obsidian/);
-  assert.deepEqual(deriveBrowserChromeTheme(resolveTheme("dark", "original")), {
+  const hydratedChrome = deriveBrowserChromeTheme(resolveTheme("dark", "original"));
+  assert.deepEqual(hydratedChrome, {
     background: "#0b0b0b",
     foreground: "#f2f2f2",
     surface: "#101010",
     border: "#242424",
     accent: "#ffffff",
     scrollbarTrack: "#0f0f0f",
-    scrollbarThumb: "#2b2b2b",
-    scrollbarThumbHover: "#3a3a3a",
+    scrollbarThumb: "#5c5c5c",
+    scrollbarThumbHover: "#646464",
   });
+  assert.equal(cssVariable(css, "--app-scrollbar-thumb"), hydratedChrome.scrollbarThumb);
+  assert.equal(cssVariable(css, "--app-scrollbar-thumb-hover"), hydratedChrome.scrollbarThumbHover);
 }
 
 function testConfigAndScope() {

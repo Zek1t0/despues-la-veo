@@ -18,7 +18,7 @@ require.extensions[".ts"] = function compileTypeScript(module, filename) {
 const {
   getPersonalRatingPresentation,
 } = require("../../../src/components/browsing/personalRatingPresentation.ts");
-const { colors } = require("../../../src/theme/colors.ts");
+const { resolveTheme } = require("../../../src/theme/resolver.ts");
 
 const expectedBoundaries = [
   [10, "1.0", "low"],
@@ -29,11 +29,13 @@ const expectedBoundaries = [
   [100, "10.0", "high"],
 ];
 
-const visualToneColors = [
-  [colors.personalRatingLowBackground, colors.personalRatingLowText],
-  [colors.personalRatingMediumBackground, colors.personalRatingMediumText],
-  [colors.personalRatingHighBackground, colors.personalRatingHighText],
-];
+const darkSemantic = resolveTheme("dark", "original").semantic;
+const lightSemantic = resolveTheme("light", "original").semantic;
+const visualToneColors = [darkSemantic, lightSemantic].flatMap((semantic) => [
+  [semantic.personalRatingLowBackground, semantic.personalRatingLowForeground],
+  [semantic.personalRatingMediumBackground, semantic.personalRatingMediumForeground],
+  [semantic.personalRatingHighBackground, semantic.personalRatingHighForeground],
+]);
 
 function relativeLuminance(hex) {
   const channels = hex.slice(1).match(/.{2}/g).map((channel) => {
@@ -90,14 +92,16 @@ assert.equal((presentation.match(/value <= 74/g) ?? []).length, 1);
 assert.equal((presentation.match(/value <= 84/g) ?? []).length, 1);
 for (const token of [
   "personalRatingLowBackground",
-  "personalRatingLowText",
+  "personalRatingLowForeground",
   "personalRatingMediumBackground",
-  "personalRatingMediumText",
+  "personalRatingMediumForeground",
   "personalRatingHighBackground",
-  "personalRatingHighText",
+  "personalRatingHighForeground",
 ]) {
-  assert.match(badge, new RegExp(`colors\\.${token}`));
+  assert.match(badge, new RegExp(`theme\\.semantic\\.${token}`));
 }
+assert.match(badge, /useAppTheme\(\)/);
+assert.doesNotMatch(badge, /theme\/colors|colors\./);
 assert.match(grid, /personalRating\?: PersonalRating/);
 assert.match(grid, /PersonalRatingBadge/);
 assert.doesNotMatch(search, /personalRating|PersonalRatingBadge/);
