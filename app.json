@@ -1,30 +1,33 @@
 {
   "expo": {
-    "name": "despues-la-veo",
+    "name": "DespuésLaVeo",
     "slug": "despues-la-veo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/branding/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/branding/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0b0b0b"
+      "backgroundColor": "#15111D"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.zekito.despueslaveo"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0b0b0b"
+        "foregroundImage": "./assets/branding/adaptive/foreground.png",
+        "backgroundImage": "./assets/branding/adaptive/background.png",
+        "monochromeImage": "./assets/branding/monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.zekito.despueslaveo"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/branding/favicon.png"
     },
     "plugins": [
       "expo-router",
