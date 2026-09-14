@@ -5,7 +5,10 @@ import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import { deleteSavedTitle, upsertSavedTitle } from "../../src/storage/savedTitlesRepo";
-import type { SavedTitle, TitleStatus } from "../../src/core/savedTitle";
+import type {
+  LegacyPersistedSavedTitle as SavedTitle,
+  TitleStatus,
+} from "../../src/core/savedTitle";
 import { LIBRARY_PIN_CONTEXT } from "../../src/core/contextualPin";
 import {
   selectVisibleLibraryTitles,

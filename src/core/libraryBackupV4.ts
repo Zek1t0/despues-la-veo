@@ -1,4 +1,4 @@
-import type { SavedTitle } from "./savedTitle";
+import type { LegacyPersistedSavedTitle as SavedTitle } from "./savedTitle";
 import {
   createLibraryBackupV3,
   parseLibraryBackupV3Value,

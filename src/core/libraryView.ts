@@ -89,7 +89,7 @@ export function comparePinnedLibraryTitles(
   return compareLibraryTitles(a, b, sort);
 }
 
-export function selectVisibleLibraryTitles({
+export function selectVisibleLibraryTitles<T extends SavedTitle>({
   items,
   pinnedAtById,
   query,
@@ -97,13 +97,13 @@ export function selectVisibleLibraryTitles({
   statusFilter,
   typeFilter,
 }: {
-  items: readonly SavedTitle[];
+  items: readonly T[];
   pinnedAtById: ReadonlyMap<string, number>;
   query: string;
   sort: LibrarySort;
   statusFilter: LibraryStatusFilter;
   typeFilter: LibraryTypeFilter;
-}): SavedTitle[] {
+}): T[] {
   const needle = query.trim().toLocaleLowerCase("es");
   const matchingItems = items.filter((item) => {
     if (statusFilter !== "all" && item.status !== statusFilter) return false;
@@ -115,8 +115,8 @@ export function selectVisibleLibraryTitles({
     );
   });
 
-  const pinned: SavedTitle[] = [];
-  const unpinned: SavedTitle[] = [];
+  const pinned: T[] = [];
+  const unpinned: T[] = [];
   for (const item of matchingItems) {
     (pinnedAtById.has(item.id) ? pinned : unpinned).push(item);
   }

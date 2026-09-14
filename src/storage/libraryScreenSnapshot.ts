@@ -1,4 +1,4 @@
-import type { SavedTitle } from "../core/savedTitle";
+import type { LegacyPersistedSavedTitle as SavedTitle } from "../core/savedTitle";
 import { LIBRARY_PIN_CONTEXT, type TitlePin } from "../core/contextualPin";
 import { initDb } from "./db";
 import { listSavedTitlesWithDb } from "./savedTitlesRepo";

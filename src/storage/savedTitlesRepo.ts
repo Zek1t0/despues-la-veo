@@ -1,9 +1,10 @@
-import type { SavedTitle } from "../core/savedTitle";
+import type { LegacyPersistedSavedTitle as SavedTitle } from "../core/savedTitle";
 import { parsePersonalRating, type PersonalRating } from "../core/personalRating";
 import { nextSavedTitleUpdatedAt } from "../core/savedTitleTimestamp";
 import {
-  materializeTmdbSavedTitle,
-  type TmdbSavedTitleSnapshot,
+  createTmdbProviderReference,
+  materializeLegacyTmdbSavedTitle,
+  type LegacyTmdbSavedTitleSnapshot,
 } from "../core/tmdbSavedTitle";
 import type { NormalizedBackupSavedTitle } from "../core/libraryBackupV1";
 import type { ParsedLibraryBackup } from "../core/libraryBackup";
@@ -50,6 +51,71 @@ function assertSavedTitleMetadataPatch(patch: SavedTitleMetadataPatch): void {
   if (keys.length === 0 || keys.some((key) => !["status", "tags", "notes"].includes(key))) {
     throw new Error("El cambio de metadata debe limitarse a status, tags o notes.");
   }
+}
+
+/**
+ * Transitional SQLite v3 lookup. Historical external_id values predate the
+ * canonical ProviderReference contract, so compare only values that the TMDB
+ * adapter can validate and canonicalize. Remove this bridge when Sections 2/3
+ * persist and resolve media_provider_references directly.
+ */
+async function findLegacyTmdbTitleWithDb(
+  db: SavedTitlesMutationDatabase,
+  resourceNamespace: "movie" | "tv",
+  canonicalExternalId: string
+): Promise<SavedTitle | null> {
+  const exactRow = await db.getFirstAsync<Record<string, unknown>>(
+    `SELECT * FROM saved_titles
+     WHERE provider = 'tmdb' AND external_id = ? LIMIT 1;`,
+    [canonicalExternalId]
+  );
+  if (exactRow) {
+    const exact = rowToSavedTitle(exactRow);
+    if (exact.type !== resourceNamespace) {
+      throw new Error(
+        "SQLite v3 ya asocia este ID TMDB a otro namespace; la migración v4 debe resolverlo."
+      );
+    }
+    return exact;
+  }
+
+  const rows = await db.getAllAsync<Record<string, unknown>>(
+    "SELECT * FROM saved_titles WHERE provider = 'tmdb';"
+  );
+  const matches: SavedTitle[] = [];
+  let crossNamespaceMatch = false;
+
+  for (const row of rows) {
+    const candidate = rowToSavedTitle(row);
+    if (candidate.type !== "movie" && candidate.type !== "tv") continue;
+
+    try {
+      const candidateReference = createTmdbProviderReference(
+        candidate.type,
+        candidate.externalId
+      );
+      if (candidateReference.externalId !== canonicalExternalId) continue;
+      if (candidate.type !== resourceNamespace) {
+        crossNamespaceMatch = true;
+      } else {
+        matches.push(candidate);
+      }
+    } catch {
+      // Malformed historical IDs are not eligible for canonical compatibility matching.
+    }
+  }
+
+  if (crossNamespaceMatch) {
+    throw new Error(
+      "SQLite v3 ya asocia una forma legacy de este ID TMDB a otro namespace; la migración v4 debe resolverlo."
+    );
+  }
+  if (matches.length > 1) {
+    throw new Error(
+      "SQLite v3 contiene varias formas legacy del mismo recurso TMDB; la migración v4 debe resolverlas."
+    );
+  }
+  return matches[0] ?? null;
 }
 
 /** Lee y actualiza metadata editable del detalle dentro de la transacción activa. */
@@ -138,22 +204,31 @@ export async function setPersonalRating(
 
 export async function saveTmdbTitleWithDb(
   db: SavedTitlesMutationDatabase,
-  snapshot: TmdbSavedTitleSnapshot,
+  snapshot: LegacyTmdbSavedTitleSnapshot,
   generateId: () => string,
   now = Date.now()
 ): Promise<string> {
-  const row = await db.getFirstAsync<Record<string, unknown>>(
-    `SELECT * FROM saved_titles
-     WHERE provider = 'tmdb' AND external_id = ? LIMIT 1;`,
-    [snapshot.externalId]
+  const reference = createTmdbProviderReference(snapshot.type, snapshot.externalId);
+  const existing = await findLegacyTmdbTitleWithDb(
+    db,
+    reference.resourceNamespace,
+    reference.externalId
   );
-  const existing = row ? rowToSavedTitle(row) : null;
-  const item = materializeTmdbSavedTitle(snapshot, existing, generateId, now);
-  return upsertSavedTitleAndCleanPinsWithDb(db, item);
+  const item = materializeLegacyTmdbSavedTitle(
+    { ...snapshot, externalId: reference.externalId },
+    existing,
+    generateId,
+    now
+  );
+  // A matched noncanonical v3 token must remain unchanged until migration:
+  // replacing it here would insert against the local-id primary key because
+  // the legacy upsert conflict target is still (provider, external_id).
+  const transitionalItem = existing ? { ...item, externalId: existing.externalId } : item;
+  return upsertSavedTitleAndCleanPinsWithDb(db, transitionalItem);
 }
 
 export async function saveTmdbTitle(
-  snapshot: TmdbSavedTitleSnapshot,
+  snapshot: LegacyTmdbSavedTitleSnapshot,
   generateId: () => string
 ): Promise<string> {
   const db = await initDb();

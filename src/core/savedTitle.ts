@@ -5,10 +5,6 @@ export type TitleStatus = "planned" | "watching" | "done" | "dropped";
 
 export type SavedTitle = {
   id: string;
-
-  provider: "manual" | "tmdb";
-  externalId: string;
-
   type: TitleType;
 
   title: string;
@@ -29,4 +25,16 @@ export type SavedTitle = {
 
   createdAt: number;
   updatedAt: number;
+};
+
+/**
+ * Transitional representation of the provider columns in SQLite v3 and backups v1-v4.
+ * Sections 2/3 replace this boundary with provider-reference persistence; it is not a
+ * ProviderReference and must not be used as the local item's identity.
+ */
+export type LegacySavedTitleProvider = "manual" | "tmdb";
+
+export type LegacyPersistedSavedTitle = SavedTitle & {
+  provider: LegacySavedTitleProvider;
+  externalId: string;
 };

@@ -14,7 +14,10 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import type { SavedTitle, TitleStatus } from "../../src/core/savedTitle";
+import type {
+  LegacyPersistedSavedTitle as SavedTitle,
+  TitleStatus,
+} from "../../src/core/savedTitle";
 import { titleStatusLabel, titleTypeLabel } from "../../src/core/presentationLabels";
 import { type PinContext } from "../../src/core/contextualPin";
 import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";

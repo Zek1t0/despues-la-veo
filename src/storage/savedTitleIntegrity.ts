@@ -1,4 +1,4 @@
-import type { SavedTitle } from "../core/savedTitle";
+import type { LegacyPersistedSavedTitle as SavedTitle } from "../core/savedTitle";
 import { parsePersonalRating } from "../core/personalRating";
 import {
   deletePinsForSavedTitleWithDb,

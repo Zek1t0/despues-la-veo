@@ -33,7 +33,7 @@ const {
   upsertSavedTitleAndCleanPinsWithDb,
 } = require("../../../src/storage/savedTitleIntegrity.ts");
 const {
-  materializeTmdbSavedTitle,
+  materializeLegacyTmdbSavedTitle: materializeTmdbSavedTitle,
 } = require("../../../src/core/tmdbSavedTitle.ts");
 Module._load = originalModuleLoad;
 
@@ -266,7 +266,10 @@ async function testCorruptUpdatedAtIsNotCoerced() {
 async function testWithDbCompositionInsideExternalTransaction() {
   const fixture = createDatabase();
   try {
-    const existing = savedTitle("externally-transactional", 87);
+    const existing = {
+      ...savedTitle("externally-transactional", 87),
+      externalId: "101",
+    };
     await fixture.db.withTransactionAsync(() =>
       upsertSavedTitleAndCleanPinsWithDb(fixture.db, existing)
     );
@@ -315,7 +318,10 @@ async function testWithDbCompositionInsideExternalTransaction() {
 async function testTmdbRepositoryResave() {
   const fixture = createDatabase();
   try {
-    const existing = savedTitle("repository-refresh", 87);
+    const existing = {
+      ...savedTitle("repository-refresh", 87),
+      externalId: "102",
+    };
     await fixture.db.withTransactionAsync(() =>
       upsertSavedTitleAndCleanPinsWithDb(fixture.db, existing)
     );
@@ -324,8 +330,8 @@ async function testTmdbRepositoryResave() {
       resultId = await saveTmdbTitleWithDb(
         fixture.db,
         {
-          externalId: existing.externalId,
-          type: "tv",
+          externalId: "000102",
+          type: "movie",
           title: "Repository refresh",
           year: 2026,
           posterUrl: "new-poster",
@@ -346,7 +352,7 @@ async function testTmdbRepositoryResave() {
     assert.deepEqual(refreshed.tags, existing.tags);
     assert.equal(refreshed.notes, existing.notes);
     assert.equal(refreshed.personalRating, 87);
-    assert.equal(refreshed.type, "tv");
+    assert.equal(refreshed.type, "movie");
     assert.equal(refreshed.title, "Repository refresh");
     assert.equal(refreshed.voteAverage, 9.2);
     assert.equal(refreshed.updatedAt, 2001);
@@ -355,8 +361,83 @@ async function testTmdbRepositoryResave() {
   }
 }
 
+async function testTmdbLegacyTextualIdCompatibility() {
+  const fixture = createDatabase();
+  try {
+    const existing = {
+      ...savedTitle("legacy-textual-id", 87),
+      externalId: "000106",
+    };
+    await fixture.db.withTransactionAsync(() =>
+      upsertSavedTitleAndCleanPinsWithDb(fixture.db, existing)
+    );
+
+    let refreshedId;
+    await fixture.db.withTransactionAsync(async () => {
+      refreshedId = await saveTmdbTitleWithDb(
+        fixture.db,
+        {
+          externalId: "106",
+          type: "movie",
+          title: "Legacy textual ID refresh",
+          year: 2026,
+          posterUrl: "new-poster",
+          overview: "new overview",
+          genres: ["Drama"],
+          voteAverage: 8.6,
+        },
+        () => "must-not-be-used",
+        2000
+      );
+    });
+
+    assert.equal(refreshedId, existing.id);
+    assert.equal(
+      fixture.sqlite.prepare("SELECT COUNT(*) AS count FROM saved_titles").get().count,
+      1
+    );
+    const refreshedRow = fixture.sqlite
+      .prepare("SELECT * FROM saved_titles WHERE id = ?")
+      .get(existing.id);
+    const refreshed = rowToSavedTitle(refreshedRow);
+    assert.equal(refreshed.externalId, "000106");
+    assert.equal(refreshed.title, "Legacy textual ID refresh");
+    assert.equal(refreshed.personalRating, 87);
+    assert.deepEqual(refreshed.tags, existing.tags);
+    assert.equal(refreshed.notes, existing.notes);
+
+    await assert.rejects(
+      () =>
+        fixture.db.withTransactionAsync(() =>
+          saveTmdbTitleWithDb(
+            fixture.db,
+            {
+              externalId: "106",
+              type: "tv",
+              title: "Must not reassociate",
+              year: 2026,
+              posterUrl: null,
+              overview: null,
+              genres: [],
+              voteAverage: null,
+            },
+            () => "must-not-be-used",
+            3000
+          )
+        ),
+      /otro namespace/
+    );
+    assert.equal(
+      fixture.sqlite.prepare("SELECT COUNT(*) AS count FROM saved_titles").get().count,
+      1
+    );
+  } finally {
+    fixture.close();
+  }
+}
+
 function testTmdbResavePolicy() {
-  const existing = savedTitle("existing", 87);
+  const existing = { ...savedTitle("existing", 87), externalId: "103" };
   const refreshed = materializeTmdbSavedTitle(
     {
       externalId: existing.externalId,
@@ -401,8 +482,8 @@ function testTmdbResavePolicy() {
 
   assert.equal(
     materializeTmdbSavedTitle(
-      { ...refreshed, externalId: "null-rating", personalRating: undefined },
-      savedTitle("null-rating", null),
+      { ...refreshed, externalId: "104", personalRating: undefined },
+      { ...savedTitle("null-rating", null), externalId: "104" },
       () => "unused",
       3000
     ).personalRating,
@@ -411,7 +492,7 @@ function testTmdbResavePolicy() {
 
   const created = materializeTmdbSavedTitle(
     {
-      externalId: "new",
+      externalId: "105",
       type: "movie",
       title: "New",
       year: null,
@@ -440,6 +521,7 @@ async function main() {
   await testCorruptUpdatedAtIsNotCoerced();
   await testWithDbCompositionInsideExternalTransaction();
   await testTmdbRepositoryResave();
+  await testTmdbLegacyTextualIdCompatibility();
   testTmdbResavePolicy();
   console.log("Section 2 personal rating repository and TMDB re-save verification passed.");
 }

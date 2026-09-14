@@ -1,4 +1,4 @@
-import type { SavedTitle } from "../core/savedTitle";
+import type { LegacyPersistedSavedTitle as SavedTitle } from "../core/savedTitle";
 import type { AppearanceBackupAvailability } from "../theme/appearanceBackupAvailability";
 import { initDb } from "./db";
 import { rowToSavedTitle } from "./libraryBackupMerge";

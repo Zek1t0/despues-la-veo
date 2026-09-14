@@ -1,6 +1,6 @@
 import type { PinContext } from "../core/contextualPin";
 import { LIBRARY_PIN_CONTEXT } from "../core/contextualPin";
-import type { SavedTitle } from "../core/savedTitle";
+import type { LegacyPersistedSavedTitle as SavedTitle } from "../core/savedTitle";
 import {
   resolveTitleDetailPinContext,
   type TitleDetailPinParams,
