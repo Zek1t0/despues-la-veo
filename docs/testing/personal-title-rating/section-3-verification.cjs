@@ -48,8 +48,6 @@ function createDatabase(label) {
     PRAGMA foreign_keys = ON;
     CREATE TABLE saved_titles (
       id TEXT NOT NULL PRIMARY KEY,
-      provider TEXT NOT NULL,
-      external_id TEXT NOT NULL,
       type TEXT NOT NULL,
       title TEXT NOT NULL,
       year INTEGER,
@@ -67,8 +65,18 @@ function createDatabase(label) {
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
-    CREATE UNIQUE INDEX idx_saved_titles_provider_external
-      ON saved_titles(provider, external_id);
+    CREATE TABLE media_provider_references (
+      provider TEXT NOT NULL, resource_namespace TEXT NOT NULL, external_id TEXT NOT NULL,
+      saved_title_id TEXT NOT NULL,
+      PRIMARY KEY(provider, resource_namespace, external_id),
+      FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE
+    );
+    CREATE TABLE legacy_saved_title_identities (
+      legacy_format TEXT NOT NULL, legacy_provider TEXT NOT NULL,
+      legacy_external_id TEXT NOT NULL, saved_title_id TEXT NOT NULL,
+      PRIMARY KEY(legacy_format, legacy_provider, legacy_external_id),
+      FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE
+    );
     CREATE TABLE title_pins (
       saved_title_id TEXT NOT NULL,
       context_type TEXT NOT NULL,
@@ -115,7 +123,7 @@ function createDatabase(label) {
 function savedTitle(overrides = {}) {
   return {
     id: "local-id",
-    provider: "tmdb",
+    provider: "manual",
     externalId: "logical-title",
     type: "movie",
     title: "Local title",
@@ -137,7 +145,7 @@ function savedTitle(overrides = {}) {
 function backupItem(overrides = {}) {
   return {
     id: "portable-source-id",
-    provider: "tmdb",
+    provider: "manual",
     externalId: "logical-title",
     type: "movie",
     title: "Incoming title",
@@ -158,7 +166,7 @@ function backupItem(overrides = {}) {
 
 function pin(overrides = {}) {
   return {
-    provider: "tmdb",
+    provider: "manual",
     externalId: "logical-title",
     contextType: "library",
     contextKey: "",
@@ -174,14 +182,19 @@ function parsePayload(value) {
 }
 
 async function seed(fixture, item) {
-  await fixture.db.withTransactionAsync(() =>
-    upsertSavedTitleAndCleanPinsWithDb(fixture.db, item)
-  );
+  await fixture.db.withTransactionAsync(async () => {
+    await upsertSavedTitleAndCleanPinsWithDb(fixture.db, item);
+    await fixture.db.runAsync(`INSERT INTO legacy_saved_title_identities
+      (legacy_format, legacy_provider, legacy_external_id, saved_title_id)
+      VALUES ('library-backup-v1-v4', 'manual', ?, ?)`, item.externalId, item.id);
+  });
 }
 
 function readTitle(fixture, externalId = "logical-title") {
   const row = fixture.sqlite.prepare(
-    "SELECT * FROM saved_titles WHERE provider = 'tmdb' AND external_id = ?"
+    `SELECT s.* FROM saved_titles s
+     INNER JOIN legacy_saved_title_identities l ON l.saved_title_id = s.id
+     WHERE l.legacy_provider = 'manual' AND l.legacy_external_id = ?`
   ).get(externalId);
   return row ? rowToSavedTitle(row) : null;
 }

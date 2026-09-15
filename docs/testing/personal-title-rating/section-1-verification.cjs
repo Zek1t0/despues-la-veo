@@ -28,11 +28,11 @@ const {
 const {
   DATABASE_SCHEMA_VERSION,
   enableAndVerifyForeignKeys,
-  ensureLibrarySchema,
   evolveDatabaseSchema,
   readUserVersion,
   verifyAppPreferencesTable,
   verifySavedTitlesV3Schema,
+  verifyV4Schema,
   verifyTitlePinsSchema,
 } = require("../../../src/storage/databaseSchema.ts");
 
@@ -93,6 +93,10 @@ function createDatabase(label) {
     async getAllAsync(sql, ...params) {
       return sqlite.prepare(sql).all(...normalizeParams(params));
     },
+    async runAsync(sql, ...params) {
+      const result = sqlite.prepare(sql).run(...normalizeParams(params));
+      return { changes: Number(result.changes) };
+    },
     async withTransactionAsync(task) {
       sqlite.exec("BEGIN;");
       try {
@@ -117,23 +121,22 @@ function createDatabase(label) {
 
 async function evolve(db, currentVersion) {
   await enableAndVerifyForeignKeys(db);
-  await ensureLibrarySchema(db);
   await evolveDatabaseSchema(db, currentVersion);
 }
 
 function assertRatingConstraint(sqlite) {
   const insert = sqlite.prepare(`
     INSERT INTO saved_titles (
-      id, provider, external_id, type, title, personal_rating,
+      id, type, title, personal_rating,
       status, tags_json, created_at, updated_at
-    ) VALUES (?, 'manual', ?, 'movie', ?, ?, 'planned', '[]', 1, 1)
+    ) VALUES (?, 'movie', ?, ?, 'planned', '[]', 1, 1)
   `);
-  insert.run("null", "null", "Null", null);
-  insert.run("min", "min", "Min", 10);
-  insert.run("max", "max", "Max", 100);
-  assert.throws(() => insert.run("low", "low", "Low", 9), /constraint/i);
-  assert.throws(() => insert.run("high", "high", "High", 101), /constraint/i);
-  assert.throws(() => insert.run("real", "real", "Real", 87.5), /constraint/i);
+  insert.run("null", "Null", null);
+  insert.run("min", "Min", 10);
+  insert.run("max", "Max", 100);
+  assert.throws(() => insert.run("low", "Low", 9), /constraint/i);
+  assert.throws(() => insert.run("high", "High", 101), /constraint/i);
+  assert.throws(() => insert.run("real", "Real", 87.5), /constraint/i);
   assert.equal(
     fixtureStoredTypes(sqlite).every((row) => row.personal_rating === null || row.storage_type === "integer"),
     true
@@ -146,13 +149,13 @@ function fixtureStoredTypes(sqlite) {
   ).all();
 }
 
-async function testFreshV3() {
+async function testFreshV4() {
   const fixture = createDatabase("fresh");
   try {
     await evolve(fixture.db, 0);
     assert.equal(await readUserVersion(fixture.db), DATABASE_SCHEMA_VERSION);
-    assert.equal(DATABASE_SCHEMA_VERSION, 3);
-    await verifySavedTitlesV3Schema(fixture.db);
+    assert.equal(DATABASE_SCHEMA_VERSION, 4);
+    await verifyV4Schema(fixture.db);
     await verifyAppPreferencesTable(fixture.db);
     await verifyTitlePinsSchema(fixture.db);
     assertRatingConstraint(fixture.sqlite);
@@ -252,8 +255,8 @@ async function testMigrationV2() {
     seedRealisticV2(fixture.sqlite);
 
     await evolve(fixture.db, 2);
-    assert.equal(await readUserVersion(fixture.db), 3);
-    await verifySavedTitlesV3Schema(fixture.db);
+    assert.equal(await readUserVersion(fixture.db), 4);
+    await verifyV4Schema(fixture.db);
     await verifyAppPreferencesTable(fixture.db);
     await verifyTitlePinsSchema(fixture.db);
 
@@ -276,10 +279,14 @@ async function testMigrationV2() {
     const identityIndex = fixture.sqlite.prepare(
       "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_saved_titles_provider_external'"
     ).get();
-    assert.equal(identityIndex.name, "idx_saved_titles_provider_external");
+    assert.equal(identityIndex, undefined);
+    assert.equal(
+      fixture.sqlite.prepare("SELECT saved_title_id FROM legacy_saved_title_identities").get().saved_title_id,
+      "legacy-title"
+    );
 
-    await evolveDatabaseSchema(fixture.db, 3);
-    assert.equal(await readUserVersion(fixture.db), 3);
+    await evolveDatabaseSchema(fixture.db, 4);
+    assert.equal(await readUserVersion(fixture.db), 4);
     assert.equal(
       fixture.sqlite.prepare("SELECT COUNT(*) AS count FROM saved_titles").get().count,
       1
@@ -295,8 +302,6 @@ async function testMigrationV3Rollback() {
   try {
     seedRealisticV2(fixture.sqlite);
     await enableAndVerifyForeignKeys(fixture.db);
-    await ensureLibrarySchema(fixture.db);
-
     await assert.rejects(
       () => evolveDatabaseSchema(fixture.db, 2, {
         beforeVersion3Published() {
@@ -325,7 +330,7 @@ async function testMigrationV3Rollback() {
     );
 
     await evolveDatabaseSchema(fixture.db, 2);
-    assert.equal(await readUserVersion(fixture.db), 3);
+    assert.equal(await readUserVersion(fixture.db), 4);
     const columnsAfterRetry = fixture.sqlite.prepare(
       "PRAGMA table_info(saved_titles)"
     ).all();
@@ -355,8 +360,8 @@ async function testEarlierVersionsAndFutureRejection() {
         fixture.sqlite.exec("PRAGMA user_version = 1;");
       }
       await evolve(fixture.db, version);
-      assert.equal(await readUserVersion(fixture.db), 3);
-      await verifySavedTitlesV3Schema(fixture.db);
+      assert.equal(await readUserVersion(fixture.db), 4);
+      await verifyV4Schema(fixture.db);
       await verifyTitlePinsSchema(fixture.db);
     } finally {
       fixture.close();
@@ -365,9 +370,9 @@ async function testEarlierVersionsAndFutureRejection() {
 
   const future = createDatabase("future");
   try {
-    future.sqlite.exec("PRAGMA user_version = 4;");
-    await assert.rejects(() => evolveDatabaseSchema(future.db, 4), /no soportada/i);
-    assert.equal(await readUserVersion(future.db), 4);
+    future.sqlite.exec("PRAGMA user_version = 5;");
+    await assert.rejects(() => evolveDatabaseSchema(future.db, 5), /no soportada/i);
+    assert.equal(await readUserVersion(future.db), 5);
   } finally {
     future.close();
   }
@@ -375,11 +380,11 @@ async function testEarlierVersionsAndFutureRejection() {
 
 async function main() {
   testDomain();
-  await testFreshV3();
+  await testFreshV4();
   await testMigrationV2();
   await testMigrationV3Rollback();
   await testEarlierVersionsAndFutureRejection();
-  console.log("Section 1 personal rating domain and SQLite v3 verification passed.");
+  console.log("Personal rating domain and SQLite v4 evolution verification passed.");
 }
 
 main().catch((error) => {

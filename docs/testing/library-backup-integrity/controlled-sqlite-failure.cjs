@@ -45,8 +45,6 @@ async function main() {
   sqlite.exec(`
     CREATE TABLE saved_titles (
       id TEXT NOT NULL PRIMARY KEY,
-      provider TEXT NOT NULL,
-      external_id TEXT NOT NULL,
       type TEXT NOT NULL,
       title TEXT NOT NULL,
       year INTEGER,
@@ -68,8 +66,19 @@ async function main() {
       updated_at INTEGER NOT NULL
     );
 
-    CREATE UNIQUE INDEX idx_saved_titles_provider_external
-      ON saved_titles(provider, external_id);
+    CREATE TABLE media_provider_references (
+      provider TEXT NOT NULL, resource_namespace TEXT NOT NULL, external_id TEXT NOT NULL,
+      saved_title_id TEXT NOT NULL,
+      PRIMARY KEY(provider, resource_namespace, external_id),
+      FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE legacy_saved_title_identities (
+      legacy_format TEXT NOT NULL, legacy_provider TEXT NOT NULL,
+      legacy_external_id TEXT NOT NULL, saved_title_id TEXT NOT NULL,
+      PRIMARY KEY(legacy_format, legacy_provider, legacy_external_id),
+      FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE
+    );
 
     CREATE TABLE title_pins (
       saved_title_id TEXT NOT NULL,
@@ -80,8 +89,8 @@ async function main() {
     );
 
     CREATE TRIGGER controlled_import_failure
-    BEFORE INSERT ON saved_titles
-    WHEN NEW.external_id = 'controlled-failure'
+    BEFORE INSERT ON legacy_saved_title_identities
+    WHEN NEW.legacy_external_id = 'controlled-failure'
     BEGIN
       SELECT RAISE(ABORT, 'controlled import failure');
     END;
@@ -90,6 +99,9 @@ async function main() {
   const db = {
     async getFirstAsync(sql, params = []) {
       return sqlite.prepare(sql).get(...params);
+    },
+    async getAllAsync(sql, ...params) {
+      return sqlite.prepare(sql).all(...params);
     },
     async runAsync(sql, ...params) {
       return sqlite.prepare(sql).run(...params);
@@ -140,13 +152,15 @@ async function main() {
   );
 
   const rows = sqlite.prepare(
-    `SELECT id, external_id, title FROM saved_titles ORDER BY external_id`
+    `SELECT s.id, l.legacy_external_id AS external_id, s.title
+     FROM saved_titles s INNER JOIN legacy_saved_title_identities l ON l.saved_title_id = s.id
+     ORDER BY l.legacy_external_id`
   ).all();
   const failedRow = sqlite.prepare(
-    `SELECT id FROM saved_titles WHERE external_id = ?`
+    `SELECT saved_title_id AS id FROM legacy_saved_title_identities WHERE legacy_external_id = ?`
   ).get("controlled-failure");
   const successAfter = sqlite.prepare(
-    `SELECT id FROM saved_titles WHERE external_id = ?`
+    `SELECT saved_title_id AS id FROM legacy_saved_title_identities WHERE legacy_external_id = ?`
   ).get("controlled-success-after");
 
   assert.equal(result.inserted, 2);

@@ -1,6 +1,6 @@
 import type { PinContext } from "../core/contextualPin";
 import { LIBRARY_PIN_CONTEXT } from "../core/contextualPin";
-import type { LegacyPersistedSavedTitle as SavedTitle } from "../core/savedTitle";
+import type { SavedTitleWithProviderReferences } from "../core/savedTitle";
 import {
   resolveTitleDetailPinContext,
   type TitleDetailPinParams,
@@ -11,7 +11,7 @@ import { runSerializedStorageMutation } from "./storageMutationQueue";
 import { getTitlePinPinnedAtWithDb } from "./titlePinsRepo";
 
 export type TitleDetailPinSnapshot = {
-  item: SavedTitle | null;
+  item: SavedTitleWithProviderReferences | null;
   context: PinContext;
   pinnedAt: number | null;
   pinReadError: unknown | null;

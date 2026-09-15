@@ -15,7 +15,7 @@ El backup actual es v4: sus items reproducen `SavedTitle`, mientras sus pins apu
 - Distinguir `tmdb/movie/N` de `tmdb/tv/N` en esquema, lookup, guardado e import.
 - Migrar schema v3 a v4 sin red, reset ni pérdida de datos.
 - Exportar backup v5 capaz de representar el nuevo estado y continuar importando v1–v4.
-- Mantener la aplicación TMDB actual y `/title/[id]` funcional después de cada sección implementada.
+- Mantener la aplicación TMDB actual y `/title/[id]` funcional después de cada checkpoint de implementación. Las secciones 2, 3, 4 y 5 forman un único checkpoint de identidad funcional: el schema v4 necesita repositorios v4, backup v5 necesita portabilidad completa y los consumidores runtime deben poder leer todos los estados válidos de cero o varias ProviderReferences sin pasar por la proyección singular legacy.
 
 **Non-Goals:**
 
@@ -68,20 +68,23 @@ Alternativas consideradas:
 
 SQLite no ofrece una eliminación de columnas que preserve por sí sola todos los constraints e índices que se necesitan verificar. La migración reconstruirá las tablas de forma controlada:
 
-1. Renombrar `title_pins` y `saved_titles` a nombres temporales v3, haciendo que la foreign key histórica siga apuntando a la tabla histórica.
-2. Crear el `saved_titles` v4 sin `provider/external_id`, preservando las demás columnas y el CHECK exacto de `personal_rating`.
-3. Copiar cada fila conservando `id`, snapshot, rating, tags, notas, status y timestamps.
-4. Crear `media_provider_references` y su índice.
-5. Por cada fila TMDB histórica, insertar `('tmdb', type, external_id, id)`; la migración falla ante cualquier valor que no permita una referencia válida.
-6. Por cada fila manual histórica, no crear una referencia externa y registrar su clave de compatibilidad legacy.
-7. Crear `title_pins` v4 con la misma primary key, checks, foreign key hacia el nuevo `saved_titles` e índice contextual; copiar todas las filas y timestamps.
-8. Eliminar primero las tablas temporales dependientes y luego la tabla histórica.
-9. Verificar columnas, primary keys, foreign keys, checks, índices, conteos, ausencia de huérfanos y correspondencia exacta de referencias TMDB.
-10. Publicar `PRAGMA user_version = 4` sólo después de todas las verificaciones.
+1. Antes del rebuild, conservar la normalización histórica que hacía el bootstrap pre-v4: convertir `genres_json IS NULL` a `'[]'` y convertir `tags_json IS NULL` a `'[]'` sólo en una estructura histórica donde esa condición sea legal. En el schema v3 válido `tags_json` es `NOT NULL`, por lo que esa rama documenta compatibilidad histórica pero no habilita reparación de datos v4 ni relaja el contrato válido.
+2. Renombrar `title_pins` y `saved_titles` a nombres temporales v3, haciendo que la foreign key histórica siga apuntando a la tabla histórica.
+3. Crear el `saved_titles` v4 sin `provider/external_id`, preservando las demás columnas y el CHECK exacto de `personal_rating`.
+4. Copiar cada fila conservando `id`, snapshot, rating, tags, notas, status y timestamps, después de la normalización histórica anterior.
+5. Crear `media_provider_references` y su índice.
+6. Por cada fila TMDB histórica, insertar `('tmdb', type, external_id, id)`; la migración falla ante cualquier valor que no permita una referencia válida.
+7. Por cada fila manual histórica, no crear una referencia externa y registrar su clave de compatibilidad legacy.
+8. Crear `title_pins` v4 con la misma primary key, checks, foreign key hacia el nuevo `saved_titles` e índice contextual; copiar todas las filas y timestamps.
+9. Eliminar primero las tablas temporales dependientes y luego la tabla histórica.
+10. Verificar columnas, primary keys, foreign keys, checks, índices, conteos, ausencia de huérfanos y correspondencia exacta de referencias TMDB.
+11. Publicar `PRAGMA user_version = 4` sólo después de todas las verificaciones.
 
 Toda la secuencia vive dentro del `withTransactionAsync` de evolución ya existente. No se desactiva `foreign_keys` dentro de la transacción. Los nombres temporales evitan que borrar la tabla histórica dispare cascades sobre los pins nuevos.
 
 `ensureLibrarySchema()` dejará de ser un bootstrap que publica el schema v3 antes de conocer la versión. La inicialización se separará en: habilitar/verificar foreign keys, leer/rechazar versiones futuras y ejecutar un bootstrap/evolución consciente de la versión. Para una base nueva se crea directamente v4 dentro del mismo flujo verificable; para v3 se usa la migración anterior. Bases v0–v2 continúan evolucionando sin saltarse los contratos históricos antes de alcanzar v4.
+
+La normalización de JSON anterior pertenece exclusivamente al camino histórico pre-v4. Una fila histórica válida con `genres_json` SQL NULL llega a v4 con `'[]'`, reproduciendo el bootstrap anterior. Como `tags_json` es `NOT NULL` en el schema histórico válido, los tests deben demostrar esa restricción en vez de fabricar una regla de reparación nueva. La reapertura o escritura normal de una base v4 no ejecuta ninguna normalización equivalente.
 
 Alternativa considerada: crear v4 de forma aditiva y retirar columnas después. Se descarta porque mantendría el índice incompatible o columnas NOT NULL que obligan a duplicar identidad.
 
@@ -106,6 +109,8 @@ ON legacy_saved_title_identities(saved_title_id);
 En esta fase `legacy_format` tendrá el valor estable `library-backup-v1-v4`; sólo se crearán filas para identidades históricas `manual`. El código de runtime y la búsqueda TMDB no consultarán esta tabla. Su única responsabilidad es conservar el matching de migración e imports legacy repetidos.
 
 Backup v5 serializará obligatoriamente esa identidad legacy en todo item local-only que esta versión pueda exportar, ya que esos items proceden de filas históricas `manual`. Así, un round-trip v5 conserva la capacidad de reconocer posteriormente el backup histórico original y de repetir el propio import v5 aun si el ID fue remapeado. El parser v5 la validará como compatibilidad, no como `ProviderReference`.
+
+El `legacy_external_id` se conserva como token histórico exacto: no recibe trim ni las reglas de ProviderReference. La capa de aplicación mantiene como máximo una identidad manual legacy por MediaItem. Readjuntar la misma identidad es idempotente; una identidad diferente produce conflicto dentro del savepoint. Si storage ya contiene varias filas para un item, el exporter v5 falla de forma diagnóstica porque el contrato v5 singular no puede representarlas.
 
 Un archivo v5 externo puede contener sintácticamente un item sin referencias ni identidad legacy. Se insertará sólo si su ID está libre. Si está ocupado, se reportará conflicto: no se remapeará, no se comparará por título/año/snapshot y no se sobrescribirá el ocupante. El exporter de esta versión considera inválido y no emite ese estado. Una futura capacidad de crear items local-only nuevos deberá definir su estrategia portable en su propio change; esta propuesta no agrega otro ID universal.
 
@@ -142,6 +147,10 @@ El guardado TMDB se resolverá así dentro de una transacción pública:
 
 No se implementará una API pública para agregar una segunda referencia manualmente. La multiplicidad queda garantizada por el esquema y contratos, lista para cambios posteriores.
 
+Las secciones 2, 3, 4 y 5 son un solo checkpoint de identidad funcional. Las revisiones intermedias pueden registrar findings, pero no habilitan un checkpoint manual: schema v4, repositorios v4, backup v5 y consumidores locales/TMDB deben aprobar juntos la revisión externa final de Sección 5. La revisión combinada 2+3+4 confirmó schema, migración, persistencia, modelo v5, import histórico, savepoints y Appearance, pero detectó dos bloqueos que continúan hacia la corrección y Sección 5: canonicalización TMDB en referencias v5 y consumidores runtime todavía dependientes de la proyección singular legacy.
+
+Hasta que la sección 4 introduzca backup v5, los adaptadores de backup v4 son sólo una transición de implementación. Pueden proyectar items TMDB y manuales elegibles, pero no pueden serializar fielmente todo estado runtime válido: un pin v4 contiene `provider + externalId + context` y omite `resourceNamespace`. Si existen `tmdb/movie/N` y `tmdb/tv/N`, un pin `tmdb + N` no identifica a cuál pertenece. No se prohibirá esa coexistencia ni sus pins, no se fusionarán items y no se elegirá un namespace por orden o heurística. Backup v5 elimina la ambigüedad haciendo que cada pin apunte al `itemId` interno del backup. Los formatos v1–v4 mantienen su interpretación histórica hasta ser reemplazados como formato de exportación.
+
 Archivos/capas afectadas:
 
 - `src/core/savedTitle.ts`: separación de item y referencias manteniendo `TitleType`.
@@ -155,6 +164,8 @@ Archivos/capas afectadas:
 ### 5. Mantener rutas locales y adaptar sólo el link TMDB
 
 `/title/[id]` no cambia. El detalle guardado carga por ID local y obtiene sus referencias junto con el snapshot. Si encuentra una referencia TMDB reconocida puede construir `/tmdb/[namespace]/[externalId]`; si no existe, conserva el detalle local sin link remoto.
+
+Biblioteca y las APIs de lectura usadas por consumidores locales devolverán el MediaItem con su colección completa de ProviderReferences. Deben funcionar tanto con múltiples referencias como con cero referencias, incluido un local-only defensivo importado desde v5 sin identidad legacy. Rating, tags, notas, status, pins, filtros, ordenamientos y detalle offline continúan resolviéndose por ID/snapshot local. Ningún consumidor elegirá arbitrariamente una referencia para reconstruir `provider/externalId`; la proyección singular v4 se retira de los caminos runtime normales y queda sólo en helpers internos de compatibilidad histórica donde sea necesaria.
 
 `/tmdb/[type]/[id]` continúa siendo una ruta TMDB. Su `type` es el namespace del recurso TMDB y además alimenta el `TitleType` actual durante la normalización. No se crea una ruta genérica de providers en este cambio.
 
@@ -188,6 +199,8 @@ type BackupPinV5 = {
 
 El import v5 prevalidará IDs duplicados dentro del archivo y referencias externas repetidas. Para cada item:
 
+- cada referencia pasa primero por una frontera provider-aware: providers desconocidos conservan el ID opaco validado por el constructor universal; `provider=tmdb` reutiliza `createTmdbProviderReference`, admite sólo `movie|tv`, canonicaliza exclusivamente IDs numéricos positivos y seguros, y exige que el namespace coincida con el `TitleType` actual del item;
+
 - si una o más referencias resuelven un único item local, todas deben resolver ese mismo item; las referencias entrantes todavía libres pueden adjuntarse a ese item como restauración de identidad;
 - si distintas referencias resuelven items locales distintos, se reporta conflicto y no se fusionan;
 - ninguna referencia local existente se elimina por estar ausente del backup;
@@ -198,6 +211,7 @@ El import v5 prevalidará IDs duplicados dentro del archivo y referencias extern
 
 La resolución de identidad/referencias sucede antes y separada del merge de contenido. Una vez resuelto un item local existente:
 
+- el `type` local debe coincidir con el `type` entrante; la discrepancia es un conflicto evaluado al inicio del savepoint, antes de adjuntar referencias, identidad legacy o contenido;
 - se preservan siempre el `id` local y el `createdAt` local;
 - el `updatedAt` entrante conserva la política vigente: ausente, anterior o igual omite la actualización de contenido; posterior habilita el merge;
 - un merge habilitado reemplaza sólo campos presentes y distingue ausencia de `null` explícito, igual que el contrato actual;
@@ -207,6 +221,8 @@ La resolución de identidad/referencias sucede antes y separada del merge de con
 Adjuntar una referencia libre durante import es restauración declarada por el archivo, no matching automático ni una API pública de linking. Si una referencia entrante ya pertenece a otro item, todo el item entrante se reporta como conflicto antes de adjuntar referencias o aplicar contenido.
 
 El mapa `backup itemId → local final id` se mantiene durante la importación y es la única vía para aplicar pins v5. Los savepoints preservan el aislamiento por item/pin actual. Un item fallido no aporta mapping; sus pins se reportan como no resolubles.
+
+La regresión de portabilidad del checkpoint debe crear `tmdb/movie/77` y `tmdb/tv/77` como MediaItems distintos, asignarles datos personales independientes y pinear ambos en el mismo contexto. El export v5 debe producir identidades de item distintas, conservar ambas referencias completas y apuntar cada pin a su `itemId`. Al importar en una base vacía, rating, tags, notas, status y pins deben volver al MediaItem correcto sin resolver ninguna relación mediante el par incompleto `provider + externalId`.
 
 Los parsers v1–v4 conservarán tipos literales históricos propios (`manual|tmdb`, `movie|tv`) en lugar de derivarlos del dominio live. Para TMDB, el item legacy aporta el namespace faltante. Los pins v2–v4 se agruparán por `provider + externalId` contra los items válidos del mismo archivo:
 
@@ -240,7 +256,9 @@ No se agregan dependencias.
 - [Un backup anterior intenta sobrescribir contenido local nuevo mientras restaura referencias] → Resolver identidad y referencias por separado, aplicar contenido sólo bajo el orden vigente de `updatedAt` y nunca eliminar referencias locales ausentes.
 - [Dos referencias entrantes apuntan a distintos items locales] → Rechazar el item como conflicto; linking/merge permanece fuera de alcance.
 - [Versiones viejas no leen schema v4 ni backup v5] → Publicar versión sólo tras verificación y documentar rollback mediante copia/backup previo compatible; mantener import v1–v4 en la versión nueva.
-- [Cambio transversal difícil de revisar] → Implementar por secciones que dejan contratos compilables y ejecutar revisión real del diff antes de cada checkpoint externo.
+- [Cambio transversal difícil de revisar] → Implementar por secciones revisables, tratando schema v4, repositorios v4, backup v5 y migración de consumidores como un único checkpoint funcional 2+3+4+5, y ejecutar la revisión externa combinada antes del checkpoint manual.
+- [Backup v5 introduce una variante TMDB no canónica] → Reutilizar la canonicalización del adaptador TMDB sólo en la frontera de referencias v5; rechazar namespace/ID inválidos o incompatibilidad con `TitleType`, manteniendo opacos los IDs de otros providers.
+- [Un estado v5 válido rompe consumidores singulares] → Migrar Biblioteca, detalle local y lecturas públicas al MediaItem con referencias; no elegir una referencia arbitraria y reservar la conversión singular para import histórico dedicado.
 - [La multiplicidad existe sin UI para gestionarla] → No exponer operaciones de linking; sólo migración y backup pueden materializar el estado estructural permitido.
 
 ## Migration Plan

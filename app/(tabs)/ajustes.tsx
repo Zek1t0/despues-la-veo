@@ -7,10 +7,8 @@ import * as DocumentPicker from "expo-document-picker";
 
 import { parseLibraryBackup } from "../../src/core/libraryBackup";
 import type { BackupValidationError } from "../../src/core/libraryBackupV1";
-import {
-  createLibraryBackupV4,
-  type BackupAppearanceImportOutcome,
-} from "../../src/core/libraryBackupV4";
+import { type BackupAppearanceImportOutcome } from "../../src/core/libraryBackupV4";
+import { createLibraryBackupV5 } from "../../src/core/libraryBackupV5";
 import { getLibraryBackupExportData } from "../../src/storage/libraryBackupExport";
 import { mergeLibraryBackup } from "../../src/storage/savedTitlesRepo";
 import { useAppTheme } from "../../src/theme/AppThemeProvider";
@@ -152,7 +150,7 @@ export default function SettingsScreen() {
 
       const { items, pins, appearanceAvailability } =
         await getLibraryBackupExportData(backupAvailability);
-      const payload = createLibraryBackupV4(items, pins, appearanceAvailability);
+      const payload = createLibraryBackupV5(items, pins, appearanceAvailability);
 
       const json = JSON.stringify(payload, null, 2);
       const filename = `despues-la-veo-backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
@@ -168,7 +166,7 @@ export default function SettingsScreen() {
         a.remove();
         URL.revokeObjectURL(url);
         setLastMsg(
-          `Export v4 listo: ${items.length} títulos y ${pins.length} pins.` +
+          `Export v5 listo: ${items.length} títulos y ${pins.length} pins.` +
           (payload.appearance ? " Apariencia incluida." : " Apariencia omitida por no estar confirmada.")
         );
         return;
@@ -190,7 +188,7 @@ export default function SettingsScreen() {
       });
 
       setLastMsg(
-        `Export v4 listo: ${items.length} títulos y ${pins.length} pins.` +
+        `Export v5 listo: ${items.length} títulos y ${pins.length} pins.` +
         (payload.appearance ? " Apariencia incluida." : " Apariencia omitida por no estar confirmada.")
       );
     } catch (e: any) {
@@ -222,7 +220,7 @@ export default function SettingsScreen() {
             `Pins estructuralmente inválidos: ${payload.invalidPins.length}`,
           ]
         : ["Este backup v1 no contiene ni modifica pins por ausencia."]),
-      ...(payload.version === 4
+      ...(payload.version === 4 || payload.version === 5
         ? [payload.appearance.status === "valid"
             ? "Apariencia: se aplicará después de completar el merge, salvo que elijas otra mientras tanto."
             : payload.appearance.status === "absent"
@@ -251,12 +249,12 @@ export default function SettingsScreen() {
     if (!proceed) return;
 
     let deferredHandle: DeferredAppearanceHandle | null = null;
-    let appearanceOutcome: BackupAppearanceImportOutcome = payload.version === 4
+    let appearanceOutcome: BackupAppearanceImportOutcome = payload.version === 4 || payload.version === 5
       ? payload.appearance.status === "incompatible"
         ? { status: "incompatible", reason: payload.appearance.reason }
         : { status: "absent" }
       : { status: "absent" };
-    if (payload.version === 4 && payload.appearance.status === "valid") {
+    if ((payload.version === 4 || payload.version === 5) && payload.appearance.status === "valid") {
       deferredHandle = reserveDeferred(payload.appearance.preference);
     }
 
@@ -475,8 +473,8 @@ export default function SettingsScreen() {
       )}
 
       <Text style={{ color: theme.global.textMuted, marginTop: 6 }}>
-        Export genera un .json v4 versionado. Import acepta v1–v4 y hace MERGE: no borra títulos locales ausentes del
-        backup y evita duplicados por provider + externalId.
+        Export genera un .json v5 versionado. Import acepta v1–v5 y hace MERGE: no borra títulos locales ausentes del
+        backup y restaura relaciones mediante la identidad interna del archivo.
       </Text>
     </ScrollView>
   );

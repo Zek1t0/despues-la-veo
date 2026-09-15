@@ -28,7 +28,8 @@ import type {
   TmdbWatchProvidersCountry,
 } from "../../../src/providers/tmdb/tmdbTypes";
 
-import { getByProviderExternal, saveTmdbTitle } from "../../../src/storage/savedTitlesRepo";
+import { getByProviderReference, saveTmdbTitle } from "../../../src/storage/savedTitlesRepo";
+import { createTmdbProviderReference } from "../../../src/core/tmdbSavedTitle";
 import { useAppTheme } from "../../../src/theme/AppThemeProvider";
 import { useTmdbCredential } from "../../../src/providers/tmdb/credential/TmdbCredentialProvider";
 import {
@@ -159,7 +160,9 @@ export default function TmdbDetailScreen() {
 
       const externalId = String(id);
       try {
-        const existing = await getByProviderExternal("tmdb", externalId);
+        const existing = await getByProviderReference(
+          createTmdbProviderReference(type, externalId)
+        );
         if (isCurrent()) setSavedId(existing?.id ?? null);
       } catch {
         if (isCurrent()) setSavedId(null);

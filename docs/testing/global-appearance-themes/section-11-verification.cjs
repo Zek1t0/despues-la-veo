@@ -77,13 +77,18 @@ function createMergeFixture(label) {
   const sqlite = new DatabaseSync(databasePath);
   sqlite.exec(`
     CREATE TABLE saved_titles (
-      id TEXT NOT NULL PRIMARY KEY, provider TEXT NOT NULL, external_id TEXT NOT NULL,
-      type TEXT NOT NULL, title TEXT NOT NULL, year INTEGER, poster_url TEXT, overview TEXT,
+      id TEXT NOT NULL PRIMARY KEY, type TEXT NOT NULL, title TEXT NOT NULL, year INTEGER, poster_url TEXT, overview TEXT,
       vote_average REAL, personal_rating INTEGER, genres_json TEXT, status TEXT NOT NULL,
       tags_json TEXT NOT NULL, notes TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
     );
-    CREATE UNIQUE INDEX idx_saved_titles_provider_external
-      ON saved_titles(provider, external_id);
+    CREATE TABLE media_provider_references (
+      provider TEXT NOT NULL, resource_namespace TEXT NOT NULL, external_id TEXT NOT NULL,
+      saved_title_id TEXT NOT NULL, PRIMARY KEY(provider, resource_namespace, external_id)
+    );
+    CREATE TABLE legacy_saved_title_identities (
+      legacy_format TEXT NOT NULL, legacy_provider TEXT NOT NULL, legacy_external_id TEXT NOT NULL,
+      saved_title_id TEXT NOT NULL, PRIMARY KEY(legacy_format, legacy_provider, legacy_external_id)
+    );
     CREATE TABLE title_pins (
       saved_title_id TEXT NOT NULL, context_type TEXT NOT NULL, context_key TEXT NOT NULL,
       pinned_at INTEGER NOT NULL, PRIMARY KEY(saved_title_id, context_type, context_key)
@@ -140,7 +145,9 @@ async function mergeParsedPayload(fixture, payload) {
 
 function assertDataPersisted(fixture, externalId = "portable-1", expectPin = true) {
   const row = fixture.sqlite.prepare(
-    "SELECT id, external_id, personal_rating FROM saved_titles WHERE external_id = ?"
+    `SELECT s.id, l.legacy_external_id AS external_id, s.personal_rating
+     FROM saved_titles s INNER JOIN legacy_saved_title_identities l ON l.saved_title_id=s.id
+     WHERE l.legacy_external_id = ?`
   ).get(externalId);
   assert.equal(row.external_id, externalId);
   if (expectPin) {

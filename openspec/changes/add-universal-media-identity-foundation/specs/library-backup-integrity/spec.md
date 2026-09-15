@@ -27,6 +27,14 @@ El sistema MUST exportar un backup versión 5 donde cada item tenga una identida
 - **THEN** cada pin refiere la identidad del item dentro del backup
 - **AND** no usa una referencia de proveedor como única foreign key hacia el item
 
+#### Scenario: round-trip con ID TMDB compartido entre namespaces
+- **GIVEN** MediaItems distintos para `tmdb/movie/77` y `tmdb/tv/77`, cada uno con datos personales propios y ambos pineados en el mismo contexto
+- **WHEN** se exporta backup v5 y se importa en una base vacía
+- **THEN** el backup contiene dos identidades de item distintas y conserva ambas referencias externas completas
+- **AND** cada pin apunta al `itemId` de su MediaItem correspondiente
+- **AND** rating, tags, notas, status y pins se restauran en el MediaItem correcto
+- **AND** ninguna relación se decide usando únicamente `provider + externalId`
+
 ### Requirement: la importación v5 resuelve primero los MediaItems y luego sus relaciones internas
 El sistema MUST construir un mapa entre cada identidad de item del backup y el ID local final, MUST resolver o insertar MediaItems antes de importar pins y MUST usar ese mapa para restaurar las relaciones internas incluso cuando un ID entrante elegible deba remapearse.
 
@@ -93,6 +101,12 @@ Si las referencias entrantes ya resueltas apuntan todas al mismo MediaItem, el s
 - **THEN** puede adjuntar la referencia libre al mismo MediaItem como parte de la restauración
 - **AND** aplica la frescura del contenido mediante su política independiente de `updatedAt`
 
+#### Scenario: el item local resuelto tiene otro tipo
+- **GIVEN** que una referencia entrante resuelve un MediaItem local cuyo `type` difiere del item v5
+- **WHEN** se importa el item
+- **THEN** se reporta conflicto antes de adjuntar referencias o identidad legacy y antes de actualizar contenido
+- **AND** el item no aporta mapping, por lo que sus pins se reportan como no resolubles
+
 #### Scenario: referencias resueltas divergen
 - **GIVEN** un item entrante con referencias que resuelven MediaItems locales distintos
 - **WHEN** se importa
@@ -108,6 +122,8 @@ Si las referencias entrantes ya resueltas apuntan todas al mismo MediaItem, el s
 ### Requirement: el backup v5 valida referencias externas e identidad interna
 El sistema MUST rechazar y reportar items, referencias o pins que no cumplan su contrato, MUST impedir que una misma referencia externa concreta identifique dos items y MUST evitar toda asociación silenciosa ante una identidad ambigua.
 
+Para referencias cuyo provider sea `tmdb`, el parser/restaurador v5 MUST reutilizar la normalización específica del adaptador TMDB: MUST admitir únicamente namespace `movie` o `tv`, MUST convertir un ID numérico textual válido a la misma representación decimal positiva y segura que usa el runtime, y MUST exigir que el namespace sea compatible con el `TitleType` vigente del item. Estas reglas MUST permanecer fuera del constructor universal; referencias de otros providers conservan su `externalId` opaco bajo las reglas genéricas de ProviderReference.
+
 #### Scenario: referencia externa incompleta
 - **WHEN** una referencia omite proveedor, namespace o ID externo válido
 - **THEN** se reporta como inválida y no se persiste
@@ -116,6 +132,27 @@ El sistema MUST rechazar y reportar items, referencias o pins que no cumplan su 
 - **WHEN** dos items entrantes declaran la misma referencia externa completa
 - **THEN** la colisión se reporta
 - **AND** la referencia no transfiere metadata ni datos personales entre ellos
+
+#### Scenario: referencia TMDB textual se canonicaliza por el adaptador conocido
+- **GIVEN** un item movie v5 con referencia `tmdb/movie/00077`
+- **WHEN** se valida o restaura el backup
+- **THEN** la referencia se canonicaliza a `tmdb/movie/77` mediante la regla TMDB existente
+- **AND** no puede crear una segunda referencia lógica ni otro MediaItem frente a `tmdb/movie/77`
+
+#### Scenario: namespace o ID TMDB inválido
+- **WHEN** una referencia v5 declara provider `tmdb` con namespace distinto de `movie|tv`, o con ID no numérico, no positivo o no seguro
+- **THEN** el item se reporta inválido
+- **AND** esa referencia no se almacena como un ID opaco genérico
+
+#### Scenario: namespace TMDB incompatible con el item
+- **GIVEN** un item cuyo `type` es `movie`
+- **WHEN** declara una referencia `tmdb/tv/N`
+- **THEN** el item se reporta inválido y no se crea un estado tipo/namespace contradictorio
+
+#### Scenario: ID externo de otro provider permanece opaco
+- **WHEN** una referencia v5 de un provider distinto de TMDB contiene un ID externo canónico para ese provider
+- **THEN** el parser universal conserva el string opaco
+- **AND** no le aplica parsing numérico ni reglas de namespace de TMDB
 
 #### Scenario: pin hacia item inexistente
 - **WHEN** un pin refiere una identidad de item ausente o no resuelta en el backup
@@ -134,6 +171,28 @@ El sistema MUST continuar importando backups v1, v2, v3 y v4 con sus validadores
 - **WHEN** se importa nuevamente
 - **THEN** la identidad legacy aislada resuelve el mismo MediaItem
 - **AND** no se presenta `manual` como proveedor externo
+
+#### Scenario: identidad manual histórica resuelve un tipo diferente
+- **GIVEN** una identidad manual histórica que ya pertenece a un MediaItem local de otro tipo `movie|tv`
+- **WHEN** se reimporta
+- **THEN** se reporta conflicto sin cambiar el item local ni resolver sus pins
+
+### Requirement: la identidad manual legacy v5 es exacta y singular por MediaItem
+El sistema MUST conservar `legacyIdentity.externalId` exactamente, sin trim ni canonicalización, y MUST mantener como máximo una identidad manual legacy por MediaItem en las escrituras de aplicación. El exporter v5 MUST rechazar un estado preexistente con varias identidades legacy para un mismo item en vez de elegir una fila arbitraria.
+
+#### Scenario: externalId manual con whitespace
+- **WHEN** una identidad manual histórica contiene whitespace inicial o final
+- **THEN** migración, export v5, parse/import v5 y reimport histórico preservan el string exacto
+
+#### Scenario: segunda identidad legacy diferente
+- **GIVEN** un MediaItem que ya tiene una identidad manual legacy
+- **WHEN** una importación intenta adjuntar otra identidad manual diferente al mismo item
+- **THEN** se reporta conflicto y el savepoint revierte cualquier referencia o contenido del item entrante
+
+#### Scenario: export de estado legacy no representable
+- **GIVEN** un MediaItem que contiene varias identidades manuales legacy por datos preexistentes
+- **WHEN** se intenta exportar v5
+- **THEN** el exporter falla con diagnóstico y no selecciona una identidad mediante orden SQL
 
 #### Scenario: campos futuros no amplían un formato histórico
 - **WHEN** los contratos de dominio actuales admiten un provider, namespace o tipo desconocido para v1–v4

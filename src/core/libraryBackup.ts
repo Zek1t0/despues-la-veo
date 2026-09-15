@@ -6,12 +6,14 @@ import {
 import { parseLibraryBackupV2, type ParsedLibraryBackupV2 } from "./libraryBackupV2";
 import { parseLibraryBackupV3, type ParsedLibraryBackupV3 } from "./libraryBackupV3";
 import { parseLibraryBackupV4, type ParsedLibraryBackupV4 } from "./libraryBackupV4";
+import { parseLibraryBackupV5, type ParsedLibraryBackupV5 } from "./libraryBackupV5";
 
 export type ParsedLibraryBackup =
   | ParsedLibraryBackupV1
   | ParsedLibraryBackupV2
   | ParsedLibraryBackupV3
-  | ParsedLibraryBackupV4;
+  | ParsedLibraryBackupV4
+  | ParsedLibraryBackupV5;
 export type LibraryBackupParseResult =
   | { ok: true; payload: ParsedLibraryBackup }
   | { ok: false; error: BackupValidationError };
@@ -31,6 +33,7 @@ export function parseLibraryBackup(jsonText: string): LibraryBackupParseResult {
   if (version === 2) return parseLibraryBackupV2(jsonText);
   if (version === 3) return parseLibraryBackupV3(jsonText);
   if (version === 4) return parseLibraryBackupV4(jsonText);
+  if (version === 5) return parseLibraryBackupV5(jsonText);
   return {
     ok: false,
     error: { field: "version", message: `Versión de backup no soportada: ${String(version)}.` },

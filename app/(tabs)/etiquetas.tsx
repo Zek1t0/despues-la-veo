@@ -25,7 +25,7 @@ import {
   type ViewOptionsSection,
 } from "../../src/components/browsing";
 import { titleStatusLabel, titleTypeLabel } from "../../src/core/presentationLabels";
-import type { SavedTitle } from "../../src/core/savedTitle";
+import type { SavedTitleWithProviderReferences as SavedTitle } from "../../src/core/savedTitle";
 import { createTagPinContext } from "../../src/core/contextualPin";
 import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";
 import { compareTagTitles, selectVisibleTagTitles } from "../../src/core/tagView";

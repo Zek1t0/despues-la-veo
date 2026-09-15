@@ -10,10 +10,12 @@ La biblioteca identifica localmente cada título mediante un `id` estable, pero 
 - Conservar los títulos manuales históricos como MediaItems locales sin convertir `manual` en un proveedor externo; mantener información de compatibilidad sólo donde sea necesaria para reimportar backups anteriores de forma repetible.
 - Corregir en conjunto el esquema, su bootstrap/verificación, los repositorios y la adaptación mínima de TMDB para que `tmdb/movie/N` y `tmdb/tv/N` se resuelvan como recursos distintos.
 - Introducir un backup posterior a v4 donde items, referencias externas y relaciones internas como pins puedan restaurarse mediante identidad local al backup y un mapa explícito hacia los IDs locales finales.
+- Validar las referencias TMDB restauradas por backup v5 mediante el adaptador TMDB existente: namespace `movie|tv`, ID numérico canónico positivo y seguro, y compatibilidad con el `TitleType` del item; los IDs de providers desconocidos permanecen opacos bajo el contrato universal.
 - Mantener en backup v5 el merge vigente por `updatedAt` y presencia explícita de campos después de resolver identidad, adjuntando referencias nuevas sólo cuando todas las ya resueltas señalan al mismo MediaItem y sin borrar referencias locales ausentes del backup.
 - Garantizar reimports deterministas de items local-only históricos exportando su identidad legacy manual; la versión actual no emitirá items local-only sin referencia externa ni identidad legacy.
 - Mantener la interpretación histórica de backups v1–v4 y reportar referencias legacy ambiguas o inválidas sin adivinar su destino.
 - Preservar el detalle local `/title/[id]`, los flujos TMDB actuales, la semántica de importación parcial con integridad transaccional y la aplicación posterior e independiente de Appearance.
+- Completar el checkpoint de identidad migrando Biblioteca, detalle local y demás lecturas de aplicación a MediaItems con cero o varias ProviderReferences, sin seleccionar una referencia singular arbitraria ni depender de `provider/externalId` para usar datos locales.
 - Mantener fuera de alcance la abstracción completa de providers, nuevos providers, una taxonomía universal, progreso, relaciones, sync y rediseños de UI.
 
 ## Capabilities
@@ -32,4 +34,5 @@ La biblioteca identifica localmente cada título mediante un `id` estable, pero 
 - Requiere una migración SQLite transaccional, idempotente y verificada que preserve instalaciones existentes; un fallo debe revertir el nuevo esquema y conservar la versión y los datos anteriores.
 - Requiere un nuevo contrato de backup y compatibilidad explícita con versiones 1–4. No cambia ratings `10..100 | null`, tags, notas, estados, pinning, browsing preferences, Appearance ni credenciales TMDB.
 - Las referencias externas usan tokens canónicos de provider/namespace y un ID externo opaco normalizado por cada adaptador; para TMDB esto fija `tmdb`, `movie|tv` y una única representación decimal del ID numérico.
+- Schema, repositorios, backup v5 y consumidores runtime forman un único checkpoint funcional de las Secciones 2+3+4+5; no existe un checkpoint manual intermedio después de Sección 4.
 - No agrega dependencias. Una versión anterior de la aplicación no podrá abrir una base publicada con la nueva `user_version`; la reversión operativa consiste en restaurar el binario anterior junto con un backup/base anterior compatible, no en intentar que código antiguo interprete el esquema nuevo.

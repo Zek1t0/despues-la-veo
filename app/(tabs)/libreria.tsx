@@ -5,10 +5,7 @@ import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import { deleteSavedTitle, upsertSavedTitle } from "../../src/storage/savedTitlesRepo";
-import type {
-  LegacyPersistedSavedTitle as SavedTitle,
-  TitleStatus,
-} from "../../src/core/savedTitle";
+import type { SavedTitleWithProviderReferences, TitleStatus } from "../../src/core/savedTitle";
 import { LIBRARY_PIN_CONTEXT } from "../../src/core/contextualPin";
 import {
   selectVisibleLibraryTitles,
@@ -115,7 +112,7 @@ export default function LibraryScreen() {
   const { theme } = useAppTheme();
   const { width: windowWidth } = useWindowDimensions();
 
-  const [items, setItems] = useState<SavedTitle[]>([]);
+  const [items, setItems] = useState<SavedTitleWithProviderReferences[]>([]);
   const [pinnedAtById, setPinnedAtById] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
   const [snapshotReady, setSnapshotReady] = useState(false);
@@ -441,7 +438,7 @@ export default function LibraryScreen() {
     ]);
   }
 
-  async function toggleDone(item: SavedTitle) {
+  async function toggleDone(item: SavedTitleWithProviderReferences) {
     const now = Date.now();
     const nextStatus: TitleStatus = item.status === "done" ? "planned" : "done";
     await upsertSavedTitle({ ...item, status: nextStatus, updatedAt: now });

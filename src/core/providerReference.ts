@@ -38,3 +38,7 @@ export function providerReferencesEqual(
     left.resourceNamespace === right.resourceNamespace &&
     left.externalId === right.externalId;
 }
+
+export function providerReferenceKey(reference: ProviderReference): string {
+  return `${reference.provider}\u0000${reference.resourceNamespace}\u0000${reference.externalId}`;
+}

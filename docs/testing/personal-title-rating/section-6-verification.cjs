@@ -40,7 +40,7 @@ function createDatabase() {
   sqlite.exec(`
     PRAGMA foreign_keys = ON;
     CREATE TABLE saved_titles (
-      id TEXT NOT NULL PRIMARY KEY, provider TEXT NOT NULL, external_id TEXT NOT NULL,
+      id TEXT NOT NULL PRIMARY KEY,
       type TEXT NOT NULL, title TEXT NOT NULL, year INTEGER, poster_url TEXT,
       overview TEXT, vote_average REAL,
       personal_rating INTEGER CHECK (personal_rating IS NULL OR
@@ -48,8 +48,18 @@ function createDatabase() {
       genres_json TEXT, status TEXT NOT NULL, tags_json TEXT NOT NULL, notes TEXT,
       created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
     );
-    CREATE UNIQUE INDEX idx_saved_titles_provider_external
-      ON saved_titles(provider, external_id);
+    CREATE TABLE media_provider_references (
+      provider TEXT NOT NULL, resource_namespace TEXT NOT NULL, external_id TEXT NOT NULL,
+      saved_title_id TEXT NOT NULL,
+      PRIMARY KEY(provider, resource_namespace, external_id),
+      FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE
+    );
+    CREATE TABLE legacy_saved_title_identities (
+      legacy_format TEXT NOT NULL, legacy_provider TEXT NOT NULL,
+      legacy_external_id TEXT NOT NULL, saved_title_id TEXT NOT NULL,
+      PRIMARY KEY(legacy_format, legacy_provider, legacy_external_id),
+      FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE
+    );
     CREATE TABLE title_pins (
       saved_title_id TEXT NOT NULL, context_type TEXT NOT NULL, context_key TEXT NOT NULL,
       pinned_at INTEGER NOT NULL,
@@ -57,8 +67,9 @@ function createDatabase() {
       FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE
     );
     INSERT INTO saved_titles VALUES
-      ('title', 'tmdb', '1', 'movie', 'Title', 2026, NULL, NULL, 7.5,
+      ('title', 'movie', 'Title', 2026, NULL, NULL, 7.5,
        87, '["Drama"]', 'planned', '["watch"]', 'draft persisted', 1, 100);
+    INSERT INTO media_provider_references VALUES ('tmdb', 'movie', '1', 'title');
     INSERT INTO title_pins VALUES ('title', 'library', '', 50);
   `);
   const normalize = (params) => params.length === 1 && Array.isArray(params[0]) ? params[0] : params;

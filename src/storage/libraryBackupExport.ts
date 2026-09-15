@@ -1,17 +1,17 @@
-import type { LegacyPersistedSavedTitle as SavedTitle } from "../core/savedTitle";
+import type { SavedTitleWithProviderReferences } from "../core/savedTitle";
+import type { BackupLegacyIdentityV5, BackupPinV5 } from "../core/libraryBackupV5";
 import type { AppearanceBackupAvailability } from "../theme/appearanceBackupAvailability";
 import { initDb } from "./db";
-import { rowToSavedTitle } from "./libraryBackupMerge";
+import { listSavedTitlesWithReferencesWithDb } from "./savedTitleStorage";
 import { runSerializedStorageMutation } from "./storageMutationQueue";
 import {
-  listAllPinsForBackupWithDb,
-  type BackupTitlePinRow,
+  listAllPinsForBackupV5WithDb,
   type TitlePinsDatabase,
 } from "./titlePinsRepo";
 
 export type LibraryBackupExportData = {
-  items: SavedTitle[];
-  pins: BackupTitlePinRow[];
+  items: Array<SavedTitleWithProviderReferences & { legacyIdentity?: BackupLegacyIdentityV5 }>;
+  pins: BackupPinV5[];
   appearanceAvailability: AppearanceBackupAvailability;
 };
 
@@ -21,11 +21,21 @@ export async function getLibraryBackupExportDataWithDb(
   db: LibraryBackupExportDatabase,
   appearanceAvailability: AppearanceBackupAvailability
 ): Promise<LibraryBackupExportData> {
-  const rows = await db.getAllAsync<Record<string, unknown>>(
-    "SELECT * FROM saved_titles ORDER BY created_at DESC, id ASC"
-  );
-  const items = rows.map(rowToSavedTitle);
-  const pins = await listAllPinsForBackupWithDb(db);
+  const currentItems = await listSavedTitlesWithReferencesWithDb(db);
+  const items = await Promise.all(currentItems.map(async (item) => {
+    const legacyIdentities = await db.getAllAsync<{ legacy_external_id: string }>(
+      `SELECT legacy_external_id FROM legacy_saved_title_identities
+       WHERE saved_title_id = ? AND legacy_format = 'library-backup-v1-v4'
+         AND legacy_provider = 'manual';`,
+      [item.id]
+    );
+    if (legacyIdentities.length > 1) {
+      throw new Error(`El MediaItem ${item.id} tiene varias identidades manuales legacy y no puede representarse en backup v5.`);
+    }
+    const legacy = legacyIdentities[0];
+    return legacy ? { ...item, legacyIdentity: { format: "library-backup-v1-v4" as const, provider: "manual" as const, externalId: legacy.legacy_external_id } } : item;
+  }));
+  const pins = await listAllPinsForBackupV5WithDb(db);
   return { items, pins, appearanceAvailability };
 }
 

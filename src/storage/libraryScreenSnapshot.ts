@@ -1,4 +1,4 @@
-import type { LegacyPersistedSavedTitle as SavedTitle } from "../core/savedTitle";
+import type { SavedTitleWithProviderReferences } from "../core/savedTitle";
 import { LIBRARY_PIN_CONTEXT, type TitlePin } from "../core/contextualPin";
 import { initDb } from "./db";
 import { listSavedTitlesWithDb } from "./savedTitlesRepo";
@@ -6,7 +6,7 @@ import { runSerializedStorageMutation } from "./storageMutationQueue";
 import { listTitlePinsForContextWithDb } from "./titlePinsRepo";
 
 export type LibraryScreenSnapshot = {
-  items: SavedTitle[];
+  items: SavedTitleWithProviderReferences[];
   pins: TitlePin[];
 };
 

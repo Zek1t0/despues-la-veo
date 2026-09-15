@@ -21,12 +21,12 @@ export function compareTagTitles(a: SavedTitle, b: SavedTitle): number {
   );
 }
 
-export function selectVisibleTagTitles(
-  tagItems: readonly SavedTitle[],
+export function selectVisibleTagTitles<T extends SavedTitle>(
+  tagItems: readonly T[],
   pinnedAtById: ReadonlyMap<string, number>
-): SavedTitle[] {
-  const pinned: SavedTitle[] = [];
-  const unpinned: SavedTitle[] = [];
+): T[] {
+  const pinned: T[] = [];
+  const unpinned: T[] = [];
   for (const item of tagItems) {
     (pinnedAtById.has(item.id) ? pinned : unpinned).push(item);
   }

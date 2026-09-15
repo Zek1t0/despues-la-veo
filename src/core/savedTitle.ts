@@ -1,4 +1,5 @@
 import type { PersonalRating } from "./personalRating";
+import type { ProviderReference } from "./providerReference";
 
 export type TitleType = "movie" | "tv";
 export type TitleStatus = "planned" | "watching" | "done" | "dropped";
@@ -25,6 +26,10 @@ export type SavedTitle = {
 
   createdAt: number;
   updatedAt: number;
+};
+
+export type SavedTitleWithProviderReferences = SavedTitle & {
+  providerReferences: ProviderReference[];
 };
 
 /**

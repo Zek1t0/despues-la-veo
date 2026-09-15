@@ -47,8 +47,6 @@ function createDatabase() {
     PRAGMA foreign_keys = ON;
     CREATE TABLE saved_titles (
       id TEXT NOT NULL PRIMARY KEY,
-      provider TEXT NOT NULL,
-      external_id TEXT NOT NULL,
       type TEXT NOT NULL,
       title TEXT NOT NULL,
       year INTEGER,
@@ -66,8 +64,22 @@ function createDatabase() {
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
-    CREATE UNIQUE INDEX idx_saved_titles_provider_external
-      ON saved_titles(provider, external_id);
+    CREATE TABLE media_provider_references (
+      provider TEXT NOT NULL,
+      resource_namespace TEXT NOT NULL,
+      external_id TEXT NOT NULL,
+      saved_title_id TEXT NOT NULL,
+      PRIMARY KEY(provider, resource_namespace, external_id),
+      FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE
+    );
+    CREATE TABLE legacy_saved_title_identities (
+      legacy_format TEXT NOT NULL,
+      legacy_provider TEXT NOT NULL,
+      legacy_external_id TEXT NOT NULL,
+      saved_title_id TEXT NOT NULL,
+      PRIMARY KEY(legacy_format, legacy_provider, legacy_external_id),
+      FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE
+    );
     CREATE TABLE title_pins (
       saved_title_id TEXT NOT NULL,
       context_type TEXT NOT NULL,
@@ -273,6 +285,7 @@ async function testWithDbCompositionInsideExternalTransaction() {
     await fixture.db.withTransactionAsync(() =>
       upsertSavedTitleAndCleanPinsWithDb(fixture.db, existing)
     );
+    attachTmdbReference(fixture, existing);
 
     let updatedAt;
     await fixture.db.withTransactionAsync(async () => {
@@ -325,6 +338,7 @@ async function testTmdbRepositoryResave() {
     await fixture.db.withTransactionAsync(() =>
       upsertSavedTitleAndCleanPinsWithDb(fixture.db, existing)
     );
+    attachTmdbReference(fixture, existing);
     let resultId;
     await fixture.db.withTransactionAsync(async () => {
       resultId = await saveTmdbTitleWithDb(
@@ -361,16 +375,24 @@ async function testTmdbRepositoryResave() {
   }
 }
 
-async function testTmdbLegacyTextualIdCompatibility() {
+function attachTmdbReference(fixture, item) {
+  fixture.sqlite.prepare(`INSERT INTO media_provider_references
+    (provider, resource_namespace, external_id, saved_title_id)
+    VALUES ('tmdb', ?, ?, ?)`
+  ).run(item.type, item.externalId, item.id);
+}
+
+async function testTmdbCanonicalV4Identity() {
   const fixture = createDatabase();
   try {
     const existing = {
       ...savedTitle("legacy-textual-id", 87),
-      externalId: "000106",
+      externalId: "106",
     };
     await fixture.db.withTransactionAsync(() =>
       upsertSavedTitleAndCleanPinsWithDb(fixture.db, existing)
     );
+    attachTmdbReference(fixture, existing);
 
     let refreshedId;
     await fixture.db.withTransactionAsync(async () => {
@@ -400,36 +422,33 @@ async function testTmdbLegacyTextualIdCompatibility() {
       .prepare("SELECT * FROM saved_titles WHERE id = ?")
       .get(existing.id);
     const refreshed = rowToSavedTitle(refreshedRow);
-    assert.equal(refreshed.externalId, "000106");
     assert.equal(refreshed.title, "Legacy textual ID refresh");
     assert.equal(refreshed.personalRating, 87);
     assert.deepEqual(refreshed.tags, existing.tags);
     assert.equal(refreshed.notes, existing.notes);
 
-    await assert.rejects(
-      () =>
-        fixture.db.withTransactionAsync(() =>
-          saveTmdbTitleWithDb(
-            fixture.db,
-            {
-              externalId: "106",
-              type: "tv",
-              title: "Must not reassociate",
-              year: 2026,
-              posterUrl: null,
-              overview: null,
-              genres: [],
-              voteAverage: null,
-            },
-            () => "must-not-be-used",
-            3000
-          )
-        ),
-      /otro namespace/
-    );
+    let tvId;
+    await fixture.db.withTransactionAsync(async () => {
+      tvId = await saveTmdbTitleWithDb(
+        fixture.db,
+        {
+          externalId: "106",
+          type: "tv",
+          title: "Independent TV resource",
+          year: 2026,
+          posterUrl: null,
+          overview: null,
+          genres: [],
+          voteAverage: null,
+        },
+        () => "tv-106",
+        3000
+      );
+    });
+    assert.equal(tvId, "tv-106");
     assert.equal(
       fixture.sqlite.prepare("SELECT COUNT(*) AS count FROM saved_titles").get().count,
-      1
+      2
     );
   } finally {
     fixture.close();
@@ -521,7 +540,7 @@ async function main() {
   await testCorruptUpdatedAtIsNotCoerced();
   await testWithDbCompositionInsideExternalTransaction();
   await testTmdbRepositoryResave();
-  await testTmdbLegacyTextualIdCompatibility();
+  await testTmdbCanonicalV4Identity();
   testTmdbResavePolicy();
   console.log("Section 2 personal rating repository and TMDB re-save verification passed.");
 }

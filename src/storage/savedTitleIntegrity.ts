@@ -1,7 +1,6 @@
-import type { LegacyPersistedSavedTitle as SavedTitle } from "../core/savedTitle";
+import type { SavedTitle } from "../core/savedTitle";
 import { parsePersonalRating } from "../core/personalRating";
 import {
-  deletePinsForSavedTitleWithDb,
   deleteTagPinsExceptWithDb,
   type TitlePinsDatabase,
 } from "./titlePinsRepo";
@@ -15,11 +14,11 @@ export async function upsertSavedTitleAndCleanPinsWithDb(
   const personalRating = parsePersonalRating(item.personalRating);
   await db.runAsync(
     `INSERT INTO saved_titles (
-      id, provider, external_id, type, title, year, poster_url,
+      id, type, title, year, poster_url,
       overview, vote_average, personal_rating, genres_json,
       status, tags_json, notes, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(provider, external_id) DO UPDATE SET
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
       type=excluded.type,
       title=excluded.title,
       year=excluded.year,
@@ -33,8 +32,6 @@ export async function upsertSavedTitleAndCleanPinsWithDb(
       notes=excluded.notes,
       updated_at=excluded.updated_at`,
     item.id,
-    item.provider,
-    item.externalId,
     item.type,
     item.title,
     item.year ?? null,
@@ -51,8 +48,8 @@ export async function upsertSavedTitleAndCleanPinsWithDb(
   );
 
   const row = await db.getFirstAsync<{ id: string }>(
-    "SELECT id FROM saved_titles WHERE provider = ? AND external_id = ? LIMIT 1;",
-    [item.provider, item.externalId]
+    "SELECT id FROM saved_titles WHERE id = ? LIMIT 1;",
+    [item.id]
   );
   if (!row?.id) throw new Error("No se pudo leer el id guardado.");
 
@@ -64,6 +61,5 @@ export async function deleteSavedTitleAndPinsWithDb(
   db: SavedTitleIntegrityDatabase,
   savedTitleId: string
 ): Promise<void> {
-  await deletePinsForSavedTitleWithDb(db, savedTitleId);
   await db.runAsync("DELETE FROM saved_titles WHERE id = ?;", savedTitleId);
 }

@@ -3,7 +3,6 @@ import * as SQLite from "expo-sqlite";
 import {
   DATABASE_SCHEMA_VERSION,
   enableAndVerifyForeignKeys,
-  ensureLibrarySchema,
   evolveDatabaseSchema,
   readUserVersion,
 } from "./databaseSchema";
@@ -27,7 +26,6 @@ async function initializeDatabase(): Promise<SQLite.SQLiteDatabase> {
     }
 
     await enableAndVerifyForeignKeys(db);
-    await ensureLibrarySchema(db);
     await evolveDatabaseSchema(db, currentVersion);
     return db;
   } catch (error) {

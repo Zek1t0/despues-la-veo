@@ -1,9 +1,13 @@
-import type { LegacyPersistedSavedTitle as SavedTitle } from "../core/savedTitle";
+import type {
+  SavedTitle,
+  SavedTitleWithProviderReferences,
+} from "../core/savedTitle";
+import type { ProviderReference } from "../core/providerReference";
 import { parsePersonalRating, type PersonalRating } from "../core/personalRating";
 import { nextSavedTitleUpdatedAt } from "../core/savedTitleTimestamp";
 import {
   createTmdbProviderReference,
-  materializeLegacyTmdbSavedTitle,
+  materializeTmdbSavedTitle,
   type LegacyTmdbSavedTitleSnapshot,
 } from "../core/tmdbSavedTitle";
 import type { NormalizedBackupSavedTitle } from "../core/libraryBackupV1";
@@ -12,7 +16,6 @@ import { initDb } from "./db";
 import {
   mergeLibraryBackupItemsWithDb,
   mergeLibraryBackupWithDb,
-  rowToSavedTitle,
   type LibraryImportIssue,
   type LibraryImportMergeResult,
   type LibraryBackupMergeResult,
@@ -22,11 +25,27 @@ import {
   upsertSavedTitleAndCleanPinsWithDb,
 } from "./savedTitleIntegrity";
 import { runSerializedStorageMutation } from "./storageMutationQueue";
+import {
+  attachProviderReferenceWithDb,
+  getSavedTitleByProviderReferenceWithDb,
+  getSavedTitleWithReferencesByIdWithDb,
+  listProviderReferencesForSavedTitleWithDb,
+  listSavedTitlesWithReferencesWithDb,
+} from "./savedTitleStorage";
+
+export {
+  attachProviderReferenceWithDb,
+  getSavedTitleByProviderReferenceWithDb,
+  getSavedTitleWithReferencesByIdWithDb,
+  listProviderReferencesForSavedTitleWithDb,
+  listSavedTitlesWithReferencesWithDb,
+};
 
 export type { LibraryImportIssue, LibraryImportMergeResult };
 export type { LibraryBackupMergeResult };
 
 export type SavedTitlesReadDatabase = {
+  getFirstAsync<T>(source: string, ...params: any[]): Promise<T | null>;
   getAllAsync<T>(source: string, ...params: any[]): Promise<T[]>;
 };
 
@@ -53,84 +72,19 @@ function assertSavedTitleMetadataPatch(patch: SavedTitleMetadataPatch): void {
   }
 }
 
-/**
- * Transitional SQLite v3 lookup. Historical external_id values predate the
- * canonical ProviderReference contract, so compare only values that the TMDB
- * adapter can validate and canonicalize. Remove this bridge when Sections 2/3
- * persist and resolve media_provider_references directly.
- */
-async function findLegacyTmdbTitleWithDb(
-  db: SavedTitlesMutationDatabase,
-  resourceNamespace: "movie" | "tv",
-  canonicalExternalId: string
-): Promise<SavedTitle | null> {
-  const exactRow = await db.getFirstAsync<Record<string, unknown>>(
-    `SELECT * FROM saved_titles
-     WHERE provider = 'tmdb' AND external_id = ? LIMIT 1;`,
-    [canonicalExternalId]
-  );
-  if (exactRow) {
-    const exact = rowToSavedTitle(exactRow);
-    if (exact.type !== resourceNamespace) {
-      throw new Error(
-        "SQLite v3 ya asocia este ID TMDB a otro namespace; la migración v4 debe resolverlo."
-      );
-    }
-    return exact;
-  }
-
-  const rows = await db.getAllAsync<Record<string, unknown>>(
-    "SELECT * FROM saved_titles WHERE provider = 'tmdb';"
-  );
-  const matches: SavedTitle[] = [];
-  let crossNamespaceMatch = false;
-
-  for (const row of rows) {
-    const candidate = rowToSavedTitle(row);
-    if (candidate.type !== "movie" && candidate.type !== "tv") continue;
-
-    try {
-      const candidateReference = createTmdbProviderReference(
-        candidate.type,
-        candidate.externalId
-      );
-      if (candidateReference.externalId !== canonicalExternalId) continue;
-      if (candidate.type !== resourceNamespace) {
-        crossNamespaceMatch = true;
-      } else {
-        matches.push(candidate);
-      }
-    } catch {
-      // Malformed historical IDs are not eligible for canonical compatibility matching.
-    }
-  }
-
-  if (crossNamespaceMatch) {
-    throw new Error(
-      "SQLite v3 ya asocia una forma legacy de este ID TMDB a otro namespace; la migración v4 debe resolverlo."
-    );
-  }
-  if (matches.length > 1) {
-    throw new Error(
-      "SQLite v3 contiene varias formas legacy del mismo recurso TMDB; la migración v4 debe resolverlas."
-    );
-  }
-  return matches[0] ?? null;
-}
-
 /** Lee y actualiza metadata editable del detalle dentro de la transacción activa. */
 export async function updateSavedTitleMetadataWithDb(
   db: SavedTitlesMutationDatabase,
   id: string,
   patch: SavedTitleMetadataPatch,
   now: () => number = Date.now
-): Promise<SavedTitle> {
+): Promise<SavedTitleWithProviderReferences> {
   assertSavedTitleId(id);
   assertSavedTitleMetadataPatch(patch);
   const current = await getSavedTitleByIdWithDb(db, id);
   if (!current) throw new Error("El título guardado no existe.");
 
-  const updated: SavedTitle = {
+  const updated: SavedTitleWithProviderReferences = {
     ...current,
     ...patch,
     updatedAt: nextSavedTitleUpdatedAt(current.updatedAt, now()),
@@ -143,10 +97,10 @@ export async function updateSavedTitleMetadataWithDb(
 export async function updateSavedTitleMetadata(
   id: string,
   patch: SavedTitleMetadataPatch
-): Promise<SavedTitle> {
+): Promise<SavedTitleWithProviderReferences> {
   const db = await initDb();
   return runSerializedStorageMutation(async () => {
-    let updated: SavedTitle | null = null;
+    let updated: SavedTitleWithProviderReferences | null = null;
     await db.withTransactionAsync(async () => {
       updated = await updateSavedTitleMetadataWithDb(db, id, patch);
     });
@@ -209,22 +163,20 @@ export async function saveTmdbTitleWithDb(
   now = Date.now()
 ): Promise<string> {
   const reference = createTmdbProviderReference(snapshot.type, snapshot.externalId);
-  const existing = await findLegacyTmdbTitleWithDb(
-    db,
-    reference.resourceNamespace,
-    reference.externalId
-  );
-  const item = materializeLegacyTmdbSavedTitle(
-    { ...snapshot, externalId: reference.externalId },
+  const existing = await getSavedTitleByProviderReferenceWithDb(db, reference);
+  const { externalId: _externalId, ...localSnapshot } = snapshot;
+  const item = materializeTmdbSavedTitle(
+    reference,
+    localSnapshot,
     existing,
     generateId,
     now
   );
-  // A matched noncanonical v3 token must remain unchanged until migration:
-  // replacing it here would insert against the local-id primary key because
-  // the legacy upsert conflict target is still (provider, external_id).
-  const transitionalItem = existing ? { ...item, externalId: existing.externalId } : item;
-  return upsertSavedTitleAndCleanPinsWithDb(db, transitionalItem);
+  await upsertSavedTitleAndCleanPinsWithDb(db, item);
+  if (!existing) {
+    await attachProviderReferenceWithDb(db, reference, item.id);
+  }
+  return item.id;
 }
 
 export async function saveTmdbTitle(
@@ -245,28 +197,21 @@ export async function saveTmdbTitle(
 export async function getSavedTitleByIdWithDb(
   db: SavedTitlesReadDatabase,
   id: string
-): Promise<SavedTitle | null> {
-  const rows = await db.getAllAsync<Record<string, unknown>>(
-    "SELECT * FROM saved_titles WHERE id = ? LIMIT 1",
-    id
-  );
-  return rows.length ? rowToSavedTitle(rows[0]) : null;
+): Promise<SavedTitleWithProviderReferences | null> {
+  return getSavedTitleWithReferencesByIdWithDb(db, id);
 }
 
 export async function listSavedTitlesWithDb(
   db: SavedTitlesReadDatabase
-): Promise<SavedTitle[]> {
-  const rows = await db.getAllAsync<Record<string, unknown>>(
-    "SELECT * FROM saved_titles ORDER BY created_at DESC"
-  );
-  return rows.map(rowToSavedTitle);
+): Promise<SavedTitleWithProviderReferences[]> {
+  return listSavedTitlesWithReferencesWithDb(db);
 }
 
-export async function listSavedTitles(): Promise<SavedTitle[]> {
+export async function listSavedTitles(): Promise<SavedTitleWithProviderReferences[]> {
   return listSavedTitlesWithDb(await initDb());
 }
 
-export async function getAllSavedTitles(): Promise<SavedTitle[]> {
+export async function getAllSavedTitles(): Promise<SavedTitleWithProviderReferences[]> {
   return listSavedTitles();
 }
 
@@ -307,8 +252,7 @@ export async function mergeLibraryBackup(
     await db.withTransactionAsync(async () => {
       result = await mergeLibraryBackupWithDb(
         db,
-        payload.items,
-        payload.version === 1 ? null : payload.pins,
+        payload,
         generateId
       );
     });
@@ -324,19 +268,13 @@ export async function deleteSavedTitle(id: string): Promise<void> {
   );
 }
 
-export async function getSavedTitleById(id: string): Promise<SavedTitle | null> {
+export async function getSavedTitleById(id: string): Promise<SavedTitleWithProviderReferences | null> {
   return getSavedTitleByIdWithDb(await initDb(), id);
 }
 
-export async function getByProviderExternal(
-  provider: string,
-  externalId: string
-): Promise<SavedTitle | null> {
+export async function getByProviderReference(
+  reference: ProviderReference
+): Promise<SavedTitleWithProviderReferences | null> {
   const db = await initDb();
-  const rows = await db.getAllAsync(
-    "SELECT * FROM saved_titles WHERE provider = ? AND external_id = ? LIMIT 1",
-    provider,
-    externalId
-  );
-  return rows.length ? rowToSavedTitle(rows[0]) : null;
+  return getSavedTitleByProviderReferenceWithDb(db, reference);
 }

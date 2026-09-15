@@ -48,7 +48,7 @@ assert.match(saved, /next < PERSONAL_RATING_MIN \|\| next > PERSONAL_RATING_MAX/
 // Remote lifecycle, credentials, providers and local-preserving re-save path remain intact.
 for (const needle of [
   "useTmdbCredential", "sameTmdbRemoteRequest", "isTmdbDetailLoadingVisible",
-  "getMovieDetails", "getTvDetails", "getWatchProviders", "getByProviderExternal",
+  "getMovieDetails", "getTvDetails", "getWatchProviders", "getByProviderReference",
   "saveTmdbTitle", "router.push", "providerLogoUrl",
 ]) assert.ok(remote.includes(needle), `TMDB Detail contract missing ${needle}`);
 assert.match(remote, /theme\.global\.surfaceSecondary/);

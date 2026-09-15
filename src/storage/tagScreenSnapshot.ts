@@ -1,4 +1,4 @@
-import type { SavedTitle } from "../core/savedTitle";
+import type { SavedTitleWithProviderReferences } from "../core/savedTitle";
 import { createTagPinContext, type TagPinContext, type TitlePin } from "../core/contextualPin";
 import { initDb } from "./db";
 import { listSavedTitlesWithDb } from "./savedTitlesRepo";
@@ -7,7 +7,7 @@ import { listTitlePinsForContextWithDb } from "./titlePinsRepo";
 
 export type TagScreenSnapshot = {
   context: TagPinContext;
-  items: SavedTitle[];
+  items: SavedTitleWithProviderReferences[];
   pins: TitlePin[];
 };
 

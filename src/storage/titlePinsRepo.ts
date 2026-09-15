@@ -32,6 +32,13 @@ export type BackupTitlePinRow = {
   pinnedAt: number;
 };
 
+export type BackupTitlePinV5Row = {
+  itemId: string;
+  contextType: "library" | "tag";
+  contextKey: string;
+  pinnedAt: number;
+};
+
 function assertSavedTitleId(savedTitleId: string): void {
   if (typeof savedTitleId !== "string" || !savedTitleId.trim()) {
     throw new Error("El id del título guardado debe ser un string no vacío.");
@@ -106,10 +113,19 @@ export async function listAllPinsForBackupWithDb(
     context_key: string;
     pinned_at: number;
   }>(
-    `SELECT s.provider, s.external_id, p.context_type, p.context_key, p.pinned_at
+    `SELECT 'tmdb' AS provider, r.external_id, p.context_type, p.context_key, p.pinned_at
      FROM title_pins p
      INNER JOIN saved_titles s ON s.id = p.saved_title_id
-     ORDER BY s.provider, s.external_id, p.context_type, p.context_key;`
+     INNER JOIN media_provider_references r ON r.saved_title_id = s.id
+     WHERE r.provider = 'tmdb' AND r.resource_namespace = s.type
+     UNION ALL
+     SELECT 'manual' AS provider, l.legacy_external_id AS external_id,
+            p.context_type, p.context_key, p.pinned_at
+     FROM title_pins p
+     INNER JOIN saved_titles s ON s.id = p.saved_title_id
+     INNER JOIN legacy_saved_title_identities l ON l.saved_title_id = s.id
+     WHERE l.legacy_format = 'library-backup-v1-v4' AND l.legacy_provider = 'manual'
+     ORDER BY provider, external_id, context_type, context_key;`
   );
   return rows.map((row) => {
     const context = parsePinContext(row.context_type, row.context_key);
@@ -122,6 +138,22 @@ export async function listAllPinsForBackupWithDb(
       contextKey: context.contextKey,
       pinnedAt: row.pinned_at,
     };
+  });
+}
+
+export async function listAllPinsForBackupV5WithDb(
+  db: TitlePinsDatabase
+): Promise<BackupTitlePinV5Row[]> {
+  const rows = await db.getAllAsync<TitlePinRow>(
+    `SELECT saved_title_id, context_type, context_key, pinned_at
+     FROM title_pins
+     ORDER BY saved_title_id, context_type, context_key;`
+  );
+  return rows.map((row) => {
+    const context = parsePinContext(row.context_type, row.context_key);
+    assertValidPinnedAt(row.pinned_at);
+    if (!context) throw new Error("Se encontró un contexto de pin persistido inválido.");
+    return { itemId: row.saved_title_id, ...context, pinnedAt: row.pinned_at };
   });
 }
 

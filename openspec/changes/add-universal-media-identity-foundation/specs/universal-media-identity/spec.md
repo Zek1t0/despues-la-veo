@@ -78,6 +78,27 @@ El sistema MUST permitir que un MediaItem no tenga referencias externas o tenga 
 - **WHEN** el usuario elimina el MediaItem
 - **THEN** se eliminan sus referencias y pins relacionados dentro de la misma mutación íntegra
 
+### Requirement: los consumidores locales usan MediaItem y sus referencias sin proyección singular
+El sistema MUST listar y cargar MediaItems mediante su ID local y su colección completa de ProviderReferences, MUST mantener Biblioteca y `/title/[id]` utilizables con cero o varias referencias, y MUST NOT elegir una ProviderReference arbitraria para satisfacer el contrato singular histórico. Rating, tags, notas, status, pins, filtros, ordenamientos y detalle offline MUST depender del MediaItem y su snapshot local, no de la presencia de provider.
+
+#### Scenario: item con múltiples referencias en Biblioteca y detalle local
+- **GIVEN** un MediaItem con varias ProviderReferences válidas
+- **WHEN** se lista mediante las APIs de lectura usadas por Biblioteca y se abre `/title/[id]`
+- **THEN** el item y todos sus datos personales permanecen utilizables
+- **AND** los consumidores no requieren campos singulares `provider` o `externalId`
+
+#### Scenario: link remoto desde una referencia TMDB reconocida
+- **GIVEN** un MediaItem local con una referencia TMDB reconocida entre cero o varias referencias
+- **WHEN** se presenta su detalle local
+- **THEN** puede ofrecer el link remoto TMDB derivado de esa referencia completa
+- **AND** no trata una referencia genérica distinta como sustituto de TMDB
+
+#### Scenario: item local-only sin identidad portable histórica
+- **GIVEN** un item v5 defensivo sin ProviderReferences ni identidad legacy que fue importado con un ID libre
+- **WHEN** Biblioteca lo lista o `/title/[id]` lo carga sin red ni credencial TMDB
+- **THEN** el snapshot, rating, tags, notas, status y pins siguen disponibles
+- **AND** el detalle simplemente omite el link remoto TMDB
+
 ### Requirement: instalaciones existentes migran sin perder datos locales
 El sistema MUST migrar instalaciones válidas sin reset ni acceso de red, MUST preservar los IDs locales y snapshots existentes, y MUST conservar ratings, tags, notas, estados, timestamps, pins, fechas de pin y preferencias no relacionadas.
 
@@ -103,6 +124,18 @@ El sistema MUST migrar instalaciones válidas sin reset ni acceso de red, MUST p
 - **WHEN** vuelve a inicializarse
 - **THEN** no repite ni duplica MediaItems, referencias, pins o preferencias
 
+#### Scenario: normalización JSON histórica antes de v4
+- **GIVEN** una fila de un schema histórico válido donde `genres_json` es SQL NULL
+- **WHEN** la inicialización histórica evoluciona esa base a v4
+- **THEN** conserva el comportamiento del bootstrap anterior y almacena `genres_json = '[]'` antes de copiar la fila
+- **AND** no aplica esa normalización como regla nueva sobre filas v4
+
+#### Scenario: tags JSON en el schema histórico válido
+- **GIVEN** el schema histórico válido donde `tags_json` es `NOT NULL`
+- **WHEN** se prepara una migración a v4
+- **THEN** el sistema mantiene esa restricción histórica
+- **AND** no inventa una reparación de `tags_json` inválido ni relaja el contrato v4
+
 ### Requirement: las mutaciones de identidad mantienen composición transaccional
 El sistema MUST serializar cada mutación pública de identidad con las demás mutaciones SQLite, MUST ejecutarla dentro de una única transacción pública y MUST evitar que sus helpers internos reinicialicen la base, reingresen a la cola o creen transacciones anidadas.
 
@@ -113,6 +146,22 @@ El sistema MUST serializar cada mutación pública de identidad con las demás m
 #### Scenario: fallo durante una mutación
 - **WHEN** una escritura de identidad falla antes de confirmar la transacción
 - **THEN** no queda una referencia sin MediaItem ni un MediaItem parcialmente reasociado
+
+#### Scenario: runtime después de migrar una instalación real
+- **GIVEN** que `initDb()` migra una base v3 realista a v4
+- **WHEN** el runtime lista y carga títulos, resuelve y guarda recursos TMDB, actualiza una puntuación, opera pins y elimina un item
+- **THEN** todas las operaciones usan el schema v4 sin consultar las columnas eliminadas de `saved_titles`
+- **AND** los borrados eliminan por cascade referencias e identidades relacionadas sin dejar pins huérfanos
+- **AND** `tmdb/movie/N` y `tmdb/tv/N` permanecen independientes
+
+#### Scenario: límite transitorio del backup v4 durante el checkpoint de persistencia
+- **GIVEN** que storage v4 contiene `tmdb/movie/N` y `tmdb/tv/N` como MediaItems distintos
+- **AND** al menos uno tiene un pin contextual
+- **WHEN** el adaptador transitorio intenta proyectar ese estado al formato backup v4
+- **THEN** el sistema reconoce que el pin v4 omite `resourceNamespace` y no puede garantizar un round-trip fiel
+- **AND** no prohíbe la coexistencia ni los pins, no fusiona los MediaItems y no elige un namespace arbitrariamente
+- **AND** el cierre del checkpoint queda sujeto a backup v5, donde los pins internos referencian la identidad local del item dentro del backup
+- **AND** no se amplía ni reinterpreta la semántica histórica del formato v4
 
 ### Requirement: TMDB conserva su comportamiento vigente sobre la nueva identidad
 El sistema MUST continuar ofreciendo búsqueda, detalle remoto, guardado, detección de guardado, snapshots locales, credenciales, imágenes, proveedores de visualización y atribución TMDB bajo sus contratos actuales, usando la referencia TMDB completa para resolver identidad.

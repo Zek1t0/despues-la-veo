@@ -63,7 +63,7 @@ export function normalizeBackupPin(
     ok: true,
     pin: {
       provider: value.provider,
-      externalId: value.externalId.trim(),
+      externalId: value.provider === "manual" ? value.externalId : value.externalId.trim(),
       contextType: context.contextType,
       contextKey: context.contextKey,
       pinnedAt: value.pinnedAt,

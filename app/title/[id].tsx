@@ -15,9 +15,10 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type {
-  LegacyPersistedSavedTitle as SavedTitle,
+  SavedTitleWithProviderReferences,
   TitleStatus,
 } from "../../src/core/savedTitle";
+import { findUnambiguousTmdbReference } from "../../src/core/savedTitleProviderReferences";
 import { titleStatusLabel, titleTypeLabel } from "../../src/core/presentationLabels";
 import { type PinContext } from "../../src/core/contextualPin";
 import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";
@@ -184,7 +185,7 @@ export default function TitleDetailScreen() {
   }>();
 
   const [loading, setLoading] = useState(true);
-  const [item, setItem] = useState<SavedTitle | null>(null);
+  const [item, setItem] = useState<SavedTitleWithProviderReferences | null>(null);
   const [effectivePinContext, setEffectivePinContext] = useState<PinContext | null>(null);
   const [pinnedAt, setPinnedAt] = useState<number | null>(null);
   const [pinReady, setPinReady] = useState(false);
@@ -392,9 +393,10 @@ export default function TitleDetailScreen() {
 
   const tmdbHref = useMemo(() => {
     if (!item) return null;
-    if (item.provider !== "tmdb") return null;
-    if (!item.type || !item.externalId) return null;
-    return `/tmdb/${item.type}/${item.externalId}`;
+    const reference = findUnambiguousTmdbReference(item);
+    return reference
+      ? `/tmdb/${reference.resourceNamespace}/${reference.externalId}`
+      : null;
   }, [item]);
 
   const save = useCallback(
@@ -600,7 +602,7 @@ export default function TitleDetailScreen() {
             {item.title}
           </Text>
           <Text style={{ color: theme.global.textSecondary, fontWeight: "700" }}>
-            {titleTypeLabel(item.type)} • {item.provider.toUpperCase()}
+            {titleTypeLabel(item.type)}
           </Text>
         </View>
 

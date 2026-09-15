@@ -1,13 +1,11 @@
-import type {
-  LegacyPersistedSavedTitle as SavedTitle,
-  TitleStatus,
-  TitleType,
-} from "./savedTitle";
+import type { LegacyPersistedSavedTitle as SavedTitle } from "./savedTitle";
 import { parsePersonalRating, type PersonalRating } from "./personalRating";
 
 export const LIBRARY_BACKUP_VERSION = 1 as const;
 
-export type SavedTitleProvider = SavedTitle["provider"];
+export type SavedTitleProvider = "manual" | "tmdb";
+export type HistoricalBackupTitleType = "movie" | "tv";
+export type HistoricalBackupTitleStatus = "planned" | "watching" | "done" | "dropped";
 
 // Contrato JSON v1 y correspondencia persistida:
 // id: string opcional -> id TEXT NOT NULL
@@ -33,7 +31,7 @@ export type OptionalBackupField<T> =
 export type NormalizedBackupSavedTitle = {
   provider: SavedTitleProvider;
   externalId: string;
-  type: TitleType;
+  type: HistoricalBackupTitleType;
   title: string;
   id: OptionalBackupField<string>;
   year: OptionalBackupField<number | null>;
@@ -42,7 +40,7 @@ export type NormalizedBackupSavedTitle = {
   voteAverage: OptionalBackupField<number | null>;
   personalRating: OptionalBackupField<PersonalRating>;
   genres: OptionalBackupField<string[]>;
-  status: OptionalBackupField<TitleStatus>;
+  status: OptionalBackupField<HistoricalBackupTitleStatus>;
   tags: OptionalBackupField<string[]>;
   notes: OptionalBackupField<string | null>;
   createdAt: OptionalBackupField<number>;
@@ -86,11 +84,11 @@ function isProvider(value: unknown): value is SavedTitleProvider {
   return value === "manual" || value === "tmdb";
 }
 
-function isTitleType(value: unknown): value is TitleType {
+function isTitleType(value: unknown): value is HistoricalBackupTitleType {
   return value === "movie" || value === "tv";
 }
 
-function isTitleStatus(value: unknown): value is TitleStatus {
+function isTitleStatus(value: unknown): value is HistoricalBackupTitleStatus {
   return value === "planned" || value === "watching" || value === "done" || value === "dropped";
 }
 
@@ -158,7 +156,7 @@ export function normalizeBackupSavedTitle(
     ok: true,
     item: {
       provider: value.provider,
-      externalId: value.externalId.trim(),
+      externalId: value.provider === "manual" ? value.externalId : value.externalId.trim(),
       type: value.type,
       title: value.title.trim(),
       id: normalizedId.present ? present(normalizedId.value.trim()) : absent(),
@@ -168,7 +166,7 @@ export function normalizeBackupSavedTitle(
       voteAverage: voteAverage as OptionalBackupField<number | null>,
       personalRating: absent(),
       genres: genres as OptionalBackupField<string[]>,
-      status: status as OptionalBackupField<TitleStatus>,
+      status: status as OptionalBackupField<HistoricalBackupTitleStatus>,
       tags: tags as OptionalBackupField<string[]>,
       notes: notes as OptionalBackupField<string | null>,
       createdAt: createdAt as OptionalBackupField<number>,
