@@ -1,0 +1,50 @@
+## 1. Contratos compartidos
+
+- [ ] 1.1 Definir el resultado normalizado de búsqueda, el tipo de detalle portable, el snapshot local compatible y el input separado de materialización; verificar con un contrato TypeScript que no contienen descriptor de proveedor, paginación, DTOs TMDB, credenciales, rutas ni enriquecimientos.
+- [ ] 1.2 Definir solamente la operación de search que consume Buscar, con `search(query)` y resultados readonly; verificar que no existen `page`, `hasMore`, cursor, metadata de paginación ni capability remota de detalle.
+- [ ] 1.3 Someter el diff completo de la Sección 1 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
+
+## 2. Mapeos puros y adaptador TMDB
+
+- [ ] 2.1 Tipar las formas de detalle TMDB actualmente consumidas y crear el mapper puro de search que filtra movie/TV, construye referencias canónicas y normaliza title/name, fechas, overview y póster absoluto; verificar movie, TV, recurso no soportado, póster ausente y referencia canónica.
+- [ ] 2.2 Crear un mapper puro que transforma el detalle TMDB ya obtenido en `ProviderMediaDetails`, incluyendo año, resumen nulo, póster absoluto y `voteAverage`; verificar movie, TV, fechas válidas/ausentes/inválidas e IDs inválidos.
+- [ ] 2.3 Derivar por separado los nombres de género TMDB como `initialTags` para construir el input local de materialización, y verificar que `ProviderMediaDetails` no contiene esa política.
+- [ ] 2.4 Exponer search normalizado y los mappers puros desde un adaptador/módulo TMDB explícito sin mover créditos, watch providers, profile/logo helpers, credenciales ni atribución; verificar que los endpoints y parámetros actuales siguen siendo los mismos.
+- [ ] 2.5 Someter el diff completo de la Sección 2 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
+
+## 3. Migración de Buscar
+
+- [ ] 3.1 Reemplazar el estado y render de `TmdbSearchItem` por resultados normalizados, eliminando de la pantalla el conocimiento de `media_type`, `poster_path`, `release_date`, `first_air_date` y `title/name`; verificar que textos, tarjetas, claves y navegación `/tmdb/[type]/[id]` no cambian.
+- [ ] 3.2 Verificar el runtime de Buscar para query vacía, debounce, credencial inicializando/no configurada/con error/configurada, retry, loading, errores y rechazo de respuestas obsoletas por consulta o generación.
+- [ ] 3.3 Someter el diff y la evidencia runtime de la Sección 3 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
+
+## 4. Materialización y guardado reutilizables
+
+- [ ] 4.1 Extraer la preservación de estado local a un materializador que recibe `ProviderMaterializationInput` sin comprobar `provider === "tmdb"`; verificar creación con ID opaco y refresh preservando ID, `createdAt`, status, tags, notas, puntuación personal y semántica de `updatedAt`.
+- [ ] 4.2 Incorporar en el repositorio un camino transaccional de guardado por `ProviderReference`, snapshot normalizado e `initialTags` explícitos, manteniendo lookup, upsert y attach actuales; verificar que guardar la misma referencia no duplica el MediaItem.
+- [ ] 4.3 Mantener o reducir `saveTmdbTitle` a un wrapper fino solamente si ayuda a una migración incremental, y verificar que el camino reusable final no acepta DTOs crudos, IDs sueltos ni interpreta géneros.
+- [ ] 4.4 Verificar que el primer guardado TMDB conserva tags derivados de géneros, que refresh preserva tags personalizados, que `tmdb/movie/N` y `tmdb/tv/N` siguen independientes y que se conserva la protección contra referencias ya asignadas.
+- [ ] 4.5 Someter el diff completo de la Sección 4 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
+
+## 5. Migración del detalle remoto TMDB
+
+- [ ] 5.1 Mantener una sola llamada a `getMovieDetails` o `getTvDetails` y pasar esa misma respuesta tanto a la presentación TMDB como al mapper portable usado al guardar/refrescar; verificar mediante dobles o conteo focalizado que el request de detalle no se duplica.
+- [ ] 5.2 Remover de la ruta el mapeo duplicado de año, géneros, overview y `vote_average`, construir por separado el input de materialización y verificar save, re-save y lookup por la referencia completa.
+- [ ] 5.3 Mantener en la ruta TMDB runtime, temporadas, director, reparto, perfiles, watch providers, fallback AR→US, logos y enlaces; verificar que su presentación e imágenes continúan iguales.
+- [ ] 5.4 Preservar la coordinación conjunta actual de details, credits y watch providers y comprobar que una falla de cualquiera mantiene el flujo integral de error, sin introducir render parcial.
+- [ ] 5.5 Someter el diff y la evidencia runtime de la Sección 5 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
+
+## 6. Evaluación opcional de helpers async
+
+- [ ] 6.1 Evaluar con los consumidores ya migrados si secuencia, identidad de recurso y comparación de requests ofrecen reutilización concreta sin depender de credenciales; documentar como resultado válido que no corresponde extraer nada y conservar el helper TMDB cuando esa reutilización no exista.
+- [ ] 6.2 Si la evaluación justifica una extracción, mover solamente secuencia/recurso/comparación y verificar rechazo de respuestas obsoletas; mantener `TmdbCredentialStatus`, generation, elegibilidad y configuración en TMDB, sin introducir networking genérico.
+- [ ] 6.3 Si la Sección 6 produce cambios de código, someter su diff a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; si no produce cambios, registrar la decisión revisada de no extracción. Todo commit/push posterior es manual del usuario.
+
+## 7. Regresión y cierre
+
+- [ ] 7.1 Agregar/ejecutar verificaciones focalizadas de search mapping, detail mapping desde una respuesta ya obtenida y materialización genérica, sin incorporar un framework de tests nuevo.
+- [ ] 7.2 Reejecutar las verificaciones relevantes de identidad universal: SQLite v4, backup v5, imports históricos, referencias movie/TV con mismo ID, detalle local/offline y pins; confirmar que no cambiaron schema ni formato.
+- [ ] 7.3 Reejecutar las verificaciones relevantes de credenciales, personal rating, sorting y preferencias de browsing, y comprobar que la atribución TMDB/JustWatch permanece intacta.
+- [ ] 7.4 Ejecutar `npx tsc --noEmit` y resolver cualquier error sin modificar dependencias ni el `package.json` ajeno al cambio.
+- [ ] 7.5 Revisar manualmente en web Buscar, detalle TMDB, guardar/refrescar, navegación al detalle local, errores y estados de credencial; documentar el resultado y confirmar que no existen descriptor sin consumidor, paginación compartida, capability remota de detalle, registry, segundo proveedor, anime/manga, taxonomía nueva, schema v5 ni backup v6.
+- [ ] 7.6 Someter el diff completo y toda la evidencia de regresión a revisión externa final antes de archivar; dejar este checkpoint sin marcar hasta la aprobación externa y mantener cualquier commit/push como acción manual del usuario.
