@@ -45,8 +45,8 @@
 
 ## 6. Regresión integral y cierre de implementación
 
-- [ ] 6.1 Ejecutar la suite dirigida de schema/migración con bases v0–v4, reapertura, versión futura y fallos inyectados; verificar valores y relaciones, no sólo conteos.
-- [ ] 6.2 Ejecutar round-trips de backup v5 y regresiones de imports v1–v4 con merge existing-item por `updatedAt`/presencia/null, referencias añadidas pero no borradas, repeat import local-only por legacy, ratings, tags, notas, pins, conflictos y Appearance compatible/incompatible/fallida.
-- [ ] 6.3 Verificar las capacidades canónicas afectables: personal rating y sorting, prioridad de pins, limpieza de tag pins, browsing preferences fuera del backup, Appearance separado y credencial TMDB excluida.
-- [ ] 6.4 Ejecutar `npx tsc --noEmit`, las verificaciones automatizadas relevantes y una pasada manual final en web; registrar resultados y cualquier límite de plataforma pendiente.
-- [ ] 6.5 Ejecutar una revisión externa final del diff real completo, resolver findings y dejar el cambio listo para el checkpoint manual final de commit/push sin archivar OpenSpec.
+- [x] 6.1 Ejecutar la suite dirigida de schema/migración con bases v0–v4, reapertura, versión futura y fallos inyectados; verificar valores y relaciones, no sólo conteos.
+- [x] 6.2 Ejecutar round-trips de backup v5 y regresiones de imports v1–v4 con merge existing-item por `updatedAt`/presencia/null, referencias añadidas pero no borradas, repeat import local-only por legacy, ratings, tags, notas, pins, conflictos y Appearance compatible/incompatible/fallida.
+- [x] 6.3 Verificar las capacidades canónicas afectables: personal rating y sorting, prioridad de pins, limpieza de tag pins, browsing preferences fuera del backup, Appearance separado y credencial TMDB excluida.
+- [x] 6.4 Ejecutar `npx tsc --noEmit`, las verificaciones automatizadas relevantes y una pasada manual final en web; registrar resultados y cualquier límite de plataforma pendiente.
+- [x] 6.5 Ejecutar una revisión externa final del diff real completo, resolver findings y dejar el cambio listo para el checkpoint manual final de commit/push sin archivar OpenSpec.
