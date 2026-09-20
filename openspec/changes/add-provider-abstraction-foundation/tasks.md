@@ -1,16 +1,16 @@
 ## 1. Contratos compartidos
 
-- [ ] 1.1 Definir el resultado normalizado de búsqueda, el tipo de detalle portable, el snapshot local compatible y el input separado de materialización; verificar con un contrato TypeScript que no contienen descriptor de proveedor, paginación, DTOs TMDB, credenciales, rutas ni enriquecimientos.
-- [ ] 1.2 Definir solamente la operación de search que consume Buscar, con `search(query)` y resultados readonly; verificar que no existen `page`, `hasMore`, cursor, metadata de paginación ni capability remota de detalle.
-- [ ] 1.3 Someter el diff completo de la Sección 1 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
+- [x] 1.1 Definir el resultado normalizado de búsqueda, el tipo de detalle portable, el snapshot local compatible y el input separado de materialización; verificar con un contrato TypeScript que no contienen descriptor de proveedor, paginación, DTOs TMDB, credenciales, rutas ni enriquecimientos.
+- [x] 1.2 Definir solamente la operación de search que consume Buscar, con `search(query)` y resultados readonly; verificar que no existen `page`, `hasMore`, cursor, metadata de paginación ni capability remota de detalle.
+- [x] 1.3 Someter el diff completo de la Sección 1 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
 
 ## 2. Mapeos puros y adaptador TMDB
 
-- [ ] 2.1 Tipar las formas de detalle TMDB actualmente consumidas y crear el mapper puro de search que filtra movie/TV, construye referencias canónicas y normaliza title/name, fechas, overview y póster absoluto; verificar movie, TV, recurso no soportado, póster ausente y referencia canónica.
-- [ ] 2.2 Crear un mapper puro que transforma el detalle TMDB ya obtenido en `ProviderMediaDetails`, incluyendo año, resumen nulo, póster absoluto y `voteAverage`; verificar movie, TV, fechas válidas/ausentes/inválidas e IDs inválidos.
-- [ ] 2.3 Derivar por separado los nombres de género TMDB como `initialTags` para construir el input local de materialización, y verificar que `ProviderMediaDetails` no contiene esa política.
-- [ ] 2.4 Exponer search normalizado y los mappers puros desde un adaptador/módulo TMDB explícito sin mover créditos, watch providers, profile/logo helpers, credenciales ni atribución; verificar que los endpoints y parámetros actuales siguen siendo los mismos.
-- [ ] 2.5 Someter el diff completo de la Sección 2 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
+- [x] 2.1 Tipar las formas de detalle TMDB actualmente consumidas y crear el mapper puro de search que filtra movie/TV, construye referencias canónicas y normaliza title/name, fechas, overview y póster absoluto; verificar movie, TV, recurso no soportado, póster ausente y referencia canónica.
+- [x] 2.2 Crear un mapper puro que transforma el detalle TMDB ya obtenido en `ProviderMediaDetails`, incluyendo año, resumen nulo, póster absoluto y `voteAverage`; verificar movie, TV, fechas válidas/ausentes/inválidas e IDs inválidos.
+- [x] 2.3 Derivar por separado los nombres de género TMDB como `initialTags` para construir el input local de materialización, y verificar que `ProviderMediaDetails` no contiene esa política.
+- [x] 2.4 Exponer search normalizado y los mappers puros desde un adaptador/módulo TMDB explícito sin mover créditos, watch providers, profile/logo helpers, credenciales ni atribución; verificar que los endpoints y parámetros actuales siguen siendo los mismos.
+- [x] 2.5 Someter el diff completo de la Sección 2 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
 
 ## 3. Migración de Buscar
 

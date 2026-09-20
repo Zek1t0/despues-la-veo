@@ -13,6 +13,46 @@ export type TmdbSearchItem = {
   poster_path?: string | null;
 };
 
+/** Raw `/search/multi` shape used at the TMDB mapping boundary. */
+export type TmdbSearchMultiItem = {
+  id: number;
+  media_type: string;
+  title?: string;
+  name?: string;
+  release_date?: string;
+  first_air_date?: string;
+  overview?: string;
+  poster_path?: string | null;
+};
+
+export type TmdbGenre = {
+  id: number;
+  name: string;
+};
+
+type TmdbPortableDetailFields = {
+  id: number;
+  poster_path?: string | null;
+  overview?: string | null;
+  vote_average?: number | null;
+  genres?: TmdbGenre[];
+};
+
+export type TmdbMovieDetails = TmdbPortableDetailFields & {
+  title?: string;
+  release_date?: string;
+  runtime?: number | null;
+};
+
+export type TmdbTvDetails = TmdbPortableDetailFields & {
+  name?: string;
+  first_air_date?: string;
+  episode_run_time?: number[];
+  number_of_seasons?: number;
+};
+
+export type TmdbDetails = TmdbMovieDetails | TmdbTvDetails;
+
 export type TmdbCastMember = {
   id: number;
   name: string;

@@ -1,5 +1,11 @@
 import { tmdbFetch } from "./tmdbClient";
-import type { TmdbSearchItem, TmdbCreditsResponse  } from "./tmdbTypes";
+import type {
+  TmdbCreditsResponse,
+  TmdbMovieDetails,
+  TmdbSearchItem,
+  TmdbTvDetails,
+} from "./tmdbTypes";
+export { posterUrl } from "./tmdbImages";
 
 type SearchResponse = {
   page: number;
@@ -18,17 +24,11 @@ export async function searchMulti(query: string, page = 1) {
 }
 
 export async function getMovieDetails(id: number) {
-  return tmdbFetch<any>(`/movie/${id}`, { language: "es-AR" });
+  return tmdbFetch<TmdbMovieDetails>(`/movie/${id}`, { language: "es-AR" });
 }
 
 export async function getTvDetails(id: number) {
-  return tmdbFetch<any>(`/tv/${id}`, { language: "es-AR" });
-}
-
-// Para poster rápido (MVP). Luego hacemos config/size.
-export function posterUrl(posterPath?: string | null, size: "w185" | "w342" = "w342") {
-  if (!posterPath) return null;
-  return `https://image.tmdb.org/t/p/${size}${posterPath}`;
+  return tmdbFetch<TmdbTvDetails>(`/tv/${id}`, { language: "es-AR" });
 }
 
 export async function getMovieCredits(id: number) {
@@ -43,6 +43,7 @@ export function profileUrl(profilePath?: string | null, size: "w185" | "w342" = 
   if (!profilePath) return null;
   return `https://image.tmdb.org/t/p/${size}${profilePath}`;
 }
+
 import type { TmdbWatchProvidersResponse } from "./tmdbTypes";
 
 export async function getWatchProviders(type: "movie" | "tv", id: number) {
@@ -53,3 +54,4 @@ export function providerLogoUrl(logoPath?: string | null, size: "w92" | "w154" =
   if (!logoPath) return null;
   return `https://image.tmdb.org/t/p/${size}${logoPath}`;
 }
+
