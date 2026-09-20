@@ -14,9 +14,9 @@
 
 ## 3. Migración de Buscar
 
-- [ ] 3.1 Reemplazar el estado y render de `TmdbSearchItem` por resultados normalizados, eliminando de la pantalla el conocimiento de `media_type`, `poster_path`, `release_date`, `first_air_date` y `title/name`; verificar que textos, tarjetas, claves y navegación `/tmdb/[type]/[id]` no cambian.
-- [ ] 3.2 Verificar el runtime de Buscar para query vacía, debounce, credencial inicializando/no configurada/con error/configurada, retry, loading, errores y rechazo de respuestas obsoletas por consulta o generación.
-- [ ] 3.3 Someter el diff y la evidencia runtime de la Sección 3 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
+- [x] 3.1 Reemplazar el estado y render de `TmdbSearchItem` por resultados normalizados, eliminando de la pantalla el conocimiento de `media_type`, `poster_path`, `release_date`, `first_air_date` y `title/name`; verificar que textos, tarjetas, claves y navegación `/tmdb/[type]/[id]` no cambian.
+- [x] 3.2 Verificar el runtime de Buscar para query vacía, debounce, credencial inicializando/no configurada/con error/configurada, retry, loading, errores y rechazo de respuestas obsoletas por consulta o generación.
+- [x] 3.3 Someter el diff y la evidencia runtime de la Sección 3 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
 
 ## 4. Materialización y guardado reutilizables
 

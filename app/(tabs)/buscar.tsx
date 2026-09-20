@@ -2,9 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ActivityIndicator, Alert, FlatList, Pressable, Text, TextInput, View, Image, Linking, Platform, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { posterUrl, searchMulti } from "../../src/providers/tmdb/tmdbApi";
-import type { TmdbSearchItem } from "../../src/providers/tmdb/tmdbTypes";
-import { titleTypeLabel } from "../../src/core/presentationLabels";
+import type { ProviderSearchResult } from "../../src/providers/providerContracts";
+import { tmdbSearchCapability } from "../../src/providers/tmdb/tmdbAdapter";
 import {
   VIEW_PREFERENCE_DEFAULTS,
   type SearchViewMode,
@@ -42,7 +41,7 @@ export default function ExploreScreen() {
   const { width: windowWidth } = useWindowDimensions();
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
-  const [items, setItems] = useState<TmdbSearchItem[]>([]);
+  const [items, setItems] = useState<readonly ProviderSearchResult[]>([]);
   const [itemsIdentity, setItemsIdentity] = useState<{ query: string; generation: number } | null>(null);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState<TmdbRemoteErrorPresentation | null>(null);
@@ -217,10 +216,9 @@ export default function ExploreScreen() {
       setLoading(true);
       setSearchError(null);
       try {
-        const res = await searchMulti(currentQuery, 1);
-        const filtered = res.results.filter((r) => r.media_type === "movie" || r.media_type === "tv");
+        const results = await tmdbSearchCapability.search(currentQuery);
         if (isCurrent()) {
-          setItems(filtered);
+          setItems(results);
           setItemsIdentity({ query: identity.resource, generation: identity.generation });
         }
       } catch (e) {
@@ -358,7 +356,7 @@ export default function ExploreScreen() {
         columnWrapperStyle={listColumns > 1 ? { gap: gridGap } : undefined}
         data={visibleItems}
         key={listLayoutKey}
-        keyExtractor={(x) => `${x.media_type}-${x.id}`}
+        keyExtractor={(item) => `${item.reference.provider}/${item.reference.resourceNamespace}/${item.reference.externalId}`}
         numColumns={listColumns}
         contentContainerStyle={{
           flexGrow: visibleItems.length === 0 ? 1 : undefined,
@@ -366,37 +364,28 @@ export default function ExploreScreen() {
           paddingBottom: 24,
         }}
         renderItem={({ item }) => {
-          const title =
-            item.media_type === "movie"
-              ? item.title ?? "Sin título"
-              : item.name ?? "Sin nombre";
-
-          const year =
-            item.media_type === "movie"
-              ? item.release_date?.slice(0, 4)
-              : item.first_air_date?.slice(0, 4);
-
-          const img = item.poster_path ? posterUrl(item.poster_path, "w185") : null;
+          const type = item.reference.resourceNamespace as "movie" | "tv";
+          const route = `/${item.reference.provider}/${item.reference.resourceNamespace}/${item.reference.externalId}` as const;
 
           if (viewMode === "grid") {
             return (
               <TitleGridCard
-                accessibilityLabel={`Abrir ${titleTypeLabel(item.media_type)} ${title}`}
-                onPress={() => router.push(`/tmdb/${item.media_type}/${item.id}`)}
-                posterUrl={img}
+                accessibilityLabel={`Abrir ${item.kindLabel} ${item.displayTitle}`}
+                onPress={() => router.push(route)}
+                posterUrl={item.posterUrl}
                 style={{ width: gridCardWidth }}
-                title={title}
-                type={item.media_type}
+                title={item.displayTitle}
+                type={type}
               />
             );
           }
 
           return (
             <Pressable
-              accessibilityLabel={`Abrir ${titleTypeLabel(item.media_type)} ${title}`}
+              accessibilityLabel={`Abrir ${item.kindLabel} ${item.displayTitle}`}
               accessibilityRole="button"
               focusable
-              onPress={() => router.push(`/tmdb/${item.media_type}/${item.id}`)}
+              onPress={() => router.push(route)}
               style={{
                 flexDirection: "row",
                 gap: 12,
@@ -408,9 +397,9 @@ export default function ExploreScreen() {
                 alignItems: "flex-start",
               }}
             >
-              {img ? (
+              {item.posterUrl ? (
                 <Image
-                  source={{ uri: img }}
+                  source={{ uri: item.posterUrl }}
                   style={{ width: 80, height: 120, borderRadius: 10 }}
                   resizeMode="cover"
                 />
@@ -433,13 +422,13 @@ export default function ExploreScreen() {
 
               <View style={{ flex: 1, gap: 4 }}>
                 <Text style={{ fontSize: 16, fontWeight: "800", color: theme.global.textPrimary }}>
-                  {title} {year ? `(${year})` : ""}
+                  {item.displayTitle} {item.releaseLabel ? `(${item.releaseLabel})` : ""}
                 </Text>
                 <Text style={{ color: theme.global.textMuted, fontWeight: "700" }}>
-                  {titleTypeLabel(item.media_type)}
+                  {item.kindLabel}
                 </Text>
                 <Text style={{ color: theme.global.textSecondary }} numberOfLines={4}>
-                  {item.overview || "Sin descripción."}
+                  {item.description || "Sin descripción."}
                 </Text>
               </View>
             </Pressable>
