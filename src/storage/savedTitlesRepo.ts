@@ -3,11 +3,13 @@ import type {
   SavedTitleWithProviderReferences,
 } from "../core/savedTitle";
 import type { ProviderReference } from "../core/providerReference";
+import type { ProviderMaterializationInput } from "../providers/providerContracts";
+import { materializeProviderSavedTitle } from "../core/providerSavedTitle";
 import { parsePersonalRating, type PersonalRating } from "../core/personalRating";
 import { nextSavedTitleUpdatedAt } from "../core/savedTitleTimestamp";
 import {
   createTmdbProviderReference,
-  materializeTmdbSavedTitle,
+  createTmdbSavedTitleMaterializationInput,
   type LegacyTmdbSavedTitleSnapshot,
 } from "../core/tmdbSavedTitle";
 import type { NormalizedBackupSavedTitle } from "../core/libraryBackupV1";
@@ -156,42 +158,66 @@ export async function setPersonalRating(
   });
 }
 
-export async function saveTmdbTitleWithDb(
+/** Composes lookup, materialization and persistence inside the caller's transaction. */
+export async function saveProviderTitleWithDb(
   db: SavedTitlesMutationDatabase,
-  snapshot: LegacyTmdbSavedTitleSnapshot,
+  input: ProviderMaterializationInput,
   generateId: () => string,
   now = Date.now()
 ): Promise<string> {
-  const reference = createTmdbProviderReference(snapshot.type, snapshot.externalId);
-  const existing = await getSavedTitleByProviderReferenceWithDb(db, reference);
-  const { externalId: _externalId, ...localSnapshot } = snapshot;
-  const item = materializeTmdbSavedTitle(
-    reference,
-    localSnapshot,
+  const existing = await getSavedTitleByProviderReferenceWithDb(db, input.reference);
+  const item = materializeProviderSavedTitle(
+    input,
     existing,
     generateId,
     now
   );
   await upsertSavedTitleAndCleanPinsWithDb(db, item);
   if (!existing) {
-    await attachProviderReferenceWithDb(db, reference, item.id);
+    await attachProviderReferenceWithDb(db, input.reference, item.id);
   }
   return item.id;
 }
 
-export async function saveTmdbTitle(
-  snapshot: LegacyTmdbSavedTitleSnapshot,
+export async function saveProviderTitle(
+  input: ProviderMaterializationInput,
   generateId: () => string
 ): Promise<string> {
   const db = await initDb();
   return runSerializedStorageMutation(async () => {
     let savedTitleId: string | null = null;
     await db.withTransactionAsync(async () => {
-      savedTitleId = await saveTmdbTitleWithDb(db, snapshot, generateId);
+      savedTitleId = await saveProviderTitleWithDb(db, input, generateId);
     });
-    if (!savedTitleId) throw new Error("No se pudo completar el guardado del título TMDB.");
+    if (!savedTitleId) throw new Error("No se pudo completar el guardado del título.");
     return savedTitleId;
   });
+}
+
+function legacyTmdbMaterializationInput(
+  snapshot: LegacyTmdbSavedTitleSnapshot
+): ProviderMaterializationInput {
+  return createTmdbSavedTitleMaterializationInput(
+    createTmdbProviderReference(snapshot.type, snapshot.externalId),
+    snapshot
+  );
+}
+
+/** Compatibility adapter for the remote TMDB consumer pending its migration. */
+export async function saveTmdbTitleWithDb(
+  db: SavedTitlesMutationDatabase,
+  snapshot: LegacyTmdbSavedTitleSnapshot,
+  generateId: () => string,
+  now = Date.now()
+): Promise<string> {
+  return saveProviderTitleWithDb(db, legacyTmdbMaterializationInput(snapshot), generateId, now);
+}
+
+export async function saveTmdbTitle(
+  snapshot: LegacyTmdbSavedTitleSnapshot,
+  generateId: () => string
+): Promise<string> {
+  return saveProviderTitle(legacyTmdbMaterializationInput(snapshot), generateId);
 }
 
 export async function getSavedTitleByIdWithDb(

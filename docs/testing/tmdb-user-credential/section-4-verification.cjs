@@ -197,7 +197,8 @@ function testScreenIntegrationByInspection() {
   assert.match(search, /setSearchRetry\(\(value\) => value \+ 1\)/);
   assert.match(detail, /Promise\.all\(\[/, "atomic detail load remains Promise.all");
   assert.match(detail, /if \(!hasCurrentData \|\| !data \|\| !type \|\| !id\) return;/, "save remains blocked without current complete remote metadata");
-  assert.equal((detail.match(/saveTmdbTitle\(/g) || []).length, 1, "existing save/update path remains singular");
+  assert.equal((detail.match(/saveProviderTitle\(/g) || []).length, 1, "normalized save/update path remains singular");
+  assert.doesNotMatch(detail, /saveTmdbTitle/);
 }
 
 function testScopeAndSecurityByInspection() {

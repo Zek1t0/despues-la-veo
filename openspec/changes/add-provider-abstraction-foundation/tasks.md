@@ -28,18 +28,18 @@ Las tareas completadas de Secciones 1–3 conservan su estado. Este parche acota
 
 ## 4. Materialización y guardado reutilizables
 
-- [ ] 4.1 Tras la aprobación de C.3, extraer la preservación de estado local a un materializador que recibe `ProviderMaterializationInput` sin comprobar `provider === "tmdb"`; verificar creación con ID opaco, `snapshot.genres` en `SavedTitle.genres` e `initialTags` en `SavedTitle.tags`, y refresh que actualiza géneros pero preserva ID, `createdAt`, status, tags, notas, puntuación personal, referencias existentes y semántica de `updatedAt`, ignorando `initialTags` para tags existentes.
-- [ ] 4.2 Incorporar en el repositorio un camino transaccional de guardado por `ProviderReference`, snapshot normalizado e `initialTags` explícitos, manteniendo lookup, upsert y attach actuales; verificar que guardar la misma referencia no duplica el MediaItem.
-- [ ] 4.3 Mantener o reducir `saveTmdbTitle` a un wrapper fino solamente si ayuda a una migración incremental, y verificar que el camino reusable final no acepta DTOs crudos, IDs sueltos ni interpreta géneros.
-- [ ] 4.4 Verificar que el primer guardado TMDB conserva géneros del snapshot y tags iniciales derivados por su política, que refresh actualiza `SavedTitle.genres` y preserva tags personalizados aunque difieran de `initialTags`, que la capa genérica no equipara géneros con tags, que `tmdb/movie/N` y `tmdb/tv/N` siguen independientes y que se conserva la protección contra referencias ya asignadas.
+- [x] 4.1 Tras la aprobación de C.3, extraer la preservación de estado local a un materializador que recibe `ProviderMaterializationInput` sin comprobar `provider === "tmdb"`; verificar creación con ID opaco, `snapshot.genres` en `SavedTitle.genres` e `initialTags` en `SavedTitle.tags`, y refresh que actualiza géneros pero preserva ID, `createdAt`, status, tags, notas, puntuación personal, referencias existentes y semántica de `updatedAt`, ignorando `initialTags` para tags existentes.
+- [x] 4.2 Incorporar en el repositorio un camino transaccional de guardado por `ProviderReference`, snapshot normalizado e `initialTags` explícitos, manteniendo lookup, upsert y attach actuales; verificar que guardar la misma referencia no duplica el MediaItem.
+- [x] 4.3 Mantener o reducir `saveTmdbTitle` a un wrapper fino solamente si ayuda a una migración incremental, y verificar que el camino reusable final no acepta DTOs crudos, IDs sueltos ni interpreta géneros.
+- [x] 4.4 Verificar que el primer guardado TMDB conserva géneros del snapshot y tags iniciales derivados por su política, que refresh actualiza `SavedTitle.genres` y preserva tags personalizados aunque difieran de `initialTags`, que la capa genérica no equipara géneros con tags, que `tmdb/movie/N` y `tmdb/tv/N` siguen independientes y que se conserva la protección contra referencias ya asignadas.
 - [ ] 4.5 Someter el diff completo de la Sección 4 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
 
 ## 5. Migración del detalle remoto TMDB
 
-- [ ] 5.1 Mantener una sola llamada a `getMovieDetails` o `getTvDetails` y pasar esa misma respuesta tanto a la presentación TMDB como al mapper portable usado al guardar/refrescar; verificar mediante dobles o conteo focalizado que el request de detalle no se duplica.
-- [ ] 5.2 Remover de la ruta el mapeo duplicado de año, géneros, overview y `vote_average`, construir por separado el input de materialización y verificar save, re-save y lookup por la referencia completa.
-- [ ] 5.3 Mantener en la ruta TMDB runtime, temporadas, director, reparto, perfiles, watch providers, fallback AR→US, logos y enlaces; verificar que su presentación e imágenes continúan iguales.
-- [ ] 5.4 Preservar la coordinación conjunta actual de details, credits y watch providers y comprobar que una falla de cualquiera mantiene el flujo integral de error, sin introducir render parcial.
+- [x] 5.1 Mantener una sola llamada a `getMovieDetails` o `getTvDetails` y pasar esa misma respuesta tanto a la presentación TMDB como al mapper portable usado al guardar/refrescar; verificar mediante dobles o conteo focalizado que el request de detalle no se duplica.
+- [x] 5.2 Remover de la ruta el mapeo duplicado de año, géneros, overview y `vote_average`, construir por separado el input de materialización y verificar save, re-save y lookup por la referencia completa.
+- [x] 5.3 Mantener en la ruta TMDB runtime, temporadas, director, reparto, perfiles, watch providers, fallback AR→US, logos y enlaces; verificar que su presentación e imágenes continúan iguales.
+- [x] 5.4 Preservar la coordinación conjunta actual de details, credits y watch providers y comprobar que una falla de cualquiera mantiene el flujo integral de error, sin introducir render parcial.
 - [ ] 5.5 Someter el diff y la evidencia runtime de la Sección 5 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
 
 ## 6. Evaluación opcional de helpers async

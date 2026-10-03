@@ -49,7 +49,7 @@ assert.match(saved, /next < PERSONAL_RATING_MIN \|\| next > PERSONAL_RATING_MAX/
 for (const needle of [
   "useTmdbCredential", "sameTmdbRemoteRequest", "isTmdbDetailLoadingVisible",
   "getMovieDetails", "getTvDetails", "getWatchProviders", "getByProviderReference",
-  "saveTmdbTitle", "router.push", "providerLogoUrl",
+  "saveProviderTitle", "router.push", "providerLogoUrl",
 ]) assert.ok(remote.includes(needle), `TMDB Detail contract missing ${needle}`);
 assert.match(remote, /theme\.global\.surfaceSecondary/);
 assert.match(remote, /theme\.semantic\.disabledSurface/);
