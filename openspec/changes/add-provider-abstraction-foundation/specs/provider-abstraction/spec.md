@@ -39,7 +39,15 @@ El sistema SHALL mantener Buscar respaldado únicamente por TMDB y SHALL preserv
 - **THEN** Buscar conserva el mensaje y las acciones actuales sin ejecutar la consulta remota
 
 ### Requirement: Metadata portable de detalle normalizada
-El sistema SHALL convertir un detalle compatible de un proveedor en metadata normalizada compuesta por su `ProviderReference`, el `TitleType` local compatible, título, año, URL absoluta de póster, resumen y el campo snapshot `voteAverage`, sin afirmar que esos campos definen una taxonomía o una ontología universal de puntuaciones.
+El sistema SHALL convertir un detalle compatible de un proveedor en `ProviderMediaDetails` compuesto por su `ProviderReference` y un `ProviderLocalSnapshot` compatible con el modelo `SavedTitle` actual: `TitleType`, título, año, URL absoluta de póster, resumen, `genres` como array readonly de strings normalizados y el campo snapshot `voteAverage`. El sistema SHALL NOT afirmar que estos campos definen una taxonomía universal, IDs de género, procedencia, reglas de normalización entre proveedores ni una ontología universal de puntuaciones. `ProviderMediaDetails` SHALL NOT contener `initialTags`. Un recurso que no pueda mapearse honestamente al modelo local actual SHALL quedar fuera de la frontera de guardado y materialización.
+
+#### Scenario: Géneros normalizados desde un detalle TMDB
+- **WHEN** se normaliza un detalle TMDB ya obtenido con nombres de géneros
+- **THEN** el mapper puro incluye esos nombres en `snapshot.genres`, y la política TMDB puede suministrarlos por separado como `initialTags` desde la misma respuesta sin un segundo request
+
+#### Scenario: Detalle TMDB sin géneros
+- **WHEN** se normaliza un detalle TMDB sin géneros
+- **THEN** `snapshot.genres` contiene un array vacío
 
 #### Scenario: Detalle de película TMDB
 - **WHEN** se normaliza un detalle TMDB de película válido
@@ -77,18 +85,18 @@ El sistema SHALL materializar metadata remota normalizada usando la `ProviderRef
 
 #### Scenario: Creación de un MediaItem
 - **WHEN** se guarda una referencia que todavía no pertenece a un MediaItem
-- **THEN** el sistema crea un MediaItem con un ID local opaco, persiste el snapshot normalizado y adjunta exactamente esa referencia
+- **THEN** el sistema crea un MediaItem con un ID local opaco y los defaults personales vigentes, persiste el snapshot normalizado incluyendo `snapshot.genres` como `SavedTitle.genres`, inicializa `SavedTitle.tags` con los `initialTags` explícitos y adjunta exactamente esa referencia
 
 #### Scenario: Guardado repetido de la misma referencia
-- **WHEN** se vuelve a guardar la misma `ProviderReference`
+- **WHEN** se vuelve a guardar la misma `ProviderReference` completa (provider, resourceNamespace, externalId)
 - **THEN** el sistema actualiza el MediaItem ya asociado y no crea un duplicado
 
 #### Scenario: Refresh preserva estado personal
 - **WHEN** metadata normalizada refresca un MediaItem existente
-- **THEN** el sistema preserva ID local, `createdAt`, status, tags, notas y puntuación personal, actualiza los campos del snapshot remoto y calcula `updatedAt` con la semántica vigente
+- **THEN** el sistema preserva ID local, `createdAt`, status, tags, notas, puntuación personal y todas las ProviderReferences existentes, actualiza los campos del snapshot remoto incluyendo `SavedTitle.genres` desde `snapshot.genres` y calcula `updatedAt` con la semántica vigente
 
 ### Requirement: Inicialización de tags definida por el proveedor
-La materialización SHALL aceptar tags iniciales definidos explícitamente por la política del proveedor para un MediaItem nuevo y SHALL NOT asumir que todo proveedor posee géneros ni que los géneros se convierten universalmente en tags.
+La materialización SHALL aceptar `initialTags` como input explícito de política local de creación, separado de `snapshot.genres`, y SHALL usarlos solamente para inicializar `SavedTitle.tags` de un MediaItem nuevo. Los tags existentes SHALL permanecer bajo propiedad del usuario después de la creación. La materialización SHALL NOT asumir que todo proveedor posee géneros ni que los géneros se convierten universalmente en tags.
 
 #### Scenario: Primer guardado desde TMDB
 - **WHEN** se guarda por primera vez un detalle TMDB con nombres de géneros
@@ -96,7 +104,11 @@ La materialización SHALL aceptar tags iniciales definidos explícitamente por l
 
 #### Scenario: Refresh de un item con tags personalizados
 - **WHEN** se refresca desde TMDB un MediaItem que ya contiene tags
-- **THEN** sus tags existentes permanecen sin cambios aunque hayan cambiado los géneros remotos
+- **THEN** sus tags existentes permanecen sin cambios e ignoran los `initialTags` entrantes, mientras `SavedTitle.genres` se actualiza desde `snapshot.genres`
+
+#### Scenario: Géneros y tags iniciales distintos
+- **WHEN** se crea un MediaItem con `snapshot.genres` e `initialTags` diferentes
+- **THEN** `SavedTitle.genres` conserva la metadata del snapshot y `SavedTitle.tags` recibe exclusivamente los tags iniciales suministrados
 
 ### Requirement: Enriquecimientos TMDB permanecen específicos
 El sistema SHALL mantener fuera del contrato portable los datos TMDB de runtime, runtime de episodios, cantidad de temporadas, reparto, equipo, director, rutas de perfiles, disponibilidad regional, logos y enlaces de plataformas.

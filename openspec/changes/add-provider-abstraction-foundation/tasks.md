@@ -18,12 +18,20 @@
 - [x] 3.2 Verificar el runtime de Buscar para query vacía, debounce, credencial inicializando/no configurada/con error/configurada, retry, loading, errores y rechazo de respuestas obsoletas por consulta o generación.
 - [x] 3.3 Someter el diff y la evidencia runtime de la Sección 3 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
 
+## Corrección de compatibilidad de Secciones 1/2 — requisito previo a Sección 4
+
+Las tareas completadas de Secciones 1–3 conservan su estado. Este parche acotado corrige la omisión de metadata ya persistida; no reabre trabajo ajeno ni implementa materialización. Sección 4 sólo puede comenzar después de completar el parche y obtener aprobación externa en C.3.
+
+- [x] C.1 Agregar `genres: readonly string[]` a `ProviderLocalSnapshot` como metadata compatible con el `SavedTitle` actual y actualizar la verificación de type-contract de Sección 1; verificar que `ProviderMediaDetails.snapshot` incluye géneros y que `initialTags` permanece separado y fuera de `ProviderMediaDetails`, sin agregar taxonomía, IDs ni procedencia.
+- [x] C.2 Actualizar el mapper puro de detalle TMDB para mapear nombres de género a `snapshot.genres` y actualizar la verificación de Sección 2 para movie, TV y géneros ausentes; conservar la política separada de `initialTags`, verificar que ambos valores usan el mismo DTO ya obtenido sin request adicional y reejecutar las verificaciones de Secciones 1–3 y `npx tsc --noEmit` sin cambiar enriquecimientos ni consumidores.
+- [ ] C.3 Someter el parche correctivo de C.1–C.2 y su evidencia a revisión externa antes de retomar Sección 4; dejar este checkpoint sin marcar hasta recibir aprobación. Todo commit/push posterior es una acción manual del usuario.
+
 ## 4. Materialización y guardado reutilizables
 
-- [ ] 4.1 Extraer la preservación de estado local a un materializador que recibe `ProviderMaterializationInput` sin comprobar `provider === "tmdb"`; verificar creación con ID opaco y refresh preservando ID, `createdAt`, status, tags, notas, puntuación personal y semántica de `updatedAt`.
+- [ ] 4.1 Tras la aprobación de C.3, extraer la preservación de estado local a un materializador que recibe `ProviderMaterializationInput` sin comprobar `provider === "tmdb"`; verificar creación con ID opaco, `snapshot.genres` en `SavedTitle.genres` e `initialTags` en `SavedTitle.tags`, y refresh que actualiza géneros pero preserva ID, `createdAt`, status, tags, notas, puntuación personal, referencias existentes y semántica de `updatedAt`, ignorando `initialTags` para tags existentes.
 - [ ] 4.2 Incorporar en el repositorio un camino transaccional de guardado por `ProviderReference`, snapshot normalizado e `initialTags` explícitos, manteniendo lookup, upsert y attach actuales; verificar que guardar la misma referencia no duplica el MediaItem.
 - [ ] 4.3 Mantener o reducir `saveTmdbTitle` a un wrapper fino solamente si ayuda a una migración incremental, y verificar que el camino reusable final no acepta DTOs crudos, IDs sueltos ni interpreta géneros.
-- [ ] 4.4 Verificar que el primer guardado TMDB conserva tags derivados de géneros, que refresh preserva tags personalizados, que `tmdb/movie/N` y `tmdb/tv/N` siguen independientes y que se conserva la protección contra referencias ya asignadas.
+- [ ] 4.4 Verificar que el primer guardado TMDB conserva géneros del snapshot y tags iniciales derivados por su política, que refresh actualiza `SavedTitle.genres` y preserva tags personalizados aunque difieran de `initialTags`, que la capa genérica no equipara géneros con tags, que `tmdb/movie/N` y `tmdb/tv/N` siguen independientes y que se conserva la protección contra referencias ya asignadas.
 - [ ] 4.5 Someter el diff completo de la Sección 4 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
 
 ## 5. Migración del detalle remoto TMDB

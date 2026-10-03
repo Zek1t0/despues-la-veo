@@ -115,6 +115,7 @@ function detailMapping() {
       year: 2023,
       posterUrl: "https://image.tmdb.org/t/p/w342/detail.jpg",
       overview: "Resumen portable",
+      genres: ["Drama", "Acción"],
       voteAverage: 8.4,
     },
   });
@@ -126,6 +127,7 @@ function detailMapping() {
       year: null,
       posterUrl: null,
       overview: null,
+      genres: ["Comedia"],
       voteAverage: 7.2,
     },
   });
@@ -135,6 +137,7 @@ function detailMapping() {
     year: null,
     posterUrl: null,
     overview: null,
+    genres: [],
     voteAverage: null,
   });
   assert.deepEqual(movieInput, movieBefore);
@@ -157,6 +160,50 @@ function detailMapping() {
   });
   assert.equal(Object.hasOwn(movie, "initialTags"), false);
   assert.throws(() => mapTmdbTvDetails({ id: -1, name: "Inválida" }), /TMDB/);
+
+  const tvTags = tmdbInitialTags(tvInput);
+  const tvMaterialization = createTmdbMaterializationInput(tv, tvTags);
+  assert.deepEqual(tvTags, ["Comedia"]);
+  assert.strictEqual(tvMaterialization.snapshot, tv.snapshot);
+  assert.strictEqual(materialization.snapshot, movie.snapshot);
+  assert.notStrictEqual(initialTags, movie.snapshot.genres);
+  assert.notStrictEqual(tvTags, tv.snapshot.genres);
+  const customPolicy = createTmdbMaterializationInput(movie, ["Ver con amigos"]);
+  assert.deepEqual(customPolicy.snapshot.genres, ["Drama", "Acción"]);
+  assert.deepEqual(customPolicy.initialTags, ["Ver con amigos"]);
+  assert.notDeepEqual(customPolicy.snapshot.genres, customPolicy.initialTags);
+
+  for (const map of [mapTmdbMovieDetails, mapTmdbTvDetails]) {
+    for (const genres of [undefined, []]) {
+      const dto = { id: 404, genres };
+      assert.deepEqual(map(dto).snapshot.genres, []);
+      assert.deepEqual(tmdbInitialTags(dto), []);
+    }
+    const dto = { id: 405, genres: [{ name: "" }, { name: "  Drama  " }, { name: "Drama" }] };
+    assert.deepEqual(map(dto).snapshot.genres, ["  Drama  ", "Drama"]);
+    assert.deepEqual(tmdbInitialTags(dto), ["  Drama  ", "Drama"]);
+  }
+  assert.deepEqual(movieInput, movieBefore);
+  assert.deepEqual(tvInput, tvBefore);
+}
+
+function pureDetailMappingDoesNotRequest() {
+  const previousFetch = global.fetch;
+  global.fetch = () => { throw new Error("Unexpected request inside pure mapper"); };
+  try {
+    for (const map of [mapTmdbMovieDetails, mapTmdbTvDetails]) {
+      const dto = { id: 606, genres: [{ id: 1, name: "Drama" }] };
+      const details = map(dto);
+      const input = createTmdbMaterializationInput(details, tmdbInitialTags(dto));
+      assert.deepEqual(input.snapshot.genres, ["Drama"]);
+      assert.deepEqual(input.initialTags, ["Drama"]);
+    }
+    const source = fs.readFileSync(path.join(__dirname, "../../../src/providers/tmdb/tmdbMappers.ts"), "utf8");
+    assert.doesNotMatch(source, /tmdbApi|tmdbClient|tmdbTransport|fetch\s*\(|getMovieDetails|getTvDetails/);
+    assert.equal((source.match(/genres\.map/g) || []).length, 1, "one genre DTO interpretation");
+  } finally {
+    global.fetch = previousFetch;
+  }
 }
 
 async function searchCapability() {
@@ -210,6 +257,7 @@ function unchangedApiEndpoints() {
 async function main() {
   searchMapping();
   detailMapping();
+  pureDetailMappingDoesNotRequest();
   await searchCapability();
   unchangedApiEndpoints();
   console.log("Section 2 TMDB mapping verification passed.");

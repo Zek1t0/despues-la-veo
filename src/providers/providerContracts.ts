@@ -18,6 +18,8 @@ export type ProviderLocalSnapshot = Readonly<{
   year: number | null;
   posterUrl: string | null;
   overview: string | null;
+  /** Existing persisted snapshot metadata, separate from initial-tag policy. */
+  genres: readonly string[];
   /** Existing local snapshot field; not a cross-provider rating ontology. */
   voteAverage: number | null;
 }>;

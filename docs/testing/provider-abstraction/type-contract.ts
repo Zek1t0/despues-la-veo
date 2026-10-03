@@ -20,8 +20,12 @@ type SearchResultKeys = Assert<Equal<
 >>;
 type SnapshotKeys = Assert<Equal<
   keyof ProviderLocalSnapshot,
-  "type" | "title" | "year" | "posterUrl" | "overview" | "voteAverage"
+  "type" | "title" | "year" | "posterUrl" | "overview" | "genres" | "voteAverage"
 >>;
+type SnapshotGenres = Assert<Equal<ProviderLocalSnapshot["genres"], readonly string[]>>;
+type DetailsSnapshotGenres = Assert<Equal<ProviderMediaDetails["snapshot"]["genres"], readonly string[]>>;
+type SnapshotExcludesInitialTags = Assert<Equal<HasKey<ProviderLocalSnapshot, "initialTags">, false>>;
+type SearchCapabilityKeys = Assert<Equal<keyof ProviderSearchCapability, "search">>;
 type DetailKeys = Assert<Equal<keyof ProviderMediaDetails, "reference" | "snapshot">>;
 type MaterializationKeys = Assert<Equal<
   keyof ProviderMaterializationInput,
@@ -59,6 +63,7 @@ const snapshot: ProviderLocalSnapshot = {
   year: 2026,
   posterUrl: "https://example.test/poster.jpg",
   overview: "Resumen",
+  genres: ["Drama"],
   voteAverage: 8.1,
 };
 
@@ -68,6 +73,18 @@ const materialization: ProviderMaterializationInput = {
   snapshot,
   initialTags: ["Política explícita del proveedor"],
 };
+
+// The two arrays intentionally contain different values: equality is not a contract.
+if (false) {
+  // @ts-expect-error Snapshot genres cannot be mutated through the shared contract.
+  snapshot.genres.push("Comedia");
+  // @ts-expect-error Snapshot genre property is readonly.
+  snapshot.genres = [];
+  // @ts-expect-error Details do not expose creation policy.
+  details.initialTags;
+  // @ts-expect-error Initial tags are readonly policy input.
+  materialization.initialTags.push("Otro tag");
+}
 
 const search: ProviderSearchCapability = {
   async search(query) {
@@ -100,6 +117,10 @@ void rawTmdbSearchResult;
 type ContractAssertions =
   | SearchResultKeys
   | SnapshotKeys
+  | SnapshotGenres
+  | DetailsSnapshotGenres
+  | SnapshotExcludesInitialTags
+  | SearchCapabilityKeys
   | DetailKeys
   | MaterializationKeys
   | DetailsExcludeInitialTags

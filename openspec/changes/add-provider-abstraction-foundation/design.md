@@ -90,6 +90,7 @@ type ProviderLocalSnapshot = Readonly<{
   year: number | null;
   posterUrl: string | null;
   overview: string | null;
+  genres: readonly string[];
   voteAverage: number | null;
 }>; 
 ```
@@ -100,7 +101,9 @@ No existirá `getPortableDetails()` provider-neutral en este cambio. `ProviderMe
 
 `voteAverage` se mantiene como el campo histórico del snapshot local. El contrato no agrega procedencia, escala ni equivalencia entre proveedores.
 
-Los nombres de género no forman parte de `ProviderMediaDetails`. Son input de una política local de creación provista explícitamente por TMDB:
+`ProviderLocalSnapshot` incluye `genres: readonly string[]` porque el modelo local actual ya persiste `SavedTitle.genres` y su refresh reemplaza esos valores con metadata entrante. Son strings normalizados destinados al snapshot local, sin IDs, procedencia, ontología universal, taxonomía de proveedores ni reglas de normalización entre proveedores. Un proveedor futuro que no pueda mapear honestamente un recurso al modelo local actual queda fuera de esta frontera hasta una futura ampliación del dominio.
+
+`ProviderMediaDetails.snapshot` contiene estos géneros, pero `ProviderMediaDetails` no contiene `initialTags`. Los tags iniciales son input separado de una política local de creación:
 
 ```ts
 type ProviderMaterializationInput = Readonly<{
@@ -110,7 +113,7 @@ type ProviderMaterializationInput = Readonly<{
 }>;
 ```
 
-No se creará un framework de políticas. El mapper o caller TMDB puede derivar el array de nombres de género antes de construir este input local.
+No se creará un framework de políticas ni se establecerá `genres === tags` como regla genérica. El mapper puro TMDB normalizará los nombres de género en `snapshot.genres`; por separado, la política TMDB puede suministrar esos mismos nombres como `initialTags`. Ambos valores proceden del mismo DTO de detalle ya obtenido, sin un segundo request HTTP. El materializador sólo recibe metadata normalizada y tags iniciales explícitos, sin interpretar DTOs ni géneros TMDB.
 
 Runtime, temporadas, créditos, director y watch providers permanecen en tipos y funciones TMDB consumidos por `/tmdb/[type]/[id]`. Para preservar el comportamiento actual, la ruta seguirá esperando conjuntamente detalle, créditos y watch providers antes de publicar éxito, reutilizando el único detalle ya obtenido para el mapper portable.
 
@@ -124,7 +127,7 @@ La función de materialización recibirá:
 - MediaItem existente o nulo;
 - generador de ID y reloj.
 
-No comprobará `provider === "tmdb"`. Al crear, generará el ID local y aplicará los tags iniciales suministrados. Al refrescar, preservará ID, `createdAt`, status, tags, notas y puntuación personal, y usará la lógica vigente de `updatedAt`.
+No comprobará `provider === "tmdb"`. Al crear, generará el ID local con el mecanismo vigente, copiará `snapshot.genres` a `SavedTitle.genres`, aplicará `initialTags` a `SavedTitle.tags` y conservará los defaults personales actuales. Al refrescar el item resuelto por la misma referencia completa (provider, resourceNamespace, externalId), actualizará los campos remotos, incluido `SavedTitle.genres` desde `snapshot.genres`, y preservará ID, `createdAt`, status, tags, notas, puntuación personal y todas las ProviderReferences existentes. Ignorará `initialTags` para los tags de un item existente y usará exactamente la lógica vigente de `updatedAt`.
 
 La validación de coincidencia entre namespace TMDB, ID canónico y tipo local ocurrirá en el adaptador antes de cruzar el límite. La capa genérica se limitará a validar invariantes locales y la presencia de una referencia canónica genérica.
 
@@ -197,6 +200,7 @@ No se espera modificar `databaseSchema.ts`, contratos de backup, credenciales, a
 1. Agregar tipos compartidos sin cambiar consumidores.
 2. Introducir y verificar mappers puros TMDB.
 3. Migrar Buscar al resultado normalizado manteniendo TMDB explícito.
+   Antes de la etapa 4, corregir de forma acotada los contratos y mappers ya completados: incorporar `genres` al snapshot, actualizar la verificación de tipos, mapear los nombres TMDB a `snapshot.genres` y actualizar su verificación, conservando `initialTags` separado. Someter ese parche correctivo a revisión externa y recibir aprobación antes de iniciar la materialización.
 4. Extraer materialización local y agregar el save path por referencia/snapshot.
 5. Migrar el guardado del detalle TMDB al nuevo límite manteniendo enriquecimientos y coordinación actuales.
 6. Extraer helpers async solamente si la implementación demuestra una separación limpia.

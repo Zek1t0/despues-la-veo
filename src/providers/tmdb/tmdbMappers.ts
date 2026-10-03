@@ -70,15 +70,21 @@ function mapTmdbDetails(
       year: snapshotYear(date),
       posterUrl: posterUrl(details.poster_path),
       overview: normalizedOverview(details.overview),
+      genres: tmdbGenreNames(details),
       voteAverage: typeof details.vote_average === "number" ? details.vote_average : null,
     },
   };
 }
 
-export function tmdbInitialTags(details: TmdbDetails): readonly string[] {
+function tmdbGenreNames(details: TmdbDetails): readonly string[] {
   return Array.isArray(details.genres)
     ? details.genres.map((genre) => String(genre.name)).filter(Boolean)
     : [];
+}
+
+/** TMDB creation policy; snapshot genres do not require matching initial tags. */
+export function tmdbInitialTags(details: TmdbDetails): readonly string[] {
+  return tmdbGenreNames(details);
 }
 
 export function createTmdbMaterializationInput(
