@@ -24,7 +24,7 @@ Las tareas completadas de Secciones 1–3 conservan su estado. Este parche acota
 
 - [x] C.1 Agregar `genres: readonly string[]` a `ProviderLocalSnapshot` como metadata compatible con el `SavedTitle` actual y actualizar la verificación de type-contract de Sección 1; verificar que `ProviderMediaDetails.snapshot` incluye géneros y que `initialTags` permanece separado y fuera de `ProviderMediaDetails`, sin agregar taxonomía, IDs ni procedencia.
 - [x] C.2 Actualizar el mapper puro de detalle TMDB para mapear nombres de género a `snapshot.genres` y actualizar la verificación de Sección 2 para movie, TV y géneros ausentes; conservar la política separada de `initialTags`, verificar que ambos valores usan el mismo DTO ya obtenido sin request adicional y reejecutar las verificaciones de Secciones 1–3 y `npx tsc --noEmit` sin cambiar enriquecimientos ni consumidores.
-- [ ] C.3 Someter el parche correctivo de C.1–C.2 y su evidencia a revisión externa antes de retomar Sección 4; dejar este checkpoint sin marcar hasta recibir aprobación. Todo commit/push posterior es una acción manual del usuario.
+- [x] C.3 Someter el parche correctivo de C.1–C.2 y su evidencia a revisión externa antes de retomar Sección 4; dejar este checkpoint sin marcar hasta recibir aprobación. Todo commit/push posterior es una acción manual del usuario.
 
 ## 4. Materialización y guardado reutilizables
 
@@ -32,7 +32,7 @@ Las tareas completadas de Secciones 1–3 conservan su estado. Este parche acota
 - [x] 4.2 Incorporar en el repositorio un camino transaccional de guardado por `ProviderReference`, snapshot normalizado e `initialTags` explícitos, manteniendo lookup, upsert y attach actuales; verificar que guardar la misma referencia no duplica el MediaItem.
 - [x] 4.3 Mantener o reducir `saveTmdbTitle` a un wrapper fino solamente si ayuda a una migración incremental, y verificar que el camino reusable final no acepta DTOs crudos, IDs sueltos ni interpreta géneros.
 - [x] 4.4 Verificar que el primer guardado TMDB conserva géneros del snapshot y tags iniciales derivados por su política, que refresh actualiza `SavedTitle.genres` y preserva tags personalizados aunque difieran de `initialTags`, que la capa genérica no equipara géneros con tags, que `tmdb/movie/N` y `tmdb/tv/N` siguen independientes y que se conserva la protección contra referencias ya asignadas.
-- [ ] 4.5 Someter el diff completo de la Sección 4 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
+- [x] 4.5 Someter el diff completo de la Sección 4 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
 
 ## 5. Migración del detalle remoto TMDB
 
@@ -40,7 +40,7 @@ Las tareas completadas de Secciones 1–3 conservan su estado. Este parche acota
 - [x] 5.2 Remover de la ruta el mapeo duplicado de año, géneros, overview y `vote_average`, construir por separado el input de materialización y verificar save, re-save y lookup por la referencia completa.
 - [x] 5.3 Mantener en la ruta TMDB runtime, temporadas, director, reparto, perfiles, watch providers, fallback AR→US, logos y enlaces; verificar que su presentación e imágenes continúan iguales.
 - [x] 5.4 Preservar la coordinación conjunta actual de details, credits y watch providers y comprobar que una falla de cualquiera mantiene el flujo integral de error, sin introducir render parcial.
-- [ ] 5.5 Someter el diff y la evidencia runtime de la Sección 5 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
+- [x] 5.5 Someter el diff y la evidencia runtime de la Sección 5 a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; el commit/push de checkpoint es una acción manual del usuario posterior a esa aprobación.
 
 ## 6. Evaluación opcional de helpers async
 
@@ -51,9 +51,10 @@ Las tareas completadas de Secciones 1–3 conservan su estado. Este parche acota
 
 ## 7. Regresión y cierre
 
-- [ ] 7.1 Agregar/ejecutar verificaciones focalizadas de search mapping, detail mapping desde una respuesta ya obtenida y materialización genérica, sin incorporar un framework de tests nuevo.
-- [ ] 7.2 Reejecutar las verificaciones relevantes de identidad universal: SQLite v4, backup v5, imports históricos, referencias movie/TV con mismo ID, detalle local/offline y pins; confirmar que no cambiaron schema ni formato.
-- [ ] 7.3 Reejecutar las verificaciones relevantes de credenciales, personal rating, sorting y preferencias de browsing, y comprobar que la atribución TMDB/JustWatch permanece intacta.
-- [ ] 7.4 Ejecutar `npx tsc --noEmit` y resolver cualquier error sin modificar dependencias ni el `package.json` ajeno al cambio.
-- [ ] 7.5 Revisar manualmente en web Buscar, detalle TMDB, guardar/refrescar, navegación al detalle local, errores y estados de credencial; documentar el resultado y confirmar que no existen descriptor sin consumidor, paginación compartida, capability remota de detalle, registry, segundo proveedor, anime/manga, taxonomía nueva, schema v5 ni backup v6.
-- [ ] 7.6 Someter el diff completo y toda la evidencia de regresión a revisión externa final antes de archivar; dejar este checkpoint sin marcar hasta la aprobación externa y mantener cualquier commit/push como acción manual del usuario.
+- [x] 7.1 Agregar/ejecutar verificaciones focalizadas de search mapping, detail mapping desde una respuesta ya obtenida y materialización genérica, sin incorporar un framework de tests nuevo.
+- [x] 7.2 Reejecutar las verificaciones relevantes de identidad universal: SQLite v4, backup v5, imports históricos, referencias movie/TV con mismo ID, detalle local/offline y pins; confirmar que no cambiaron schema ni formato.
+- [x] 7.3 Reejecutar las verificaciones relevantes de credenciales, personal rating, sorting y preferencias de browsing, y comprobar que la atribución TMDB/JustWatch permanece intacta.
+- [x] 7.4 Ejecutar `npx tsc --noEmit` y resolver cualquier error sin modificar dependencias ni el `package.json` ajeno al cambio.
+  - Evidencia automatizada y revisión estática: `docs/testing/provider-abstraction/section-7-validation.md`. Pasaron 35 scripts CJS existentes, los contratos de tipos incluidos en `npx.cmd tsc --noEmit` y la validación OpenSpec estricta. No se detectó una regresión ni se modificó producción.
+- [x] 7.5 Revisar manualmente en web Buscar, detalle TMDB, guardar/refrescar, navegación al detalle local, errores y estados de credencial; documentar el resultado y confirmar que no existen descriptor sin consumidor, paginación compartida, capability remota de detalle, registry, segundo proveedor, anime/manga, taxonomía nueva, schema v5 ni backup v6.
+- [x] 7.6 Someter el diff completo y toda la evidencia de regresión a revisión externa final antes de archivar; dejar este checkpoint sin marcar hasta la aprobación externa y mantener cualquier commit/push como acción manual del usuario.
