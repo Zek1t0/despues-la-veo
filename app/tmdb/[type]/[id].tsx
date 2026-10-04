@@ -25,10 +25,19 @@ import {
 
 import type {
   TmdbCreditsResponse,
+  TmdbDetails,
+  TmdbMovieDetails,
+  TmdbTvDetails,
   TmdbWatchProvidersCountry,
 } from "../../../src/providers/tmdb/tmdbTypes";
 
-import { getByProviderReference, saveTmdbTitle } from "../../../src/storage/savedTitlesRepo";
+import {
+  createTmdbMaterializationInput,
+  mapTmdbMovieDetails,
+  mapTmdbTvDetails,
+  tmdbInitialTags,
+} from "../../../src/providers/tmdb/tmdbMappers";
+import { getByProviderReference, saveProviderTitle } from "../../../src/storage/savedTitlesRepo";
 import { createTmdbProviderReference } from "../../../src/core/tmdbSavedTitle";
 import { useAppTheme } from "../../../src/theme/AppThemeProvider";
 import { useTmdbCredential } from "../../../src/providers/tmdb/credential/TmdbCredentialProvider";
@@ -120,7 +129,7 @@ export default function TmdbDetailScreen() {
   const { snapshot, retryInitialization } = useTmdbCredential();
   const { type, id } = useLocalSearchParams<{ type: "movie" | "tv"; id: string }>();
 
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<TmdbDetails | null>(null);
   const [credits, setCredits] = useState<TmdbCreditsResponse | null>(null);
   const [watch, setWatch] = useState<TmdbWatchProvidersCountry | null>(null);
 
@@ -226,7 +235,7 @@ export default function TmdbDetailScreen() {
 
   const title = useMemo(() => {
     if (!data) return "";
-    return type === "movie" ? data.title : data.name;
+    return type === "movie" ? (data as TmdbMovieDetails).title : (data as TmdbTvDetails).name;
   }, [data, type]);
 
   const headerTitle = useMemo(() => {
@@ -236,7 +245,7 @@ export default function TmdbDetailScreen() {
 
   const year = useMemo(() => {
     if (!data) return null;
-    const date = type === "movie" ? data.release_date : data.first_air_date;
+    const date = type === "movie" ? (data as TmdbMovieDetails).release_date : (data as TmdbTvDetails).first_air_date;
     return yearFromDate(date);
   }, [data, type]);
 
@@ -248,8 +257,9 @@ export default function TmdbDetailScreen() {
 
   const runtimeText = useMemo(() => {
     if (!data) return null;
-    if (type === "movie") return minutesToH(data.runtime ?? null);
-    const rt = Array.isArray(data.episode_run_time) ? data.episode_run_time[0] : null;
+    if (type === "movie") return minutesToH((data as TmdbMovieDetails).runtime ?? null);
+    const tvData = data as TmdbTvDetails;
+    const rt = Array.isArray(tvData.episode_run_time) ? tvData.episode_run_time[0] : null;
     return minutesToH(rt ?? null);
   }, [data, type]);
 
@@ -288,37 +298,15 @@ export default function TmdbDetailScreen() {
     if (!hasCurrentData || !data || !type || !id) return;
 
     const wasSaved = savedId !== null;
-    const externalId = String(id);
-
-    const date = type === "movie" ? data.release_date : data.first_air_date;
-    const yearNum = date ? Number(String(date).slice(0, 4)) : null;
-
-    const genreNames: string[] = Array.isArray(data?.genres)
-      ? data.genres.map((g: any) => String(g.name)).filter(Boolean)
-      : [];
-
-    const voteAvg: number | null =
-      typeof data?.vote_average === "number" ? data.vote_average : null;
-
-    const overview: string | null =
-      typeof data?.overview === "string" && data.overview.trim().length > 0
-        ? data.overview
-        : null;
 
     try {
       setSaving(true);
 
-      const newSavedId = await saveTmdbTitle({
-        externalId,
-        type,
-        title: title ?? "Sin título",
-        year: yearNum,
-        posterUrl: poster ?? null,
-
-        overview,
-        genres: genreNames,
-        voteAverage: voteAvg,
-      }, uuid);
+      const details = type === "movie"
+        ? mapTmdbMovieDetails(data as TmdbMovieDetails)
+        : mapTmdbTvDetails(data as TmdbTvDetails);
+      const input = createTmdbMaterializationInput(details, tmdbInitialTags(data));
+      const newSavedId = await saveProviderTitle(input, uuid);
       setSavedId(newSavedId);
 
       if (Platform.OS === "web") alert("Guardado ✅");
@@ -467,7 +455,7 @@ export default function TmdbDetailScreen() {
                   <Text style={{ color: theme.global.textSecondary, fontWeight: "700" }}>
                     {type.toUpperCase()}
                     {runtimeText ? ` • ${runtimeText}` : ""}
-                    {type === "tv" && data.number_of_seasons ? ` • ${data.number_of_seasons} temp` : ""}
+                    {type === "tv" && (data as TmdbTvDetails).number_of_seasons ? ` • ${(data as TmdbTvDetails).number_of_seasons} temp` : ""}
                   </Text>
 
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>

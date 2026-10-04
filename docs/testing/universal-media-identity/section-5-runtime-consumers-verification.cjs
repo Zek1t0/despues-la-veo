@@ -79,7 +79,8 @@ async function main() {
     const remoteSource = fs.readFileSync(path.join(__dirname, "../../../app/tmdb/[type]/[id].tsx"), "utf8");
     assert.match(detailSource, /findUnambiguousTmdbReference/); assert.doesNotMatch(detailSource, /item\.provider|item\.externalId/);
     assert.match(remoteSource, /getByProviderReference\([\s\S]*createTmdbProviderReference\(type, externalId\)/);
-    assert.match(remoteSource, /saveTmdbTitle\(/);
+    assert.match(remoteSource, /saveProviderTitle\(input, uuid\)/);
+    assert.doesNotMatch(remoteSource, /saveTmdbTitle|LegacyTmdbSavedTitleSnapshot/);
     console.log("Section 5 runtime consumer integration verification passed.");
   } finally { f.close(); }
 }

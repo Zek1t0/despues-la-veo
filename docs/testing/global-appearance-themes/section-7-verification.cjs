@@ -47,10 +47,10 @@ function testOptionsDisabledParity() {
 }
 
 function testSearchBehaviorAndPreferences() {
-  assert.match(search, /searchMulti\(currentQuery, 1\)/);
+  assert.match(search, /tmdbSearchCapability\.search\(currentQuery\)/);
   assert.match(search, /setTimeout\(\(\) => setDebounced\(q\.trim\(\)\), 350\)/);
   assert.match(search, /sameTmdbRemoteRequest/);
-  assert.match(search, /res\.results\.filter\(\(r\) => r\.media_type === "movie" \|\| r\.media_type === "tv"\)/);
+  assert.doesNotMatch(search, /media_type|searchMulti/);
   assert.match(search, /getViewPreference\("search\.viewMode"\)/);
   assert.match(search, /setViewPreference\("search\.viewMode", next\)/);
   assert.match(preferences, /"search\.viewMode": "detail"/);

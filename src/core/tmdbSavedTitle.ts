@@ -7,7 +7,8 @@ import type {
   SavedTitle,
   TitleType,
 } from "./savedTitle";
-import { nextSavedTitleUpdatedAt } from "./savedTitleTimestamp";
+import { materializeProviderSavedTitle } from "./providerSavedTitle";
+import type { ProviderMaterializationInput } from "../providers/providerContracts";
 
 export type TmdbResourceNamespace = "movie" | "tv";
 export type TmdbProviderReference = ProviderReference & Readonly<{
@@ -25,7 +26,7 @@ export type TmdbSavedTitleSnapshot = {
   voteAverage: number | null;
 };
 
-/** Transitional input retained until repository persistence moves off SQLite v3. */
+/** Compatibility input retained until the remote TMDB save consumer is migrated. */
 export type LegacyTmdbSavedTitleSnapshot = TmdbSavedTitleSnapshot & {
   externalId: string;
 };
@@ -66,41 +67,37 @@ export function materializeTmdbSavedTitle(
   if (!Number.isSafeInteger(now) || now < 0) {
     throw new Error("El reloj no produjo un timestamp válido.");
   }
+  return materializeProviderSavedTitle(
+    createTmdbSavedTitleMaterializationInput(reference, snapshot),
+    existing,
+    generateId,
+    now
+  );
+}
+
+/** Adapts the existing TMDB snapshot and creation policy to normalized local input. */
+export function createTmdbSavedTitleMaterializationInput(
+  reference: TmdbProviderReference,
+  snapshot: TmdbSavedTitleSnapshot
+): ProviderMaterializationInput {
   if (reference.provider !== "tmdb" ||
       reference.resourceNamespace !== snapshot.type ||
       !providerReferenceIsCanonicalTmdb(reference)) {
     throw new Error("La referencia TMDB no coincide con el snapshot.");
   }
 
-  const personalFields = existing
-    ? {
-        id: existing.id,
-        status: existing.status,
-        tags: existing.tags,
-        notes: existing.notes ?? null,
-        personalRating: existing.personalRating,
-        createdAt: existing.createdAt,
-        updatedAt: nextSavedTitleUpdatedAt(existing.updatedAt, now),
-      }
-    : {
-        id: generateId(),
-        status: "planned" as const,
-        tags: [...snapshot.genres],
-        notes: null,
-        personalRating: null,
-        createdAt: now,
-        updatedAt: now,
-      };
-
   return {
-    ...personalFields,
-    type: snapshot.type,
-    title: snapshot.title,
-    year: snapshot.year,
-    posterUrl: snapshot.posterUrl,
-    overview: snapshot.overview,
-    genres: [...snapshot.genres],
-    voteAverage: snapshot.voteAverage,
+    reference,
+    snapshot: {
+      type: snapshot.type,
+      title: snapshot.title,
+      year: snapshot.year,
+      posterUrl: snapshot.posterUrl,
+      overview: snapshot.overview,
+      genres: snapshot.genres,
+      voteAverage: snapshot.voteAverage,
+    },
+    initialTags: snapshot.genres,
   };
 }
 
