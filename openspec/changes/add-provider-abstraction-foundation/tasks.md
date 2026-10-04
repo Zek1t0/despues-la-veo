@@ -44,9 +44,10 @@ Las tareas completadas de Secciones 1–3 conservan su estado. Este parche acota
 
 ## 6. Evaluación opcional de helpers async
 
-- [ ] 6.1 Evaluar con los consumidores ya migrados si secuencia, identidad de recurso y comparación de requests ofrecen reutilización concreta sin depender de credenciales; documentar como resultado válido que no corresponde extraer nada y conservar el helper TMDB cuando esa reutilización no exista.
-- [ ] 6.2 Si la evaluación justifica una extracción, mover solamente secuencia/recurso/comparación y verificar rechazo de respuestas obsoletas; mantener `TmdbCredentialStatus`, generation, elegibilidad y configuración en TMDB, sin introducir networking genérico.
-- [ ] 6.3 Si la Sección 6 produce cambios de código, someter su diff a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; si no produce cambios, registrar la decisión revisada de no extracción. Todo commit/push posterior es manual del usuario.
+- [x] 6.1 Evaluar con los consumidores ya migrados si secuencia, identidad de recurso y comparación de requests ofrecen reutilización concreta sin depender de credenciales; documentar como resultado válido que no corresponde extraer nada y conservar el helper TMDB cuando esa reutilización no exista.
+  - Resultado revisado: **no extraction warranted**. Buscar y el detalle remoto son los dos consumidores, pero ambos son flujos exclusivamente TMDB y necesitan que la identidad compare conjuntamente secuencia, recurso y `snapshot.generation` para invalidar éxitos y fallos tras cambios de credencial. Extraer sólo secuencia/recurso obligaría a recomponer o esconder la generación TMDB en cada caller, sin un consumidor provider-independent actual y con más indirección que el helper cohesivo existente. Se conserva `tmdbRemoteRequestIdentity.ts` sin cambios de producción; las regresiones focalizadas existentes cubren consulta/recurso vigente, secuencia obsoleta, cambio de recurso, cambio de generación, unmount y fallo obsoleto.
+- [x] 6.2 Si la evaluación justifica una extracción, mover solamente secuencia/recurso/comparación y verificar rechazo de respuestas obsoletas; mantener `TmdbCredentialStatus`, generation, elegibilidad y configuración en TMDB, sin introducir networking genérico.
+- [x] 6.3 Si la Sección 6 produce cambios de código, someter su diff a revisión externa y dejar este checkpoint sin marcar hasta recibir aprobación; si no produce cambios, registrar la decisión revisada de no extracción. Todo commit/push posterior es manual del usuario.
 
 ## 7. Regresión y cierre
 
