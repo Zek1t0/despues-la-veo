@@ -97,7 +97,7 @@ async function main() {
     const { createTmdbProviderReference } = require("../../../src/core/tmdbSavedTitle.ts");
 
     const db = await initDb();
-    assert.equal(fixture.sqlite.prepare("PRAGMA user_version").get().user_version, 4);
+    assert.equal(fixture.sqlite.prepare("PRAGMA user_version").get().user_version, 5);
     assert.equal(fixture.sqlite.prepare("SELECT genres_json FROM saved_titles WHERE id='opaque-existing'").get().genres_json, "[]");
 
     const listed = await repo.listSavedTitlesWithDb(db);
@@ -238,7 +238,7 @@ async function main() {
 
     delete require.cache[dbModulePath];
     const reopened = await require(dbModulePath).initDb();
-    assert.equal(fixture.sqlite.prepare("PRAGMA user_version").get().user_version, 4);
+    assert.equal(fixture.sqlite.prepare("PRAGMA user_version").get().user_version, 5);
     assert.equal((await repo.listSavedTitlesWithReferencesWithDb(reopened)).length, 3);
     assert.deepEqual(fixture.sqlite.prepare("PRAGMA foreign_key_check").all(), []);
     console.log("Section 3 v3 migration to v4 runtime integration verification passed.");

@@ -1,4 +1,4 @@
-import { historicalTypeForV4 } from "../core/legacyMediaBoundary";
+import { assertMediaClassification } from "../core/mediaClassification";
 import type { SavedTitle } from "../core/savedTitle";
 import { parsePersonalRating } from "../core/personalRating";
 import {
@@ -13,15 +13,23 @@ export async function upsertSavedTitleAndCleanPinsWithDb(
   item: SavedTitle
 ): Promise<string> {
   const personalRating = parsePersonalRating(item.personalRating);
-  const historicalType = historicalTypeForV4(item);
+  assertMediaClassification(item);
+  if (item.medium !== "audiovisual" && await db.getFirstAsync(
+    "SELECT saved_title_id FROM media_provider_references WHERE saved_title_id = ? AND provider = 'tmdb' LIMIT 1;",
+    [item.id]
+  )) {
+    throw new Error("Una referencia TMDB existente requiere conservar el medio audiovisual.");
+  }
   await db.runAsync(
     `INSERT INTO saved_titles (
-      id, type, title, year, poster_url,
+      id, medium, content_family, primary_format, title, year, poster_url,
       overview, vote_average, personal_rating, genres_json,
       status, tags_json, notes, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
-      type=excluded.type,
+      medium=excluded.medium,
+      content_family=excluded.content_family,
+      primary_format=excluded.primary_format,
       title=excluded.title,
       year=excluded.year,
       poster_url=excluded.poster_url,
@@ -34,7 +42,9 @@ export async function upsertSavedTitleAndCleanPinsWithDb(
       notes=excluded.notes,
       updated_at=excluded.updated_at`,
     item.id,
-    historicalType,
+    item.medium,
+    item.contentFamily,
+    item.primaryFormat,
     item.title,
     item.year ?? null,
     item.posterUrl ?? null,

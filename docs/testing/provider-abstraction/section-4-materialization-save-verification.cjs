@@ -269,7 +269,7 @@ async function repositorySaving() {
     assert.deepEqual(results, ["concurrent-local", "concurrent-local"]);
     assert.equal((await repo.getSavedTitleByProviderReferenceWithDb(db, concurrent.reference)).title, "Latest");
     assert.equal(fixture.maximumTransactions, 1);
-    assert.equal(sqlite.prepare("PRAGMA user_version").get().user_version, 4);
+    assert.equal(sqlite.prepare("PRAGMA user_version").get().user_version, 5);
     assert.deepEqual(sqlite.prepare("PRAGMA foreign_key_check").all(), []);
   } finally {
     Module._load = originalLoad;

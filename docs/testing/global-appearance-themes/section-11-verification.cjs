@@ -77,7 +77,7 @@ function createMergeFixture(label) {
   const sqlite = new DatabaseSync(databasePath);
   sqlite.exec(`
     CREATE TABLE saved_titles (
-      id TEXT NOT NULL PRIMARY KEY, type TEXT NOT NULL, title TEXT NOT NULL, year INTEGER, poster_url TEXT, overview TEXT,
+      id TEXT NOT NULL PRIMARY KEY, medium TEXT NOT NULL, content_family TEXT, primary_format TEXT, title TEXT NOT NULL, year INTEGER, poster_url TEXT, overview TEXT,
       vote_average REAL, personal_rating INTEGER, genres_json TEXT, status TEXT NOT NULL,
       tags_json TEXT NOT NULL, notes TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
     );

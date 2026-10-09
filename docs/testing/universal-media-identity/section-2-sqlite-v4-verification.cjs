@@ -20,7 +20,7 @@ const {
   enableAndVerifyForeignKeys,
   evolveDatabaseSchema,
   readUserVersion,
-  verifyV4Schema,
+  verifyV5Schema,
 } = require("../../../src/storage/databaseSchema.ts");
 
 function createDatabase(label) {
@@ -171,16 +171,16 @@ async function testFreshV4AndReopen() {
   const fixture = createDatabase("fresh");
   try {
     await initialize(fixture, 0);
-    assert.equal(DATABASE_SCHEMA_VERSION, 4);
-    assert.equal(await readUserVersion(fixture.db), 4);
-    await verifyV4Schema(fixture.db);
+    assert.equal(DATABASE_SCHEMA_VERSION, 5);
+    assert.equal(await readUserVersion(fixture.db), 5);
+    await verifyV5Schema(fixture.db);
     const columns = fixture.sqlite.prepare("PRAGMA table_info(saved_titles)").all().map((row) => row.name);
     assert.equal(columns.includes("provider"), false);
     assert.equal(columns.includes("external_id"), false);
 
     fixture.sqlite.prepare(`INSERT INTO saved_titles
-      (id, type, title, personal_rating, status, tags_json, created_at, updated_at)
-      VALUES ('one', 'movie', 'One', 10, 'planned', '[]', 1, 1)`).run();
+      (id, medium, primary_format, title, personal_rating, status, tags_json, created_at, updated_at)
+      VALUES ('one', 'audiovisual', 'movie', 'One', 10, 'planned', '[]', 1, 1)`).run();
     const insertReference = fixture.sqlite.prepare(`INSERT INTO media_provider_references
       (provider, resource_namespace, external_id, saved_title_id) VALUES (?, ?, ?, 'one')`);
     insertReference.run("tmdb", "movie", "123");
@@ -190,14 +190,14 @@ async function testFreshV4AndReopen() {
     assert.throws(() => insertReference.run("tmdb", "movie ", "124"), /constraint/i);
     assert.throws(() => insertReference.run("tmdb", "movie", "   "), /constraint/i);
     assert.throws(() => fixture.sqlite.prepare(`INSERT INTO saved_titles
-      (id, type, title, personal_rating, status, tags_json, created_at, updated_at)
-      VALUES ('bad-rating', 'movie', 'Bad', 87.5, 'planned', '[]', 1, 1)`).run(), /constraint/i);
+      (id, medium, primary_format, title, personal_rating, status, tags_json, created_at, updated_at)
+      VALUES ('bad-rating', 'audiovisual', 'movie', 'Bad', 87.5, 'planned', '[]', 1, 1)`).run(), /constraint/i);
 
     const before = JSON.stringify({
       titles: fixture.sqlite.prepare("SELECT * FROM saved_titles ORDER BY id").all(),
       refs: fixture.sqlite.prepare("SELECT * FROM media_provider_references ORDER BY resource_namespace").all(),
     });
-    await evolveDatabaseSchema(fixture.db, 4);
+    await evolveDatabaseSchema(fixture.db, 5);
     const after = JSON.stringify({
       titles: fixture.sqlite.prepare("SELECT * FROM saved_titles ORDER BY id").all(),
       refs: fixture.sqlite.prepare("SELECT * FROM media_provider_references ORDER BY resource_namespace").all(),
@@ -219,8 +219,8 @@ async function testV3Migration() {
       /constraint/i
     );
     await initialize(fixture, 3);
-    await verifyV4Schema(fixture.db);
-    assert.equal(await readUserVersion(fixture.db), 4);
+    await verifyV5Schema(fixture.db);
+    assert.equal(await readUserVersion(fixture.db), 5);
     assert.deepEqual(
       fixture.sqlite.prepare(`SELECT provider, resource_namespace, external_id, saved_title_id
         FROM media_provider_references ORDER BY resource_namespace`).all().map((row) => ({ ...row })),
@@ -259,8 +259,8 @@ async function testHistoricalVersions() {
         type: "movie", title: `V${version}`,
       }]);
       await initialize(fixture, version);
-      assert.equal(await readUserVersion(fixture.db), 4);
-      await verifyV4Schema(fixture.db);
+      assert.equal(await readUserVersion(fixture.db), 5);
+      await verifyV5Schema(fixture.db);
       assert.equal(fixture.sqlite.prepare("SELECT id FROM saved_titles").get().id, `opaque-v${version}`);
       assert.equal(fixture.sqlite.prepare("SELECT legacy_external_id FROM legacy_saved_title_identities").get().legacy_external_id, `legacy-v${version}`);
     } finally { fixture.close(); }
@@ -320,10 +320,10 @@ async function testInjectedRollback() {
 async function testFutureVersionRejected() {
   const fixture = createDatabase("future");
   try {
-    fixture.sqlite.exec("PRAGMA user_version = 5;");
+    fixture.sqlite.exec("PRAGMA user_version = 6;");
     await enableAndVerifyForeignKeys(fixture.db);
-    await assert.rejects(() => evolveDatabaseSchema(fixture.db, 5), /no soportada/i);
-    assert.equal(await readUserVersion(fixture.db), 5);
+    await assert.rejects(() => evolveDatabaseSchema(fixture.db, 6), /no soportada/i);
+    assert.equal(await readUserVersion(fixture.db), 6);
   } finally { fixture.close(); }
 }
 

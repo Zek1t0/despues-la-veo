@@ -1,6 +1,7 @@
+import { assertMediaClassification } from "../core/mediaClassification";
 import { createTmdbProviderReference } from "../core/tmdbSavedTitle";
 
-export const DATABASE_SCHEMA_VERSION = 4;
+export const DATABASE_SCHEMA_VERSION = 5;
 export const LEGACY_BACKUP_FORMAT = "library-backup-v1-v4";
 
 export const PERSONAL_RATING_COLUMN_SQL = `personal_rating INTEGER NULL CHECK (
@@ -31,6 +32,21 @@ export const SAVED_TITLES_V4_TABLE_SQL = `CREATE TABLE IF NOT EXISTS saved_title
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );`;
+
+export const MEDIA_CLASSIFICATION_CHECK_SQL = `
+  CHECK (medium IN ('audiovisual', 'comic', 'literature')),
+  CHECK (content_family IS NULL OR
+    (medium = 'audiovisual' AND content_family = 'anime') OR
+    (medium = 'comic' AND content_family IN ('manga', 'manhwa', 'manhua'))),
+  CHECK (primary_format IS NULL OR
+    (medium = 'audiovisual' AND primary_format IN ('movie', 'tv', 'ova', 'ona', 'special', 'music')) OR
+    (medium = 'comic' AND primary_format IN ('webtoon', 'one-shot')) OR
+    (medium = 'literature' AND primary_format IN ('novel', 'light-novel')))
+`;
+
+export const SAVED_TITLES_V5_TABLE_SQL = SAVED_TITLES_V4_TABLE_SQL
+  .replace('type TEXT NOT NULL,', 'medium TEXT NOT NULL, content_family TEXT NULL, primary_format TEXT NULL,')
+  .replace('updated_at INTEGER NOT NULL\n', `updated_at INTEGER NOT NULL, ${MEDIA_CLASSIFICATION_CHECK_SQL}\n`);
 
 export const MEDIA_PROVIDER_REFERENCES_TABLE_SQL = `CREATE TABLE IF NOT EXISTS media_provider_references (
   provider TEXT NOT NULL,
@@ -120,6 +136,12 @@ type IndexInfoRow = { name: string };
 type LegacySavedTitleRow = { id: string; provider: string; external_id: string; type: string };
 
 export type DatabaseMigrationHooks = {
+  afterV5TargetTablesCreated?: () => void | Promise<void>;
+  afterV5ItemsCopied?: () => void | Promise<void>;
+  afterV5DependentsCopied?: () => void | Promise<void>;
+  beforeV5Verification?: () => void | Promise<void>;
+  beforeVersion5Published?: () => void | Promise<void>;
+  afterVersion5Published?: () => void | Promise<void>;
   beforeVersion2Published?: () => void | Promise<void>;
   beforeVersion3Published?: () => void | Promise<void>;
   afterV4TargetTablesCreated?: () => void | Promise<void>;
@@ -290,6 +312,50 @@ export async function verifySavedTitlesV4Schema(db: SchemaDatabase): Promise<voi
   if (invalidRating) throw new Error("saved_titles contiene un personal_rating fuera del dominio v4.");
   if (columns.some((column) => column.name === "provider" || column.name === "external_id")) {
     throw new Error("saved_titles v4 conserva identidad externa legacy.");
+  }
+}
+
+export async function verifySavedTitlesV5Schema(db: SchemaDatabase): Promise<void> {
+  const table = await db.getFirstAsync<{ sql: string }>(
+    "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'saved_titles' LIMIT 1;"
+  );
+  const columns = await db.getAllAsync<TableInfoRow>("PRAGMA table_info(saved_titles);");
+  const expected = [
+    { name: "id", type: "TEXT", notnull: 1, pk: 1 },
+    { name: "medium", type: "TEXT", notnull: 1, pk: 0 },
+    { name: "content_family", type: "TEXT", notnull: 0, pk: 0 },
+    { name: "primary_format", type: "TEXT", notnull: 0, pk: 0 },
+    { name: "title", type: "TEXT", notnull: 1, pk: 0 },
+    { name: "year", type: "INTEGER", notnull: 0, pk: 0 },
+    { name: "poster_url", type: "TEXT", notnull: 0, pk: 0 },
+    { name: "overview", type: "TEXT", notnull: 0, pk: 0 },
+    { name: "vote_average", type: "REAL", notnull: 0, pk: 0 },
+    { name: "personal_rating", type: "INTEGER", notnull: 0, pk: 0 },
+    { name: "genres_json", type: "TEXT", notnull: 0, pk: 0 },
+    { name: "status", type: "TEXT", notnull: 1, pk: 0 },
+    { name: "tags_json", type: "TEXT", notnull: 1, pk: 0 },
+    { name: "notes", type: "TEXT", notnull: 0, pk: 0 },
+    { name: "created_at", type: "INTEGER", notnull: 1, pk: 0 },
+    { name: "updated_at", type: "INTEGER", notnull: 1, pk: 0 },
+  ];
+  if (!table?.sql || !matchesColumns(columns, expected)) {
+    throw new Error("La estructura de saved_titles v5 no coincide.");
+  }
+  verifyRatingCheck(table.sql);
+  if (!normalizeSql(table.sql).includes(normalizeSql(MEDIA_CLASSIFICATION_CHECK_SQL))) {
+    throw new Error("Los CHECK constraints de clasificación v5 no coinciden.");
+  }
+  const rows = await db.getAllAsync<{ medium: unknown; content_family: unknown; primary_format: unknown }>(
+    "SELECT medium, content_family, primary_format FROM saved_titles;"
+  );
+  for (const row of rows) assertMediaClassification({ medium: row.medium, contentFamily: row.content_family, primaryFormat: row.primary_format });
+  const invalidRating = await db.getFirstAsync<{ id: string }>(`SELECT id FROM saved_titles
+    WHERE personal_rating IS NOT NULL AND (
+      typeof(personal_rating) <> 'integer' OR personal_rating < 10 OR personal_rating > 100
+    ) LIMIT 1;`);
+  if (invalidRating) throw new Error("saved_titles contiene un personal_rating fuera del dominio v5.");
+  if (columns.some((column) => column.name === "provider" || column.name === "external_id")) {
+    throw new Error("saved_titles v5 conserva identidad externa legacy.");
   }
 }
 
@@ -482,6 +548,73 @@ async function migrateV3ToV4(db: SchemaDatabase, hooks: DatabaseMigrationHooks):
   await db.execAsync("DROP TABLE saved_titles_v3;");
 }
 
+export async function verifyV5Schema(db: SchemaDatabase): Promise<void> {
+  await verifyAppPreferencesTable(db);
+  await verifySavedTitlesV5Schema(db);
+  await verifyProviderReferencesSchema(db);
+  await verifyLegacyIdentitiesSchema(db);
+  await verifyTitlePinsSchema(db);
+  if (await db.getFirstAsync("PRAGMA foreign_key_check;")) throw new Error("El esquema v5 contiene referencias huérfanas.");
+  const invalid = await db.getFirstAsync(`SELECT r.saved_title_id FROM media_provider_references r
+    JOIN saved_titles s ON s.id = r.saved_title_id WHERE r.provider = 'tmdb' AND
+    (s.medium <> 'audiovisual' OR r.resource_namespace NOT IN ('movie', 'tv')) LIMIT 1;`);
+  if (invalid) throw new Error("Referencia TMDB incompatible con el medio local.");
+  const references = await db.getAllAsync<{ resource_namespace: string; external_id: string }>(
+    "SELECT resource_namespace, external_id FROM media_provider_references WHERE provider = 'tmdb';"
+  );
+  for (const reference of references) {
+    const canonical = createTmdbProviderReference(reference.resource_namespace as "movie" | "tv", reference.external_id);
+    if (canonical.externalId !== reference.external_id) throw new Error("Referencia TMDB no canónica.");
+  }
+}
+
+async function createV5Tables(db: SchemaDatabase): Promise<void> {
+  await db.execAsync(SAVED_TITLES_V5_TABLE_SQL);
+  await createV4Tables(db); // IF NOT EXISTS preserves the current parent; children have unchanged schemas.
+}
+
+async function migrateV4ToV5(db: SchemaDatabase, hooks: DatabaseMigrationHooks): Promise<void> {
+  await verifyV4Schema(db);
+  if (await db.getFirstAsync("SELECT id FROM saved_titles WHERE type NOT IN ('movie', 'tv') LIMIT 1;")) {
+    throw new Error("Clasificación histórica v4 inválida; no se puede migrar.");
+  }
+  const dependents = ["media_provider_references", "legacy_saved_title_identities", "title_pins"];
+  for (const name of dependents) await db.execAsync(`ALTER TABLE ${name} RENAME TO ${name}_v4;`);
+  for (const name of ["idx_media_provider_references_saved_title", "idx_legacy_saved_title_identities_saved_title", "idx_title_pins_context"]) {
+    await db.execAsync(`DROP INDEX ${name};`);
+  }
+  await db.execAsync("ALTER TABLE saved_titles RENAME TO saved_titles_v4;");
+  await createV5Tables(db);
+  await hooks.afterV5TargetTablesCreated?.();
+  const fields = "id, title, year, poster_url, overview, vote_average, personal_rating, genres_json, status, tags_json, notes, created_at, updated_at";
+  await db.execAsync(`INSERT INTO saved_titles (medium, content_family, primary_format, ${fields})
+    SELECT 'audiovisual', NULL, type, ${fields} FROM saved_titles_v4;`);
+  await hooks.afterV5ItemsCopied?.();
+  for (const name of dependents) await db.execAsync(`INSERT INTO ${name} SELECT * FROM ${name}_v4;`);
+  await hooks.afterV5DependentsCopied?.();
+  await hooks.beforeV5Verification?.();
+  await verifyV5Schema(db);
+  for (const name of ["saved_titles", ...dependents]) {
+    const projection = name === "saved_titles" ? fields : "*";
+    for (const [left, right] of [[name, `${name}_v4`], [`${name}_v4`, name]]) {
+      if (await db.getFirstAsync(`SELECT ${projection} FROM ${left} EXCEPT SELECT ${projection} FROM ${right} LIMIT 1;`)) {
+        throw new Error(`La migración v5 alteró datos de ${name}.`);
+      }
+    }
+    const counts = await db.getFirstAsync<{ current_count: number; old_count: number }>(
+      `SELECT (SELECT COUNT(*) FROM ${name}) AS current_count, (SELECT COUNT(*) FROM ${name}_v4) AS old_count;`
+    );
+    if (counts?.current_count !== counts?.old_count) throw new Error(`La migración v5 perdió filas de ${name}.`);
+  }
+  if (await db.getFirstAsync(`SELECT s.id FROM saved_titles s JOIN saved_titles_v4 old ON s.id = old.id
+    WHERE s.medium <> 'audiovisual' OR s.content_family IS NOT NULL OR s.primary_format <> old.type LIMIT 1;`)) {
+    throw new Error("La conversión histórica v5 no coincide.");
+  }
+  for (const name of dependents) await db.execAsync(`DROP TABLE ${name}_v4;`);
+  await db.execAsync("DROP TABLE saved_titles_v4;");
+  await verifyV5Schema(db);
+}
+
 /** Version-aware compatibility entry point; it never installs v3 before inspecting user_version. */
 export async function ensureLibrarySchema(db: SchemaDatabase): Promise<void> {
   await evolveDatabaseSchema(db, await readUserVersion(db));
@@ -499,23 +632,29 @@ export async function evolveDatabaseSchema(
   await db.execAsync("PRAGMA journal_mode = WAL;");
   await db.withTransactionAsync(async () => {
     if (currentVersion === DATABASE_SCHEMA_VERSION) {
-      await verifyV4Schema(db);
+      await verifyV5Schema(db);
       return;
     }
     const hasSavedTitles = await tableExists(db, "saved_titles");
     if (currentVersion === 0 && !hasSavedTitles) {
-      await createV4Tables(db);
-      await hooks.afterV4TargetTablesCreated?.();
-      await hooks.beforeV4Verification?.();
-      await verifyV4Schema(db);
+      await createV5Tables(db);
+      await hooks.afterV5TargetTablesCreated?.();
+      await hooks.beforeV5Verification?.();
+      await verifyV5Schema(db);
     } else {
       if (!hasSavedTitles) throw new Error(`El esquema SQLite v${currentVersion} no contiene saved_titles.`);
-      await prepareHistoricalSchemaThroughV3(db, currentVersion, hooks);
-      await migrateV3ToV4(db, hooks);
+      if (currentVersion < 4) {
+        await prepareHistoricalSchemaThroughV3(db, currentVersion, hooks);
+        await migrateV3ToV4(db, hooks);
+        await hooks.beforeVersion4Published?.();
+        await db.execAsync("PRAGMA user_version = 4;");
+        await hooks.afterVersion4Published?.();
+      }
+      await migrateV4ToV5(db, hooks);
     }
-    await hooks.beforeVersion4Published?.();
+    await hooks.beforeVersion5Published?.();
     await db.execAsync(`PRAGMA user_version = ${DATABASE_SCHEMA_VERSION};`);
-    await hooks.afterVersion4Published?.();
+    await hooks.afterVersion5Published?.();
     if (await readUserVersion(db) !== DATABASE_SCHEMA_VERSION) {
       throw new Error(`La evolución SQLite no alcanzó la versión ${DATABASE_SCHEMA_VERSION}.`);
     }

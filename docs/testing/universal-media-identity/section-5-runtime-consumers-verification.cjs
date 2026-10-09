@@ -26,7 +26,7 @@ function fixture() {
   const file = path.join(os.tmpdir(), `dlv-section5-${process.pid}-${Date.now()}.sqlite`);
   const sqlite = new DatabaseSync(file);
   sqlite.exec(`PRAGMA foreign_keys=ON;
-    CREATE TABLE saved_titles (id TEXT PRIMARY KEY NOT NULL, type TEXT NOT NULL, title TEXT NOT NULL, year INTEGER, poster_url TEXT, overview TEXT, vote_average REAL,
+    CREATE TABLE saved_titles (id TEXT PRIMARY KEY NOT NULL, medium TEXT NOT NULL, content_family TEXT, primary_format TEXT, title TEXT NOT NULL, year INTEGER, poster_url TEXT, overview TEXT, vote_average REAL,
       personal_rating INTEGER, genres_json TEXT, status TEXT NOT NULL, tags_json TEXT NOT NULL, notes TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
     CREATE TABLE media_provider_references (provider TEXT NOT NULL, resource_namespace TEXT NOT NULL, external_id TEXT NOT NULL, saved_title_id TEXT NOT NULL,
       PRIMARY KEY(provider,resource_namespace,external_id), FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE);

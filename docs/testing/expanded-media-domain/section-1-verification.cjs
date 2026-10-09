@@ -134,19 +134,22 @@ async function storageBoundary() {
     const refreshed = await repo.getSavedTitleWithReferencesByIdWithDb(db, "movie-local");
     assert.equal(refreshed.voteAverage, 7.9); assert.equal(refreshed.title, "Generic refresh");
     assert.deepEqual(refreshed.providerReferences, current.providerReferences);
-    for (const request of [input(classify("comic")), input(classify("audiovisual", "anime", "ova")),
-      input(classify("audiovisual", null, "movie"), { voteAverage: null })]) {
-      const before = writes;
-      await assert.rejects(db.withTransactionAsync(() => repo.saveProviderTitleWithDb(db, request, () => "unsupported", 102)));
-      assert.equal(writes, before, "reject before writes at v4 boundary");
+    // Section 2 removes the v4 projection; valid expanded resources now persist.
+    for (const [classification, id] of [[classify("comic", "manga"), "manga-local"], [classify("audiovisual", "anime", "ova"), "ova-local"]]) {
+      const request = input(classification, {}, { provider: "test-catalog", resourceNamespace: "work", externalId: id });
+      await db.withTransactionAsync(() => repo.saveProviderTitleWithDb(db, request, () => id, 102));
+      assert.equal((await repo.getSavedTitleWithReferencesByIdWithDb(db, id)).medium, classification.medium);
     }
-    assert.equal(sqlite.prepare("PRAGMA user_version").get().user_version, 4);
-    const { createLibraryBackupV5, parseLibraryBackupV5 } = require("../../../src/core/libraryBackupV5.ts");
+    const before = writes;
+    await assert.rejects(db.withTransactionAsync(() => repo.saveProviderTitleWithDb(db, input(classify("comic")), () => "mismatch", 103)));
+    assert.equal(writes, before, "medium mismatch rejected before writes");
+    assert.equal(sqlite.prepare("PRAGMA user_version").get().user_version, 5);
+    const { createLibraryBackupV6, parseLibraryBackupV6 } = require("../../../src/core/libraryBackupV6.ts");
     const titles = await repo.listSavedTitlesWithDb(db);
-    const backup = createLibraryBackupV5(titles, [], { status: "unavailable" });
-    assert.equal(backup.version, 5); assert.equal(backup.items[0].type, "movie");
-    assert.equal(Object.hasOwn(backup.items[0], "medium"), false);
-    assert.equal(parseLibraryBackupV5(JSON.stringify(backup)).payload.invalid.length, 0);
+    const backup = createLibraryBackupV6(titles, [], { status: "unavailable" });
+    assert.equal(backup.version, 6);
+    assert.equal(Object.hasOwn(backup.items[0], "type"), false);
+    assert.equal(parseLibraryBackupV6(JSON.stringify(backup)).payload.invalid.length, 0);
     assert.throws(() => savedTitleToHistorical(create(classify("comic"))), /requiere SQLite v5/);
     assert.throws(() => historicalTypeForV4(classify("audiovisual", "anime", "movie")), /sin pérdida/);
     assert.deepEqual(savedTitleFromHistorical(savedTitleToHistorical(refreshed)), { ...refreshed });
@@ -155,5 +158,5 @@ async function storageBoundary() {
 
 (async () => {
   domain(); refresh(); ratingsAndLabels(); await storageBoundary();
-  console.log("Section 1 classification, refresh, ratings, labels and unchanged v4/v5 boundary passed.");
+  console.log("Section 1 classification, refresh, ratings, labels and current v5/v6 persistence passed.");
 })().catch(error => { console.error(error); process.exitCode = 1; });

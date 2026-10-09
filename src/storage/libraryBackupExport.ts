@@ -1,5 +1,5 @@
 import type { SavedTitleWithProviderReferences } from "../core/savedTitle";
-import type { BackupLegacyIdentityV5, BackupPinV5 } from "../core/libraryBackupV5";
+import type { BackupLegacyIdentityV6, BackupPinV6 } from "../core/libraryBackupV6";
 import type { AppearanceBackupAvailability } from "../theme/appearanceBackupAvailability";
 import { initDb } from "./db";
 import { listSavedTitlesWithReferencesWithDb } from "./savedTitleStorage";
@@ -10,8 +10,8 @@ import {
 } from "./titlePinsRepo";
 
 export type LibraryBackupExportData = {
-  items: Array<SavedTitleWithProviderReferences & { legacyIdentity?: BackupLegacyIdentityV5 }>;
-  pins: BackupPinV5[];
+  items: Array<SavedTitleWithProviderReferences & { legacyIdentity?: BackupLegacyIdentityV6 }>;
+  pins: BackupPinV6[];
   appearanceAvailability: AppearanceBackupAvailability;
 };
 
@@ -30,7 +30,7 @@ export async function getLibraryBackupExportDataWithDb(
       [item.id]
     );
     if (legacyIdentities.length > 1) {
-      throw new Error(`El MediaItem ${item.id} tiene varias identidades manuales legacy y no puede representarse en backup v5.`);
+      throw new Error(`El MediaItem ${item.id} tiene varias identidades manuales legacy y no puede representarse en backup v6.`);
     }
     const legacy = legacyIdentities[0];
     return legacy ? { ...item, legacyIdentity: { format: "library-backup-v1-v4" as const, provider: "manual" as const, externalId: legacy.legacy_external_id } } : item;
