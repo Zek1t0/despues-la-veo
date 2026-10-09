@@ -1,3 +1,5 @@
+import { classificationFromHistoricalType } from "../core/mediaClassification";
+import { historicalTypeForV4, savedTitleFromHistorical } from "../core/legacyMediaBoundary";
 import type { SavedTitle } from "../core/savedTitle";
 import { createTmdbProviderReference } from "../core/tmdbSavedTitle";
 import { parsePersonalRating } from "../core/personalRating";
@@ -46,7 +48,7 @@ function updateFrom(local: SavedTitle, incoming: Omit<NormalizedBackupSavedTitle
     updatedAt: incoming.updatedAt.present ? incoming.updatedAt.value : local.updatedAt };
 }
 function insertV5(incoming: NormalizedBackupMediaItemV5, id: string, now = Date.now()): SavedTitle {
-  return { id, type: incoming.type, title: incoming.title, year: incoming.year.present ? incoming.year.value : null,
+  return { id, ...classificationFromHistoricalType(incoming.type), title: incoming.title, year: incoming.year.present ? incoming.year.value : null,
     posterUrl: incoming.posterUrl.present ? incoming.posterUrl.value : null, overview: incoming.overview.present ? incoming.overview.value : null,
     voteAverage: incoming.voteAverage.present ? incoming.voteAverage.value : null, personalRating: incoming.personalRating.present ? parsePersonalRating(incoming.personalRating.value) : null,
     genres: incoming.genres.present ? incoming.genres.value : [], status: incoming.status.present ? incoming.status.value : "planned",
@@ -82,7 +84,7 @@ async function mergeV5Items(db: LibraryBackupMergeDb, items: NormalizedBackupMed
       const local = ids.length ? await getSavedTitleWithReferencesByIdWithDb(db, ids[0]) : null;
       await savepoint(db, "backup_item", async () => {
         if (local) {
-          if (local.type !== incoming.type) throw new ImportConflict("El tipo movie/tv entrante no coincide con el MediaItem local resuelto.");
+          if (historicalTypeForV4(local) !== incoming.type) throw new ImportConflict("El tipo movie/tv entrante no coincide con el MediaItem local resuelto.");
           for (const reference of incoming.providerReferences) await attachProviderReferenceWithDb(db, reference, local.id);
           if (incoming.legacyIdentity) await attachLegacy(db, incoming.legacyIdentity, local.id);
           if (!incoming.updatedAt.present || incoming.updatedAt.value <= local.updatedAt) result.skipped++;
@@ -115,8 +117,8 @@ async function mergeHistorical(db: LibraryBackupMergeDb, items: NormalizedBackup
     try {
       let local = await historicalLocal(db, incoming);
       await savepoint(db, "backup_item", async () => {
-        if (local) { if (local.type !== incoming.type) throw new ImportConflict("El tipo movie/tv histórico no coincide con el MediaItem local resuelto."); if (!incoming.updatedAt.present || incoming.updatedAt.value <= local.updatedAt) result.skipped++; else { await upsertSavedTitleAndCleanPinsWithDb(db, updateFrom(local, incoming)); result.updated++; } }
-        else { const item = materializeSavedTitleForInsert(incoming, generateId); item.id = await freeId(db, item.id, generateId); await upsertSavedTitleAndCleanPinsWithDb(db, item); await attachHistorical(db, incoming, item.id); local = item; result.inserted++; }
+        if (local) { if (historicalTypeForV4(local) !== incoming.type) throw new ImportConflict("El tipo movie/tv histórico no coincide con el MediaItem local resuelto."); if (!incoming.updatedAt.present || incoming.updatedAt.value <= local.updatedAt) result.skipped++; else { await upsertSavedTitleAndCleanPinsWithDb(db, updateFrom(local, incoming)); result.updated++; } }
+        else { const item = savedTitleFromHistorical(materializeSavedTitleForInsert(incoming, generateId)); item.id = await freeId(db, item.id, generateId); await upsertSavedTitleAndCleanPinsWithDb(db, item); await attachHistorical(db, incoming, item.id); local = item; result.inserted++; }
       });
       if (local) { const key = `${incoming.provider}\u0000${incoming.externalId}`; result.historical.set(key, [...(result.historical.get(key) ?? []), local.id]); }
     } catch (error) { report(result, error, label); }

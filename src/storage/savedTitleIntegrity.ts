@@ -1,3 +1,4 @@
+import { historicalTypeForV4 } from "../core/legacyMediaBoundary";
 import type { SavedTitle } from "../core/savedTitle";
 import { parsePersonalRating } from "../core/personalRating";
 import {
@@ -12,6 +13,7 @@ export async function upsertSavedTitleAndCleanPinsWithDb(
   item: SavedTitle
 ): Promise<string> {
   const personalRating = parsePersonalRating(item.personalRating);
+  const historicalType = historicalTypeForV4(item);
   await db.runAsync(
     `INSERT INTO saved_titles (
       id, type, title, year, poster_url,
@@ -32,7 +34,7 @@ export async function upsertSavedTitleAndCleanPinsWithDb(
       notes=excluded.notes,
       updated_at=excluded.updated_at`,
     item.id,
-    item.type,
+    historicalType,
     item.title,
     item.year ?? null,
     item.posterUrl ?? null,

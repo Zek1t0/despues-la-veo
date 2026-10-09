@@ -1,8 +1,9 @@
-import type { SavedTitle, TitleStatus, TitleType } from "./savedTitle";
+import type { SavedTitle, TitleStatus } from "./savedTitle";
 import type { LibrarySort } from "./viewPreferences";
 
 export type LibraryStatusFilter = "all" | TitleStatus;
-export type LibraryTypeFilter = "all" | TitleType;
+// Existing UI options only; expanded browsing predicates belong to Section 3.
+export type LibraryTypeFilter = "all" | "movie" | "tv";
 
 const SPANISH_TITLE_COLLATOR = new Intl.Collator("es", {
   numeric: true,
@@ -107,7 +108,7 @@ export function selectVisibleLibraryTitles<T extends SavedTitle>({
   const needle = query.trim().toLocaleLowerCase("es");
   const matchingItems = items.filter((item) => {
     if (statusFilter !== "all" && item.status !== statusFilter) return false;
-    if (typeFilter !== "all" && item.type !== typeFilter) return false;
+    if (typeFilter !== "all" && (item.medium !== "audiovisual" || item.primaryFormat !== typeFilter)) return false;
     if (!needle) return true;
     if (item.title.toLocaleLowerCase("es").includes(needle)) return true;
     return (item.tags ?? []).some((tag) =>

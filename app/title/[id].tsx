@@ -19,7 +19,7 @@ import type {
   TitleStatus,
 } from "../../src/core/savedTitle";
 import { findUnambiguousTmdbReference } from "../../src/core/savedTitleProviderReferences";
-import { titleStatusLabel, titleTypeLabel } from "../../src/core/presentationLabels";
+import { titleStatusLabel, mediaClassificationLabel } from "../../src/core/presentationLabels";
 import { type PinContext } from "../../src/core/contextualPin";
 import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";
 import {
@@ -54,7 +54,7 @@ const STATUS_OPTIONS: { value: TitleStatus; label: string }[] = ([
   "dropped",
 ] satisfies TitleStatus[]).map((value) => ({
   value,
-  label: titleStatusLabel(value),
+  label: titleStatusLabel(value, "audiovisual"),
 }));
 
 const UPDATED_AT_FORMATTER = new Intl.DateTimeFormat("es-AR", {
@@ -602,7 +602,7 @@ export default function TitleDetailScreen() {
             {item.title}
           </Text>
           <Text style={{ color: theme.global.textSecondary, fontWeight: "700" }}>
-            {titleTypeLabel(item.type)}
+            {mediaClassificationLabel(item)}
           </Text>
         </View>
 

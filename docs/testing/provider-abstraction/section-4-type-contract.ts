@@ -15,8 +15,8 @@ type TransactionSaveInput = Assert<Equal<Parameters<typeof saveProviderTitleWith
 
 const input: ProviderMaterializationInput = {
   reference: { provider: "fixture", resourceNamespace: "entry", externalId: "opaque" },
-  snapshot: { type: "movie", title: "Normalized", year: null, posterUrl: null,
-    overview: null, genres: ["Remote genre"], voteAverage: null },
+  snapshot: { medium: "audiovisual", contentFamily: null, primaryFormat: "movie", title: "Normalized", year: null, posterUrl: null,
+    overview: null, genres: ["Remote genre"] },
   initialTags: ["Local creation tag"],
 };
 

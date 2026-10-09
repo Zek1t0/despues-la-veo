@@ -1,7 +1,8 @@
 import type { ProviderMaterializationInput } from "../providers/providerContracts";
-import { createProviderReference } from "./providerReference";
+import { validateProviderMaterializationInput } from "./providerMaterializationValidation";
 import type { SavedTitle } from "./savedTitle";
 import { nextSavedTitleUpdatedAt } from "./savedTitleTimestamp";
+import { refineMediaClassification } from "./mediaClassification";
 
 /** Materializes local state only; reference ownership is resolved by the repository. */
 export function materializeProviderSavedTitle(
@@ -13,8 +14,10 @@ export function materializeProviderSavedTitle(
   if (!Number.isSafeInteger(now) || now < 0) {
     throw new Error("El reloj no produjo un timestamp válido.");
   }
-  createProviderReference(input.reference);
+  validateProviderMaterializationInput(input);
   const { snapshot, initialTags } = input;
+  const classification = refineMediaClassification(snapshot, existing);
+  const ratingSupplied = Object.prototype.hasOwnProperty.call(snapshot, "voteAverage");
 
   const personalFields = existing
     ? {
@@ -38,12 +41,12 @@ export function materializeProviderSavedTitle(
 
   return {
     ...personalFields,
-    type: snapshot.type,
+    ...classification,
     title: snapshot.title,
     year: snapshot.year,
     posterUrl: snapshot.posterUrl,
     overview: snapshot.overview,
     genres: [...snapshot.genres],
-    voteAverage: snapshot.voteAverage,
+    voteAverage: ratingSupplied ? snapshot.voteAverage! : existing?.voteAverage ?? null,
   };
 }

@@ -1,4 +1,4 @@
-import type { LegacyPersistedSavedTitle as SavedTitle } from "./savedTitle";
+import type { LegacyPersistedSavedTitle as SavedTitle } from "./historicalSavedTitle";
 import { parsePersonalRating, type PersonalRating } from "./personalRating";
 
 export const LIBRARY_BACKUP_VERSION = 1 as const;

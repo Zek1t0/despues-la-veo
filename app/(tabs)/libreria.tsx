@@ -15,7 +15,7 @@ import {
 import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";
 import { setTitlePinState } from "../../src/storage/titlePinsRepo";
 import { getLibraryScreenSnapshot } from "../../src/storage/libraryScreenSnapshot";
-import { titleStatusLabel, titleTypeLabel } from "../../src/core/presentationLabels";
+import { titleStatusLabel, mediaClassificationLabel } from "../../src/core/presentationLabels";
 import {
   VIEW_PREFERENCE_DEFAULTS,
   isLibrarySort,
@@ -742,7 +742,7 @@ export default function LibraryScreen() {
             if (viewMode === "grid") {
               return (
                 <TitleGridCard
-                  accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}`}
+                  accessibilityLabel={`Abrir ${mediaClassificationLabel(item)} ${item.title}`}
                   isPinned={pinnedAtById.has(item.id)}
                   onPress={() =>
                     router.push({
@@ -754,7 +754,7 @@ export default function LibraryScreen() {
                   personalRating={item.personalRating}
                   style={{ width: gridCardWidth }}
                   title={item.title}
-                  type={item.type}
+                  kindLabel={mediaClassificationLabel(item)}
                 />
               );
             }
@@ -778,7 +778,7 @@ export default function LibraryScreen() {
                 }}
               >
                 <Pressable
-                  accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}${
+                  accessibilityLabel={`Abrir ${mediaClassificationLabel(item)} ${item.title}${
                     personalRatingPresentation
                       ? `. ${personalRatingPresentation.accessibilityLabel}`
                       : ""
@@ -824,8 +824,8 @@ export default function LibraryScreen() {
                       </Text>
 
                       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                        <Pill text={titleTypeLabel(item.type)} />
-                        <Pill text={`Estado: ${titleStatusLabel(item.status)}`} />
+                        <Pill text={mediaClassificationLabel(item)} />
+                        <Pill text={`Estado: ${titleStatusLabel(item.status, item.medium)}`} />
                         {tmdbRating && <Pill text={`TMDB ${tmdbRating}/10`} />}
                         <PersonalRatingBadge value={item.personalRating} />
                       </View>

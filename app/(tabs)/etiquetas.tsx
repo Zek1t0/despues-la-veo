@@ -24,7 +24,7 @@ import {
   ViewOptionsPanel,
   type ViewOptionsSection,
 } from "../../src/components/browsing";
-import { titleStatusLabel, titleTypeLabel } from "../../src/core/presentationLabels";
+import { titleStatusLabel, mediaClassificationLabel } from "../../src/core/presentationLabels";
 import type { SavedTitleWithProviderReferences as SavedTitle } from "../../src/core/savedTitle";
 import { createTagPinContext } from "../../src/core/contextualPin";
 import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";
@@ -199,7 +199,7 @@ function DetailTitleRow({
       }}
     >
       <Pressable
-        accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}${
+        accessibilityLabel={`Abrir ${mediaClassificationLabel(item)} ${item.title}${
           personalRatingPresentation
             ? `. ${personalRatingPresentation.accessibilityLabel}`
             : ""
@@ -213,7 +213,7 @@ function DetailTitleRow({
           {item.title}{item.year ? ` (${item.year})` : ""}
         </Text>
         <Text style={{ color: theme.global.textSecondary, fontWeight: "700" }}>
-          {titleTypeLabel(item.type)} · {titleStatusLabel(item.status)}
+          {mediaClassificationLabel(item)} · {titleStatusLabel(item.status, item.medium)}
         </Text>
         <PersonalRatingBadge value={item.personalRating} />
       </Pressable>
@@ -823,7 +823,7 @@ export default function EtiquetasScreen() {
             renderItem={({ item }) =>
               libraryViewMode === "grid" ? (
                 <TitleGridCard
-                  accessibilityLabel={`Abrir ${titleTypeLabel(item.type)} ${item.title}`}
+                  accessibilityLabel={`Abrir ${mediaClassificationLabel(item)} ${item.title}`}
                   isPinned={tagPinnedAtById.has(item.id)}
                   onPress={() =>
                     router.push({
@@ -835,7 +835,7 @@ export default function EtiquetasScreen() {
                   personalRating={item.personalRating}
                   style={{ width: titleCardWidth }}
                   title={item.title}
-                  type={item.type}
+                  kindLabel={mediaClassificationLabel(item)}
                 />
               ) : (
                 <DetailTitleRow

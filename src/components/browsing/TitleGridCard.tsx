@@ -10,9 +10,9 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { TitleType } from "../../core/savedTitle";
+
 import type { PersonalRating } from "../../core/personalRating";
-import { titleTypeLabel } from "../../core/presentationLabels";
+
 import { useAppTheme } from "../../theme/AppThemeProvider";
 import { PersonalRatingBadge } from "./PersonalRatingBadge";
 import { PosterPlaceholder } from "./PosterPlaceholder";
@@ -20,7 +20,7 @@ import { getPersonalRatingPresentation } from "./personalRatingPresentation";
 
 export type TitleGridCardProps = {
   title: string;
-  type: TitleType;
+  kindLabel: string;
   posterUrl?: string | null;
   onPress: () => void;
   accessibilityLabel: string;
@@ -31,7 +31,7 @@ export type TitleGridCardProps = {
 
 export function TitleGridCard({
   title,
-  type,
+  kindLabel,
   posterUrl,
   onPress,
   accessibilityLabel,
@@ -90,7 +90,7 @@ export function TitleGridCard({
         style={[styles.badge, { backgroundColor: theme.structural.imageOverlayMedium }]}
       >
         <Text style={[styles.badgeText, { color: theme.structural.onImageOverlay }]}>
-          {titleTypeLabel(type)}
+          {kindLabel}
         </Text>
       </View>
 

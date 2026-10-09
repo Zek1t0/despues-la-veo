@@ -11,6 +11,7 @@ import {
   createTmdbProviderReference,
   createTmdbSavedTitleMaterializationInput,
   type LegacyTmdbSavedTitleSnapshot,
+  legacyTmdbSnapshotToCurrent,
 } from "../core/tmdbSavedTitle";
 import type { NormalizedBackupSavedTitle } from "../core/libraryBackupV1";
 import type { ParsedLibraryBackup } from "../core/libraryBackup";
@@ -199,7 +200,7 @@ function legacyTmdbMaterializationInput(
 ): ProviderMaterializationInput {
   return createTmdbSavedTitleMaterializationInput(
     createTmdbProviderReference(snapshot.type, snapshot.externalId),
-    snapshot
+    legacyTmdbSnapshotToCurrent(snapshot)
   );
 }
 

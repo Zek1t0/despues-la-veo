@@ -364,7 +364,7 @@ export default function ExploreScreen() {
           paddingBottom: 24,
         }}
         renderItem={({ item }) => {
-          const type = item.reference.resourceNamespace as "movie" | "tv";
+
           const route = `/${item.reference.provider}/${item.reference.resourceNamespace}/${item.reference.externalId}` as const;
 
           if (viewMode === "grid") {
@@ -375,7 +375,7 @@ export default function ExploreScreen() {
                 posterUrl={item.posterUrl}
                 style={{ width: gridCardWidth }}
                 title={item.displayTitle}
-                type={type}
+                kindLabel={item.kindLabel}
               />
             );
           }

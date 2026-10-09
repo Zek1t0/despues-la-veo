@@ -1,3 +1,4 @@
+import { classificationFromHistoricalType } from "../core/mediaClassification";
 import { createProviderReference, type ProviderReference } from "../core/providerReference";
 import { parsePersonalRating } from "../core/personalRating";
 import type {
@@ -32,7 +33,7 @@ function parseJsonStringArray(value: unknown): string[] {
 export function rowToSavedTitle(row: Record<string, unknown>): SavedTitle {
   return {
     id: String(row.id),
-    type: row.type as SavedTitle["type"],
+    ...classificationFromHistoricalType(row.type),
     title: String(row.title),
     year: row.year == null ? null : Number(row.year),
     posterUrl: row.poster_url == null ? null : String(row.poster_url),
