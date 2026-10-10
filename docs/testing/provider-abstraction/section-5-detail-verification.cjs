@@ -283,6 +283,26 @@ async function main() {
     api = require("../../../src/providers/tmdb/tmdbApi.ts");
     Screen = require(routePath).default; Date.now = () => 1000; global.alert = (message) => active.alerts.push(message);
     await savingAndPresentation(db); await remoteLifecycle();
+    // Actual remote-screen re-save uses generic materialization; namespace never replaces known format.
+    for (const [externalId, primaryFormat] of [["123", "ova"], ["124", null]]) {
+      const reference = { provider: "tmdb", resourceNamespace: "movie", externalId };
+      await repo.saveProviderTitleWithDb(db, {
+        reference,
+        snapshot: { medium: "audiovisual", contentFamily: "anime", primaryFormat, title: "Local anime", year: null, posterUrl: null, overview: null, genres: [], voteAverage: 6 },
+        initialTags: ["Personal"],
+      }, () => `anime-${externalId}`, 100);
+      await repo.updateSavedTitleMetadataWithDb(db, `anime-${externalId}`, { status: "watching", notes: "Keep my note" }, () => 200);
+      await repo.setPersonalRatingWithDb(db, `anime-${externalId}`, 90, () => 201);
+      const before = await repo.getSavedTitleWithReferencesByIdWithDb(db, `anime-${externalId}`);
+      const h = host("movie", externalId); await h.flush();
+      await button(h, "Actualizar en Biblioteca").props.onPress(); await h.flush();
+      const after = await repo.getSavedTitleWithReferencesByIdWithDb(db, `anime-${externalId}`);
+      assert.equal(after.contentFamily, "anime");
+      assert.equal(after.primaryFormat, primaryFormat ?? "movie");
+      for (const field of ["id", "createdAt", "status", "notes", "personalRating", "tags", "providerReferences"]) assert.deepEqual(after[field], before[field]);
+      assert.equal(h.saves[0].reference.resourceNamespace, "movie");
+      assert.equal(h.saves[0].snapshot.primaryFormat, "movie");
+    }
     const separate = host("movie", "880"); separate.policyOverride = ["Distinct creation policy"];
     await separate.flush(); await button(separate, "Guardar en Biblioteca").props.onPress(); await separate.flush();
     assert.deepEqual(separate.saves[0].snapshot.genres, ["Drama"]);

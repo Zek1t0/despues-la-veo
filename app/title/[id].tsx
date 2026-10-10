@@ -1,7 +1,8 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -19,7 +20,8 @@ import type {
   TitleStatus,
 } from "../../src/core/savedTitle";
 import { findUnambiguousTmdbReference } from "../../src/core/savedTitleProviderReferences";
-import { titleStatusLabel, mediaClassificationLabel } from "../../src/core/presentationLabels";
+import { titleStatusLabel, mediaClassificationLabel, mediaYearLabel } from "../../src/core/presentationLabels";
+import { PosterPlaceholder } from "../../src/components/browsing/PosterPlaceholder";
 import { type PinContext } from "../../src/core/contextualPin";
 import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";
 import {
@@ -47,15 +49,21 @@ import { getTitleDetailPinSnapshot } from "../../src/storage/titleDetailPinSnaps
 import { setTitlePinState } from "../../src/storage/titlePinsRepo";
 import { useAppTheme } from "../../src/theme/AppThemeProvider";
 
-const STATUS_OPTIONS: { value: TitleStatus; label: string }[] = ([
+const STATUS_VALUES: TitleStatus[] = [
   "planned",
   "watching",
   "done",
   "dropped",
-] satisfies TitleStatus[]).map((value) => ({
-  value,
-  label: titleStatusLabel(value, "audiovisual"),
-}));
+];
+
+function LocalPoster({ posterUrl }: { posterUrl: string | null }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [posterUrl]);
+  const style = { width: 72, height: 108, borderRadius: 12 };
+  return posterUrl && !failed
+    ? <Image accessible={false} source={{ uri: posterUrl }} resizeMode="cover" style={style} onError={() => setFailed(true)} />
+    : <PosterPlaceholder style={style} />;
+}
 
 const UPDATED_AT_FORMATTER = new Intl.DateTimeFormat("es-AR", {
   dateStyle: "medium",
@@ -597,14 +605,27 @@ export default function TitleDetailScreen() {
           width: "100%",
         }}
       >
-        <View style={{ gap: 6 }}>
-          <Text style={{ fontSize: 24, fontWeight: "900", color: theme.global.textPrimary }}>
-            {item.title}
-          </Text>
-          <Text style={{ color: theme.global.textSecondary, fontWeight: "700" }}>
-            {mediaClassificationLabel(item)}
-          </Text>
+        <View style={{ flexDirection: "row", gap: 12 }}>
+          <LocalPoster posterUrl={item.posterUrl ?? null} />
+          <View style={{ flex: 1, gap: 6 }}>
+            <Text style={{ fontSize: 24, fontWeight: "900", color: theme.global.textPrimary }}>
+              {item.title}
+            </Text>
+            <Text style={{ color: theme.global.textSecondary, fontWeight: "700" }}>
+              {mediaClassificationLabel(item)}
+            </Text>
+            <Text style={{ color: theme.global.textSecondary }}>
+              {mediaYearLabel(item.medium)}: {item.year ?? "Sin fecha"}
+            </Text>
+          </View>
         </View>
+
+        {item.overview?.trim() || item.genres?.length ? (
+          <Card>
+            {item.overview?.trim() ? <Text style={{ color: theme.global.textPrimary }}>{item.overview}</Text> : null}
+            {item.genres?.length ? <Text style={{ color: theme.global.textSecondary }}>Géneros: {item.genres.join(", ")}</Text> : null}
+          </Card>
+        ) : null}
 
         <Card>
           {pinReady ? (
@@ -690,7 +711,7 @@ export default function TitleDetailScreen() {
                   : `${formatPersonalRating(item.personalRating)} / 10`}
               </Text>
             </View>
-            <View style={{ flex: 1, gap: 4 }}>
+            {(tmdbHref || (typeof item.voteAverage === "number" && Number.isFinite(item.voteAverage))) ? <View style={{ flex: 1, gap: 4 }}>
               <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 16 }}>
                 TMDB
               </Text>
@@ -699,7 +720,7 @@ export default function TitleDetailScreen() {
                   ? `${item.voteAverage.toFixed(1)} / 10`
                   : "— / 10"}
               </Text>
-            </View>
+            </View> : null}
           </View>
 
           {item.personalRating === null ? (
@@ -800,12 +821,12 @@ export default function TitleDetailScreen() {
         <Card>
           <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 16 }}>Estado</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {STATUS_OPTIONS.map((s) => (
+            {STATUS_VALUES.map((value) => (
               <Chip
-                key={s.value}
-                label={s.label}
-                active={item.status === s.value}
-                onPress={() => void setStatus(s.value)}
+                key={value}
+                label={titleStatusLabel(value, item.medium)}
+                active={item.status === value}
+                onPress={() => void setStatus(value)}
               />
             ))}
           </View>

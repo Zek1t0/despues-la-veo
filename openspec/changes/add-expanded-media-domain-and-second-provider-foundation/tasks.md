@@ -18,9 +18,9 @@
 
 ## 3. Local UI and browsing compatibility — implementable tras sección 2
 
-- [ ] 3.1 Sustituir filtro type por predicados de medio/familia/formato en libraryView y controles web/móvil de Biblioteca. Verificar anime movie visible bajo Películas y Anime; búsqueda/title/tags + estado + clasificación; filtros sin resultados y pins dentro de coincidencias. Mantener rating-desc y label Puntuación TMDB por voteAverage descendente, ausentes al final y empates título/ID respetando grupos de pins; verificar que no usa personalRating ni score externo fabricado.
-- [ ] 3.2 Adaptar TitleGridCard, filas de Biblioteca/Etiquetas y accesibilidad a labels compartidos sin duplicar anuncios ni añadir navegación secundaria. Verificar Detalle/Mosaico, placeholders, pills personales, pins y collages existentes.
-- [ ] 3.3 Adaptar detalle local a clasificación, año según medio, estado y bloque TMDB aplicable; preservar editor/notas/tags/pins y lectura sin red. Verificar comic/literature Leyendo, mixto En curso y cero/múltiples referencias; personalRating 10..100|null sin cambios.
+- [x] 3.1 Sustituir filtro type por predicados de medio/familia/formato en libraryView y controles web/móvil de Biblioteca. Verificar anime movie visible bajo Películas y Anime; búsqueda/title/tags + estado + clasificación; filtros sin resultados y pins dentro de coincidencias. Mantener rating-desc y label Puntuación TMDB por voteAverage descendente, ausentes al final y empates título/ID respetando grupos de pins; verificar que no usa personalRating ni score externo fabricado.
+- [x] 3.2 Adaptar TitleGridCard, filas de Biblioteca/Etiquetas y accesibilidad a labels compartidos sin duplicar anuncios ni añadir navegación secundaria. Verificar Detalle/Mosaico, placeholders, pills personales, pins y collages existentes.
+- [x] 3.3 Adaptar detalle local a clasificación, año según medio, estado y bloque TMDB aplicable; preservar editor/notas/tags/pins y lectura sin red. Verificar comic/literature Leyendo, mixto En curso y cero/múltiples referencias; personalRating 10..100|null sin cambios.
 - [ ] 3.4 Adaptar vínculo TMDB y snapshot desde detalle remoto mediante mapeo explícito, sin generic route. Validar referencia canónica/medio audiovisual sin exigir igualdad con primaryFormat; verificar link movie de item anime/ova, re-save que conserva anime/ova y formato null aceptado; movie/TV, créditos/disponibilidad/credenciales intactos; tsc + revisión manual web y móvil.
 
 ## 4. Search category architecture — implementable sin nueva red

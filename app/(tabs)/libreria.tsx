@@ -10,7 +10,9 @@ import { LIBRARY_PIN_CONTEXT } from "../../src/core/contextualPin";
 import {
   selectVisibleLibraryTitles,
   type LibraryStatusFilter,
-  type LibraryTypeFilter,
+  LIBRARY_CLASSIFICATION_FILTERS,
+  isLibraryClassificationFilter,
+  type LibraryClassificationFilter,
 } from "../../src/core/libraryView";
 import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";
 import { setTitlePinState } from "../../src/storage/titlePinsRepo";
@@ -28,7 +30,7 @@ import {
 } from "../../src/storage/viewPreferencesRepo";
 import { useAppTheme } from "../../src/theme/AppThemeProvider";
 import {
-  getPersonalRatingPresentation,
+  savedTitleOpenAccessibilityLabel,
   PersonalRatingBadge,
   TitleGridCard,
   ViewOptionsPanel,
@@ -36,7 +38,7 @@ import {
 } from "../../src/components/browsing";
 
 type StatusFilter = LibraryStatusFilter;
-type TypeFilter = LibraryTypeFilter;
+type ClassificationFilter = LibraryClassificationFilter;
 
 function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   const { theme } = useAppTheme();
@@ -120,7 +122,7 @@ export default function LibraryScreen() {
 
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [classificationFilter, setClassificationFilter] = useState<ClassificationFilter>("all");
   const [viewMode, setViewMode] = useState<LibraryViewMode>(
     VIEW_PREFERENCE_DEFAULTS["library.viewMode"]
   );
@@ -315,29 +317,25 @@ export default function LibraryScreen() {
         options: [
           { id: "all", title: "Todos" },
           { id: "planned", title: "Planeados" },
-          { id: "watching", title: "Viendo" },
+          { id: "watching", title: titleStatusLabel("watching") },
           { id: "done", title: "Terminados" },
           { id: "dropped", title: "Abandonados" },
         ],
       },
       {
         presentation: "compact",
-        id: "type",
-        title: "Tipo",
-        selectedId: typeFilter,
+        id: "classification",
+        title: "Clasificación",
+        selectedId: classificationFilter,
         onSelect: (optionId) => {
-          if (optionId === "all" || optionId === "movie" || optionId === "tv") {
-            setTypeFilter(optionId);
+          if (isLibraryClassificationFilter(optionId)) {
+            setClassificationFilter(optionId);
           }
         },
-        options: [
-          { id: "all", title: "Todos" },
-          { id: "movie", title: "Películas" },
-          { id: "tv", title: "Series" },
-        ],
+        options: LIBRARY_CLASSIFICATION_FILTERS.map(({ value, label }) => ({ id: value, title: label })),
       },
     ],
-    [selectSort, selectViewMode, sort, statusFilter, theme.global.textSecondary, typeFilter, viewMode]
+    [selectSort, selectViewMode, sort, statusFilter, theme.global.textSecondary, classificationFilter, viewMode]
   );
 
   const refresh = useCallback(async () => {
@@ -384,9 +382,9 @@ export default function LibraryScreen() {
       query: q,
       sort,
       statusFilter,
-      typeFilter,
+      classificationFilter,
     });
-  }, [items, pinnedAtById, q, sort, statusFilter, typeFilter]);
+  }, [items, pinnedAtById, q, sort, statusFilter, classificationFilter]);
 
   const gridGap = 12;
   const availableListWidth = Math.max(0, Math.min(windowWidth - 32, 1168));
@@ -657,15 +655,15 @@ export default function LibraryScreen() {
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             <Chip label="Todos" active={statusFilter === "all"} onPress={() => setStatusFilter("all")} />
             <Chip label="Planeados" active={statusFilter === "planned"} onPress={() => setStatusFilter("planned")} />
-            <Chip label="Viendo" active={statusFilter === "watching"} onPress={() => setStatusFilter("watching")} />
+            <Chip label={titleStatusLabel("watching")} active={statusFilter === "watching"} onPress={() => setStatusFilter("watching")} />
             <Chip label="Terminados" active={statusFilter === "done"} onPress={() => setStatusFilter("done")} />
             <Chip label="Abandonados" active={statusFilter === "dropped"} onPress={() => setStatusFilter("dropped")} />
           </View>
 
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            <Chip label="Todos los tipos" active={typeFilter === "all"} onPress={() => setTypeFilter("all")} />
-            <Chip label="Películas" active={typeFilter === "movie"} onPress={() => setTypeFilter("movie")} />
-            <Chip label="Series" active={typeFilter === "tv"} onPress={() => setTypeFilter("tv")} />
+            {LIBRARY_CLASSIFICATION_FILTERS.map(({ value, label }) => (
+              <Chip key={value} label={label} active={classificationFilter === value} onPress={() => setClassificationFilter(value)} />
+            ))}
           </View>
 
           <Text style={{ color: theme.global.textMuted, fontWeight: "700" }}>
@@ -684,7 +682,7 @@ export default function LibraryScreen() {
           >
             <Chip label="Todos" active={statusFilter === "all"} onPress={() => setStatusFilter("all")} />
             <Chip label="Planeados" active={statusFilter === "planned"} onPress={() => setStatusFilter("planned")} />
-            <Chip label="Viendo" active={statusFilter === "watching"} onPress={() => setStatusFilter("watching")} />
+            <Chip label={titleStatusLabel("watching")} active={statusFilter === "watching"} onPress={() => setStatusFilter("watching")} />
             <Chip label="Terminados" active={statusFilter === "done"} onPress={() => setStatusFilter("done")} />
             <Chip label="Abandonados" active={statusFilter === "dropped"} onPress={() => setStatusFilter("dropped")} />
           </ScrollView>
@@ -742,7 +740,7 @@ export default function LibraryScreen() {
             if (viewMode === "grid") {
               return (
                 <TitleGridCard
-                  accessibilityLabel={`Abrir ${mediaClassificationLabel(item)} ${item.title}`}
+                  accessibilityLabel={savedTitleOpenAccessibilityLabel(item)}
                   isPinned={pinnedAtById.has(item.id)}
                   onPress={() =>
                     router.push({
@@ -755,14 +753,12 @@ export default function LibraryScreen() {
                   style={{ width: gridCardWidth }}
                   title={item.title}
                   kindLabel={mediaClassificationLabel(item)}
+                  statusLabel={titleStatusLabel(item.status, item.medium)}
                 />
               );
             }
 
-            const tmdbRating = typeof item.voteAverage === "number" ? item.voteAverage.toFixed(1) : null;
-            const personalRatingPresentation = getPersonalRatingPresentation(
-              item.personalRating
-            );
+            const tmdbRating = typeof item.voteAverage === "number" && Number.isFinite(item.voteAverage) ? item.voteAverage.toFixed(1) : null;
             const overview = item.overview?.trim() ?? "";
             const tagsPreview = (item.tags ?? []).slice(0, 3);
 
@@ -778,11 +774,8 @@ export default function LibraryScreen() {
                 }}
               >
                 <Pressable
-                  accessibilityLabel={`Abrir ${mediaClassificationLabel(item)} ${item.title}${
-                    personalRatingPresentation
-                      ? `. ${personalRatingPresentation.accessibilityLabel}`
-                      : ""
-                  }`}
+                  accessible
+                  accessibilityLabel={savedTitleOpenAccessibilityLabel(item, true)}
                   accessibilityRole="button"
                   focusable
                   onPress={() =>
@@ -793,7 +786,13 @@ export default function LibraryScreen() {
                   }
                   style={({ pressed }) => ({ opacity: pressed ? 0.82 : 1 })}
                 >
-                  <View style={{ flexDirection: "row", gap: 12 }}>
+                  <View
+                    accessible={false}
+                    aria-hidden
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                    style={{ flexDirection: "row", gap: 12 }}
+                  >
                     {item.posterUrl ? (
                       <Image
                         source={{ uri: item.posterUrl }}

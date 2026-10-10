@@ -4,6 +4,7 @@ export {
   type PosterPlaceholderProps,
 } from "./PosterPlaceholder";
 export { TitleGridCard, type TitleGridCardProps } from "./TitleGridCard";
+export { savedTitleOpenAccessibilityLabel } from "./savedTitleAccessibility";
 export {
   PersonalRatingBadge,
   type PersonalRatingBadgeProps,

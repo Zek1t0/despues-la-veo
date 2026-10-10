@@ -66,7 +66,7 @@ async function main() {
     await f.db.withTransactionAsync(() => pins.pinTitleWithDb(f.db, "local-only", { contextType: "library", contextKey: "" }, 402));
     const edited = await repo.getSavedTitleByIdWithDb(f.db, "local-only"); assert.equal(edited.personalRating, 100); assert.deepEqual(edited.tags, ["Offline", "Edited"]); assert.equal(edited.notes, "edited"); assert.equal(edited.status, "dropped");
     assert.equal(await pins.isTitlePinnedWithDb(f.db, "local-only", { contextType: "library", contextKey: "" }), true);
-    const visible = selectVisibleLibraryTitles({ items: listed, pinnedAtById: new Map(), query: "Offline", sort: "personal-rating-desc", statusFilter: "all", typeFilter: "all" }); assert.equal(visible[0].id, "local-only");
+    const visible = selectVisibleLibraryTitles({ items: listed, pinnedAtById: new Map(), query: "Offline", sort: "personal-rating-desc", statusFilter: "all", classificationFilter: "all" }); assert.equal(visible[0].id, "local-only");
 
     const movie = await repo.getSavedTitleByProviderReferenceWithDb(f.db, createTmdbProviderReference("movie", "991"));
     const tv = await repo.getSavedTitleByProviderReferenceWithDb(f.db, createTmdbProviderReference("tv", "991"));

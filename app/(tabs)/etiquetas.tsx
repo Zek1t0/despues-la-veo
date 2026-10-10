@@ -17,7 +17,7 @@ import {
 } from "react-native";
 
 import {
-  getPersonalRatingPresentation,
+  savedTitleOpenAccessibilityLabel,
   PersonalRatingBadge,
   TagCollage,
   TitleGridCard,
@@ -183,9 +183,6 @@ function DetailTitleRow({
   tag: string;
 }) {
   const { theme } = useAppTheme();
-  const personalRatingPresentation = getPersonalRatingPresentation(
-    item.personalRating
-  );
 
   return (
     <View
@@ -199,23 +196,22 @@ function DetailTitleRow({
       }}
     >
       <Pressable
-        accessibilityLabel={`Abrir ${mediaClassificationLabel(item)} ${item.title}${
-          personalRatingPresentation
-            ? `. ${personalRatingPresentation.accessibilityLabel}`
-            : ""
-        }`}
+        accessible
+        accessibilityLabel={savedTitleOpenAccessibilityLabel(item, true)}
         accessibilityRole="button"
         focusable
         onPress={onPress}
         style={({ pressed }) => ({ gap: 5, opacity: pressed ? 0.82 : 1 })}
       >
-        <Text numberOfLines={2} style={{ color: theme.global.textPrimary, fontWeight: "900" }}>
-          {item.title}{item.year ? ` (${item.year})` : ""}
-        </Text>
-        <Text style={{ color: theme.global.textSecondary, fontWeight: "700" }}>
-          {mediaClassificationLabel(item)} · {titleStatusLabel(item.status, item.medium)}
-        </Text>
-        <PersonalRatingBadge value={item.personalRating} />
+        <View accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <Text numberOfLines={2} style={{ color: theme.global.textPrimary, fontWeight: "900" }}>
+            {item.title}{item.year ? ` (${item.year})` : ""}
+          </Text>
+          <Text style={{ color: theme.global.textSecondary, fontWeight: "700" }}>
+            {mediaClassificationLabel(item)} · {titleStatusLabel(item.status, item.medium)}
+          </Text>
+          <PersonalRatingBadge value={item.personalRating} />
+        </View>
       </Pressable>
       <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         <Pressable
@@ -823,7 +819,7 @@ export default function EtiquetasScreen() {
             renderItem={({ item }) =>
               libraryViewMode === "grid" ? (
                 <TitleGridCard
-                  accessibilityLabel={`Abrir ${mediaClassificationLabel(item)} ${item.title}`}
+                  accessibilityLabel={savedTitleOpenAccessibilityLabel(item)}
                   isPinned={tagPinnedAtById.has(item.id)}
                   onPress={() =>
                     router.push({
@@ -836,6 +832,7 @@ export default function EtiquetasScreen() {
                   style={{ width: titleCardWidth }}
                   title={item.title}
                   kindLabel={mediaClassificationLabel(item)}
+                  statusLabel={titleStatusLabel(item.status, item.medium)}
                 />
               ) : (
                 <DetailTitleRow

@@ -21,6 +21,7 @@ import { getPersonalRatingPresentation } from "./personalRatingPresentation";
 export type TitleGridCardProps = {
   title: string;
   kindLabel: string;
+  statusLabel?: string;
   posterUrl?: string | null;
   onPress: () => void;
   accessibilityLabel: string;
@@ -32,6 +33,7 @@ export type TitleGridCardProps = {
 export function TitleGridCard({
   title,
   kindLabel,
+  statusLabel,
   posterUrl,
   onPress,
   accessibilityLabel,
@@ -58,6 +60,7 @@ export function TitleGridCard({
 
   return (
     <Pressable
+      accessible
       accessibilityLabel={composedAccessibilityLabel}
       accessibilityRole="button"
       focusable
@@ -86,6 +89,9 @@ export function TitleGridCard({
 
       <View
         accessible={false}
+        aria-hidden
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
         pointerEvents="none"
         style={[styles.badge, { backgroundColor: theme.structural.imageOverlayMedium }]}
       >
@@ -97,6 +103,9 @@ export function TitleGridCard({
       {isPinned ? (
         <View
           accessible={false}
+          aria-hidden
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
           pointerEvents="none"
           style={[
             styles.pinBadge,
@@ -112,6 +121,9 @@ export function TitleGridCard({
 
       <View
         accessible={false}
+        aria-hidden
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
         pointerEvents="none"
         style={[
           styles.titleOverlay,
@@ -119,6 +131,7 @@ export function TitleGridCard({
         ]}
       >
         <PersonalRatingBadge value={personalRating} style={styles.ratingBadge} />
+        {statusLabel ? <Text style={{ color: theme.structural.onImageOverlaySecondary, fontSize: 11, fontWeight: "700" }}>{statusLabel}</Text> : null}
         <Text
           ellipsizeMode="tail"
           numberOfLines={2}
