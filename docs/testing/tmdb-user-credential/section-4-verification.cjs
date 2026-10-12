@@ -180,16 +180,18 @@ function testScreenIntegrationByInspection() {
   const legacyEnvName = ["EXPO", "PUBLIC", "TMDB", "TOKEN"].join("_");
   for (const source of [search, detail]) {
     assert.match(source, /useTmdbCredential/);
-    assert.match(source, /sameTmdbRemoteRequest/);
     assert.match(source, /TMDB_SETTINGS_ROUTE/);
     assert.match(source, /TMDB_TOKEN_URL/);
     assert.equal(source.includes(legacyEnvName), false);
     assert.doesNotMatch(source, /\.env|Authorization/);
     assert.doesNotMatch(source, /console\.(?:error|log)\(e/);
   }
-  assert.match(search, /shouldRunTmdbSearch/);
-  assert.match(search, /isTmdbSearchDebounceSettled/);
-  assert.match(search, /isTmdbSearchObservationEqual/);
+  const lifecycle = read("src/components/search/useCategorySearch.ts");
+  assert.match(search, /useCategorySearch/);
+  assert.match(lifecycle, /sameSearchRequest\(identity, active\.current\)/);
+  assert.match(lifecycle, /source === "tmdb" \? input\.tmdbGeneration : undefined/);
+  assert.match(lifecycle, /query !== debounced \|\| !input.ready/);
+  assert.match(detail, /sameTmdbRemoteRequest/);
   assert.match(detail, /snapshot\.status !== "configured"/);
   assert.match(detail, /isTmdbDetailLoadingVisible/);
   assert.match(detail, /loadErrorContext\.retry === loadRetry/, "detail hides feedback from a previous retry cycle");

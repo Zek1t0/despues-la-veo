@@ -47,9 +47,11 @@ function testOptionsDisabledParity() {
 }
 
 function testSearchBehaviorAndPreferences() {
-  assert.match(search, /tmdbSearchCapability\.search\(currentQuery\)/);
-  assert.match(search, /setTimeout\(\(\) => setDebounced\(q\.trim\(\)\), 350\)/);
-  assert.match(search, /sameTmdbRemoteRequest/);
+  const lifecycle = read("src/components/search/useCategorySearch.ts");
+  assert.match(search, /useCategorySearch\(/);
+  assert.match(lifecycle, /capability\.search\(query\)/);
+  assert.match(lifecycle, /setTimeout\(\(\) => setDebounced\(query\), 350\)/);
+  assert.match(lifecycle, /sameSearchRequest/);
   assert.doesNotMatch(search, /media_type|searchMulti/);
   assert.match(search, /getViewPreference\("search\.viewMode"\)/);
   assert.match(search, /setViewPreference\("search\.viewMode", next\)/);
