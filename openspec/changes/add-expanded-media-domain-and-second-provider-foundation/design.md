@@ -2,7 +2,7 @@
 
 Ver `proposal.md` para motivación y alcance. La fuente normativa son las specs canónicas del repositorio; esta propuesta contiene deltas, no modifica las specs principales ni implementa código.
 
-Evidencia de implementación revisada:
+Evidencia histórica al proponer la evolución (las restricciones v4/type de esta tabla describen el punto de partida, no el runtime actual):
 
 | Archivo/capa | Restricción actual | Consecuencia |
 | --- | --- | --- |
@@ -21,11 +21,13 @@ Evidencia de implementación revisada:
 
 Las specs provider-abstraction congelaron selector y schema v4/backup v5 para aquella entrega; aquí esos límites cambian deliberadamente mediante deltas completos. Universal-media-identity ya separa namespace y clasificación: no hay motivo para cambiar sus invariantes. La spec backup v5 y su exporter rechazan exportar local-only sin identidad portable; se conserva esa restricción, no se inventa equivalencia por ID para permitir fixtures sin referencias.
 
+Estado al actualizar el 2026-10-11: Secciones 1–2 y 3.1–3.3 completadas; clasificación expandida, snapshots opcionales, refresh monotónico, SQLite v5 y backup v6 ya existen. El remoto TMDB ya guarda por el pipeline genérico; 3.4 permanece sin marcar por su revisión móvil separada pendiente. Buscar aún usa capability/credenciales/errores TMDB y no tiene selección por categorías/fuentes. Secciones 4–5 y el adaptador MangaUpdates todavía requieren implementación; esta actualización no cambia ese estado.
+
 ## Goals / Non-Goals
 
-**Goals:** permitir dominio y persistencia correctos; probarlos en un consumidor manual y automatizado aislado; mantener producción TMDB; habilitar un segundo proveedor solo con evidencia revisada.
+**Goals:** conservar dominio/persistencia correctos y revisión aislada; mantener TMDB; demostrar Manga/Manhwa/Manhua con MangaUpdates bajo elegibilidad revisada y transporte usable por plataforma. La disponibilidad de la fuente remota puede diferir de la capacidad neutral del dominio.
 
-**Non-Goals:** ver exclusiones de proposal. Sin APIs nuevas para comics/libros solo por representarlos, sin clasificar a partir de géneros/título/conteos, sin generalizar servicios de credencial, errores, imágenes o atribución. Sin cambios de package.json ni Git. No ejecutar APPLY desde PROPOSE.
+**Non-Goals:** ver exclusiones de proposal. Ningún proveedor anime/libros ni Novel de MangaUpdates, sin clasificar a partir de categorías/país/título/conteos, sin generalizar servicios de credencial, errores, imágenes o atribución. Sin proxy/backend, dependencias nuevas, cambios de package.json ni operaciones Git de implementación. Esta actualización solo modifica artefactos; no ejecuta APPLY.
 
 ## Decisions
 
@@ -110,13 +112,15 @@ Evidencia de orden: `libraryView.ts` usa voteAverage para `rating-desc`; Bibliot
 
 Archivos UI: Biblioteca, Etiquetas, detalle local, TitleGridCard.tsx, TagCollage.tsx, presentationLabels.ts, libraryView.ts; viewPreferences.ts conserva opciones/keys de orden y apariencia. TitleGridCard recibe un label visible en vez de exigir tipo estructural: superficies locales lo derivan de clasificación y Buscar usa kindLabel normalizado sin interpretar namespace. PosterPlaceholder existente basta; no garantía de portada offline ni allowlist nueva.
 
-### 6. Categorías sin proveedor predeterminado
+### 6. Categorías finitas y disponibilidad por plataforma
 
-Buscar obtiene categoría/source explícita de una unión finita y capabilities ligadas a categoría, no de registry. Antes del gate producción expone solo fuentes realmente disponibles y conserva la experiencia TMDB películas/series; anime/manga futuros no se muestran, ni siquiera deshabilitados. Stubs prueban categorías futuras y el harness aislado expone categorías sintéticas. Después del gate y la entrega real 7/8, únicamente los catálogos aprobados/disponibles se hacen visibles y habilitados. No proveedor candidato presentado como definitivo ni requests reales nuevos antes del gate.
+Buscar obtiene categoría/source explícita de una unión finita y capabilities ligadas a categoría, no de registry. Películas → TMDB movie; Series → TMDB tv; Manga → MangaUpdates Manga; Manhwa → MangaUpdates Manhwa; Manhua → MangaUpdates Manhua. Las categorías son la arquitectura de navegación; el proveedor es fuente/atribución secundaria. Preservar comportamiento TMDB al preparar Sección 4, sin requests nuevos productivos ni fixtures fuera del harness. Anime no es categoría remota de este milestone.
+
+Solo exponer categorías con elegibilidad documentada, adaptador disponible y transporte real validado en la plataforma activa. MangaUpdates permanece invisible en Web mientras CORS bloquee requests directos, sin controles deshabilitados ni errores que pidan token TMDB. Web conserva TMDB, Biblioteca/detalle locales y review sintético dev; poder representar/importar cómics en Web no demuestra discovery MangaUpdates Web. Android/iOS se habilitan individualmente tras validación real de la plataforma; declarar exactamente entorno validado y pendientes, sin atribuir iOS a Windows. Si en el futuro el proveedor permite el origen Web o un change separado aprueba transporte legítimo, podrá habilitarse sin cambiar identidad/taxonomía; no anticipar proxy/backend ni spoof de headers.
 
 Identidad de solicitud: secuencia + query + category/source + generación de configuración solo si aplica + retry. Cambiar fuente invalida loading/error/resultados anteriores incluso con igual query. TMDB mantiene debounce 350 ms, retry y estados de credencial; fuente sin credencial no consulta ese gate. Errores/configuración siguen específicos por fuente. Destino se resuelve por casos reconocidos y referencia validada, no por interpolación de provider arbitrario. Sin búsqueda concurrente, ranking mixto o deduplicación.
 
-Rutas nuevas se eligen después del gate como `/<proveedor>/<namespace>/[id]`, no `/provider/...`. Si varias referencias proveen links, se muestran links explícitos reconocidos, no una fuente preferida inventada. No framework genérico de attribution: About suma bloque específico cuando se conoce el contrato.
+Ruta MangaUpdates concreta: `/mangaupdates/series/[id]`; TMDB conserva `/tmdb/[type]/[id]`. Resolver destinos por casos reconocidos y referencia canónica, no por provider arbitrario ni generic catch-all. Si varias referencias proveen links, mostrar links explícitos reconocidos sin prioridad inventada; no ofrecer navegación remota MangaUpdates no usable en la plataforma, pero conservar provenance local. No framework genérico de attribution.
 
 ### 7. Consumidor inmediato: revisión sintética aislada
 
@@ -136,15 +140,76 @@ Añadir los cuatro casos de refresh monotónico de decisión 2 y un item audiovi
 
 Alcance exacto de aislamiento: el harness nunca abre/escribe/importa a DB personal, y restaura sus archivos TEST únicamente mediante el flujo de revisión en la segunda DB aislada. `fixture-review` solo existe en datos de sesiones y sus archivos TEST; no hay adaptador productivo, registry, fuente runtime, sentinel en schema ni rechazo especial por token en importer de producción. No se promete impedir que un desarrollador seleccione manualmente fuera del harness un archivo TEST estructuralmente válido: el importer genérico acepta referencias desconocidas conforme a contrato. El aislamiento es garantía del recorrido controlado, no una política nueva de importación universal.
 
-### 8. Gate externo y fase real
+### 8. Elegibilidad MangaUpdates y fase real mínima
 
-Ningún proveedor final seleccionado. Estado inicial fijado por el usuario, no nueva conclusión de investigación: AniList indisponible sin permiso expreso; Kitsu sin términos API; MAL sin verificación primaria storage/export; MangaBaka sin aclaración upstream. No llamar APIs reales de candidatos durante secciones 1–5.
+MangaUpdates es la fuente elegida de este change para Manga/Manhwa/Manhua, con resultado de exploración CONDITIONAL GO. Anime se retira del compromiso de entrega y de las dependencias de cierre; no añadir MAL, AniList, Kitsu u otra fuente. Secciones 1–5 siguen revisables sin nueva red productiva; la investigación oficial ya realizada no equivale a implementación ni a completar 6.1/6.2.
 
-Antes de sección 6, tarea 6.1 requiere evidencia first-party guardada en este change: permiso para tracker independiente, snapshots offline, retención, export/import y backups, uso previsto/comercial, imágenes/atribución, procedencia upstream cuando aplica; endpoints/IDs/namespaces/formats, auth sin secretos en cliente, límites/429, CORS web y viabilidad nativa. No basta BYO-auth, licencia del código, fixture o publicidad de API. Contactar proveedor requiere autorización específica aparte; la propuesta no autoriza mensajes.
+#### 8.1 Evidencia primaria y política de elegibilidad
 
-Gate se resuelve por revisión explícita de evidencia/selección; task checkbox no equivale por sí solo a permiso. Si requiere backend, secret embarcado, cuentas/sync, SDK/dependencia nueva o tercer proveedor para completar anime+manga, parar fase dependiente y actualizar alcance/diseño para revisión, no ampliar automáticamente. Si candidato solo cubre manga, sección 7 anime sigue bloqueada; no afirmar completado el milestone entero. Misma fuente puede habilitar literature/familias adyacentes si mapping y licencia claros, sin exigir todos esos catálogos.
+La elegibilidad puede sustentarse en A) términos/políticas oficiales publicados suficientemente compatibles con el uso documentado, o B) autorización explícita del proveedor. No exigir permiso humano/email individual en todos los casos. Revisar API, tracker independiente, retención/snapshots, export/import/backups, imágenes/atribución, uso previsto/comercial, upstream pertinente, auth, IDs, límites y plataformas. Silencio/falta de respuesta nunca autoriza; ausencia de prohibición no equivale a clearance completo. Licencia de wrappers/código, BYO-auth, fixtures o uso por otros trackers tampoco completan el gate. Contactar proveedores requiere autorización específica; este change no autoriza mensajes.
 
-Tras aprobación: actualizar estos artefactos con provider/namespaces/rutas y mapping exactos antes de codificar el adaptador. Implementar DTO → mapper → contratos existentes, reference canonicalization, initialTags [], no voteAverage. Configuración, errores, rate limits, markup, imágenes y About específicos. Habilitar anime y después manga/familias adyacentes permitidas. Sin enlace automático de mappings upstream.
+Evidencia obtenida en la exploración del 2026-10-11, no nueva prueba ejecutada al actualizar:
+
+| Evidencia oficial / observación | Resultado y límite |
+| --- | --- |
+| [API oficial](https://api.mangaupdates.com/) y [OpenAPI](https://api.mangaupdates.com/openapi.yaml) | Metadata pública; POST `/v1/series/search` y GET `/v1/series/{id}` probados con 200 sin credenciales y sin Origin externo |
+| [AUP oficial](https://api.mangaupdates.com/#section/Acceptable-Use-Policy) | Exige crédito MangaUpdates, espaciado razonable y caché; prohíbe uso fraudulento/ilegal/spam/daño a la DB; puede cambiar; no cuota numérica/TTL verificados |
+| Seguridad documentada | Introducción indica operaciones públicas; YAML declara bearerAuth global. Validar operaciones concretas sin imponer login/secret innecesarios |
+| CORS | Search con localhost Origin: 403; OPTIONS preflight: 403; GET con Origin externo: 403; Origin `https://www.mangaupdates.com`: 200 y ACAO para ese origen. Transporte Web directo no viable actualmente |
+| Runtime nativo | La exploración probó HTTP desde este entorno Windows, no la app Android/iOS. Ninguna plataforma nativa MangaUpdates se declara validada por esa evidencia |
+| Portadas | API devuelve URLs HTTPS `cdn.mangaupdates.com`; un HEAD obtuvo 400. Renderizado nativo, redirects y derechos de display/hotlink pendientes; URL pública no acredita copyright |
+| Retención/backups/comercial | AUP inspeccionada no trata expresamente retención indefinida, export/backups o uso comercial. No afirmar autorización expresa de DespuésLaVeo ni que todos los derechos están resueltos |
+
+Política de ingeniería para este milestone personal, open-source y no comercial: implementación del adaptador/dominio puede avanzar basada en términos oficiales suficientemente compatibles, con evaluación y restricciones documentadas. Uso acotado a search/detail iniciados por el usuario, snapshots pequeños de cada obra seleccionada y sus backups locales, sin bulk mirroring ni scraping fuera de API; atribución, caché/espaciado, rating omitido y ninguna descarga permanente de portadas. Las incertidumbres expresas anteriores no se ocultan ni se convierten en certeza legal; una restricción material incompatible exige detener el uso afectado/revisar antes de activar. Portadas no permitidas o inciertas usan posterUrl null y placeholder, sin bloquear todo el adaptador. Revisar términos y derechos otra vez antes de distribución materialmente más amplia/comercial; esa release no es entregable de este milestone.
+
+Esta decisión documenta una base de elegibilidad de desarrollo, no habilita por sí sola categorías: 6.1 verifica evidencia/condiciones, 6.2 coherencia y 8.3 runtime real antes de considerar completo el vertical. CORS bloquea exposición Web, no implementación neutral/nativa. Completar fixtures o reescribir tareas no completa gates ni pruebas.
+
+#### 8.2 Operaciones, identidad y contrato
+
+POST `/v1/series/search`: JSON `search`, `stype: title`, `type: [Manga|Manhwa|Manhua]` según categoría, `page: 1`, `perpage` válido. Respuesta `total_hits/page/per_page/results[].record`, con `hit_title` alternativo; conservar ranking de una fuente, validar tipo/ID de cada registro y usar título canónico, no hit_title como identidad. Una capability ligada al filtro puede conservar search(query). Paginación queda específica: primera página, sin cursor/hasMore universal ni N requests de detalle para pintar resultados. La exploración vio perpage 5 respetado y perpage 3 filtrado devuelto como 25; no asumir tamaño ni completar páginas automáticamente.
+
+GET `/v1/series/{id}` retorna registro: validar DTO y coincidencia de series_id con referencia/ruta. Helper canónico `provider: mangaupdates`, `resourceNamespace: series`, `externalId: series_id decimal como string`. Validar entero positivo sin coerción insegura ni rangos de 32 bits; rechazar valores numéricos ya inseguros en vez de perder precisión. No reemplazar por slug/web token/ID legacy. `series` identifica recurso externo, nunca medio/formato local. ID SavedTitle sigue local, opaco e independiente.
+
+DTO/transporte/mappers y errores bajo `src/providers/mangaupdates/`; pantalla `app/mangaupdates/series/[id].tsx`; selección de categoría/destino en `app/(tabs)/buscar.tsx`, fuente local en `app/title/[id].tsx` y atribución en `app/settings/about.tsx`. Reutilizar ProviderSearchResult, ProviderSearchCapability, ProviderMediaDetails, ProviderLocalSnapshot, materializeProviderSavedTitle y saveProviderTitle sin registry/capability de detalle general. Sin nuevas dependencias previstas ni modificación de package.json.
+
+#### 8.3 Mapping conservador y snapshot
+
+| type MangaUpdates habilitado | medium | contentFamily | primaryFormat |
+| --- | --- | --- | --- |
+| Manga | comic | manga | null |
+| Manhwa | comic | manhwa | null |
+| Manhua | comic | manhua | null |
+
+Novel es estructuralmente compatible con literature/null/novel, pero no habilitado en este change. Excluir Novel, Doujinshi, OEL, Artbook, Drama CD, Filipino, Indonesian, Thai, Vietnamese, Malaysian, Nordic, French, Spanish, German, Russian y tipos desconocidos/no soportados tanto en discovery como guardado; no ampliar vocabulario. No inferir webtoon/one-shot/light-novel por categorías, país, título, descripción o conocimiento cultural. `Webtoon/Webcomic`, `Based on a Webcomic/Webtoon`, `Adapted to Webtoon` y filtros oneshots no refinan primaryFormat en esta entrega. Las fixtures con formatos conocidos prueban el dominio, no esa precisión de producción.
+
+| Campo | Mapping MangaUpdates |
+| --- | --- |
+| title | título canónico no vacío; dato inválido impide guardar |
+| year | solo año inequívoco válido convertido a número; otro valor → null |
+| posterUrl | image.url.original absoluta HTTPS permitida; inválida/no permitida → null; thumb puede servir resultados |
+| overview | description normalizada a texto seguro/legible, sin ejecutar markup ni recuperar enlaces; vacío → null |
+| genres | solo valores narrativos aprobados explícitamente; excluir demografía (p.ej. Seinen/Shounen), avisos/temas ambiguos y categories; ausentes → [] |
+| medium/contentFamily/primaryFormat | tabla anterior; clasificación local monotónica autoritativa |
+| initialTags (política de creación, fuera del snapshot) | [] siempre; no reemplaza tags personales al refrescar |
+| voteAverage | propiedad totalmente ausente: no número, null ni undefined propio; bayesian_rating/rating_votes no se mapean |
+
+Casos observados: Berserk `51239621230` Manga/1989 → comic/manga/null; Solo Leveling `15180124327` Manhwa/2018 → comic/manhwa/null, aun con categoría votada Webtoon/Webcomic; One Punch-Man `30535847369` Manga/2012 → comic/manga/null, aunque Based on a Webcomic/Webtoon. Solo Leveling (Novel) `13184758110` Novel/2016 se excluye; no fusionar por nombre ni relaciones. [Berserk](https://api.mangaupdates.com/v1/series/51239621230), [Solo Leveling](https://api.mangaupdates.com/v1/series/15180124327), [One Punch-Man](https://api.mangaupdates.com/v1/series/30535847369).
+
+No persistir autores/artistas/publicación/capítulos/relaciones ni ratings nuevos. El genérico crea voteAverage null si ausente y conserva valor histórico TMDB en refresh no-TMDB; rechaza own-properties no-TMDB antes de escritura. Conservar identidad completa, monotonicidad, resto de metadata válida, campos personales, referencias/pins, reloj y separación genres/initialTags, sin matching/fusión/deduplicación.
+
+#### 8.4 Transporte responsable, provenance y validación
+
+Search/detail solo por intención de usuario (debounce/retry de esa acción incluidos); sin refresh de fondo ni descarga de catálogo. Caché acotada de metadata/búsquedas y espaciado razonable compartidos por requests MangaUpdates; definir política concreta verificable en 6.3 sin inventar cuota oficial. Respetar 429/Retry-After cuando disponible con backoff limitado, sin retry storm. Errores específicos network/timeout/aborted/HTTP/rate-limit/not-found/invalid-response/acceso rechazado; no masquerade de credential TMDB. No secret, cuenta/OAuth ni User-Agent obligatorio inventado; validar cambios reales del contrato.
+
+Remote detail: `Datos: MangaUpdates`, con enlace al registro oficial validado cuando corresponda. Local detail: provenance reconocible por ProviderReference donde se muestran fuentes, sin red necesaria ni marca integrada en identidad. About: bloque MangaUpdates/enlace. Solo referencias remotas HTTPS permitidas, sin descarga permanente ni binarios en backup; imagen ausente/restringida/fallida → placeholder. Metadata API permission y derechos de arte son asuntos separados.
+
+Vertical mínimo: categoría → search normalizado → detalle MangaUpdates → snapshot/input initialTags [] → saveProviderTitle → Biblioteca/detalle por ID → re-save/refresh → offline → backup v6/import. No migración adicional ni v7. Referencias desconocidas se preservan aunque el adaptador no esté disponible; import no interpreta series como taxonomía. Android/iOS: probar cada plataforma habilitada en runtime real (search, detail, cover/fallback, save, local detail, refresh, offline/persistencia, backup, attribution y errores); documentar dispositivo/OS/runtime y pendientes. Windows no verifica iOS. 3.4 sigue siendo comprobación móvil independiente. Web: validar TMDB normal, ausencia MangaUpdates/red prohibida y harness neutral, no proclamar provider Web.
+
+#### 8.5 Aceptación y roadmap
+
+Cierre: dominio local expandido, SQLite v5/backup v6/import histórico, categorías finitas, fixture vertical aislado, TMDB preservado y Manga/Manhwa/Manhua reales en al menos una plataforma nativa elegible validada; cada plataforma habilitada exige su propia validación, con disponibilidad/plataformas y evaluación de desarrollo documentadas. Ausencia de anime y bloqueo MangaUpdates Web no impiden el cierre bajo este alcance. Validar el vertical en instalación/build de prueba controlada antes de exponerlo en producción; ninguna plataforma nativa puede declararse habilitada sin su prueba real. No cerrar mediante fixtures o navegador estrecho ni afirmar aprobación expresa de la app, registry, ratings universales, libros o manual local.
+
+Roadmap no bloqueante, sin tareas aquí: proveedor anime dedicado; Open Library/literatura (incluido Novel MangaUpdates opcional); creación manual local; ExternalRating; precisión webtoon/one-shot; autores/publicación; extensión/protocolo comunitario; capítulos/lectura/progreso; revisión de política/derechos previa a release más amplia/comercial.
 
 ## Risks / Trade-offs
 
@@ -153,7 +218,9 @@ Tras aprobación: actualizar estos artefactos con provider/namespaces/rutas y ma
 - [Snapshot no-TMDB borra rating TMDB] → own-property + ownership check, pruebas create/refresh/null/undefined y backup separado.
 - [Fixture contamina biblioteca] → DB física aislada, repositorio explícito, release gate y prueba que initDb productivo no se invoca.
 - [Pérdida de familia por import histórico] → convertir familia no suministrada en updates, no null explícito; insert histórico null.
-- [Proveedor no elegido prolonga milestone] → secciones 1–5 y regresión inmediata entregables; 6–8 siguen pendientes, no archivar como todo completado.
+- [Confundir implementación con elegibilidad/runtime] → 6.1/6.2 y 8.3 siguen pendientes hasta sus comprobaciones; términos compatibles habilitan desarrollo conservador, no todas las plataformas ni certeza legal.
+- [CORS bloquea Web] → ocultar MangaUpdates, preservar TMDB/local y usar review neutral; no proxy ni spoof. No exigir Web MangaUpdates para cerrar este alcance.
+- [Condiciones/portadas cambian] → revisar fuentes primarias y restricciones materiales; posterUrl null cuando necesario; nueva revisión antes de release más amplia/comercial.
 - [URLs no garantizan offline] → snapshot textual usable + placeholder; no descarga permanente de imágenes automática.
 - [Vocablo local insuficiente para DTO futuro] → null honesto o no habilitar recurso sin medio probado; enriquecer el vocabulario solo mediante revisión.
 
@@ -163,9 +230,31 @@ Tras aprobación: actualizar estos artefactos con provider/namespaces/rutas y ma
 2. Sección 1 integra dominio/contratos y convierte consumidores internos mínimos para mantener compilación; adaptaciones UI visibles completas son sección 3. No publicar build con modelo incompatible y storage antiguo.
 3. Sección 2 migra v5, storage, backup v6 y tests históricos. Una release no habilita nuevos guardados antes de pasar round-trip y FK/rollback.
 4. Secciones 3–5 completan browsing, arquitectura de categorías futuras invisibles en producción y consumidor dev aislado. Ejecutar regresión 9.1 ahora; segundo proveedor sigue apagado.
-5. Resolver evidencia 6.1 y actualizar artefactos concretos; ejecutar 6–8 solo si gate aprobado; regresión 9.2 después de activación.
+5. Verificar evidencia/condiciones de desarrollo 6.1 y coherencia 6.2; implementar adaptador 6.3–6.4 y vertical 8, validar cada plataforma nativa habilitada y mantener MangaUpdates oculto en Web; ejecutar 9.2. Sección 7 solo registra alcance anime retirado, sin dependencia de entrega. No avanzar checkboxes por esta actualización.
 6. Rollback por fallo: transacción vuelve a origen sin publish. Rollback después de commit: conservar DB v5/backup v6, restaurar copia v4 pre-rollout para app anterior; nunca reinterpretar comic/literature como movie/TV ni prometer downgrade lossless. Datos posteriores necesitan versión compatible para restauración.
 
 ## Open Questions
 
-No hay preguntas pendientes que impidan revisar secciones 1–5. Nombre/namespaces, endpoints, condiciones API, familias habilitadas y bloques de atribución del proveedor son resultados del gate externo, no placeholders para una decisión de producción ya tomada. Si su resolución altera arquitectura o alcance, exige actualizar estos artefactos antes de APPLY dependiente. No es necesario decidir un catálogo de libros/cómics completo ahora.
+Permanecen documentados: límites/TTL oficiales y headers no verificados; retención/backups/comercial no tratados expresamente; condiciones de display/hotlink y runtime de portadas. No bloquean automáticamente desarrollo conservador; restricciones materiales incompatibles sí bloquean el uso afectado y portadas pueden omitirse. 6.3 debe concretar valores narrativos permitidos y política conservadora de caché/espaciado sin atribuirlos al proveedor. 8.3 debe registrar plataformas nativas realmente verificadas; iOS permanece pendiente si no existe entorno, sin simular aprobación. Ninguna pregunta pendiente autoriza proxy, scope adicional o exposición Web bloqueada.
+
+## Android physical-device validation
+
+Validated on 2026-10-12.
+
+- Device: Redmi Note 13
+- Runtime: `expo run:android`
+- Result: PASS
+
+Manual review confirmed:
+
+- application launch/build
+- Biblioteca views and filters
+- local detail/navigation
+- persistence
+- offline/local-first behavior
+- mobile layout/usability
+- basic accessibility behavior
+- no observed crashes or regressions
+
+iOS was not validated because the development environment is Windows.
+This does not claim iOS runtime validation.
