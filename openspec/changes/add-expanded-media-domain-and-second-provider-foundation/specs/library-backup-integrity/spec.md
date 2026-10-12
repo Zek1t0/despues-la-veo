@@ -106,3 +106,15 @@ El sistema MUST resolver items por referencias completas o identidad legacy exac
 - **WHEN** la importación v6 tiene items o pins inválidos y Appearance confiable
 - **THEN** reporta resultados reales, preserva operaciones válidas bajo el contrato parcial y aplica Appearance únicamente después de confirmar restauración
 
+### Requirement: MangaUpdates reutiliza backup v6 sin autoridad de namespace
+La integración MangaUpdates MUST reutilizar la representación v6 vigente, sin backup v7, campos persistidos adicionales ni binarios de portadas. MUST conservar referencia mangaupdates/series/series_id decimal string y clasificación local por separado, sin interpretar series como medio/formato durante import. MUST preservar referencias desconocidas aun sin adaptador disponible y permitir snapshot local útil en plataformas sin transporte MangaUpdates. La restauración MUST conservar su semántica de presencia/null/frescura independiente de refresh remoto.
+
+#### Scenario: round-trip MangaUpdates sin adaptador Web
+- **WHEN** un Manga/Manhwa/Manhua guardado se exporta como v6 y se importa en Web sin transporte MangaUpdates
+- **THEN** conserva referencia completa/ID externo grande, clasificación nullable, snapshot/datos personales y pins bajo resolución portable vigente
+- **AND** no consulta la API, interpreta series como clasificación ni requiere habilitar categorías MangaUpdates
+
+#### Scenario: imagen en backup
+- **WHEN** se exporta una obra con posterUrl MangaUpdates HTTPS permitida o null
+- **THEN** se conserva el valor bajo el contrato vigente sin incluir binarios ni prometer portada offline
+

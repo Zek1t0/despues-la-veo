@@ -1,6 +1,6 @@
 ## Purpose
 
-Ofrecer un recorrido de revisión seguro con obras originales sintéticas que pruebe los contratos y el guardado local antes de autorizar una fuente real adicional.
+Ofrecer un recorrido seguro con obras originales sintéticas que pruebe contratos/guardado locales independientemente de la disponibilidad de una fuente real. En Web con CORS MangaUpdates bloqueado, este recorrido permite revisar UI neutral sin afirmar soporte de la API real.
 
 ## ADDED Requirements
 
@@ -28,7 +28,7 @@ La revisión MUST ofrecer resultado de búsqueda, detalle, guardado, Biblioteca 
 - **THEN** pueden guardarse como items independientes y volver a resolverse sin cruzar datos
 
 ### Requirement: revisión cubre formatos y metadata incompleta
-Las fixtures MUST ser originales y cubrir anime TV/movie/OVA/ONA/special/music, manga general/one-shot, manhwa webtoon explícito, manhua, cómic occidental, novela/light novel, clasificación nullable, portada/año/resumen ausentes, géneros vacíos, texto largo y markup. MUST cubrir clasificación inválida y presencia/propiedad del rating legacy, sin utilizar obras copiadas de un catálogo.
+Las fixtures MUST ser originales y cubrir anime TV/movie/OVA/ONA/special/music, manga general/one-shot, manhwa webtoon explícito, manhua, cómic occidental, novela/light novel, clasificación nullable, portada/año/resumen ausentes, géneros vacíos, texto largo y markup. MUST cubrir clasificación inválida y presencia/propiedad del rating legacy, sin utilizar obras copiadas de un catálogo. Esta cobertura MUST NOT exigir proveedor anime/literatura ni precisión webtoon/one-shot MangaUpdates: prueba capacidades del dominio, no alcance remoto de producción.
 
 #### Scenario: metadata incompleta y lectura
 - **WHEN** se revisa una obra de lectura sin imagen, año ni resumen
@@ -41,6 +41,11 @@ La revisión MUST exportar backup v6 de los items sintéticos exportables, ident
 - **WHEN** se exporta y restaura la biblioteca sintética con referencias en la segunda base de prueba
 - **THEN** se conservan los datos locales y pins con su identidad correcta
 - **AND** completar esta revisión no habilita proveedores ni completa tareas reales bloqueadas
+
+#### Scenario: revisión Web con CORS real bloqueado
+- **WHEN** se revisa el vertical sintético en Web y MangaUpdates directo no está disponible
+- **THEN** puede comprobarse resultado/detalle/save/local/refresh/backup neutral usando solo fixtures y DB aislada
+- **AND** no se consulta MangaUpdates, habilitan categorías productivas bloqueadas ni se declara validación del proveedor real o runtime nativo
 
 #### Scenario: archivo TEST fuera del harness
 - **WHEN** un desarrollador selecciona manualmente fuera del harness un backup TEST válido con referencia fixture-review

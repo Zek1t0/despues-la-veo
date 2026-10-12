@@ -8,7 +8,7 @@ El sistema SHALL ofrecer resultados `ProviderSearchResult` mediante una única c
 - **THEN** recibe resultados normalizados sin page, cursor, hasMore ni metadata de paginación en el contrato compartido
 
 ### Requirement: Buscar conserva su comportamiento con la frontera normalizada
-El sistema SHALL mantener películas y series de Buscar respaldadas por TMDB y permitir categorías explícitas adicionales únicamente cuando su fuente sea aprobada y SHALL preservar debounce, consulta vacía, estado de credencial, estados de carga y error, rechazo de respuestas obsoletas, etiquetas visibles y navegación actuales al consumir resultados normalizados.
+El sistema SHALL mantener películas y series de Buscar respaldadas por TMDB y permitir categorías explícitas adicionales únicamente cuando su fuente cumpla la evaluación de elegibilidad por políticas oficiales suficientes o autorización y su transporte esté disponible/validado en la plataforma activa. SHALL preservar debounce, consulta vacía, estado de credencial TMDB específico, estados de carga y error propios de la fuente, rechazo de respuestas obsoletas por query/category/source/sequence/retry/configuración pertinente, etiquetas visibles y navegación reconocida al consumir resultados normalizados. La capability neutral SHALL NOT prometer disponibilidad universal Web ni forzar credenciales TMDB a MangaUpdates.
 
 #### Scenario: Navegación desde resultado normalizado
 - **WHEN** el usuario abre un resultado normalizado con referencia `tmdb/movie/42`
@@ -127,10 +127,22 @@ El snapshot MUST distinguir voteAverage no suministrado de null explícito. La m
 - **THEN** se rechaza el input sin escritura parcial ni borrado de la puntuación existente
 
 ### Requirement: texto portable y categorías externas honestas
-El sistema MUST almacenar overview como texto seguro, normalizando markup específico sin ejecutar contenido o recuperar enlaces. MUST conservar year nullable como inicio/estreno útil. MUST persistir únicamente géneros reconocibles y MUST omitir temas, demografía o spoilers ambiguos. El segundo proveedor MUST suministrar initialTags vacío salvo decisión de producto revisada, sin modificar tags en refresh.
+El sistema MUST almacenar overview como texto seguro, normalizando markup específico sin ejecutar contenido o recuperar enlaces. MUST conservar year nullable como inicio/estreno útil. MUST persistir únicamente géneros narrativos explícitamente aprobados y MUST omitir temas, demografía o spoilers ambiguos; MangaUpdates MUST NOT importar indiscriminadamente genres/categories. MangaUpdates MUST suministrar initialTags vacío en este change, sin modificar tags en refresh.
 
 #### Scenario: descripción con markup y categorías mixtas
 - **WHEN** se normaliza una descripción con HTML/Markdown y categorías que mezclan géneros y temas
 - **THEN** el snapshot contiene texto legible sin contenido ejecutable y solo géneros clasificados con certeza
 - **AND** initialTags queda separado de genres
+
+### Requirement: mapping inicial MangaUpdates acotado al dominio existente
+MangaUpdates MUST normalizar únicamente tipos Manga/Manhwa/Manhua como comic y su familia explícita con primaryFormat null, title canónico válido, año inequívoco o null, posterUrl absoluta HTTPS permitida o null y overview seguro/legible o null. MUST omitir totalmente voteAverage aunque exponga bayesian_rating/rating_votes y MUST NOT añadir campos persistidos, modelo universal de ratings, registry o capability universal de detalle. Namespace series MUST ser identidad externa y MUST NOT determinar clasificación. Novel y otros tipos, precisión webtoon/one-shot/light-novel, autores/publicación/relaciones y lectura MUST permanecer fuera de este adaptador inicial.
+
+#### Scenario: MangaUpdates sin precisión estructural
+- **WHEN** se normaliza Manhwa con categoría Webtoon/Webcomic y rating remoto
+- **THEN** el snapshot contiene comic/manhwa/null sin voteAverage ni tags iniciales fabricados
+- **AND** las reglas locales de refresh conservan cualquier formato previamente conocido
+
+#### Scenario: tipo no admitido
+- **WHEN** una respuesta MangaUpdates identifica Novel o un tipo no habilitado
+- **THEN** no se entrega como metadata guardable de este vertical ni se crea vocabulario nuevo
 
