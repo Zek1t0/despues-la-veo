@@ -10,9 +10,11 @@ export type LibraryScreenSnapshot = {
   pins: TitlePin[];
 };
 
-export async function getLibraryScreenSnapshot(): Promise<LibraryScreenSnapshot> {
+export async function getLibraryScreenSnapshot(
+  database?: Parameters<typeof listSavedTitlesWithDb>[0] & Parameters<typeof listTitlePinsForContextWithDb>[0]
+): Promise<LibraryScreenSnapshot> {
   return runSerializedStorageMutation(async () => {
-    const db = await initDb();
+    const db = database ?? await initDb();
     const items = await listSavedTitlesWithDb(db);
     const pins = await listTitlePinsForContextWithDb(db, LIBRARY_PIN_CONTEXT);
     return { items, pins };

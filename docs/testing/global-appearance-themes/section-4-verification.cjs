@@ -17,7 +17,7 @@ const { APPEARANCE_PALETTE_CATALOG } = require("../../../src/theme/palettes.ts")
 const { resolveTheme } = require("../../../src/theme/resolver.ts");
 
 function testRouteAndSettingsEntry() {
-  const root = read("app/_layout.tsx");
+  const root = read("src/components/ProductionRootLayout.tsx");
   const settings = read("app/(tabs)/ajustes.tsx");
   assert.equal(fs.existsSync(path.join(repoRoot, "app/settings/appearance.tsx")), true);
   assert.match(root, /name="settings\/appearance" options=\{\{ title: "Apariencia" \}\}/);

@@ -31,20 +31,27 @@ export type AppThemeContextValue = Readonly<{
 
 const AppThemeContext = createContext<AppThemeContextValue | null>(null);
 
-export function AppThemeProvider({ children, fallback = null }: Readonly<{
+export type ThemePersistence = Readonly<{
+  read: typeof getAppearancePreference;
+  write: typeof setAppearancePreference;
+}>;
+const personalThemePersistence: ThemePersistence = { read: getAppearancePreference, write: setAppearancePreference };
+
+export function AppThemeProvider({ children, fallback = null, persistence = personalThemePersistence }: Readonly<{
   children: ReactNode;
   fallback?: ReactNode;
+  persistence?: ThemePersistence;
 }>): ReactNode {
-  const coordinator = useMemo(() => new AppearanceCoordinator(setAppearancePreference), []);
+  const coordinator = useMemo(() => new AppearanceCoordinator(persistence.write), [persistence]);
   const [state, setState] = useState(() => coordinator.getState());
   const observedScheme = useColorScheme();
   const runtimeSystemScheme: EffectiveScheme = observedScheme === "light" ? "light" : "dark";
 
   const hydrate = useCallback(async () => {
     const token = coordinator.beginHydration();
-    const result = await getAppearancePreference();
+    const result = await persistence.read();
     coordinator.completeHydration(token, result);
-  }, [coordinator]);
+  }, [coordinator, persistence]);
 
   useEffect(() => {
     const unsubscribe = coordinator.subscribe(setState);

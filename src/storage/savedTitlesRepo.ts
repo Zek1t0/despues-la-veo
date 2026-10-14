@@ -182,9 +182,10 @@ export async function saveProviderTitleWithDb(
 
 export async function saveProviderTitle(
   input: ProviderMaterializationInput,
-  generateId: () => string
+  generateId: () => string,
+  database?: SavedTitlesMutationDatabase
 ): Promise<string> {
-  const db = await initDb();
+  const db = database ?? await initDb();
   return runSerializedStorageMutation(async () => {
     let savedTitleId: string | null = null;
     await db.withTransactionAsync(async () => {

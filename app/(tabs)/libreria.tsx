@@ -109,7 +109,27 @@ function Pill({
   );
 }
 
-export default function LibraryScreen() {
+export type LibraryScreenServices = Readonly<{
+  getLibraryScreenSnapshot: typeof getLibraryScreenSnapshot;
+  deleteSavedTitle: typeof deleteSavedTitle;
+  upsertSavedTitle: typeof upsertSavedTitle;
+  setTitlePinState: typeof setTitlePinState;
+  getViewPreference: typeof getViewPreference;
+  setViewPreference: typeof setViewPreference;
+  useFocusEffect: typeof useFocusEffect;
+  useRouter: () => Pick<ReturnType<typeof useRouter>, "push">;
+}>;
+const personalLibraryServices: LibraryScreenServices = {
+  getLibraryScreenSnapshot, deleteSavedTitle, upsertSavedTitle, setTitlePinState,
+  getViewPreference, setViewPreference, useFocusEffect, useRouter,
+};
+
+/** Bindings are fixed for this mounted screen; default remains the personal repository. */
+export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenServices } = {}) {
+  const {
+    getLibraryScreenSnapshot, deleteSavedTitle, upsertSavedTitle, setTitlePinState,
+    getViewPreference, setViewPreference, useFocusEffect, useRouter,
+  } = bindings ?? personalLibraryServices;
   const router = useRouter();
   const { theme } = useAppTheme();
   const { width: windowWidth } = useWindowDimensions();
@@ -507,7 +527,7 @@ export default function LibraryScreen() {
 
   return (
     <>
-      {Platform.OS !== "web" ? (
+      {!bindings && Platform.OS !== "web" ? (
         <Tabs.Screen
           options={{
             headerLeft: isSearchActive
@@ -592,7 +612,7 @@ export default function LibraryScreen() {
           width: "100%",
         }}
       >
-      {Platform.OS === "web" ? (
+      {bindings || Platform.OS === "web" ? (
         <View style={{ gap: 10 }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
             <TextInput

@@ -181,16 +181,31 @@ function Card({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function TitleDetailScreen() {
+type DetailParams = { id?: string | string[]; pinContext?: string | string[]; tag?: string | string[] };
+export type TitleDetailServices = Readonly<{
+  getTitleDetailPinSnapshot: typeof getTitleDetailPinSnapshot;
+  deleteSavedTitle: typeof deleteSavedTitle;
+  setPersonalRating: typeof setPersonalRating;
+  updateSavedTitleMetadata: typeof updateSavedTitleMetadata;
+  setTitlePinState: typeof setTitlePinState;
+  useFocusEffect: typeof useFocusEffect;
+  useRouter: () => Pick<ReturnType<typeof useRouter>, "back" | "push">;
+  useParams: () => DetailParams;
+}>;
+const personalDetailServices: TitleDetailServices = {
+  getTitleDetailPinSnapshot, deleteSavedTitle, setPersonalRating, updateSavedTitleMetadata,
+  setTitlePinState, useFocusEffect, useRouter, useParams: () => useLocalSearchParams<DetailParams>(),
+};
+
+/** Reuses the same editor and intent queues with explicit, mount-stable repository bindings. */
+export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetailServices } = {}) {
+  const { getTitleDetailPinSnapshot, deleteSavedTitle, setPersonalRating,
+    updateSavedTitleMetadata, setTitlePinState, useFocusEffect, useRouter, useParams } = bindings ?? personalDetailServices;
   const { theme } = useAppTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
-  const { id, pinContext, tag } = useLocalSearchParams<{
-    id?: string | string[];
-    pinContext?: string | string[];
-    tag?: string | string[];
-  }>();
+  const { id, pinContext, tag } = useParams();
 
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState<SavedTitleWithProviderReferences | null>(null);
@@ -532,11 +547,11 @@ export default function TitleDetailScreen() {
   if (!item) {
     return (
       <>
-        <Stack.Screen
+        {!bindings && <Stack.Screen
           options={{
             title: "Título",
           }}
-        />
+        />}
         <View style={{ flex: 1, padding: 16, gap: 10, backgroundColor: theme.global.background }}>
           <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 18 }}>
             No encontrado
@@ -567,7 +582,7 @@ export default function TitleDetailScreen() {
 
   return (
     <>
-      <Stack.Screen
+      {!bindings && <Stack.Screen
         options={{
           title: headerTitle,
           headerRight: () =>
@@ -592,7 +607,7 @@ export default function TitleDetailScreen() {
               </Pressable>
             ) : null,
         }}
-      />
+      />}
 
       <ScrollView
         style={{ backgroundColor: theme.global.background }}
