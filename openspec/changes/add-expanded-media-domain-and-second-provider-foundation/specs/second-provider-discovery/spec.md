@@ -89,6 +89,11 @@ La capacidad neutral del dominio MUST separarse de disponibilidad remota. Mientr
 - **THEN** solo se muestran categorías productivas utilizables, sin MangaUpdates ni opciones muertas
 - **AND** TMDB/local siguen funcionando y el harness neutral no se presenta como API MangaUpdates
 
+#### Scenario: foundation implementada antes de integración productiva
+- **WHEN** se completa Sección 6 con cliente, validación, mapping, caché/espaciado/retry y primitivas de atribución
+- **THEN** MangaUpdates permanece invisible/no habilitado en producción Web/Android/iOS
+- **AND** Sección 8 conserva la conexión a Buscar/pantalla remota, inserción de attribution/provenance/About y validación nativa real; requests directos de diagnóstico no completan esa aceptación
+
 #### Scenario: snapshot en plataforma sin adaptador usable
 - **WHEN** se importa o abre localmente una obra MangaUpdates en Web sin transporte remoto
 - **THEN** conserva identidad, clasificación, metadata y edición local sin consultar el proveedor ni ofrecer navegación remota inutilizable

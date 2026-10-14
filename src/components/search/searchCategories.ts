@@ -21,7 +21,7 @@ export const SEARCH_CATEGORIES: readonly SearchCategory[] = Object.freeze([
 
 export function productionSearchCategories(platform: string): readonly SearchCategory[] {
   if (platform !== "web" && platform !== "android" && platform !== "ios") return [];
-  // No MangaUpdates adapter on any platform yet; Web also lacks usable CORS.
+  // MangaUpdates product integration/native validation remain pending; Web lacks usable CORS.
   return SEARCH_CATEGORIES.filter(category => category.source === "tmdb");
 }
 
