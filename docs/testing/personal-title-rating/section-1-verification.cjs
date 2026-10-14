@@ -32,7 +32,7 @@ const {
   readUserVersion,
   verifyAppPreferencesTable,
   verifySavedTitlesV3Schema,
-  verifyV4Schema,
+  verifyV5Schema,
   verifyTitlePinsSchema,
 } = require("../../../src/storage/databaseSchema.ts");
 
@@ -63,7 +63,7 @@ function testDomain() {
       id: "missing-rating",
       provider: "manual",
       external_id: "missing-rating",
-      type: "movie",
+      medium: "audiovisual", content_family: null, primary_format: "movie",
       title: "Missing rating column",
       status: "planned",
       tags_json: "[]",
@@ -127,9 +127,9 @@ async function evolve(db, currentVersion) {
 function assertRatingConstraint(sqlite) {
   const insert = sqlite.prepare(`
     INSERT INTO saved_titles (
-      id, type, title, personal_rating,
+      id, medium, content_family, primary_format, title, personal_rating,
       status, tags_json, created_at, updated_at
-    ) VALUES (?, 'movie', ?, ?, 'planned', '[]', 1, 1)
+    ) VALUES (?, 'audiovisual', NULL, 'movie', ?, ?, 'planned', '[]', 1, 1)
   `);
   insert.run("null", "Null", null);
   insert.run("min", "Min", 10);
@@ -149,13 +149,13 @@ function fixtureStoredTypes(sqlite) {
   ).all();
 }
 
-async function testFreshV4() {
+async function testFreshV5() {
   const fixture = createDatabase("fresh");
   try {
     await evolve(fixture.db, 0);
     assert.equal(await readUserVersion(fixture.db), DATABASE_SCHEMA_VERSION);
-    assert.equal(DATABASE_SCHEMA_VERSION, 4);
-    await verifyV4Schema(fixture.db);
+    assert.equal(DATABASE_SCHEMA_VERSION, 5);
+    await verifyV5Schema(fixture.db);
     await verifyAppPreferencesTable(fixture.db);
     await verifyTitlePinsSchema(fixture.db);
     assertRatingConstraint(fixture.sqlite);
@@ -255,8 +255,8 @@ async function testMigrationV2() {
     seedRealisticV2(fixture.sqlite);
 
     await evolve(fixture.db, 2);
-    assert.equal(await readUserVersion(fixture.db), 4);
-    await verifyV4Schema(fixture.db);
+    assert.equal(await readUserVersion(fixture.db), 5);
+    await verifyV5Schema(fixture.db);
     await verifyAppPreferencesTable(fixture.db);
     await verifyTitlePinsSchema(fixture.db);
 
@@ -285,8 +285,8 @@ async function testMigrationV2() {
       "legacy-title"
     );
 
-    await evolveDatabaseSchema(fixture.db, 4);
-    assert.equal(await readUserVersion(fixture.db), 4);
+    await evolveDatabaseSchema(fixture.db, 5);
+    assert.equal(await readUserVersion(fixture.db), 5);
     assert.equal(
       fixture.sqlite.prepare("SELECT COUNT(*) AS count FROM saved_titles").get().count,
       1
@@ -330,7 +330,7 @@ async function testMigrationV3Rollback() {
     );
 
     await evolveDatabaseSchema(fixture.db, 2);
-    assert.equal(await readUserVersion(fixture.db), 4);
+    assert.equal(await readUserVersion(fixture.db), 5);
     const columnsAfterRetry = fixture.sqlite.prepare(
       "PRAGMA table_info(saved_titles)"
     ).all();
@@ -360,8 +360,8 @@ async function testEarlierVersionsAndFutureRejection() {
         fixture.sqlite.exec("PRAGMA user_version = 1;");
       }
       await evolve(fixture.db, version);
-      assert.equal(await readUserVersion(fixture.db), 4);
-      await verifyV4Schema(fixture.db);
+      assert.equal(await readUserVersion(fixture.db), 5);
+      await verifyV5Schema(fixture.db);
       await verifyTitlePinsSchema(fixture.db);
     } finally {
       fixture.close();
@@ -370,9 +370,9 @@ async function testEarlierVersionsAndFutureRejection() {
 
   const future = createDatabase("future");
   try {
-    future.sqlite.exec("PRAGMA user_version = 5;");
-    await assert.rejects(() => evolveDatabaseSchema(future.db, 5), /no soportada/i);
-    assert.equal(await readUserVersion(future.db), 5);
+    future.sqlite.exec("PRAGMA user_version = 6;");
+    await assert.rejects(() => evolveDatabaseSchema(future.db, 6), /no soportada/i);
+    assert.equal(await readUserVersion(future.db), 6);
   } finally {
     future.close();
   }
@@ -380,11 +380,11 @@ async function testEarlierVersionsAndFutureRejection() {
 
 async function main() {
   testDomain();
-  await testFreshV4();
+  await testFreshV5();
   await testMigrationV2();
   await testMigrationV3Rollback();
   await testEarlierVersionsAndFutureRejection();
-  console.log("Personal rating domain and SQLite v4 evolution verification passed.");
+  console.log("Personal rating domain and SQLite v5 evolution verification passed.");
 }
 
 main().catch((error) => {

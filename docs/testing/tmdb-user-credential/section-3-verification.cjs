@@ -116,7 +116,7 @@ function testFriendlyErrors() {
 function testReactNativeSourceContracts() {
   const settings = read("app/(tabs)/ajustes.tsx");
   const screen = read("app/settings/tmdb.tsx");
-  const layout = read("app/_layout.tsx");
+  const layout = read("src/components/ProductionRootLayout.tsx");
   const provider = read("src/providers/tmdb/credential/TmdbCredentialProvider.tsx");
   const types = read("src/providers/tmdb/credential/tmdbCredentialTypes.ts");
   const relevantSource = [settings, screen, layout, provider, types].join("\n");

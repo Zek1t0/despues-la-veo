@@ -7,7 +7,7 @@ const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
 
 const about = read("app/settings/about.tsx");
 const settings = read("app/(tabs)/ajustes.tsx");
-const layout = read("app/_layout.tsx");
+const layout = read("src/components/ProductionRootLayout.tsx");
 const sourceRecord = read("docs/testing/tmdb-user-credential/tmdb-logo-source.md");
 const logoPath = path.join(root, "assets/tmdb-primary-full-blue.png");
 const exactNotice = "This product uses the TMDB API but is not endorsed or certified by TMDB.";
