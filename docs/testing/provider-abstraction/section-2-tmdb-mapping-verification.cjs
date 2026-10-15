@@ -110,7 +110,7 @@ function detailMapping() {
   assert.deepEqual(movie, {
     reference: { provider: "tmdb", resourceNamespace: "movie", externalId: "101" },
     snapshot: {
-      type: "movie",
+      medium: "audiovisual", contentFamily: null, primaryFormat: "movie",
       title: "Detalle película",
       year: 2023,
       posterUrl: "https://image.tmdb.org/t/p/w342/detail.jpg",
@@ -122,7 +122,7 @@ function detailMapping() {
   assert.deepEqual(tv, {
     reference: { provider: "tmdb", resourceNamespace: "tv", externalId: "202" },
     snapshot: {
-      type: "tv",
+      medium: "audiovisual", contentFamily: null, primaryFormat: "tv",
       title: "Detalle TV",
       year: null,
       posterUrl: null,
@@ -132,7 +132,7 @@ function detailMapping() {
     },
   });
   assert.deepEqual(mapTmdbMovieDetails({ id: 303, title: "Sin fecha" }).snapshot, {
-    type: "movie",
+    medium: "audiovisual", contentFamily: null, primaryFormat: "movie",
     title: "Sin fecha",
     year: null,
     posterUrl: null,

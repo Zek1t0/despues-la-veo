@@ -13,6 +13,7 @@ export function PosterPlaceholder({ style }: PosterPlaceholderProps) {
 
   return (
     <View
+      aria-hidden
       accessible={false}
       importantForAccessibility="no"
       pointerEvents="none"

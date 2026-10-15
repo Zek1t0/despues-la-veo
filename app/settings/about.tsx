@@ -3,6 +3,7 @@ import { Image, Linking, Pressable, ScrollView, Text, View } from "react-native"
 import { Stack } from "expo-router";
 
 import { useAppTheme } from "../../src/theme/AppThemeProvider";
+import { MANGAUPDATES_ATTRIBUTION } from "../../src/providers/mangaupdates/attribution";
 
 const TMDB_URL = "https://www.themoviedb.org";
 const JUSTWATCH_URL = "https://www.justwatch.com/";
@@ -142,6 +143,15 @@ export default function AboutScreen() {
               {linkError}
             </Text>
           )}
+        </View>
+        <View style={{ gap: 8 }}>
+          <Text style={{ color: theme.global.textPrimary, fontWeight: "800" }}>{MANGAUPDATES_ATTRIBUTION.label}</Text>
+          <Text style={{ color: theme.global.textSecondary }}>Fuente de metadata de Manga, Manhwa y Manhua en plataformas habilitadas. Esta aplicación independiente no implica aval ni certificación de MangaUpdates.</Text>
+          <Pressable accessibilityRole="link" accessibilityLabel="Abrir el sitio oficial de MangaUpdates"
+            onPress={() => void openExternalLink(MANGAUPDATES_ATTRIBUTION.providerUrl, "No pudimos abrir MangaUpdates.")}
+            style={{ minHeight: 44, justifyContent: "center" }}>
+            <Text style={{ color: theme.global.textPrimary }}>Visitar MangaUpdates</Text>
+          </Pressable>
         </View>
       </ScrollView>
     </>

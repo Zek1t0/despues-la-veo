@@ -1,0 +1,12 @@
+{
+  "series_id": "9876543210123",
+  "title": "Cuaderno sintético de los faros",
+  "type": "Manga",
+  "year": "2021",
+  "description": "<p>Descripción original de prueba &amp; texto legible.</p><p>Sin datos de un catálogo real.</p>",
+  "image": { "url": { "original": "https://cdn.mangaupdates.com/TEST-original.jpg", "thumb": "https://cdn.mangaupdates.com/TEST-thumb.jpg" } },
+  "genres": [{ "genre": "Action" }, { "genre": "Sci-fi" }, { "genre": "Seinen" }, { "genre": "Unapproved TEST" }],
+  "categories": [{ "category": "Webtoon/Webcomic" }, { "category": "Based on a Webcomic/Webtoon" }],
+  "bayesian_rating": 8.7,
+  "rating_votes": 123
+}

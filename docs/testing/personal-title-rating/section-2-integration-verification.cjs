@@ -12,6 +12,7 @@ const library = read("app/(tabs)/libreria.tsx");
 const tags = read("app/(tabs)/etiquetas.tsx");
 const search = read("app/(tabs)/buscar.tsx");
 const collage = read("src/components/browsing/TagCollage.tsx");
+const accessibility = read("src/components/browsing/savedTitleAccessibility.ts");
 
 assert.equal((grid.match(/<Pressable\b/g) ?? []).length, 1);
 assert.equal((grid.match(/<\/Pressable>/g) ?? []).length, 1);
@@ -35,12 +36,25 @@ assert.match(badge, /importantForAccessibility="no-hide-descendants"/);
 assert.equal((presentation.match(/accessibilityLabel: `/g) ?? []).length, 1);
 
 for (const source of [library, tags]) {
-  assert.match(source, /getPersonalRatingPresentation/);
-  assert.match(source, /personalRatingPresentation\.accessibilityLabel/);
+  assert.match(source, /savedTitleOpenAccessibilityLabel\(item, true\)/);
   assert.match(source, /<PersonalRatingBadge[\s\S]*?value=\{item\.personalRating\}[\s\S]*?\/>/);
   assert.match(source, /<TitleGridCard[\s\S]*?personalRating=\{item\.personalRating\}/);
   assert.doesNotMatch(source, /formatPersonalRating\(item\.personalRating\)/);
 }
+assert.match(accessibility, /includePersonalRating \? getPersonalRatingPresentation\(item\.personalRating\)/);
+assert.match(accessibility, /personalRating\?\.accessibilityLabel/);
+const ts = require("typescript");
+require.extensions[".ts"] = (module, filename) => module._compile(ts.transpileModule(
+  fs.readFileSync(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }
+).outputText, filename);
+const { savedTitleOpenAccessibilityLabel } = require("../../../src/components/browsing/savedTitleAccessibility.ts");
+const item = { title: "Rating TEST", medium: "comic", contentFamily: "manga", primaryFormat: null,
+  status: "watching", personalRating: 87, voteAverage: 9.9 };
+const label = savedTitleOpenAccessibilityLabel(item, true);
+assert.match(label, /Leyendo/);
+assert.equal((label.match(/Mi puntuación: 8\.7 de 10/g) ?? []).length, 1);
+assert.doesNotMatch(savedTitleOpenAccessibilityLabel(item), /Mi puntuación/);
+assert.doesNotMatch(savedTitleOpenAccessibilityLabel({ ...item, personalRating: null }, true), /Mi puntuación|9\.9/);
 
 assert.match(grid, /isPinned[\s\S]*?<PersonalRatingBadge/);
 assert.doesNotMatch(search, /personalRating|PersonalRatingBadge|getPersonalRatingPresentation/);

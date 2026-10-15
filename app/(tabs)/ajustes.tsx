@@ -1,481 +1,962 @@
 import React, { useEffect, useRef, useState } from "react";
+
 import { Alert, ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from "react-native";
+
 import { router } from "expo-router";
+
 import { File, Paths } from "expo-file-system";
+
 import * as Sharing from "expo-sharing";
+
 import * as DocumentPicker from "expo-document-picker";
 
+
+
 import { parseLibraryBackup } from "../../src/core/libraryBackup";
+
 import type { BackupValidationError } from "../../src/core/libraryBackupV1";
+
 import { type BackupAppearanceImportOutcome } from "../../src/core/libraryBackupV4";
-import { createLibraryBackupV5 } from "../../src/core/libraryBackupV5";
+
+import { createLibraryBackupV6 } from "../../src/core/libraryBackupV6";
+
 import { getLibraryBackupExportData } from "../../src/storage/libraryBackupExport";
+
 import { mergeLibraryBackup } from "../../src/storage/savedTitlesRepo";
+
 import { useAppTheme } from "../../src/theme/AppThemeProvider";
+
 import type { DeferredAppearanceHandle } from "../../src/theme/appearanceCoordinator";
+
 import { useTmdbCredential } from "../../src/providers/tmdb/credential/TmdbCredentialProvider";
+
 import {
+
   presentTmdbCredentialStatus,
+
   TMDB_SETTINGS_ROUTE,
+
 } from "../../src/providers/tmdb/credential/tmdbCredentialUi";
+
+
 
 const MAX_IMPORT_PROBLEM_DETAILS = 5;
 
+
+
 type ImportProblemDetail = {
+
   reference: string;
+
   reason: string;
+
 };
 
+
+
 function invalidProblemDetail(error: BackupValidationError): ImportProblemDetail {
+
   const itemReference = error.index === undefined ? "Elemento" : `Elemento ${error.index + 1}`;
+
   const fieldReference = error.field ? `, campo ${error.field}` : "";
+
   return {
+
     reference: `${itemReference}${fieldReference}`,
+
     reason: error.message,
+
   };
+
 }
+
+
 
 function formatProblemDetails(label: string, details: ImportProblemDetail[]): string | null {
+
   if (details.length === 0) return null;
 
+
+
   const visible = details
+
     .slice(0, MAX_IMPORT_PROBLEM_DETAILS)
+
     .map((detail) => `- ${detail.reference}: ${detail.reason}`);
+
   const hiddenCount = details.length - visible.length;
+
   if (hiddenCount > 0) visible.push(`- Hay ${hiddenCount} elemento(s) más no mostrado(s).`);
 
+
+
   return `${label}:\n${visible.join("\n")}`;
+
 }
+
+
 
 function appearanceOutcomeCopy(outcome: BackupAppearanceImportOutcome): string {
+
   switch (outcome.status) {
+
     case "applied":
+
       return "Apariencia: se aplicó y guardó la incluida en el backup.";
+
     case "superseded":
+
       return "Apariencia: se conservó una elección más reciente realizada en este dispositivo.";
+
     case "absent":
+
       return "Apariencia: el backup no la incluía; se conservó la configuración local.";
+
     case "incompatible":
+
       return "Apariencia: la incluida no es compatible; los datos se importaron y se conservó la local.";
+
     case "persistence-failure":
+
       return "Apariencia: los datos se importaron, pero la apariencia del backup no pudo guardarse.";
+
   }
+
 }
+
+
 
 function uuid() {
+
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+
     const r = (Math.random() * 16) | 0;
+
     const v = c === "x" ? r : (r & 0x3) | 0x8;
+
     return v.toString(16);
+
   });
+
 }
+
+
 
 async function readTextFromUri(uri: string): Promise<string> {
+
   return new File(uri).text();
+
 }
+
+
 
 function PrimaryButton({
+
   label,
+
   onPress,
+
   disabled,
+
 }: {
+
   label: string;
+
   onPress: () => void;
+
   disabled?: boolean;
+
 }) {
+
   const { theme } = useAppTheme();
+
   return (
+
     <Pressable
+
       accessibilityRole="button"
+
       accessibilityLabel={label}
+
       onPress={onPress}
+
       disabled={disabled}
+
       style={{
+
         padding: 14,
+
         borderRadius: 14,
+
         backgroundColor: disabled ? theme.semantic.disabledSurface : theme.global.surface,
+
         borderWidth: 1,
+
         borderColor: theme.global.border,
+
         alignItems: "center",
+
       }}
+
     >
+
       <Text style={{ color: disabled ? theme.semantic.disabledText : theme.global.textPrimary, fontWeight: "900" }}>{label}</Text>
+
     </Pressable>
+
   );
+
 }
 
+
+
 export default function SettingsScreen() {
+
   const {
+
     theme,
+
     backupAvailability,
+
     reserveDeferred,
+
     activateDeferred,
+
     discardDeferred,
+
   } = useAppTheme();
+
   const [busy, setBusy] = useState(false);
+
   const [lastMsg, setLastMsg] = useState<string | null>(null);
+
   const [tmdbRetrying, setTmdbRetrying] = useState(false);
+
   const { snapshot: tmdbSnapshot, retryInitialization } = useTmdbCredential();
+
   const tmdbStatus = presentTmdbCredentialStatus(tmdbSnapshot);
 
+
+
   const webFileInputRef = useRef<HTMLInputElement>(null);
+
   const tmdbRetryInFlightRef = useRef(false);
+
   const tmdbMountedRef = useRef(true);
 
+
+
   useEffect(() => {
+
     tmdbMountedRef.current = true;
+
     return () => {
+
       tmdbMountedRef.current = false;
+
     };
+
   }, []);
 
+
+
   const onRetryTmdb = async () => {
+
     if (tmdbRetryInFlightRef.current) return;
+
     tmdbRetryInFlightRef.current = true;
+
     setTmdbRetrying(true);
+
     try {
+
       await retryInitialization();
+
     } catch {
+
       // El snapshot vuelve a storage-error y presenta el estado seguro correspondiente.
+
     } finally {
+
       tmdbRetryInFlightRef.current = false;
+
       if (tmdbMountedRef.current) setTmdbRetrying(false);
+
     }
+
   };
+
+
 
   const onExport = async () => {
+
     try {
+
       setBusy(true);
+
       setLastMsg(null);
 
+
+
       const { items, pins, appearanceAvailability } =
+
         await getLibraryBackupExportData(backupAvailability);
-      const payload = createLibraryBackupV5(items, pins, appearanceAvailability);
+
+      const payload = createLibraryBackupV6(items, pins, appearanceAvailability);
+
+
 
       const json = JSON.stringify(payload, null, 2);
+
       const filename = `despues-la-veo-backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
 
+
+
       if (Platform.OS === "web") {
+
         const blob = new Blob([json], { type: "application/json" });
+
         const url = URL.createObjectURL(blob);
+
         const a = document.createElement("a");
+
         a.href = url;
+
         a.download = filename;
+
         document.body.appendChild(a);
+
         a.click();
+
         a.remove();
+
         URL.revokeObjectURL(url);
+
         setLastMsg(
-          `Export v5 listo: ${items.length} títulos y ${pins.length} pins.` +
+
+          `Export v6 listo: ${items.length} títulos y ${pins.length} pins.` +
+
           (payload.appearance ? " Apariencia incluida." : " Apariencia omitida por no estar confirmada.")
+
         );
+
         return;
+
       }
+
+
 
       const file = new File(Paths.cache, filename);
+
       file.write(json);
 
+
+
       const shareAvailable = await Sharing.isAvailableAsync();
+
       if (!shareAvailable) {
+
         Alert.alert("Export", "Sharing no está disponible en este dispositivo.");
+
         return;
+
       }
+
+
 
       await Sharing.shareAsync(file.uri, {
+
         mimeType: "application/json",
+
         dialogTitle: "Exportar biblioteca",
+
         UTI: "public.json",
+
       });
 
+
+
       setLastMsg(
-        `Export v5 listo: ${items.length} títulos y ${pins.length} pins.` +
+
+        `Export v6 listo: ${items.length} títulos y ${pins.length} pins.` +
+
         (payload.appearance ? " Apariencia incluida." : " Apariencia omitida por no estar confirmada.")
+
       );
+
     } catch (e: any) {
+
       Alert.alert("Error exportando", e?.message ?? "Error desconocido");
+
     } finally {
+
       setBusy(false);
+
     }
+
   };
 
+
+
   const doImportFromText = async (text: string) => {
+
     setLastMsg(null);
+
     const validated = parseLibraryBackup(text);
+
     if (!validated.ok) {
+
       Alert.alert("Import", validated.error.message);
+
       return;
+
     }
 
+
+
     const { payload } = validated;
+
     const totalCount = payload.items.length + payload.invalid.length;
+
     const invalidCount = payload.invalid.length;
+
     const msg = [
+
       `Versión: ${payload.version}`,
+
       `Total: ${totalCount}`,
+
       `Válidos: ${payload.items.length}`,
+
       `Inválidos: ${invalidCount}`,
+
       ...(payload.version !== 1
+
         ? [
+
             `Pins válidos: ${payload.pins.length}`,
+
             `Pins estructuralmente inválidos: ${payload.invalidPins.length}`,
+
           ]
+
         : ["Este backup v1 no contiene ni modifica pins por ausencia."]),
-      ...(payload.version === 4 || payload.version === 5
+
+      ...(payload.version === 4 || payload.version === 5 || payload.version === 6
+
         ? [payload.appearance.status === "valid"
+
             ? "Apariencia: se aplicará después de completar el merge, salvo que elijas otra mientras tanto."
+
             : payload.appearance.status === "absent"
+
               ? "Apariencia: el backup no la incluye; se conservará la local."
+
               : "Apariencia: no es compatible; se conservará la local y los datos podrán importarse."]
+
         : ["Apariencia: este backup histórico no la modifica."]),
+
       "",
+
       "La importación hace merge: no borra títulos locales ausentes del backup.",
-      "Sólo actualiza coincidencias del mismo tipo cuando el backup es más reciente; conserva los cambios locales iguales o más recientes.",
+
+      "Sólo actualiza coincidencias del mismo medio cuando el backup es más reciente; conserva los cambios locales iguales o más recientes.",
+
       "El resultado puede ser parcial: algunos elementos pueden procesarse y otros omitirse o fallar.",
+
       "",
+
       "¿Continuar?",
+
     ].join("\n");
 
+
+
     const proceed = await new Promise<boolean>((resolve) => {
+
       if (Platform.OS === "web") {
+
         resolve(window.confirm(msg));
+
       } else {
+
         Alert.alert("Confirmar importación", msg, [
+
           { text: "Cancelar", style: "cancel", onPress: () => resolve(false) },
+
           { text: "Importar", style: "destructive", onPress: () => resolve(true) },
+
         ]);
+
       }
+
     });
+
+
 
     if (!proceed) return;
 
+
+
     let deferredHandle: DeferredAppearanceHandle | null = null;
-    let appearanceOutcome: BackupAppearanceImportOutcome = payload.version === 4 || payload.version === 5
+
+    let appearanceOutcome: BackupAppearanceImportOutcome = payload.version === 4 || payload.version === 5 || payload.version === 6
+
       ? payload.appearance.status === "incompatible"
+
         ? { status: "incompatible", reason: payload.appearance.reason }
+
         : { status: "absent" }
+
       : { status: "absent" };
-    if ((payload.version === 4 || payload.version === 5) && payload.appearance.status === "valid") {
+
+    if ((payload.version === 4 || payload.version === 5 || payload.version === 6) && payload.appearance.status === "valid") {
+
       deferredHandle = reserveDeferred(payload.appearance.preference);
+
     }
+
+
 
     setBusy(true);
+
     setLastMsg(null);
 
+
+
     try {
+
       const result = await mergeLibraryBackup(payload, uuid);
+
       if (deferredHandle) {
+
         const activation = await activateDeferred(deferredHandle);
+
         appearanceOutcome = activation.status === "discarded"
+
           ? { status: "superseded" }
+
           : activation;
+
       }
+
       const structurallyInvalidPins = payload.version !== 1
+
         ? payload.invalidPins.map((error) => ({
+
             reference: `Pin ${error.index + 1}`,
+
             reason: error.message,
+
           }))
+
         : [];
+
       const finalResult = {
+
         inserted: result.inserted,
+
         updated: result.updated,
+
         skipped: result.skipped,
+
         conflicts: result.conflicts,
+
         invalid: payload.invalid.map(invalidProblemDetail),
+
         failed: result.failed,
+
         pinsInserted: result.pins.inserted,
+
         pinsPreserved: result.pins.preserved,
+
         pinsInvalid: [...structurallyInvalidPins, ...result.pins.invalid],
+
         pinsFailed: result.pins.failed,
+
       };
+
       const persistedCount = finalResult.inserted + finalResult.updated + finalResult.pinsInserted;
+
       const nonAppliedCount =
+
         finalResult.skipped +
+
         finalResult.conflicts.length +
+
         finalResult.invalid.length +
+
         finalResult.failed.length +
+
         finalResult.pinsInvalid.length +
+
         finalResult.pinsFailed.length;
+
       let outcome: string;
+
       if (persistedCount > 0 && nonAppliedCount === 0) {
+
         outcome = "Importación completada.";
+
       } else if (persistedCount > 0 && nonAppliedCount > 0) {
+
         outcome =
+
           "Resultado parcial: se conservaron los cambios persistidos y se detallan los elementos no aplicados.";
+
       } else if (
+
         finalResult.skipped > 0 &&
+
         finalResult.conflicts.length === 0 &&
+
         finalResult.invalid.length === 0 &&
+
         finalResult.failed.length === 0
+
       ) {
+
         outcome =
+
           "No se realizaron cambios: todos los elementos fueron omitidos porque los datos locales eran iguales o más recientes.";
+
       } else if (nonAppliedCount > 0) {
+
         outcome = "No se aplicaron cambios. Revisá los resultados detallados.";
+
       } else {
+
         outcome = "El backup no contenía elementos para importar.";
+
       }
+
       const detailSections = [
+
         formatProblemDetails("Inválidos", finalResult.invalid),
+
         formatProblemDetails("Conflictos", finalResult.conflicts),
+
         formatProblemDetails("Fallidos", finalResult.failed),
+
         formatProblemDetails("Pins omitidos", finalResult.pinsInvalid),
+
         formatProblemDetails("Pins fallidos", finalResult.pinsFailed),
+
       ].filter((section): section is string => section !== null);
+
       const countLines = [
+
         `Insertados: ${finalResult.inserted}`,
+
         `Actualizados: ${finalResult.updated}`,
+
         `Omitidos: ${finalResult.skipped}`,
+
         `Conflictos: ${finalResult.conflicts.length}`,
+
         `Inválidos: ${finalResult.invalid.length}`,
+
         `Fallidos: ${finalResult.failed.length}`,
+
         ...(payload.version !== 1
+
           ? [
+
               `Pins insertados: ${finalResult.pinsInserted}`,
+
               `Pins existentes conservados: ${finalResult.pinsPreserved}`,
+
               `Pins omitidos: ${finalResult.pinsInvalid.length}`,
+
               `Pins fallidos: ${finalResult.pinsFailed.length}`,
+
             ]
+
           : []),
+
       ];
+
       const finalMsg = [
+
         outcome,
+
         "",
+
         ...countLines,
+
         "",
+
         appearanceOutcomeCopy(appearanceOutcome),
+
         ...(detailSections.length > 0 ? ["", ...detailSections] : []),
+
       ].join("\n");
+
       setLastMsg(finalMsg);
+
       if (Platform.OS !== "web") {
+
         const mobileSummary = [
+
           outcome,
+
           "",
+
           ...countLines,
+
           "",
+
           appearanceOutcomeCopy(appearanceOutcome),
+
           "",
+
           "Los detalles están visibles en Ajustes.",
+
         ].join("\n");
+
         Alert.alert("Resultado de importación", mobileSummary);
+
       }
+
     } catch (e: any) {
+
       if (deferredHandle) discardDeferred(deferredHandle);
+
       Alert.alert("Error importando", e?.message ?? "Error desconocido");
+
     } finally {
+
       setBusy(false);
+
     }
+
   };
 
+
+
   const onImport = async () => {
+
     try {
+
       setLastMsg(null);
 
+
+
       if (Platform.OS === "web") {
+
         webFileInputRef.current?.click();
+
         return;
+
       }
 
+
+
       const res = await DocumentPicker.getDocumentAsync({
+
         type: ["application/json", "text/json", "text/plain"],
+
         copyToCacheDirectory: true,
+
         multiple: false,
+
       });
+
+
 
       if (res.canceled) return;
 
+
+
       const file = res.assets?.[0];
+
       if (!file?.uri) {
+
         Alert.alert("Import", "No se pudo leer el archivo.");
+
         return;
+
       }
 
+
+
       setBusy(true);
+
       const text = await readTextFromUri(file.uri);
+
       setBusy(false);
+
+
 
       await doImportFromText(text);
+
     } catch (e: any) {
+
       setBusy(false);
+
       Alert.alert("Error importando", e?.message ?? "Error desconocido");
+
     }
+
   };
+
+
 
   const onWebFilePicked = async (ev: React.ChangeEvent<HTMLInputElement>) => {
+
     const f = ev.target.files?.[0];
+
     ev.target.value = "";
+
     if (!f) return;
 
+
+
     const text = await f.text();
+
     await doImportFromText(text);
+
   };
 
+
+
   return (
+
     <ScrollView
+
       style={{ flex: 1, backgroundColor: theme.global.background }}
+
       contentContainerStyle={{ padding: 16, gap: 12 }}
+
       keyboardShouldPersistTaps="handled"
+
     >
+
       <Text style={{ fontSize: 22, fontWeight: "900", color: theme.global.textPrimary }}>Ajustes</Text>
 
+
+
       <PrimaryButton
+
         label="Apariencia"
+
         onPress={() => router.push("/settings/appearance")}
+
       />
+
+
 
       <View
+
         accessibilityLabel="Configuración de TMDB"
+
         style={{ padding: 16, gap: 10, borderRadius: 14, backgroundColor: theme.global.surface, borderWidth: 1, borderColor: theme.global.border }}
+
       >
+
         <Text style={{ color: theme.global.textPrimary, fontSize: 18, fontWeight: "900" }}>TMDB</Text>
+
         <Text accessibilityLiveRegion="polite" style={{ color: theme.global.textPrimary, fontWeight: "700" }}>
+
           Estado: {tmdbStatus.label}
+
         </Text>
+
         {!!tmdbStatus.detail && <Text style={{ color: theme.global.textSecondary }}>{tmdbStatus.detail}</Text>}
+
         {(tmdbSnapshot.status === "storage-error" || tmdbRetrying) && (
+
           <PrimaryButton
+
             label={tmdbRetrying ? "Reintentando..." : "Reintentar"}
+
             onPress={onRetryTmdb}
+
             disabled={tmdbRetrying}
+
           />
+
         )}
+
         {!!tmdbStatus.actionLabel && (
+
           <PrimaryButton
+
             label={tmdbStatus.actionLabel}
+
             onPress={() => router.push(TMDB_SETTINGS_ROUTE)}
+
           />
+
         )}
+
       </View>
 
+
+
       <PrimaryButton label="Exportar biblioteca" onPress={onExport} disabled={busy} />
+
       <PrimaryButton label="Importar biblioteca" onPress={onImport} disabled={busy} />
+
       <PrimaryButton
+
         label="Acerca de / Créditos"
+
         onPress={() => router.push("/settings/about")}
+
       />
 
+
+
       {busy && (
+
         <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
+
           <ActivityIndicator color={theme.global.accent} />
+
           <Text style={{ color: theme.global.textSecondary }}>Procesando…</Text>
+
         </View>
+
       )}
+
+
 
       {!!lastMsg && <Text style={{ color: theme.global.textSecondary }}>{lastMsg}</Text>}
 
+
+
       {Platform.OS === "web" && (
+
         <input
+
           ref={webFileInputRef}
+
           type="file"
+
           accept="application/json,.json"
+
           style={{ display: "none" }}
+
           onChange={onWebFilePicked}
+
         />
+
       )}
 
+
+
       <Text style={{ color: theme.global.textMuted, marginTop: 6 }}>
-        Export genera un .json v5 versionado. Import acepta v1–v5 y hace MERGE: no borra títulos locales ausentes del
+
+        Export genera un .json v6 versionado. Import acepta v1–v6 y hace MERGE: no borra títulos locales ausentes del
+
         backup y restaura relaciones mediante la identidad interna del archivo.
+
       </Text>
+
     </ScrollView>
+
   );
+
 }
+

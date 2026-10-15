@@ -23,9 +23,9 @@ const {
 const inputFor = (reference, overrides = {}) => ({
   reference,
   snapshot: {
-    type: "movie", title: "Normalized", year: 2026,
+    medium: "audiovisual", contentFamily: null, primaryFormat: reference.resourceNamespace === "tv" ? "tv" : "movie", title: "Normalized", year: 2026,
     posterUrl: "https://example.test/poster.jpg", overview: "Overview",
-    genres: ["Remote metadata"], voteAverage: 8.7,
+    genres: ["Remote metadata"], ...(reference.provider === "tmdb" ? { voteAverage: 8.7 } : {}),
     ...overrides,
   },
   initialTags: ["Creation policy"],
@@ -40,7 +40,7 @@ function pureMaterialization() {
   Object.freeze(input.initialTags);
   const created = materializeProviderSavedTitle(input, null, () => "opaque-local-id", 100);
   assert.deepEqual(created, {
-    ...input.snapshot, genres: ["Remote metadata"], id: "opaque-local-id",
+    ...input.snapshot, voteAverage: null, genres: ["Remote metadata"], id: "opaque-local-id",
     tags: ["Creation policy"], status: "planned", notes: null,
     personalRating: null, createdAt: 100, updatedAt: 100,
   });
@@ -57,15 +57,15 @@ function pureMaterialization() {
   };
   const before = structuredClone(existing);
   const refreshedInput = {
-    ...inputFor(input.reference, { type: "tv", title: "Refresh", year: null,
-      posterUrl: null, overview: null, genres: ["New remote genre"], voteAverage: null }),
+    ...inputFor(input.reference, { primaryFormat: "tv", title: "Refresh", year: null,
+      posterUrl: null, overview: null, genres: ["New remote genre"] }),
     initialTags: ["Incoming policy"],
   };
   const neverGenerate = () => { throw new Error("Refresh must not generate an ID"); };
   for (const [now, updatedAt] of [[100, 201], [200, 201], [500, 500]]) {
     const refreshed = materializeProviderSavedTitle(refreshedInput, existing, neverGenerate, now);
     assert.deepEqual(refreshed, {
-      ...refreshedInput.snapshot, genres: ["New remote genre"], id: existing.id,
+      ...refreshedInput.snapshot, primaryFormat: existing.primaryFormat, voteAverage: null, genres: ["New remote genre"], id: existing.id,
       status: "watching", tags: ["User tag"], notes: "User note", personalRating: 87,
       createdAt: 10, updatedAt,
     });
@@ -81,7 +81,7 @@ function pureMaterialization() {
     { ...existing, updatedAt: Number.MAX_SAFE_INTEGER }, neverGenerate, 500), /precisión/);
   assert.throws(() => materializeProviderSavedTitle({ ...input, reference: { ...input.reference, provider: " " } }, null, neverGenerate, 500), /provider/);
 
-  const legacySnapshot = { ...input.snapshot, genres: ["TMDB genre"] };
+  const legacySnapshot = { ...input.snapshot, voteAverage: 8.7, genres: ["TMDB genre"] };
   const ref = createTmdbProviderReference("movie", 77);
   const normalized = { reference: ref, snapshot: legacySnapshot, initialTags: legacySnapshot.genres };
   for (const item of [null, existing]) {
@@ -184,9 +184,9 @@ async function repositorySaving() {
     assert.deepEqual(existing.providerReferences, [extraReference, input.reference], "incoming reference is not the first reference");
     const countBefore = sqlite.prepare("SELECT COUNT(*) AS n FROM saved_titles").get().n;
     const refreshedInput = {
-      ...inputFor(input.reference, { type: "tv", title: "Refreshed", year: 2027,
+      ...inputFor(input.reference, { primaryFormat: "tv", title: "Refreshed", year: 2027,
         posterUrl: "https://example.test/new.jpg", overview: "New overview",
-        genres: ["Incoming genre"], voteAverage: 9.1 }),
+        genres: ["Incoming genre"] }),
       initialTags: ["Incoming tag policy"],
     };
     events.length = 0;
@@ -200,7 +200,8 @@ async function repositorySaving() {
     for (const key of ["id", "createdAt", "status", "tags", "notes", "personalRating", "providerReferences"]) {
       assert.deepEqual(refreshed[key], existing[key], `preserved ${key}`);
     }
-    for (const key of Object.keys(refreshedInput.snapshot)) assert.deepEqual(refreshed[key], refreshedInput.snapshot[key]);
+    for (const key of Object.keys(refreshedInput.snapshot).filter(key => key !== "primaryFormat")) assert.deepEqual(refreshed[key], refreshedInput.snapshot[key]);
+    assert.equal(refreshed.primaryFormat, existing.primaryFormat);
     assert.equal(refreshed.updatedAt, existing.updatedAt + 1);
     assert.equal(sqlite.prepare("SELECT COUNT(*) AS n FROM saved_titles").get().n, countBefore);
     assert.equal(sqlite.prepare("SELECT COUNT(*) AS n FROM title_pins WHERE saved_title_id = ?").get(id).n, 2);
@@ -268,7 +269,7 @@ async function repositorySaving() {
     assert.deepEqual(results, ["concurrent-local", "concurrent-local"]);
     assert.equal((await repo.getSavedTitleByProviderReferenceWithDb(db, concurrent.reference)).title, "Latest");
     assert.equal(fixture.maximumTransactions, 1);
-    assert.equal(sqlite.prepare("PRAGMA user_version").get().user_version, 4);
+    assert.equal(sqlite.prepare("PRAGMA user_version").get().user_version, 5);
     assert.deepEqual(sqlite.prepare("PRAGMA foreign_key_check").all(), []);
   } finally {
     Module._load = originalLoad;

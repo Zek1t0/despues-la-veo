@@ -19,10 +19,11 @@ export type TitleDetailPinSnapshot = {
 
 export function getTitleDetailPinSnapshot(
   savedTitleId: string,
-  params: TitleDetailPinParams
+  params: TitleDetailPinParams,
+  database?: Parameters<typeof getSavedTitleByIdWithDb>[0] & Parameters<typeof getTitlePinPinnedAtWithDb>[0]
 ): Promise<TitleDetailPinSnapshot> {
   return runSerializedStorageMutation(async () => {
-    const db = await initDb();
+    const db = database ?? await initDb();
     const item = await getSavedTitleByIdWithDb(db, savedTitleId);
     if (!item) {
       return {

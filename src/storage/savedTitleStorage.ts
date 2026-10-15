@@ -1,5 +1,7 @@
+import { assertMediaClassification } from "../core/mediaClassification";
 import { createProviderReference, type ProviderReference } from "../core/providerReference";
 import { parsePersonalRating } from "../core/personalRating";
+import { createTmdbProviderReference } from "../core/tmdbProviderReference";
 import type {
   SavedTitle,
   SavedTitleWithProviderReferences,
@@ -30,9 +32,11 @@ function parseJsonStringArray(value: unknown): string[] {
 }
 
 export function rowToSavedTitle(row: Record<string, unknown>): SavedTitle {
+  const classification = { medium: row.medium, contentFamily: row.content_family, primaryFormat: row.primary_format };
+  assertMediaClassification(classification);
   return {
     id: String(row.id),
-    type: row.type as SavedTitle["type"],
+    ...classification,
     title: String(row.title),
     year: row.year == null ? null : Number(row.year),
     posterUrl: row.poster_url == null ? null : String(row.poster_url),
@@ -104,6 +108,12 @@ export async function attachProviderReferenceWithDb(
   savedTitleId: string
 ): Promise<void> {
   const canonical = createProviderReference(reference);
+  if (canonical.provider === "tmdb") {
+    const tmdb = createTmdbProviderReference(
+      canonical.resourceNamespace as "movie" | "tv", canonical.externalId
+    );
+    if (tmdb.externalId !== canonical.externalId) throw new Error("La referencia TMDB debe ser canónica.");
+  }
   const owner = await db.getFirstAsync<{ saved_title_id: string }>(
     `SELECT saved_title_id FROM media_provider_references
      WHERE provider = ? AND resource_namespace = ? AND external_id = ? LIMIT 1;`,
@@ -113,13 +123,16 @@ export async function attachProviderReferenceWithDb(
     if (owner.saved_title_id !== savedTitleId) {
       throw new Error("La referencia externa ya pertenece a otro MediaItem.");
     }
-    return;
   }
-  const target = await db.getFirstAsync<{ id: string }>(
-    "SELECT id FROM saved_titles WHERE id = ? LIMIT 1;",
+  const target = await db.getFirstAsync<{ id: string; medium: string }>(
+    "SELECT id, medium FROM saved_titles WHERE id = ? LIMIT 1;",
     [savedTitleId]
   );
   if (!target) throw new Error("El MediaItem destino no existe.");
+  if (canonical.provider === "tmdb" && target.medium !== "audiovisual") {
+    throw new Error("Una referencia TMDB requiere un MediaItem audiovisual.");
+  }
+  if (owner) return;
   await db.runAsync(
     `INSERT INTO media_provider_references
        (provider, resource_namespace, external_id, saved_title_id)

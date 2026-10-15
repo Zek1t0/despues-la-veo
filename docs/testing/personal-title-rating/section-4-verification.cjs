@@ -56,7 +56,7 @@ function visible(items, pins, sort) {
     query: "",
     sort,
     statusFilter: "all",
-    typeFilter: "all",
+    classificationFilter: "all",
   });
 }
 

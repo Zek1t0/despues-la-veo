@@ -47,7 +47,7 @@ function createDatabase() {
     PRAGMA foreign_keys = ON;
     CREATE TABLE saved_titles (
       id TEXT NOT NULL PRIMARY KEY,
-      type TEXT NOT NULL,
+      medium TEXT NOT NULL, content_family TEXT, primary_format TEXT,
       title TEXT NOT NULL,
       year INTEGER,
       poster_url TEXT,
@@ -128,7 +128,8 @@ function savedTitle(id, personalRating = null) {
     id,
     provider: "tmdb",
     externalId: id,
-    type: "movie",
+    type: "movie", // Only retained for frozen legacy mapper/export tests.
+    medium: "audiovisual", contentFamily: null, primaryFormat: "movie",
     title: `Title ${id}`,
     year: 2020,
     posterUrl: "old-poster",
@@ -366,7 +367,7 @@ async function testTmdbRepositoryResave() {
     assert.deepEqual(refreshed.tags, existing.tags);
     assert.equal(refreshed.notes, existing.notes);
     assert.equal(refreshed.personalRating, 87);
-    assert.equal(refreshed.type, "movie");
+    assert.equal(refreshed.primaryFormat, "movie");
     assert.equal(refreshed.title, "Repository refresh");
     assert.equal(refreshed.voteAverage, 9.2);
     assert.equal(refreshed.updatedAt, 2001);
@@ -491,7 +492,7 @@ function testTmdbResavePolicy() {
     }
   );
   assert.equal(refreshed.updatedAt, 2001);
-  assert.equal(refreshed.type, "tv");
+  assert.equal(refreshed.type, "movie", "known local format survives the legacy TV refresh");
   assert.equal(refreshed.title, "New TMDB title");
   assert.equal(refreshed.year, 2026);
   assert.equal(refreshed.posterUrl, "new-poster");

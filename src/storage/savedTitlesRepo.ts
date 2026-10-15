@@ -11,6 +11,7 @@ import {
   createTmdbProviderReference,
   createTmdbSavedTitleMaterializationInput,
   type LegacyTmdbSavedTitleSnapshot,
+  legacyTmdbSnapshotToCurrent,
 } from "../core/tmdbSavedTitle";
 import type { NormalizedBackupSavedTitle } from "../core/libraryBackupV1";
 import type { ParsedLibraryBackup } from "../core/libraryBackup";
@@ -181,9 +182,10 @@ export async function saveProviderTitleWithDb(
 
 export async function saveProviderTitle(
   input: ProviderMaterializationInput,
-  generateId: () => string
+  generateId: () => string,
+  database?: SavedTitlesMutationDatabase
 ): Promise<string> {
-  const db = await initDb();
+  const db = database ?? await initDb();
   return runSerializedStorageMutation(async () => {
     let savedTitleId: string | null = null;
     await db.withTransactionAsync(async () => {
@@ -199,7 +201,7 @@ function legacyTmdbMaterializationInput(
 ): ProviderMaterializationInput {
   return createTmdbSavedTitleMaterializationInput(
     createTmdbProviderReference(snapshot.type, snapshot.externalId),
-    snapshot
+    legacyTmdbSnapshotToCurrent(snapshot)
   );
 }
 

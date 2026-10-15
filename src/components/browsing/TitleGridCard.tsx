@@ -10,9 +10,9 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { TitleType } from "../../core/savedTitle";
+
 import type { PersonalRating } from "../../core/personalRating";
-import { titleTypeLabel } from "../../core/presentationLabels";
+
 import { useAppTheme } from "../../theme/AppThemeProvider";
 import { PersonalRatingBadge } from "./PersonalRatingBadge";
 import { PosterPlaceholder } from "./PosterPlaceholder";
@@ -20,7 +20,8 @@ import { getPersonalRatingPresentation } from "./personalRatingPresentation";
 
 export type TitleGridCardProps = {
   title: string;
-  type: TitleType;
+  kindLabel: string;
+  statusLabel?: string;
   posterUrl?: string | null;
   onPress: () => void;
   accessibilityLabel: string;
@@ -31,7 +32,8 @@ export type TitleGridCardProps = {
 
 export function TitleGridCard({
   title,
-  type,
+  kindLabel,
+  statusLabel,
   posterUrl,
   onPress,
   accessibilityLabel,
@@ -58,6 +60,7 @@ export function TitleGridCard({
 
   return (
     <Pressable
+      accessible
       accessibilityLabel={composedAccessibilityLabel}
       accessibilityRole="button"
       focusable
@@ -86,17 +89,23 @@ export function TitleGridCard({
 
       <View
         accessible={false}
+        aria-hidden
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
         pointerEvents="none"
         style={[styles.badge, { backgroundColor: theme.structural.imageOverlayMedium }]}
       >
         <Text style={[styles.badgeText, { color: theme.structural.onImageOverlay }]}>
-          {titleTypeLabel(type)}
+          {kindLabel}
         </Text>
       </View>
 
       {isPinned ? (
         <View
           accessible={false}
+          aria-hidden
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
           pointerEvents="none"
           style={[
             styles.pinBadge,
@@ -112,6 +121,9 @@ export function TitleGridCard({
 
       <View
         accessible={false}
+        aria-hidden
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
         pointerEvents="none"
         style={[
           styles.titleOverlay,
@@ -119,6 +131,7 @@ export function TitleGridCard({
         ]}
       >
         <PersonalRatingBadge value={personalRating} style={styles.ratingBadge} />
+        {statusLabel ? <Text style={{ color: theme.structural.onImageOverlaySecondary, fontSize: 11, fontWeight: "700" }}>{statusLabel}</Text> : null}
         <Text
           ellipsizeMode="tail"
           numberOfLines={2}

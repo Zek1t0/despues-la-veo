@@ -1,5 +1,5 @@
 import type { ProviderReference } from "../core/providerReference";
-import type { TitleType } from "../core/savedTitle";
+import type { MediaClassification } from "../core/mediaClassification";
 
 /** Remote search metadata already normalized for the current search UI. */
 export type ProviderSearchResult = Readonly<{
@@ -12,8 +12,7 @@ export type ProviderSearchResult = Readonly<{
 }>;
 
 /** Remote snapshot fields that the current local media domain can persist. */
-export type ProviderLocalSnapshot = Readonly<{
-  type: TitleType;
+export type ProviderLocalSnapshot = Readonly<MediaClassification & {
   title: string;
   year: number | null;
   posterUrl: string | null;
@@ -21,7 +20,7 @@ export type ProviderLocalSnapshot = Readonly<{
   /** Existing persisted snapshot metadata, separate from initial-tag policy. */
   genres: readonly string[];
   /** Existing local snapshot field; not a cross-provider rating ontology. */
-  voteAverage: number | null;
+  voteAverage?: number | null;
 }>;
 
 /** Portable provider metadata, separate from local item-creation policy. */

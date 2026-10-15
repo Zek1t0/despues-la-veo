@@ -1,8 +1,10 @@
+import type { HistoricalSavedTitle } from "./historicalSavedTitle";
+import { savedTitleToHistorical } from "./legacyMediaBoundary";
 import { parsePinContext, isValidPinnedAt, type PinContext } from "./contextualPin";
 import { normalizeBackupSavedTitle, type BackupValidationError, type NormalizedBackupSavedTitle } from "./libraryBackupV1";
 import { parsePersonalRating } from "./personalRating";
 import { createProviderReference, providerReferenceKey, type ProviderReference } from "./providerReference";
-import type { SavedTitle, SavedTitleWithProviderReferences } from "./savedTitle";
+import type { SavedTitleWithProviderReferences } from "./savedTitle";
 import { createTmdbProviderReference } from "./tmdbSavedTitle";
 import { parsePortableBackupAppearance, type ParsedBackupAppearance, type PortableBackupAppearance } from "./libraryBackupV4";
 import type { AppearanceBackupAvailability } from "../theme/appearanceBackupAvailability";
@@ -16,7 +18,7 @@ export type BackupLegacyIdentityV5 = {
   externalId: string;
 };
 
-export type BackupMediaItemV5 = SavedTitle & {
+export type BackupMediaItemV5 = HistoricalSavedTitle & {
   providerReferences: ProviderReference[];
   legacyIdentity?: BackupLegacyIdentityV5;
 };
@@ -219,7 +221,7 @@ export function createLibraryBackupV5(
   const backupItems = items.map((item): BackupMediaItemV5 => {
     if (item.providerReferences.length === 0 && !item.legacyIdentity) throw new Error(`El MediaItem ${item.id} no tiene identidad portable para backup v5.`);
     const { providerReferences, legacyIdentity, ...savedTitle } = item;
-    return { ...savedTitle, personalRating: parsePersonalRating(savedTitle.personalRating), providerReferences: providerReferences.map(createProviderReference), ...(legacyIdentity ? { legacyIdentity } : {}) };
+    return { ...savedTitleToHistorical(savedTitle), personalRating: parsePersonalRating(savedTitle.personalRating), providerReferences: providerReferences.map(createProviderReference), ...(legacyIdentity ? { legacyIdentity } : {}) };
   });
   const backup: LibraryBackupV5 = { version: 5, exportedAt, items: backupItems, pins };
   if (appearanceAvailability.status !== "unavailable") backup.appearance = { scheme: appearanceAvailability.preference.scheme, palette: appearanceAvailability.preference.palette };

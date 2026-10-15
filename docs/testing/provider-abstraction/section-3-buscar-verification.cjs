@@ -5,12 +5,18 @@ const path = require("node:path");
 const repoRoot = path.resolve(__dirname, "../../..");
 const read = (relativePath) => fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
 const search = read("app/(tabs)/buscar.tsx");
+const lifecycle = read("src/components/search/useCategorySearch.ts");
+const ts = require("typescript");
+require.extensions[".ts"] = (module, filename) => module._compile(ts.transpileModule(fs.readFileSync(filename, "utf8"), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText, filename);
+const { SEARCH_CATEGORIES, searchResultDestination } = require("../../../src/components/search/searchCategories.ts");
 
 function normalizedConsumerBoundary() {
   assert.match(search, /import type \{ ProviderSearchResult \} from "\.\.\/\.\.\/src\/providers\/providerContracts"/);
-  assert.match(search, /import \{ tmdbSearchCapability \} from "\.\.\/\.\.\/src\/providers\/tmdb\/tmdbAdapter"/);
-  assert.match(search, /useState<readonly ProviderSearchResult\[\]>/);
-  assert.match(search, /tmdbSearchCapability\.search\(currentQuery\)/);
+  assert.match(search, /tmdbMovieSearchCapability, tmdbTvSearchCapability/);
+  assert.match(search, /readonly ProviderSearchResult\[\]/);
+  assert.match(lifecycle, /capability\.search\(query\)/);
 
   for (const rawDependency of [
     "TmdbSearchItem",
@@ -40,7 +46,7 @@ function normalizedConsumerBoundary() {
 
 function identityAndNavigation() {
   const key = (reference) => `${reference.provider}/${reference.resourceNamespace}/${reference.externalId}`;
-  const route = (reference) => `/${reference.provider}/${reference.resourceNamespace}/${reference.externalId}`;
+  const route = (reference) => searchResultDestination(SEARCH_CATEGORIES.find(x => x.id === reference.resourceNamespace), { reference });
   const movie = { provider: "tmdb", resourceNamespace: "movie", externalId: "77" };
   const tv = { provider: "tmdb", resourceNamespace: "tv", externalId: "77" };
 
@@ -48,19 +54,20 @@ function identityAndNavigation() {
   assert.equal(route(movie), "/tmdb/movie/77");
   assert.equal(route(tv), "/tmdb/tv/77");
   assert.match(search, /keyExtractor=\{\(item\) => `\$\{item\.reference\.provider\}\/\$\{item\.reference\.resourceNamespace\}\/\$\{item\.reference\.externalId\}`\}/);
-  assert.match(search, /`\/\$\{item\.reference\.provider\}\/\$\{item\.reference\.resourceNamespace\}\/\$\{item\.reference\.externalId\}`/);
+  assert.match(search, /selected\?\.destination\(item\)/);
+  assert.equal(route({ ...movie, provider: "arbitrary" }), null);
 }
 
 function preservedRuntimeBehavior() {
-  assert.match(search, /setTimeout\(\(\) => setDebounced\(q\.trim\(\)\), 350\)/);
-  assert.match(search, /shouldRunTmdbSearch\(previousObservation, observation\)/);
-  assert.match(search, /sameTmdbRemoteRequest\(identity, currentSearchIdentity\.current\)/);
-  assert.match(search, /generation: snapshot\.generation/);
-  assert.match(search, /snapshot\.status === "configured"/);
-  assert.match(search, /presentTmdbRemoteError\(e\)/);
+  assert.match(lifecycle, /setTimeout\(\(\) => setDebounced\(query\), 350\)/);
+  assert.match(search, /useCategorySearch\(/);
+  assert.match(lifecycle, /sameSearchRequest\(identity, active\.current\)/);
+  assert.match(search, /tmdbGeneration: isTmdb \? snapshot\?\.generation : undefined/);
+  assert.match(search, /snapshot\?\.status === "configured"/);
+  assert.match(search, /isTmdb && search\.error !== null \? presentTmdbRemoteError/);
   assert.match(search, /setSearchRetry\(\(value\) => value \+ 1\)/);
-  assert.match(search, /setLoading\(true\)/);
-  assert.match(search, /if \(isCurrent\(\)\) setLoading\(false\)/);
+  assert.match(lifecycle, /loading: true/);
+  assert.match(lifecycle, /if \(isCurrent\(\)\) setState\(\{ identity, items, loading: false/);
   assert.match(search, /currentQuery\.length === 0/);
   assert.match(search, /"No encontré resultados"/);
   assert.doesNotMatch(search, /\.filter\([^\n]*media_type/);

@@ -48,7 +48,7 @@ function createDatabase(label) {
     PRAGMA foreign_keys = ON;
     CREATE TABLE saved_titles (
       id TEXT NOT NULL PRIMARY KEY,
-      type TEXT NOT NULL,
+      medium TEXT NOT NULL, content_family TEXT, primary_format TEXT,
       title TEXT NOT NULL,
       year INTEGER,
       poster_url TEXT,
@@ -125,7 +125,8 @@ function savedTitle(overrides = {}) {
     id: "local-id",
     provider: "manual",
     externalId: "logical-title",
-    type: "movie",
+    type: "movie", // Only retained for frozen legacy mapper/export tests.
+    medium: "audiovisual", contentFamily: null, primaryFormat: "movie",
     title: "Local title",
     year: 2020,
     posterUrl: null,

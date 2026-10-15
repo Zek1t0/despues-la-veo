@@ -24,7 +24,8 @@ function cssVariable(source, name) {
 }
 
 function testRootProviderAndNavigationTheme() {
-  const root = read("app/_layout.tsx");
+  const root = read("src/components/ProductionRootLayout.tsx");
+  assert.match(read("app/_layout.tsx"), /if \(mediaReviewEnabled\(\)\)[\s\S]*ReviewRoot[\s\S]*ProductionRootLayout/);
   const navigation = read("src/theme/navigationTheme.ts");
   assert.match(root, /<AppThemeProvider fallback=\{<ThemeBootstrapFallback \/>\}>/);
   assert.match(root, /function ThemedRootLayout\(\)[\s\S]*useAppTheme\(\)/);
@@ -40,7 +41,7 @@ function testRootProviderAndNavigationTheme() {
 }
 
 function testStatusBarTabsAndSystem() {
-  const root = read("app/_layout.tsx");
+  const root = read("src/components/ProductionRootLayout.tsx");
   const tabs = read("app/(tabs)/_layout.tsx");
   const titleDetail = read("app/title/[id].tsx");
   const remoteDetail = read("app/tmdb/[type]/[id].tsx");

@@ -1,9 +1,12 @@
+import { classificationFromHistoricalType } from "../core/mediaClassification";
+import { savedTitleFromHistorical } from "../core/legacyMediaBoundary";
 import type { SavedTitle } from "../core/savedTitle";
 import { createTmdbProviderReference } from "../core/tmdbSavedTitle";
 import { parsePersonalRating } from "../core/personalRating";
 import { materializeSavedTitleForInsert, type NormalizedBackupSavedTitle } from "../core/libraryBackupV1";
 import type { LibraryBackupPinV2 } from "../core/libraryBackupV2";
-import type { BackupPinV5, NormalizedBackupMediaItemV5, BackupLegacyIdentityV5 } from "../core/libraryBackupV5";
+import type { BackupPinV6, BackupLegacyIdentityV6 } from "../core/libraryBackupV6";
+import type { NormalizedBackupMediaItemV6 } from "../core/libraryBackupV6";
 import type { ParsedLibraryBackup } from "../core/libraryBackup";
 import { upsertSavedTitleAndCleanPinsWithDb } from "./savedTitleIntegrity";
 import { mergeBackupPinWithDb } from "./titlePinsBackup";
@@ -17,6 +20,16 @@ export type LibraryPinImportResult = { inserted: number; preserved: number; inva
 export type LibraryBackupMergeResult = LibraryImportMergeResult & { pins: LibraryPinImportResult };
 export type LibraryBackupMergeDb = { getFirstAsync<T>(sql: string, ...params: any[]): Promise<T | null>; getAllAsync<T>(sql: string, ...params: any[]): Promise<T[]>; runAsync(sql: string, ...params: any[]): Promise<any>; withTransactionAsync(task: () => Promise<void>): Promise<void> };
 class ImportConflict extends Error {}
+
+type ImportMediaItem = Omit<NormalizedBackupMediaItemV6, "contentFamily"> & {
+  contentFamily?: NormalizedBackupMediaItemV6["contentFamily"];
+};
+
+/** Historical files supply medium/format, but have no family field to restore. */
+function historicalClassificationForUpdate(type: NormalizedBackupSavedTitle["type"]) {
+  const { contentFamily: _, ...classification } = classificationFromHistoricalType(type);
+  return classification;
+}
 
 function safeArray(value: string): string[] { try { const v = JSON.parse(value); return Array.isArray(v) ? v.filter((x) => typeof x === "string") : []; } catch { return []; } }
 async function savepoint<T>(db: LibraryBackupMergeDb, name: "backup_item" | "backup_pin", task: () => Promise<T>): Promise<T> {
@@ -34,8 +47,8 @@ async function freeId(db: LibraryBackupMergeDb, preferred: string, generateId: (
   }
   throw new Error("No se pudo generar un ID libre después de 25 intentos.");
 }
-function updateFrom(local: SavedTitle, incoming: Omit<NormalizedBackupSavedTitle, "provider" | "externalId">): SavedTitle {
-  return { ...local, title: incoming.title,
+function updateFrom(local: SavedTitle, incoming: Omit<NormalizedBackupMediaItemV6, "providerReferences" | "legacyIdentity" | "contentFamily" | "id"> & { contentFamily?: NormalizedBackupMediaItemV6["contentFamily"] }): SavedTitle {
+  return { ...local, medium: incoming.medium, contentFamily: incoming.contentFamily === undefined ? local.contentFamily : incoming.contentFamily, primaryFormat: incoming.primaryFormat, title: incoming.title,
     year: incoming.year.present ? incoming.year.value : local.year ?? null,
     posterUrl: incoming.posterUrl.present ? incoming.posterUrl.value : local.posterUrl ?? null,
     overview: incoming.overview.present ? incoming.overview.value : local.overview ?? null,
@@ -45,19 +58,19 @@ function updateFrom(local: SavedTitle, incoming: Omit<NormalizedBackupSavedTitle
     tags: incoming.tags.present ? incoming.tags.value : local.tags ?? [], notes: incoming.notes.present ? incoming.notes.value : local.notes ?? null,
     updatedAt: incoming.updatedAt.present ? incoming.updatedAt.value : local.updatedAt };
 }
-function insertV5(incoming: NormalizedBackupMediaItemV5, id: string, now = Date.now()): SavedTitle {
-  return { id, type: incoming.type, title: incoming.title, year: incoming.year.present ? incoming.year.value : null,
+function materializeImportItem(incoming: NormalizedBackupMediaItemV6, id: string, now = Date.now()): SavedTitle {
+  return { id, medium: incoming.medium, contentFamily: incoming.contentFamily, primaryFormat: incoming.primaryFormat, title: incoming.title, year: incoming.year.present ? incoming.year.value : null,
     posterUrl: incoming.posterUrl.present ? incoming.posterUrl.value : null, overview: incoming.overview.present ? incoming.overview.value : null,
     voteAverage: incoming.voteAverage.present ? incoming.voteAverage.value : null, personalRating: incoming.personalRating.present ? parsePersonalRating(incoming.personalRating.value) : null,
     genres: incoming.genres.present ? incoming.genres.value : [], status: incoming.status.present ? incoming.status.value : "planned",
     tags: incoming.tags.present ? incoming.tags.value : [], notes: incoming.notes.present ? incoming.notes.value : null,
     createdAt: incoming.createdAt.present ? incoming.createdAt.value : now, updatedAt: incoming.updatedAt.present ? incoming.updatedAt.value : now };
 }
-async function resolveLegacy(db: LibraryBackupMergeDb, legacy: BackupLegacyIdentityV5): Promise<SavedTitle | null> {
+async function resolveLegacy(db: LibraryBackupMergeDb, legacy: BackupLegacyIdentityV6): Promise<SavedTitle | null> {
   const row = await db.getFirstAsync<{ saved_title_id: string }>("SELECT saved_title_id FROM legacy_saved_title_identities WHERE legacy_format = ? AND legacy_provider = ? AND legacy_external_id = ? LIMIT 1;", [legacy.format, legacy.provider, legacy.externalId]);
   return row ? getSavedTitleWithReferencesByIdWithDb(db, row.saved_title_id) : null;
 }
-async function attachLegacy(db: LibraryBackupMergeDb, legacy: BackupLegacyIdentityV5, id: string) {
+async function attachLegacy(db: LibraryBackupMergeDb, legacy: BackupLegacyIdentityV6, id: string) {
   const owner = await db.getFirstAsync<{ saved_title_id: string }>("SELECT saved_title_id FROM legacy_saved_title_identities WHERE legacy_format = ? AND legacy_provider = ? AND legacy_external_id = ? LIMIT 1;", [legacy.format, legacy.provider, legacy.externalId]);
   if (owner && owner.saved_title_id !== id) throw new ImportConflict("La identidad manual legacy ya pertenece a otro MediaItem.");
   if (owner) return;
@@ -69,7 +82,7 @@ type Internal = LibraryImportMergeResult & { mapping: Map<string, string> };
 function baseResult(): Internal { return { inserted: 0, updated: 0, skipped: 0, conflicts: [], failed: [], mapping: new Map() }; }
 function report(result: Internal, error: unknown, reference: string) { const issue = { reference, reason: error instanceof Error ? error.message : "No se pudo persistir el elemento." }; (error instanceof ImportConflict ? result.conflicts : result.failed).push(issue); }
 
-async function mergeV5Items(db: LibraryBackupMergeDb, items: NormalizedBackupMediaItemV5[], generateId: () => string): Promise<Internal> {
+async function mergePortableItems(db: LibraryBackupMergeDb, items: ImportMediaItem[], generateId: () => string): Promise<Internal> {
   const result = baseResult();
   for (const incoming of items) {
     const backupId = incoming.id.value, label = `${incoming.title} [itemId=${backupId}]`;
@@ -80,22 +93,26 @@ async function mergeV5Items(db: LibraryBackupMergeDb, items: NormalizedBackupMed
       const ids = [...new Set(resolved.map((item) => item.id))];
       if (ids.length > 1) throw new ImportConflict("Las identidades entrantes resuelven MediaItems locales diferentes.");
       const local = ids.length ? await getSavedTitleWithReferencesByIdWithDb(db, ids[0]) : null;
-      await savepoint(db, "backup_item", async () => {
+      const outcome = await savepoint(db, "backup_item", async () => {
         if (local) {
-          if (local.type !== incoming.type) throw new ImportConflict("El tipo movie/tv entrante no coincide con el MediaItem local resuelto.");
+          if (local.medium !== incoming.medium) throw new ImportConflict("El medio entrante no coincide con el MediaItem local resuelto.");
           for (const reference of incoming.providerReferences) await attachProviderReferenceWithDb(db, reference, local.id);
           if (incoming.legacyIdentity) await attachLegacy(db, incoming.legacyIdentity, local.id);
-          if (!incoming.updatedAt.present || incoming.updatedAt.value <= local.updatedAt) result.skipped++;
-          else { await upsertSavedTitleAndCleanPinsWithDb(db, updateFrom(local, incoming)); result.updated++; }
-          result.mapping.set(backupId, local.id);
+          if (!incoming.updatedAt.present || incoming.updatedAt.value <= local.updatedAt) {
+            return { id: local.id, count: "skipped" as const };
+          }
+          await upsertSavedTitleAndCleanPinsWithDb(db, updateFrom(local, incoming));
+          return { id: local.id, count: "updated" as const };
         } else {
           const id = await freeId(db, backupId, generateId, incoming.providerReferences.length > 0 || !!incoming.legacyIdentity);
-          await upsertSavedTitleAndCleanPinsWithDb(db, insertV5(incoming, id));
+          await upsertSavedTitleAndCleanPinsWithDb(db, materializeImportItem({ ...incoming, contentFamily: incoming.contentFamily ?? null }, id));
           for (const reference of incoming.providerReferences) await attachProviderReferenceWithDb(db, reference, id);
           if (incoming.legacyIdentity) await attachLegacy(db, incoming.legacyIdentity, id);
-          result.inserted++; result.mapping.set(backupId, id);
+          return { id, count: "inserted" as const };
         }
       });
+      result[outcome.count]++;
+      result.mapping.set(backupId, outcome.id);
     } catch (error) { report(result, error, label); }
   }
   return result;
@@ -114,10 +131,21 @@ async function mergeHistorical(db: LibraryBackupMergeDb, items: NormalizedBackup
     const label = `${incoming.title} [${incoming.provider}/${incoming.type}/${incoming.externalId}]`;
     try {
       let local = await historicalLocal(db, incoming);
-      await savepoint(db, "backup_item", async () => {
-        if (local) { if (local.type !== incoming.type) throw new ImportConflict("El tipo movie/tv histórico no coincide con el MediaItem local resuelto."); if (!incoming.updatedAt.present || incoming.updatedAt.value <= local.updatedAt) result.skipped++; else { await upsertSavedTitleAndCleanPinsWithDb(db, updateFrom(local, incoming)); result.updated++; } }
-        else { const item = materializeSavedTitleForInsert(incoming, generateId); item.id = await freeId(db, item.id, generateId); await upsertSavedTitleAndCleanPinsWithDb(db, item); await attachHistorical(db, incoming, item.id); local = item; result.inserted++; }
+      const count = await savepoint(db, "backup_item", async () => {
+        if (local) {
+          if (local.medium !== "audiovisual") throw new ImportConflict("El medio histórico no coincide con el MediaItem local resuelto.");
+          if (!incoming.updatedAt.present || incoming.updatedAt.value <= local.updatedAt) return "skipped" as const;
+          await upsertSavedTitleAndCleanPinsWithDb(db, updateFrom(local, { ...incoming, ...historicalClassificationForUpdate(incoming.type) }));
+          return "updated" as const;
+        }
+        const item = savedTitleFromHistorical(materializeSavedTitleForInsert(incoming, generateId));
+        item.id = await freeId(db, item.id, generateId);
+        await upsertSavedTitleAndCleanPinsWithDb(db, item);
+        await attachHistorical(db, incoming, item.id);
+        local = item;
+        return "inserted" as const;
       });
+      result[count]++;
       if (local) { const key = `${incoming.provider}\u0000${incoming.externalId}`; result.historical.set(key, [...(result.historical.get(key) ?? []), local.id]); }
     } catch (error) { report(result, error, label); }
   }
@@ -132,7 +160,7 @@ async function mappedPin(db: LibraryBackupMergeDb, result: LibraryPinImportResul
   if (context.contextType === "tag") { const row = await db.getFirstAsync<{ tags_json: string }>("SELECT tags_json FROM saved_titles WHERE id = ? LIMIT 1;", [id]); if (!row || !safeArray(row.tags_json).map((x) => x.trim()).includes(context.contextKey)) { result.invalid.push({ reference: label, reason: "El título final no pertenece exactamente a la etiqueta indicada." }); return; } }
   try { const outcome = await savepoint(db, "backup_pin", () => mergeBackupPinWithDb(db, id, context, pin.pinnedAt)); result[outcome]++; } catch (error) { result.failed.push({ reference: label, reason: error instanceof Error ? error.message : "No se pudo persistir el pin." }); }
 }
-async function v5Pins(db: LibraryBackupMergeDb, pins: BackupPinV5[], mapping: Map<string, string>) { const result = pinResult(); for (const pin of pins) await mappedPin(db, result, mapping.get(pin.itemId), pin, `${pin.itemId} (${pin.contextType}:${pin.contextKey})`); return result; }
+async function portablePins(db: LibraryBackupMergeDb, pins: BackupPinV6[], mapping: Map<string, string>) { const result = pinResult(); for (const pin of pins) await mappedPin(db, result, mapping.get(pin.itemId), pin, `${pin.itemId} (${pin.contextType}:${pin.contextKey})`); return result; }
 async function historicalPins(db: LibraryBackupMergeDb, pins: LibraryBackupPinV2[], candidates: Map<string, string[]>) {
   const result = pinResult();
   for (const pin of pins) { const label = `${pin.provider}:${pin.externalId} (${pin.contextType}:${pin.contextKey})`; const ids = [...new Set(candidates.get(`${pin.provider}\u0000${pin.externalId}`) ?? [])]; if (ids.length !== 1) { result.invalid.push({ reference: label, reason: ids.length ? "El pin es ambiguo entre varios items del mismo backup." : "El backup no contiene un item elegible para este pin." }); } else await mappedPin(db, result, ids[0], pin, label); }
@@ -150,6 +178,11 @@ export async function mergeLibraryBackupWithDb(
       : { version: 2, items: payloadOrItems, invalid: [], pins: generateIdOrPins as LibraryBackupPinV2[], invalidPins: [] })
     : payloadOrItems;
   const generateId = (Array.isArray(payloadOrItems) ? legacyGenerateId : generateIdOrPins) as () => string;
-  if (payload.version === 5) { const internal = await mergeV5Items(db, payload.items, generateId); const pins = await v5Pins(db, payload.pins, internal.mapping); const { mapping: _, ...titles } = internal; return { ...titles, pins }; }
+  if (payload.version === 5 || payload.version === 6) {
+    const items = payload.version === 6 ? payload.items : payload.items.map(item => {
+      const { type, ...historical } = item;
+      return { ...historical, ...historicalClassificationForUpdate(type) };
+    });
+    const internal = await mergePortableItems(db, items, generateId); const pins = await portablePins(db, payload.pins, internal.mapping); const { mapping: _, ...titles } = internal; return { ...titles, pins }; }
   const internal = await mergeHistorical(db, payload.items, generateId); const pins = payload.version === 1 ? pinResult() : await historicalPins(db, payload.pins, internal.historical); const { mapping: _, historical: __, ...titles } = internal; return { ...titles, pins };
 }

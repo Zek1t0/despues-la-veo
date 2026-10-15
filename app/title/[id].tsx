@@ -1,7 +1,9 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -19,7 +21,9 @@ import type {
   TitleStatus,
 } from "../../src/core/savedTitle";
 import { findUnambiguousTmdbReference } from "../../src/core/savedTitleProviderReferences";
-import { titleStatusLabel, titleTypeLabel } from "../../src/core/presentationLabels";
+import { localMangaUpdatesSources } from "../../src/providers/mangaupdates/product";
+import { titleStatusLabel, mediaClassificationLabel, mediaYearLabel } from "../../src/core/presentationLabels";
+import { PosterPlaceholder } from "../../src/components/browsing/PosterPlaceholder";
 import { type PinContext } from "../../src/core/contextualPin";
 import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";
 import {
@@ -47,15 +51,21 @@ import { getTitleDetailPinSnapshot } from "../../src/storage/titleDetailPinSnaps
 import { setTitlePinState } from "../../src/storage/titlePinsRepo";
 import { useAppTheme } from "../../src/theme/AppThemeProvider";
 
-const STATUS_OPTIONS: { value: TitleStatus; label: string }[] = ([
+const STATUS_VALUES: TitleStatus[] = [
   "planned",
   "watching",
   "done",
   "dropped",
-] satisfies TitleStatus[]).map((value) => ({
-  value,
-  label: titleStatusLabel(value),
-}));
+];
+
+function LocalPoster({ posterUrl }: { posterUrl: string | null }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [posterUrl]);
+  const style = { width: 72, height: 108, borderRadius: 12 };
+  return posterUrl && !failed
+    ? <Image accessible={false} source={{ uri: posterUrl }} resizeMode="cover" style={style} onError={() => setFailed(true)} />
+    : <PosterPlaceholder style={style} />;
+}
 
 const UPDATED_AT_FORMATTER = new Intl.DateTimeFormat("es-AR", {
   dateStyle: "medium",
@@ -173,16 +183,31 @@ function Card({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function TitleDetailScreen() {
+type DetailParams = { id?: string | string[]; pinContext?: string | string[]; tag?: string | string[] };
+export type TitleDetailServices = Readonly<{
+  getTitleDetailPinSnapshot: typeof getTitleDetailPinSnapshot;
+  deleteSavedTitle: typeof deleteSavedTitle;
+  setPersonalRating: typeof setPersonalRating;
+  updateSavedTitleMetadata: typeof updateSavedTitleMetadata;
+  setTitlePinState: typeof setTitlePinState;
+  useFocusEffect: typeof useFocusEffect;
+  useRouter: () => Pick<ReturnType<typeof useRouter>, "back" | "push">;
+  useParams: () => DetailParams;
+}>;
+const personalDetailServices: TitleDetailServices = {
+  getTitleDetailPinSnapshot, deleteSavedTitle, setPersonalRating, updateSavedTitleMetadata,
+  setTitlePinState, useFocusEffect, useRouter, useParams: () => useLocalSearchParams<DetailParams>(),
+};
+
+/** Reuses the same editor and intent queues with explicit, mount-stable repository bindings. */
+export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetailServices } = {}) {
+  const { getTitleDetailPinSnapshot, deleteSavedTitle, setPersonalRating,
+    updateSavedTitleMetadata, setTitlePinState, useFocusEffect, useRouter, useParams } = bindings ?? personalDetailServices;
   const { theme } = useAppTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
-  const { id, pinContext, tag } = useLocalSearchParams<{
-    id?: string | string[];
-    pinContext?: string | string[];
-    tag?: string | string[];
-  }>();
+  const { id, pinContext, tag } = useParams();
 
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState<SavedTitleWithProviderReferences | null>(null);
@@ -524,11 +549,11 @@ export default function TitleDetailScreen() {
   if (!item) {
     return (
       <>
-        <Stack.Screen
+        {!bindings && <Stack.Screen
           options={{
             title: "Título",
           }}
-        />
+        />}
         <View style={{ flex: 1, padding: 16, gap: 10, backgroundColor: theme.global.background }}>
           <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 18 }}>
             No encontrado
@@ -559,7 +584,7 @@ export default function TitleDetailScreen() {
 
   return (
     <>
-      <Stack.Screen
+      {!bindings && <Stack.Screen
         options={{
           title: headerTitle,
           headerRight: () =>
@@ -584,7 +609,7 @@ export default function TitleDetailScreen() {
               </Pressable>
             ) : null,
         }}
-      />
+      />}
 
       <ScrollView
         style={{ backgroundColor: theme.global.background }}
@@ -597,14 +622,41 @@ export default function TitleDetailScreen() {
           width: "100%",
         }}
       >
-        <View style={{ gap: 6 }}>
-          <Text style={{ fontSize: 24, fontWeight: "900", color: theme.global.textPrimary }}>
-            {item.title}
-          </Text>
-          <Text style={{ color: theme.global.textSecondary, fontWeight: "700" }}>
-            {titleTypeLabel(item.type)}
-          </Text>
+        {localMangaUpdatesSources(item.providerReferences, Platform.OS).map(source => (
+          <View key={source.reference.externalId} style={{ gap: 8 }}>
+            <Text style={{ color: theme.global.textSecondary }}>{source.label}</Text>
+            {source.destination && !bindings && <Pressable accessibilityRole="button" accessibilityLabel="Abrir esta obra en MangaUpdates"
+              onPress={() => { if (source.destination) router.push(source.destination); }} style={{ minHeight: 44, justifyContent: "center" }}>
+              <Text style={{ color: theme.global.textPrimary }}>Ver en MangaUpdates</Text>
+            </Pressable>}
+            <Pressable accessibilityRole="link" accessibilityLabel="Abrir el sitio oficial de MangaUpdates"
+              onPress={() => { void Linking.openURL(source.providerUrl).catch(() => Alert.alert("MangaUpdates", "No pudimos abrir el sitio de la fuente.")); }}
+              style={{ minHeight: 44, justifyContent: "center" }}>
+              <Text style={{ color: theme.global.textPrimary }}>Sitio de MangaUpdates</Text>
+            </Pressable>
+          </View>
+        ))}
+        <View style={{ flexDirection: "row", gap: 12 }}>
+          <LocalPoster posterUrl={item.posterUrl ?? null} />
+          <View style={{ flex: 1, gap: 6 }}>
+            <Text style={{ fontSize: 24, fontWeight: "900", color: theme.global.textPrimary }}>
+              {item.title}
+            </Text>
+            <Text style={{ color: theme.global.textSecondary, fontWeight: "700" }}>
+              {mediaClassificationLabel(item)}
+            </Text>
+            <Text style={{ color: theme.global.textSecondary }}>
+              {mediaYearLabel(item.medium)}: {item.year ?? "Sin fecha"}
+            </Text>
+          </View>
         </View>
+
+        {item.overview?.trim() || item.genres?.length ? (
+          <Card>
+            {item.overview?.trim() ? <Text style={{ color: theme.global.textPrimary }}>{item.overview}</Text> : null}
+            {item.genres?.length ? <Text style={{ color: theme.global.textSecondary }}>Géneros: {item.genres.join(", ")}</Text> : null}
+          </Card>
+        ) : null}
 
         <Card>
           {pinReady ? (
@@ -690,7 +742,7 @@ export default function TitleDetailScreen() {
                   : `${formatPersonalRating(item.personalRating)} / 10`}
               </Text>
             </View>
-            <View style={{ flex: 1, gap: 4 }}>
+            {(tmdbHref || (typeof item.voteAverage === "number" && Number.isFinite(item.voteAverage))) ? <View style={{ flex: 1, gap: 4 }}>
               <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 16 }}>
                 TMDB
               </Text>
@@ -699,7 +751,7 @@ export default function TitleDetailScreen() {
                   ? `${item.voteAverage.toFixed(1)} / 10`
                   : "— / 10"}
               </Text>
-            </View>
+            </View> : null}
           </View>
 
           {item.personalRating === null ? (
@@ -800,12 +852,12 @@ export default function TitleDetailScreen() {
         <Card>
           <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 16 }}>Estado</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {STATUS_OPTIONS.map((s) => (
+            {STATUS_VALUES.map((value) => (
               <Chip
-                key={s.value}
-                label={s.label}
-                active={item.status === s.value}
-                onPress={() => void setStatus(s.value)}
+                key={value}
+                label={titleStatusLabel(value, item.medium)}
+                active={item.status === value}
+                onPress={() => void setStatus(value)}
               />
             ))}
           </View>

@@ -1,8 +1,33 @@
-import type { SavedTitle, TitleStatus, TitleType } from "./savedTitle";
+import type { SavedTitle, TitleStatus } from "./savedTitle";
 import type { LibrarySort } from "./viewPreferences";
 
 export type LibraryStatusFilter = "all" | TitleStatus;
-export type LibraryTypeFilter = "all" | TitleType;
+export const LIBRARY_CLASSIFICATION_FILTERS = [
+  { value: "all", label: "Todos" },
+  { value: "movie", label: "Películas" },
+  { value: "tv", label: "Series" },
+  { value: "anime", label: "Anime" },
+  { value: "manga", label: "Manga" },
+  { value: "manhwa", label: "Manhwa" },
+  { value: "manhua", label: "Manhua" },
+  { value: "comic", label: "Cómics" },
+  { value: "literature", label: "Literatura" },
+] as const;
+export type LibraryClassificationFilter = (typeof LIBRARY_CLASSIFICATION_FILTERS)[number]["value"];
+
+export function isLibraryClassificationFilter(value: string): value is LibraryClassificationFilter {
+  return LIBRARY_CLASSIFICATION_FILTERS.some(option => option.value === value);
+}
+
+/** A single active predicate; these options are overlapping views, not domain types. */
+export function matchesLibraryClassification(item: SavedTitle, filter: LibraryClassificationFilter): boolean {
+  switch (filter) {
+    case "all": return true;
+    case "movie": case "tv": return item.medium === "audiovisual" && item.primaryFormat === filter;
+    case "anime": case "manga": case "manhwa": case "manhua": return item.contentFamily === filter;
+    case "comic": case "literature": return item.medium === filter;
+  }
+}
 
 const SPANISH_TITLE_COLLATOR = new Intl.Collator("es", {
   numeric: true,
@@ -95,19 +120,19 @@ export function selectVisibleLibraryTitles<T extends SavedTitle>({
   query,
   sort,
   statusFilter,
-  typeFilter,
+  classificationFilter,
 }: {
   items: readonly T[];
   pinnedAtById: ReadonlyMap<string, number>;
   query: string;
   sort: LibrarySort;
   statusFilter: LibraryStatusFilter;
-  typeFilter: LibraryTypeFilter;
+  classificationFilter: LibraryClassificationFilter;
 }): T[] {
   const needle = query.trim().toLocaleLowerCase("es");
   const matchingItems = items.filter((item) => {
     if (statusFilter !== "all" && item.status !== statusFilter) return false;
-    if (typeFilter !== "all" && item.type !== typeFilter) return false;
+    if (!matchesLibraryClassification(item, classificationFilter)) return false;
     if (!needle) return true;
     if (item.title.toLocaleLowerCase("es").includes(needle)) return true;
     return (item.tags ?? []).some((tag) =>

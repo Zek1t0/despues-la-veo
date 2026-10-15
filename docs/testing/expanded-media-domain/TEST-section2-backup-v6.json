@@ -1,0 +1,357 @@
+{
+  "version": 6,
+  "exportedAt": "2026-10-09T00:00:00Z",
+  "items": [
+    {
+      "id": "TEST-movie",
+      "medium": "audiovisual",
+      "contentFamily": null,
+      "primaryFormat": "movie",
+      "providerReferences": [
+        {
+          "provider": "tmdb",
+          "resourceNamespace": "movie",
+          "externalId": "77"
+        },
+        {
+          "provider": "section2-test",
+          "resourceNamespace": "work",
+          "externalId": "movie"
+        }
+      ],
+      "title": "TEST Section 2 movie",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Synthetic SQLite and backup smoke data.",
+      "voteAverage": 7.7,
+      "personalRating": 80,
+      "genres": [],
+      "status": "watching",
+      "tags": [
+        "TEST"
+      ],
+      "notes": "Synthetic personal note",
+      "createdAt": 101,
+      "updatedAt": 202
+    },
+    {
+      "id": "TEST-tv",
+      "medium": "audiovisual",
+      "contentFamily": "anime",
+      "primaryFormat": "tv",
+      "providerReferences": [
+        {
+          "provider": "tmdb",
+          "resourceNamespace": "tv",
+          "externalId": "77"
+        },
+        {
+          "provider": "section2-test",
+          "resourceNamespace": "work",
+          "externalId": "tv"
+        }
+      ],
+      "title": "TEST Section 2 tv",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Synthetic SQLite and backup smoke data.",
+      "voteAverage": null,
+      "personalRating": 80,
+      "genres": [],
+      "status": "watching",
+      "tags": [
+        "TEST"
+      ],
+      "notes": "Synthetic personal note",
+      "createdAt": 101,
+      "updatedAt": 202
+    },
+    {
+      "id": "TEST-ova",
+      "medium": "audiovisual",
+      "contentFamily": "anime",
+      "primaryFormat": "ova",
+      "providerReferences": [
+        {
+          "provider": "tmdb",
+          "resourceNamespace": "movie",
+          "externalId": "88"
+        },
+        {
+          "provider": "section2-test",
+          "resourceNamespace": "work",
+          "externalId": "ova"
+        }
+      ],
+      "title": "TEST Section 2 ova",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Synthetic SQLite and backup smoke data.",
+      "voteAverage": null,
+      "personalRating": 80,
+      "genres": [],
+      "status": "watching",
+      "tags": [
+        "TEST"
+      ],
+      "notes": "Synthetic personal note",
+      "createdAt": 101,
+      "updatedAt": 202
+    },
+    {
+      "id": "TEST-manga",
+      "medium": "comic",
+      "contentFamily": "manga",
+      "primaryFormat": null,
+      "providerReferences": [
+        {
+          "provider": "section2-test",
+          "resourceNamespace": "work",
+          "externalId": "manga"
+        }
+      ],
+      "title": "TEST Section 2 manga",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Synthetic SQLite and backup smoke data.",
+      "voteAverage": null,
+      "personalRating": 80,
+      "genres": [],
+      "status": "watching",
+      "tags": [
+        "TEST"
+      ],
+      "notes": "Synthetic personal note",
+      "createdAt": 101,
+      "updatedAt": 202
+    },
+    {
+      "id": "TEST-one-shot",
+      "medium": "comic",
+      "contentFamily": "manga",
+      "primaryFormat": "one-shot",
+      "providerReferences": [
+        {
+          "provider": "section2-test",
+          "resourceNamespace": "work",
+          "externalId": "one-shot"
+        }
+      ],
+      "title": "TEST Section 2 one-shot",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Synthetic SQLite and backup smoke data.",
+      "voteAverage": null,
+      "personalRating": 80,
+      "genres": [],
+      "status": "watching",
+      "tags": [
+        "TEST"
+      ],
+      "notes": "Synthetic personal note",
+      "createdAt": 101,
+      "updatedAt": 202
+    },
+    {
+      "id": "TEST-manhwa",
+      "medium": "comic",
+      "contentFamily": "manhwa",
+      "primaryFormat": "webtoon",
+      "providerReferences": [
+        {
+          "provider": "section2-test",
+          "resourceNamespace": "work",
+          "externalId": "manhwa"
+        }
+      ],
+      "title": "TEST Section 2 manhwa",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Synthetic SQLite and backup smoke data.",
+      "voteAverage": null,
+      "personalRating": 80,
+      "genres": [],
+      "status": "watching",
+      "tags": [
+        "TEST"
+      ],
+      "notes": "Synthetic personal note",
+      "createdAt": 101,
+      "updatedAt": 202
+    },
+    {
+      "id": "TEST-manhua",
+      "medium": "comic",
+      "contentFamily": "manhua",
+      "primaryFormat": null,
+      "providerReferences": [
+        {
+          "provider": "section2-test",
+          "resourceNamespace": "work",
+          "externalId": "manhua"
+        }
+      ],
+      "title": "TEST Section 2 manhua",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Synthetic SQLite and backup smoke data.",
+      "voteAverage": null,
+      "personalRating": 80,
+      "genres": [],
+      "status": "watching",
+      "tags": [
+        "TEST"
+      ],
+      "notes": "Synthetic personal note",
+      "createdAt": 101,
+      "updatedAt": 202
+    },
+    {
+      "id": "TEST-comic",
+      "medium": "comic",
+      "contentFamily": null,
+      "primaryFormat": null,
+      "providerReferences": [
+        {
+          "provider": "section2-test",
+          "resourceNamespace": "work",
+          "externalId": "comic"
+        }
+      ],
+      "title": "TEST Section 2 comic",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Synthetic SQLite and backup smoke data.",
+      "voteAverage": null,
+      "personalRating": 80,
+      "genres": [],
+      "status": "watching",
+      "tags": [
+        "TEST"
+      ],
+      "notes": "Synthetic personal note",
+      "createdAt": 101,
+      "updatedAt": 202
+    },
+    {
+      "id": "TEST-novel",
+      "medium": "literature",
+      "contentFamily": null,
+      "primaryFormat": "novel",
+      "providerReferences": [
+        {
+          "provider": "section2-test",
+          "resourceNamespace": "work",
+          "externalId": "novel"
+        }
+      ],
+      "title": "TEST Section 2 novel",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Synthetic SQLite and backup smoke data.",
+      "voteAverage": null,
+      "personalRating": 80,
+      "genres": [],
+      "status": "watching",
+      "tags": [
+        "TEST"
+      ],
+      "notes": "Synthetic personal note",
+      "createdAt": 101,
+      "updatedAt": 202
+    },
+    {
+      "id": "TEST-light-novel",
+      "medium": "literature",
+      "contentFamily": null,
+      "primaryFormat": "light-novel",
+      "providerReferences": [
+        {
+          "provider": "section2-test",
+          "resourceNamespace": "work",
+          "externalId": "light-novel"
+        }
+      ],
+      "title": "TEST Section 2 light-novel",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Synthetic SQLite and backup smoke data.",
+      "voteAverage": null,
+      "personalRating": 80,
+      "genres": [],
+      "status": "watching",
+      "tags": [
+        "TEST"
+      ],
+      "notes": "Synthetic personal note",
+      "createdAt": 101,
+      "updatedAt": 202
+    }
+  ],
+  "pins": [
+    {
+      "itemId": "TEST-movie",
+      "contextType": "library",
+      "contextKey": "",
+      "pinnedAt": 303
+    },
+    {
+      "itemId": "TEST-tv",
+      "contextType": "library",
+      "contextKey": "",
+      "pinnedAt": 303
+    },
+    {
+      "itemId": "TEST-ova",
+      "contextType": "library",
+      "contextKey": "",
+      "pinnedAt": 303
+    },
+    {
+      "itemId": "TEST-manga",
+      "contextType": "library",
+      "contextKey": "",
+      "pinnedAt": 303
+    },
+    {
+      "itemId": "TEST-one-shot",
+      "contextType": "library",
+      "contextKey": "",
+      "pinnedAt": 303
+    },
+    {
+      "itemId": "TEST-manhwa",
+      "contextType": "library",
+      "contextKey": "",
+      "pinnedAt": 303
+    },
+    {
+      "itemId": "TEST-manhua",
+      "contextType": "library",
+      "contextKey": "",
+      "pinnedAt": 303
+    },
+    {
+      "itemId": "TEST-comic",
+      "contextType": "library",
+      "contextKey": "",
+      "pinnedAt": 303
+    },
+    {
+      "itemId": "TEST-novel",
+      "contextType": "library",
+      "contextKey": "",
+      "pinnedAt": 303
+    },
+    {
+      "itemId": "TEST-light-novel",
+      "contextType": "library",
+      "contextKey": "",
+      "pinnedAt": 303
+    }
+  ],
+  "appearance": {
+    "scheme": "dark",
+    "palette": "lavender"
+  }
+}

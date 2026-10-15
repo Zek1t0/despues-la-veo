@@ -27,7 +27,7 @@ const {
 function localItem(overrides = {}) {
   return {
     id: "opaque-local-id",
-    type: "tv",
+    medium: "audiovisual", contentFamily: null, primaryFormat: "tv",
     title: "Título anterior",
     year: 2020,
     posterUrl: "poster-anterior",
@@ -128,7 +128,7 @@ function testTmdbRefreshPreservesLocalIdentityAndPersonalState() {
   const refreshed = materializeTmdbSavedTitle(
     reference,
     {
-      type: "tv",
+      medium: "audiovisual", contentFamily: null, primaryFormat: "tv",
       title: "Título actualizado",
       year: 2026,
       posterUrl: "poster-nuevo",
@@ -165,12 +165,12 @@ function testTmdbRefreshPreservesLocalIdentityAndPersonalState() {
   assert.equal(Object.hasOwn(refreshed, "provider"), false);
   assert.equal(Object.hasOwn(refreshed, "externalId"), false);
 
-  assert.throws(
+  assert.doesNotThrow(
     () => materializeTmdbSavedTitle(
       createTmdbProviderReference("movie", 77),
       {
-        type: "tv",
-        title: "Namespace incorrecto",
+        medium: "audiovisual", contentFamily: null, primaryFormat: "tv",
+        title: "Namespace independiente",
         year: null,
         posterUrl: null,
         overview: null,
@@ -189,7 +189,7 @@ function testNewTmdbItemUsesLocalDefaults() {
   const created = materializeTmdbSavedTitle(
     createTmdbProviderReference("movie", 99),
     {
-      type: "movie",
+      medium: "audiovisual", contentFamily: null, primaryFormat: "movie",
       title: "Nueva",
       year: null,
       posterUrl: null,

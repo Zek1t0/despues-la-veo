@@ -41,7 +41,7 @@ function createDatabase() {
     PRAGMA foreign_keys = ON;
     CREATE TABLE saved_titles (
       id TEXT NOT NULL PRIMARY KEY,
-      type TEXT NOT NULL, title TEXT NOT NULL, year INTEGER, poster_url TEXT,
+      medium TEXT NOT NULL, content_family TEXT, primary_format TEXT, title TEXT NOT NULL, year INTEGER, poster_url TEXT,
       overview TEXT, vote_average REAL,
       personal_rating INTEGER CHECK (personal_rating IS NULL OR
         (typeof(personal_rating) = 'integer' AND personal_rating BETWEEN 10 AND 100)),
@@ -67,7 +67,7 @@ function createDatabase() {
       FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE
     );
     INSERT INTO saved_titles VALUES
-      ('title', 'movie', 'Title', 2026, NULL, NULL, 7.5,
+      ('title', 'audiovisual', NULL, 'movie', 'Title', 2026, NULL, NULL, 7.5,
        87, '["Drama"]', 'planned', '["watch"]', 'draft persisted', 1, 100);
     INSERT INTO media_provider_references VALUES ('tmdb', 'movie', '1', 'title');
     INSERT INTO title_pins VALUES ('title', 'library', '', 50);

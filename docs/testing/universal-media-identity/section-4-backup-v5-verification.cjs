@@ -23,7 +23,7 @@ function fixture(label) {
   const file = path.join(os.tmpdir(), `dlv-v5-${label}-${process.pid}-${Date.now()}-${Math.random()}.sqlite`);
   const sqlite = new DatabaseSync(file);
   sqlite.exec(`PRAGMA foreign_keys=ON;
-    CREATE TABLE saved_titles (id TEXT PRIMARY KEY NOT NULL, type TEXT NOT NULL, title TEXT NOT NULL, year INTEGER, poster_url TEXT, overview TEXT, vote_average REAL,
+    CREATE TABLE saved_titles (id TEXT PRIMARY KEY NOT NULL, medium TEXT NOT NULL, content_family TEXT, primary_format TEXT, title TEXT NOT NULL, year INTEGER, poster_url TEXT, overview TEXT, vote_average REAL,
       personal_rating INTEGER CHECK(personal_rating IS NULL OR (typeof(personal_rating)='integer' AND personal_rating BETWEEN 10 AND 100)), genres_json TEXT,
       status TEXT NOT NULL, tags_json TEXT NOT NULL, notes TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
     CREATE TABLE media_provider_references (provider TEXT NOT NULL, resource_namespace TEXT NOT NULL, external_id TEXT NOT NULL, saved_title_id TEXT NOT NULL,
@@ -42,7 +42,7 @@ function fixture(label) {
   return { sqlite, db, close() { sqlite.close(); fs.unlinkSync(file); } };
 }
 function addItem(sqlite, item, references = [], legacy = null) {
-  sqlite.prepare("INSERT INTO saved_titles VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)").run(item.id, item.type, item.title, item.year ?? null, item.posterUrl ?? null,
+  sqlite.prepare("INSERT INTO saved_titles VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").run(item.id, item.medium ?? "audiovisual", item.contentFamily ?? null, item.primaryFormat === undefined ? item.type : item.primaryFormat, item.title, item.year ?? null, item.posterUrl ?? null,
     item.overview ?? null, item.voteAverage ?? null, item.personalRating ?? null, JSON.stringify(item.genres ?? []), item.status ?? "planned", JSON.stringify(item.tags ?? []),
     item.notes ?? null, item.createdAt, item.updatedAt);
   for (const r of references) sqlite.prepare("INSERT INTO media_provider_references VALUES (?,?,?,?)").run(r.provider, r.resourceNamespace, r.externalId, item.id);
@@ -94,17 +94,19 @@ async function main() {
     const conflict = await mergeTx(target.db, conflictPayload); assert.equal(conflict.conflicts.length, 1); assert.equal(conflict.pins.invalid.length, 1);
     assert.equal(target.sqlite.prepare("SELECT title FROM saved_titles WHERE id='movie-local'").get().title, "Newer movie");
 
-    addItem(target.sqlite, item("type-tv", "tv", "Local TV", 88, ["Keep"], "keep note", "watching", 900), [{ provider: "catalog", resourceNamespace: "work", externalId: "type-x" }]);
+    addItem(target.sqlite, { ...item("type-tv", "tv", "Local TV", 88, ["Keep"], "keep note", "watching", 900), medium: "comic", primaryFormat: null }, [{ provider: "catalog", resourceNamespace: "work", externalId: "type-x" }]);
     const typeConflictPayload = parsed({ version: 5, items: [{ ...item("type-conflict", "movie", "Incoming movie", 11, ["Move"], "move note", "done", 999), providerReferences: [{ provider: "catalog", resourceNamespace: "work", externalId: "type-x" }, { provider: "tmdb", resourceNamespace: "movie", externalId: "177" }] }], pins: [{ itemId: "type-conflict", contextType: "library", contextKey: "", pinnedAt: 11 }] });
     const typeConflict = await mergeTx(target.db, typeConflictPayload);
     assert.equal(typeConflict.conflicts.length, 1); assert.equal(typeConflict.pins.invalid.length, 1);
     assert.equal(target.sqlite.prepare("SELECT 1 FROM media_provider_references WHERE provider='tmdb' AND resource_namespace='movie' AND external_id='177'").get(), undefined);
-    assert.deepEqual({ ...target.sqlite.prepare("SELECT type,title,personal_rating,tags_json,notes,status FROM saved_titles WHERE id='type-tv'").get() }, { type: "tv", title: "Local TV", personal_rating: 88, tags_json: '["Keep"]', notes: "keep note", status: "watching" });
+    assert.deepEqual({ ...target.sqlite.prepare("SELECT primary_format AS type,title,personal_rating,tags_json,notes,status FROM saved_titles WHERE id='type-tv'").get() }, { type: null, title: "Local TV", personal_rating: 88, tags_json: '["Keep"]', notes: "keep note", status: "watching" });
 
+    target.sqlite.exec("UPDATE saved_titles SET medium='comic', primary_format=NULL WHERE id='manual-local'");
     const historicalManualMismatch = parsed({ version: 4, items: [{ ...item("ignored", "tv", "Wrong type", 10, ["Wrong"], "wrong", "done", 999), provider: "manual", externalId: "manual-key" }], pins: [{ provider: "manual", externalId: "manual-key", contextType: "library", contextKey: "", pinnedAt: 4 }] });
     const historicalMismatch = await mergeTx(target.db, historicalManualMismatch);
     assert.equal(historicalMismatch.conflicts.length, 1); assert.equal(historicalMismatch.pins.invalid.length, 1);
-    assert.equal(target.sqlite.prepare("SELECT type,title,personal_rating FROM saved_titles WHERE id='manual-local'").get().type, "movie");
+    assert.equal(target.sqlite.prepare("SELECT primary_format AS type,title,personal_rating FROM saved_titles WHERE id='manual-local'").get().type, null);
+    target.sqlite.exec("UPDATE saved_titles SET medium='audiovisual', primary_format='movie' WHERE id='manual-local'");
 
     const legacyA = parsed({ version: 5, items: [{ ...item("legacy-a", "movie", "Legacy A old", 80, [], null, "planned", 600), providerReferences: [{ provider: "catalog", resourceNamespace: "work", externalId: "m77" }], legacyIdentity: { format: "library-backup-v1-v4", provider: "manual", externalId: "legacy-A" } }], pins: [] });
     const attachA = await mergeTx(target.db, legacyA); assert.equal(attachA.conflicts.length, 0);

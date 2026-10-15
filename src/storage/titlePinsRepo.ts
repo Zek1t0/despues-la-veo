@@ -117,7 +117,7 @@ export async function listAllPinsForBackupWithDb(
      FROM title_pins p
      INNER JOIN saved_titles s ON s.id = p.saved_title_id
      INNER JOIN media_provider_references r ON r.saved_title_id = s.id
-     WHERE r.provider = 'tmdb' AND r.resource_namespace = s.type
+     WHERE r.provider = 'tmdb' AND s.medium = 'audiovisual'
      UNION ALL
      SELECT 'manual' AS provider, l.legacy_external_id AS external_id,
             p.context_type, p.context_key, p.pinned_at

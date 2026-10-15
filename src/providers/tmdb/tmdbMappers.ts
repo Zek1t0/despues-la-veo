@@ -1,4 +1,5 @@
 import { createTmdbProviderReference, type TmdbResourceNamespace } from "../../core/tmdbSavedTitle";
+import { classificationFromHistoricalType } from "../../core/mediaClassification";
 import type {
   ProviderMaterializationInput,
   ProviderMediaDetails,
@@ -65,7 +66,7 @@ function mapTmdbDetails(
   return {
     reference: createTmdbProviderReference(type, details.id),
     snapshot: {
-      type,
+      ...classificationFromHistoricalType(type),
       title,
       year: snapshotYear(date),
       posterUrl: posterUrl(details.poster_path),

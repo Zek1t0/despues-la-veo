@@ -1,23 +1,18 @@
-import {
-  createProviderReference,
-  type ProviderReference,
-} from "./providerReference";
-import type {
-  LegacyPersistedSavedTitle,
-  SavedTitle,
-  TitleType,
-} from "./savedTitle";
+import { createTmdbProviderReference, type TmdbProviderReference } from "./tmdbProviderReference";
+export { createTmdbProviderReference, type TmdbProviderReference, type TmdbResourceNamespace } from "./tmdbProviderReference";
+
+import type { SavedTitle } from "./savedTitle";
+import type { LegacyPersistedSavedTitle, HistoricalTitleType } from "./historicalSavedTitle";
+import { classificationFromHistoricalType } from "./mediaClassification";
+import { savedTitleFromHistorical, savedTitleToHistorical } from "./legacyMediaBoundary";
 import { materializeProviderSavedTitle } from "./providerSavedTitle";
-import type { ProviderMaterializationInput } from "../providers/providerContracts";
+import type { ProviderLocalSnapshot, ProviderMaterializationInput } from "../providers/providerContracts";
 
-export type TmdbResourceNamespace = "movie" | "tv";
-export type TmdbProviderReference = ProviderReference & Readonly<{
-  provider: "tmdb";
-  resourceNamespace: TmdbResourceNamespace;
-}>;
+export type TmdbSavedTitleSnapshot = ProviderLocalSnapshot & { voteAverage: number | null };
 
-export type TmdbSavedTitleSnapshot = {
-  type: TitleType;
+export type LegacyTmdbSavedTitleSnapshot = {
+  type: HistoricalTitleType;
+  externalId: string;
   title: string;
   year: number | null;
   posterUrl: string | null;
@@ -26,35 +21,10 @@ export type TmdbSavedTitleSnapshot = {
   voteAverage: number | null;
 };
 
-/** Compatibility input retained until the remote TMDB save consumer is migrated. */
-export type LegacyTmdbSavedTitleSnapshot = TmdbSavedTitleSnapshot & {
-  externalId: string;
-};
-
-function canonicalTmdbExternalId(value: number | string): string {
-  const text = typeof value === "number" ? String(value) : value.trim();
-  if (!/^\d+$/.test(text)) {
-    throw new Error("El ID de TMDB debe representar un entero decimal positivo.");
-  }
-  const numericId = Number(text);
-  if (!Number.isSafeInteger(numericId) || numericId <= 0) {
-    throw new Error("El ID de TMDB debe ser un entero seguro y positivo.");
-  }
-  return String(numericId);
-}
-
-export function createTmdbProviderReference(
-  resourceNamespace: TmdbResourceNamespace,
-  externalId: number | string
-): TmdbProviderReference {
-  if (resourceNamespace !== "movie" && resourceNamespace !== "tv") {
-    throw new Error("El namespace de TMDB debe ser movie o tv.");
-  }
-  return createProviderReference({
-    provider: "tmdb",
-    resourceNamespace,
-    externalId: canonicalTmdbExternalId(externalId),
-  }) as TmdbProviderReference;
+/** Frozen compatibility input; active TMDB mappers use the classification snapshot. */
+export function legacyTmdbSnapshotToCurrent(snapshot: LegacyTmdbSavedTitleSnapshot): TmdbSavedTitleSnapshot {
+  const { type, externalId: _externalId, ...metadata } = snapshot;
+  return { ...metadata, ...classificationFromHistoricalType(type) };
 }
 
 export function materializeTmdbSavedTitle(
@@ -81,7 +51,7 @@ export function createTmdbSavedTitleMaterializationInput(
   snapshot: TmdbSavedTitleSnapshot
 ): ProviderMaterializationInput {
   if (reference.provider !== "tmdb" ||
-      reference.resourceNamespace !== snapshot.type ||
+      snapshot.medium !== "audiovisual" ||
       !providerReferenceIsCanonicalTmdb(reference)) {
     throw new Error("La referencia TMDB no coincide con el snapshot.");
   }
@@ -89,7 +59,9 @@ export function createTmdbSavedTitleMaterializationInput(
   return {
     reference,
     snapshot: {
-      type: snapshot.type,
+      medium: snapshot.medium,
+      contentFamily: snapshot.contentFamily,
+      primaryFormat: snapshot.primaryFormat,
       title: snapshot.title,
       year: snapshot.year,
       posterUrl: snapshot.posterUrl,
@@ -123,9 +95,10 @@ export function materializeLegacyTmdbSavedTitle(
   now = Date.now()
 ): LegacyPersistedSavedTitle {
   const reference = createTmdbProviderReference(snapshot.type, snapshot.externalId);
-  const { externalId: _legacyExternalId, ...localSnapshot } = snapshot;
+  const localSnapshot = legacyTmdbSnapshotToCurrent(snapshot);
   return {
-    ...materializeTmdbSavedTitle(reference, localSnapshot, existing, generateId, now),
+    ...savedTitleToHistorical(materializeTmdbSavedTitle(reference, localSnapshot,
+      existing ? savedTitleFromHistorical(existing) : null, generateId, now)),
     provider: "tmdb",
     externalId: reference.externalId,
   };

@@ -1,0 +1,564 @@
+{
+  "version": 6,
+  "exportedAt": "2026-10-12T05:10:24.471Z",
+  "items": [
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-20",
+      "medium": "audiovisual",
+      "contentFamily": null,
+      "primaryFormat": "movie",
+      "title": "Otra identidad en pantalla",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Obra original sintética para revisar tmdb-collision; ninguna fuente externa fue consultada.",
+      "voteAverage": null,
+      "personalRating": null,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824454,
+      "updatedAt": 1791781824454,
+      "providerReferences": [
+        {
+          "provider": "tmdb",
+          "resourceNamespace": "movie",
+          "externalId": "900007"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-19",
+      "medium": "comic",
+      "contentFamily": "manga",
+      "primaryFormat": null,
+      "title": "Otra identidad en papel",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Obra original sintética para revisar collision; ninguna fuente externa fue consultada.",
+      "voteAverage": null,
+      "personalRating": null,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824453,
+      "updatedAt": 1791781824453,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "comic",
+          "externalId": "900007"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-17",
+      "medium": "comic",
+      "contentFamily": null,
+      "primaryFormat": null,
+      "title": "Ficha sin estación",
+      "year": null,
+      "posterUrl": null,
+      "overview": null,
+      "voteAverage": null,
+      "personalRating": null,
+      "genres": [],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824452,
+      "updatedAt": 1791781824452,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "comic",
+          "externalId": "review-17"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-18",
+      "medium": "audiovisual",
+      "contentFamily": "anime",
+      "primaryFormat": "tv",
+      "title": "Pantalla sin etiqueta de familia · refreshed",
+      "year": 2026,
+      "posterUrl": "http://127.0.0.1:1/review-missing.png",
+      "overview": "Obra original sintética para revisar unknown-family; ninguna fuente externa fue consultada.",
+      "voteAverage": null,
+      "personalRating": null,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824452,
+      "updatedAt": 1791781824461,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "audiovisual",
+          "externalId": "review-18"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-16",
+      "medium": "literature",
+      "contentFamily": null,
+      "primaryFormat": "light-novel",
+      "title": "La aprendiz del viento de bolsillo",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Un relato sintético con énfasis y un enlace de prueba.",
+      "voteAverage": null,
+      "personalRating": null,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824451,
+      "updatedAt": 1791781824451,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "literature",
+          "externalId": "review-16"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-15",
+      "medium": "literature",
+      "contentFamily": null,
+      "primaryFormat": "novel",
+      "title": "Inventario de una isla cuadrada",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos. En esta isla inventada, cada cajón guarda una estación dibujada y ningún dato proviene de catálogos.",
+      "voteAverage": null,
+      "personalRating": null,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824450,
+      "updatedAt": 1791781824450,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "literature",
+          "externalId": "9007199254740993"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-14",
+      "medium": "comic",
+      "contentFamily": null,
+      "primaryFormat": "webtoon",
+      "title": "Sendero vertical de botones",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Obra original sintética para revisar webtoon; ninguna fuente externa fue consultada.",
+      "voteAverage": null,
+      "personalRating": null,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824449,
+      "updatedAt": 1791781824449,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "comic",
+          "externalId": "review-14"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-13",
+      "medium": "comic",
+      "contentFamily": null,
+      "primaryFormat": null,
+      "title": "Correo del bosque de cobre",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Obra original sintética para revisar comic; ninguna fuente externa fue consultada.",
+      "voteAverage": null,
+      "personalRating": null,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824448,
+      "updatedAt": 1791781824448,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "comic",
+          "externalId": "review-13"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-12",
+      "medium": "comic",
+      "contentFamily": "manhua",
+      "primaryFormat": null,
+      "title": "Jardín de brújulas de barro",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Obra original sintética para revisar manhua; ninguna fuente externa fue consultada.",
+      "voteAverage": null,
+      "personalRating": null,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824447,
+      "updatedAt": 1791781824447,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "comic",
+          "externalId": "review-12"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-11",
+      "medium": "comic",
+      "contentFamily": "manhwa",
+      "primaryFormat": "webtoon",
+      "title": "Escalera de nubes cúbicas · refreshed",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Obra original sintética para revisar manhwa; ninguna fuente externa fue consultada.",
+      "voteAverage": null,
+      "personalRating": null,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824446,
+      "updatedAt": 1791781824464,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "comic",
+          "externalId": "review-11"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-10",
+      "medium": "comic",
+      "contentFamily": "manga",
+      "primaryFormat": "one-shot",
+      "title": "Un paraguas para la luna de papel",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Obra original sintética para revisar one-shot; ninguna fuente externa fue consultada.",
+      "voteAverage": null,
+      "personalRating": null,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824445,
+      "updatedAt": 1791781824445,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "comic",
+          "externalId": "review-10"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-9",
+      "medium": "audiovisual",
+      "contentFamily": null,
+      "primaryFormat": "tv",
+      "title": "Cuaderno de estaciones falsas",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Obra original sintética para revisar tv; ninguna fuente externa fue consultada.",
+      "voteAverage": null,
+      "personalRating": null,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824443,
+      "updatedAt": 1791781824443,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "audiovisual",
+          "externalId": "review-8"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-8",
+      "medium": "audiovisual",
+      "contentFamily": null,
+      "primaryFormat": "movie",
+      "title": "Mapa de una calle inventada",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Obra original sintética para revisar movie; ninguna fuente externa fue consultada.",
+      "voteAverage": null,
+      "personalRating": null,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824442,
+      "updatedAt": 1791781824442,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "audiovisual",
+          "externalId": "900007"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-7",
+      "medium": "audiovisual",
+      "contentFamily": "anime",
+      "primaryFormat": "music",
+      "title": "Ritmo de las semillas",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Obra original sintética para revisar anime-music; ninguna fuente externa fue consultada.",
+      "voteAverage": null,
+      "personalRating": null,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824441,
+      "updatedAt": 1791781824441,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "audiovisual",
+          "externalId": "review-6"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-6",
+      "medium": "audiovisual",
+      "contentFamily": "anime",
+      "primaryFormat": "special",
+      "title": "La pausa del reloj azul",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Obra original sintética para revisar anime-special; ninguna fuente externa fue consultada.",
+      "voteAverage": null,
+      "personalRating": null,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824440,
+      "updatedAt": 1791781824440,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "audiovisual",
+          "externalId": "review-5"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-5",
+      "medium": "audiovisual",
+      "contentFamily": "anime",
+      "primaryFormat": "ona",
+      "title": "Ventana de tinta digital",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Obra original sintética para revisar anime-ona; ninguna fuente externa fue consultada.",
+      "voteAverage": null,
+      "personalRating": null,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824439,
+      "updatedAt": 1791781824439,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "audiovisual",
+          "externalId": "review-4"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-4",
+      "medium": "audiovisual",
+      "contentFamily": "anime",
+      "primaryFormat": "ova",
+      "title": "Turno del cometa de cartón",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Obra original sintética para revisar anime-ova; ninguna fuente externa fue consultada.",
+      "voteAverage": 7.9,
+      "personalRating": null,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824437,
+      "updatedAt": 1791781824469,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "audiovisual",
+          "externalId": "review-3"
+        },
+        {
+          "provider": "tmdb",
+          "resourceNamespace": "movie",
+          "externalId": "900008"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-3",
+      "medium": "audiovisual",
+      "contentFamily": "anime",
+      "primaryFormat": "movie",
+      "title": "El faro plegable · refreshed",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Obra original sintética para revisar anime-movie; ninguna fuente externa fue consultada.",
+      "voteAverage": null,
+      "personalRating": null,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824434,
+      "updatedAt": 1791781824465,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "audiovisual",
+          "externalId": "review-2"
+        },
+        {
+          "provider": "tmdb",
+          "resourceNamespace": "movie",
+          "externalId": "900009"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-2",
+      "medium": "audiovisual",
+      "contentFamily": "anime",
+      "primaryFormat": "tv",
+      "title": "Señal de vidrio",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Obra original sintética para revisar anime-tv; ninguna fuente externa fue consultada.",
+      "voteAverage": null,
+      "personalRating": null,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "planned",
+      "tags": [],
+      "notes": null,
+      "createdAt": 1791781824433,
+      "updatedAt": 1791781824433,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "audiovisual",
+          "externalId": "review-1"
+        }
+      ]
+    },
+    {
+      "id": "review-local-1791781824406-o49rwcxfdr-1",
+      "medium": "comic",
+      "contentFamily": "manga",
+      "primaryFormat": "one-shot",
+      "title": "La biblioteca de las bisagras · refreshed",
+      "year": 2026,
+      "posterUrl": null,
+      "overview": "Obra original sintética para revisar manga; ninguna fuente externa fue consultada.",
+      "voteAverage": null,
+      "personalRating": 87,
+      "genres": [
+        "Aventura sintética"
+      ],
+      "status": "watching",
+      "tags": [
+        "TEST personal"
+      ],
+      "notes": "Nota de la sesión",
+      "createdAt": 1791781824429,
+      "updatedAt": 1791781824462,
+      "providerReferences": [
+        {
+          "provider": "fixture-review",
+          "resourceNamespace": "comic",
+          "externalId": "review-9"
+        }
+      ]
+    }
+  ],
+  "pins": [
+    {
+      "itemId": "review-local-1791781824406-o49rwcxfdr-1",
+      "contextType": "library",
+      "contextKey": "",
+      "pinnedAt": 123
+    }
+  ]
+}

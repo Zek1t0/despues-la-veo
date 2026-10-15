@@ -3,6 +3,7 @@
 ## Purpose
 Permitir que cada persona adapte la presentación y navegación de Biblioteca, Buscar y Etiquetas a su contexto, con controles coherentes en web y móvil y sin alterar el contenido guardado.
 ## Requirements
+
 ### Requirement: Biblioteca ofrece apariencias Detalle y Mosaico
 
 El sistema MUST mostrar Biblioteca en `Detalle` de forma predeterminada y MUST permitir cambiar a `Mosaico`; la selección MUST aplicarse también a la búsqueda interna y a los títulos abiertos desde Etiquetas.
@@ -34,7 +35,7 @@ El sistema MUST mostrar Biblioteca en `Detalle` de forma predeterminada y MUST p
 
 ### Requirement: Biblioteca permite ordenar y filtrar de forma determinista
 
-El sistema MUST permitir ordenar Biblioteca por `Actualizados recientemente`, `Título A–Z`, `Título Z–A`, `Mayor puntuación` y `Año más reciente`, usando el primero como valor predeterminado, y MUST conservar los filtros existentes de estado y tipo.
+El sistema MUST permitir ordenar Biblioteca por `Actualizados recientemente`, `Título A–Z`, `Título Z–A`, `Puntuación TMDB` y `Año más reciente`, usando el primero como valor predeterminado, y MUST conservar filtros de estado y sustituir el filtro de tipo por predicados explícitos de medio, familia o formato, conservando Películas y Series. MUST mantener la preferencia rating-desc para orden descendente por voteAverage TMDB finito, ausentes al final y empates deterministas por título/ID dentro del orden contextual de pins. MUST conservar órdenes de personalRating separados y MUST NOT reinterpretar rating-desc como puntuación personal o externa universal ni fabricar scores no-TMDB.
 
 #### Scenario: orden predeterminado
 - **WHEN** el usuario abre Biblioteca sin un orden guardado
@@ -42,9 +43,14 @@ El sistema MUST permitir ordenar Biblioteca por `Actualizados recientemente`, `T
 - **AND** los empates se resuelven de forma estable
 
 #### Scenario: título sin puntuación
-- **WHEN** el usuario ordena por mayor puntuación y uno o más títulos no tienen puntuación
-- **THEN** los títulos sin puntuación se ubican después de los que sí tienen
+- **WHEN** el usuario elige Puntuación TMDB y uno o más títulos no tienen voteAverage
+- **THEN** los títulos sin voteAverage se ubican después de los que sí tienen valor TMDB dentro de su grupo contextual de pins
 - **AND** el resultado es determinista y no produce errores
+
+#### Scenario: rating personal no reemplaza orden TMDB
+- **WHEN** dos items sin voteAverage tienen ratings personales distintos y se selecciona rating-desc
+- **THEN** se desempata por título/ID, no por personalRating ni una política futura de rating preferido
+- **AND** no se asigna un score externo inventado
 
 #### Scenario: título sin año
 - **WHEN** el usuario ordena por año más reciente y uno o más títulos no tienen año
@@ -52,7 +58,7 @@ El sistema MUST permitir ordenar Biblioteca por `Actualizados recientemente`, `T
 - **AND** el resultado es determinista y no produce errores
 
 #### Scenario: combinación de búsqueda y filtros
-- **WHEN** el usuario escribe una búsqueda y selecciona estado o tipo
+- **WHEN** el usuario escribe una búsqueda y selecciona estado o clasificación
 - **THEN** la lista muestra sólo los títulos que cumplen simultáneamente la búsqueda y los filtros
 - **AND** aplica el orden seleccionado al resultado
 
@@ -272,9 +278,31 @@ El sistema MUST mostrar en español todos los textos nuevos y todos los textos v
 
 #### Scenario: tipos y estados visibles
 - **WHEN** una pantalla afectada presenta tipos, estados o etiquetas de interfaz
-- **THEN** usa términos como `Película`, `Serie`, `Planeado`, `Viendo`, `Terminado`, `Abandonado`, `Estado` y `Etiquetas` según el contexto
+- **THEN** usa términos como `Película`, `Serie`, `Planeado`, `Viendo` para audiovisual, `Leyendo` para comic/literature, `En curso` en filtros mixtos, `Terminado`, `Abandonado`, `Estado` y `Etiquetas` según el contexto
 - **AND** los valores internos pueden continuar en inglés
 
 #### Scenario: alcance de idioma
 - **WHEN** se aplica el cambio
 - **THEN** no se agrega un selector de idioma ni un sistema completo de internacionalización
+
+### Requirement: filtros taxonómicos no mutuamente excluyentes
+Biblioteca MUST permitir filtrar por predicados de clasificación sin declarar tipos mutuamente excluyentes. Películas MUST incluir audiovisual/movie independientemente de familia y Anime MUST incluir familia anime independientemente de formato. MUST conservar búsqueda por título/tags, ordenamientos deterministas, prioridad de pins dentro de coincidencias y una sola fuente de estado compartida por panel/chips.
+
+#### Scenario: película anime coincide con dos opciones
+- **WHEN** una película de anime está guardada y se selecciona Películas o Anime por separado
+- **THEN** aparece en ambos resultados sin duplicarse dentro de la biblioteca
+
+#### Scenario: pin fuera del filtro
+- **WHEN** un item fijado no satisface el filtro activo
+- **THEN** no aparece por estar fijado y los pins que sí coinciden conservan su orden contextual
+
+### Requirement: cards y accesibilidad soportan lectura y clasificación nullable
+Las vistas Detalle y Mosaico de Biblioteca y etiqueta abierta MUST presentar labels coherentes con medio/familia/formato, conservar navegación única por ID local y anunciar clasificación/estado/rating personal una sola vez. MUST conservar placeholders, pills personales y pins; collages y búsqueda MUST NOT incorporar puntuación personal por este cambio.
+
+#### Scenario: cómic sin familia ni formato
+- **WHEN** se presenta comic/null/null en Biblioteca o etiqueta abierta
+- **THEN** se identifica como Cómic sin inventar familia y conserva sus datos personales y navegación
+
+#### Scenario: light novel en lectura
+- **WHEN** se presenta literature/null/light-novel con estado watching
+- **THEN** se muestra una etiqueta española de novela ligera y Leyendo sin modificar el token guardado

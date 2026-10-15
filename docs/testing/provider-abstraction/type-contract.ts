@@ -20,7 +20,7 @@ type SearchResultKeys = Assert<Equal<
 >>;
 type SnapshotKeys = Assert<Equal<
   keyof ProviderLocalSnapshot,
-  "type" | "title" | "year" | "posterUrl" | "overview" | "genres" | "voteAverage"
+  "medium" | "contentFamily" | "primaryFormat" | "title" | "year" | "posterUrl" | "overview" | "genres" | "voteAverage"
 >>;
 type SnapshotGenres = Assert<Equal<ProviderLocalSnapshot["genres"], readonly string[]>>;
 type DetailsSnapshotGenres = Assert<Equal<ProviderMediaDetails["snapshot"]["genres"], readonly string[]>>;
@@ -58,7 +58,7 @@ const reference = {
 } as const;
 
 const snapshot: ProviderLocalSnapshot = {
-  type: "movie",
+  medium: "audiovisual", contentFamily: null, primaryFormat: "movie",
   title: "Ejemplo",
   year: 2026,
   posterUrl: "https://example.test/poster.jpg",

@@ -31,12 +31,13 @@ assert.equal(visiblePersonalRating(null), null);
 
 const library = read("app/(tabs)/libreria.tsx");
 const tags = read("app/(tabs)/etiquetas.tsx");
+assert.match(read("src/components/browsing/savedTitleAccessibility.ts"), /getPersonalRatingPresentation/);
 const grid = read("src/components/browsing/TitleGridCard.tsx");
 const search = read("app/(tabs)/buscar.tsx");
 const collage = read("src/components/browsing/TagCollage.tsx");
 
 for (const source of [library, tags]) {
-  assert.match(source, /getPersonalRatingPresentation/);
+  assert.match(source, /savedTitleOpenAccessibilityLabel/);
   assert.match(source, /PersonalRatingBadge/);
   assert.match(source, /personalRating=\{item\.personalRating\}/);
 }

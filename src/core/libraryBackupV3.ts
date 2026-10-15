@@ -1,5 +1,5 @@
 import { parsePersonalRating } from "./personalRating";
-import type { LegacyPersistedSavedTitle as SavedTitle } from "./savedTitle";
+import type { LegacyPersistedSavedTitle as SavedTitle } from "./historicalSavedTitle";
 import {
   normalizeBackupSavedTitle,
   type BackupValidationError,

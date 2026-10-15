@@ -23,6 +23,22 @@ export async function searchMulti(query: string, page = 1) {
   });
 }
 
+type CategorySearchResponse = Omit<SearchResponse, "results"> & {
+  results: Omit<TmdbSearchItem, "media_type">[];
+};
+
+export async function searchMovies(query: string, page = 1) {
+  return tmdbFetch<CategorySearchResponse>("/search/movie", {
+    query, page: String(page), include_adult: "false", language: "es-AR",
+  });
+}
+
+export async function searchTv(query: string, page = 1) {
+  return tmdbFetch<CategorySearchResponse>("/search/tv", {
+    query, page: String(page), include_adult: "false", language: "es-AR",
+  });
+}
+
 export async function getMovieDetails(id: number) {
   return tmdbFetch<TmdbMovieDetails>(`/movie/${id}`, { language: "es-AR" });
 }

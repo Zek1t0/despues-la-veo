@@ -7,7 +7,7 @@ const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
 
 const about = read("app/settings/about.tsx");
 const settings = read("app/(tabs)/ajustes.tsx");
-const layout = read("app/_layout.tsx");
+const layout = read("src/components/ProductionRootLayout.tsx");
 const sourceRecord = read("docs/testing/tmdb-user-credential/tmdb-logo-source.md");
 const logoPath = path.join(root, "assets/tmdb-primary-full-blue.png");
 const exactNotice = "This product uses the TMDB API but is not endorsed or certified by TMDB.";
@@ -44,8 +44,10 @@ function testAttributionAndLink() {
   assert.match(about, /No pudimos abrir TMDB/);
   assert.match(about, /No pudimos abrir JustWatch\. Intentá nuevamente desde tu navegador\./);
   assert.match(about, /accessibilityLabel="Abrir el sitio oficial de JustWatch"\s*accessibilityRole="link"/);
-  assert.equal((about.match(/accessibilityRole="link"/g) || []).length, 2);
-  assert.equal((about.match(/minHeight: 44/g) || []).length, 2);
+  // Section 8 adds the explicit MangaUpdates credit without changing the two existing links.
+  assert.match(about, /MANGAUPDATES_ATTRIBUTION\.providerUrl/);
+  assert.equal((about.match(/accessibilityRole="link"/g) || []).length, 3);
+  assert.equal((about.match(/minHeight: 44/g) || []).length, 3);
 }
 
 function testApprovedLogo() {
