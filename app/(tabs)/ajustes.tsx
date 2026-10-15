@@ -959,4 +959,3 @@ export default function SettingsScreen() {
   );
 
 }
-

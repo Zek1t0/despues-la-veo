@@ -145,4 +145,3 @@ MangaUpdates MUST normalizar únicamente tipos Manga/Manhwa/Manhua como comic y 
 #### Scenario: tipo no admitido
 - **WHEN** una respuesta MangaUpdates identifica Novel o un tipo no habilitado
 - **THEN** no se entrega como metadata guardable de este vertical ni se crea vocabulario nuevo
-

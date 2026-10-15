@@ -143,4 +143,3 @@ Only task checkboxes 2.1–2.7 were newly completed. 1.1–1.5 remain complete; 
 No Search category architecture, fixture/review harness, new provider API/client/network path, registry, progress, relations, linking/fusion, ratings-source system or Section 3 UI adaptation was introduced. TEST backup files and screenshots are verification artifacts, not a production catalog/adapter or a provider special case in the importer. Historical projection helpers remain for explicit historical backup compatibility, but current persistence/current export no longer use them.
 
 package.json SHA-256 before/after: `262E90681FAFF16686F79D3F14CE6A6CAE158442D432038F31616B4E2E990C78`. Unchanged, including `android: expo run:android` and `ios: expo run:ios`. No dependencies added. No Git operation, staging, commit, push, reset, stash or branch change was performed.
-

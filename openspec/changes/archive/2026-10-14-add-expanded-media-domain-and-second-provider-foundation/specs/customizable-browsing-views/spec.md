@@ -69,4 +69,3 @@ Las vistas Detalle y Mosaico de Biblioteca y etiqueta abierta MUST presentar lab
 #### Scenario: light novel en lectura
 - **WHEN** se presenta literature/null/light-novel con estado watching
 - **THEN** se muestra una etiqueta española de novela ligera y Leyendo sin modificar el token guardado
-

@@ -60,4 +60,3 @@ La revisión MUST exportar backup v6 de los items sintéticos exportables, ident
 #### Scenario: local-only sin identidad portable
 - **WHEN** se presenta un local-only sintético sin referencias ni identidad legacy y se intenta exportarlo
 - **THEN** se puede revisar localmente pero la exportación reporta la restricción de identidad vigente
-

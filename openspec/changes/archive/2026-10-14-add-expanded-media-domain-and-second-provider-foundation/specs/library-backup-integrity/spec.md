@@ -117,4 +117,3 @@ La integración MangaUpdates MUST reutilizar la representación v6 vigente, sin 
 #### Scenario: imagen en backup
 - **WHEN** se exporta una obra con posterUrl MangaUpdates HTTPS permitida o null
 - **THEN** se conserva el valor bajo el contrato vigente sin incluir binarios ni prometer portada offline
-

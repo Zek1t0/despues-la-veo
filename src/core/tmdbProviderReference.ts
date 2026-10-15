@@ -31,4 +31,3 @@ export function createTmdbProviderReference(
     externalId: canonicalTmdbExternalId(externalId),
   }) as TmdbProviderReference;
 }
-

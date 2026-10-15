@@ -100,4 +100,3 @@ El sistema MUST mostrar por ID local la clasificación, título, año útil null
 #### Scenario: varias referencias
 - **WHEN** se abre un item con cero o varias referencias
 - **THEN** el detalle local funciona sin elegir una fuente arbitraria ni exigir una referencia singular
-

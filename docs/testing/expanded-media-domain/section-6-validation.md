@@ -191,4 +191,3 @@ Modified:
 Remaining: Web CORS blocked; native/runtime/image/redirect validation pending; policy/retention/commercial/cover rights unresolved as above; source websites' user-facing record slug links are not guessed. Cache is session memory only, and independently constructed diagnostic clients have independent caches/queues; future product consumers should use the existing lazy shared client. No external rating model or additional metadata persistence.
 
 SQLite remains **v5**, backup remains **v6**; SavedTitle, ProviderReference, identity/ratings/personal state, importer semantics and dependency manifests remain unchanged. The pre-existing package.json edit, including protected Android/iOS scripts, is preserved byte-for-byte. No dependency was added, no Section 8/9.2 or remote anime provider was implemented, and no Git mutation occurred.
-

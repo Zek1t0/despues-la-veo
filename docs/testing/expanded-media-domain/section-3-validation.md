@@ -161,4 +161,3 @@ Sin Sección 4+ implementada: no Search por categorías/fuentes, ningún harness
 SQLite queda **v5**, backup **v6**, imports **v1–v6**. Hashes de schema, almacenamiento, backup/validadores, mappers/transporte TMDB y Search sin cambios respecto al inicio. `rating-desc` sigue usando voteAverage; personalRating conserva 10..100|null.
 
 package.json antes/después: `262E90681FAFF16686F79D3F14CE6A6CAE158442D432038F31616B4E2E990C78`. Scripts `android: expo run:android` e `ios: expo run:ios` intactos. No dependencias añadidas. No Git, commit/push/staging/reset/stash/checkout/cambio de rama. Se trabajó en el checkout existente indicado por el usuario; no se ejecutó Git para comprobar/cambiar su rama.
-

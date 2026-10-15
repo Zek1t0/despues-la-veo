@@ -130,4 +130,3 @@ Cada plataforma nativa que se habilite MUST validarse en runtime real para searc
 - **WHEN** pasan todas las comprobaciones del alcance y MangaUpdates real funciona en plataformas nativas elegibles validadas, con Web preservado y honesto
 - **THEN** anime diferido y MangaUpdates Web bloqueado no impiden cerrar el milestone
 - **AND** roadmap anime/Open Library/manual/ExternalRating/protocolos/lectura no se convierte en tareas de esta entrega
-

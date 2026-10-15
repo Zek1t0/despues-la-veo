@@ -128,4 +128,3 @@ Modified files:
 - `docs/testing/personal-title-rating/section-3-verification.cjs`
 - `docs/testing/personal-title-rating/section-2-integration-verification.cjs`
 - `openspec/changes/add-expanded-media-domain-and-second-provider-foundation/tasks.md` (9.1 checkbox only)
-
