@@ -77,7 +77,7 @@ async function main() {
 
     const detailSource = fs.readFileSync(path.join(__dirname, "../../../app/title/[id].tsx"), "utf8");
     const remoteSource = fs.readFileSync(path.join(__dirname, "../../../app/tmdb/[type]/[id].tsx"), "utf8");
-    assert.match(detailSource, /findUnambiguousTmdbReference/); assert.doesNotMatch(detailSource, /item\.provider|item\.externalId/);
+    assert.match(detailSource, /findUnambiguousTmdbReference/); assert.doesNotMatch(detailSource, /item\.provider\b|item\.externalId\b/);
     assert.match(remoteSource, /getByProviderReference\([\s\S]*createTmdbProviderReference\(type, externalId\)/);
     assert.match(remoteSource, /saveProviderTitle\(input, uuid\)/);
     assert.doesNotMatch(remoteSource, /saveTmdbTitle|LegacyTmdbSavedTitleSnapshot/);

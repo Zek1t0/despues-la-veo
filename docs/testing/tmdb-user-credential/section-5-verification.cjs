@@ -44,8 +44,10 @@ function testAttributionAndLink() {
   assert.match(about, /No pudimos abrir TMDB/);
   assert.match(about, /No pudimos abrir JustWatch\. Intentá nuevamente desde tu navegador\./);
   assert.match(about, /accessibilityLabel="Abrir el sitio oficial de JustWatch"\s*accessibilityRole="link"/);
-  assert.equal((about.match(/accessibilityRole="link"/g) || []).length, 2);
-  assert.equal((about.match(/minHeight: 44/g) || []).length, 2);
+  // Section 8 adds the explicit MangaUpdates credit without changing the two existing links.
+  assert.match(about, /MANGAUPDATES_ATTRIBUTION\.providerUrl/);
+  assert.equal((about.match(/accessibilityRole="link"/g) || []).length, 3);
+  assert.equal((about.match(/minHeight: 44/g) || []).length, 3);
 }
 
 function testApprovedLogo() {

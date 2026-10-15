@@ -1,5 +1,7 @@
 import type { ProviderSearchCapability, ProviderSearchResult } from "../../providers/providerContracts";
 import { createTmdbProviderReference } from "../../core/tmdbProviderReference";
+import { mangaUpdatesAvailability } from "../../providers/mangaupdates/availability";
+import { canonicalSeriesId } from "../../providers/mangaupdates/identity";
 
 export type SearchCategoryId = "movie" | "tv" | "manga" | "manhwa" | "manhua";
 export type SearchSource = "tmdb" | "mangaupdates";
@@ -21,8 +23,7 @@ export const SEARCH_CATEGORIES: readonly SearchCategory[] = Object.freeze([
 
 export function productionSearchCategories(platform: string): readonly SearchCategory[] {
   if (platform !== "web" && platform !== "android" && platform !== "ios") return [];
-  // MangaUpdates product integration/native validation remain pending; Web lacks usable CORS.
-  return SEARCH_CATEGORIES.filter(category => category.source === "tmdb");
+  return SEARCH_CATEGORIES.filter(category => category.source === "tmdb" || mangaUpdatesAvailability(platform).productionEnabled);
 }
 
 /** A known future destination is not permission to activate an adapter or screen. */
@@ -40,8 +41,9 @@ export function searchResultDestination(category: SearchCategory, result: Provid
   }
   if ((category.id !== "manga" && category.id !== "manhwa" && category.id !== "manhua") ||
       category.source !== "mangaupdates" || reference.resourceNamespace !== "series" ||
-      !/^[1-9]\d*$/.test(reference.externalId)) return null;
-  return `/mangaupdates/series/${reference.externalId}`;
+      reference.externalId.trim() !== reference.externalId) return null;
+  try { return `/mangaupdates/series/${canonicalSeriesId(reference.externalId)}`; }
+  catch { return null; }
 }
 
 export type ResolvedSearchCategory = Readonly<{
@@ -54,8 +56,11 @@ export function resolveProductionSearchCategory(
   id: SearchCategoryId,
   platform: string,
   tmdb: Readonly<{ movie: ProviderSearchCapability; tv: ProviderSearchCapability }>,
+  mangaUpdates?: Readonly<{ manga: ProviderSearchCapability; manhwa: ProviderSearchCapability; manhua: ProviderSearchCapability }>,
 ): ResolvedSearchCategory | null {
   const category = productionSearchCategories(platform).find(candidate => candidate.id === id);
-  if (!category || (category.id !== "movie" && category.id !== "tv")) return null;
-  return { category, capability: tmdb[category.id], destination: result => searchResultDestination(category, result) };
+  if (!category) return null;
+  const capability = category.id === "movie" || category.id === "tv" ? tmdb[category.id] : mangaUpdates?.[category.id];
+  if (!capability) return null;
+  return { category, capability, destination: result => searchResultDestination(category, result) };
 }

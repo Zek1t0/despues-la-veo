@@ -63,7 +63,8 @@ function binding(id, search) { const c = category(id); return { category: c, cap
 async function catalogAndTransport() {
   assert.deepEqual(catalog.SEARCH_CATEGORIES.map(x => x.id), ["movie", "tv", "manga", "manhwa", "manhua"]);
   for (const platform of ["web", "android", "ios"]) {
-    assert.deepEqual(catalog.productionSearchCategories(platform).map(x => x.id), ["movie", "tv"]);
+    const enabled = require("../../../src/providers/mangaupdates/availability.ts").mangaUpdatesAvailability(platform).productionEnabled;
+    assert.deepEqual(catalog.productionSearchCategories(platform).map(x => x.id), enabled ? ["movie", "tv", "manga", "manhwa", "manhua"] : ["movie", "tv"]);
     for (const id of ["manga", "manhwa", "manhua", "anime", "evil-provider"]) assert.equal(catalog.resolveProductionSearchCategory(id, platform, { movie: {}, tv: {} }), null);
   }
   assert.deepEqual(catalog.productionSearchCategories("windows"), []);

@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -20,6 +21,7 @@ import type {
   TitleStatus,
 } from "../../src/core/savedTitle";
 import { findUnambiguousTmdbReference } from "../../src/core/savedTitleProviderReferences";
+import { localMangaUpdatesSources } from "../../src/providers/mangaupdates/product";
 import { titleStatusLabel, mediaClassificationLabel, mediaYearLabel } from "../../src/core/presentationLabels";
 import { PosterPlaceholder } from "../../src/components/browsing/PosterPlaceholder";
 import { type PinContext } from "../../src/core/contextualPin";
@@ -620,6 +622,20 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
           width: "100%",
         }}
       >
+        {localMangaUpdatesSources(item.providerReferences, Platform.OS).map(source => (
+          <View key={source.reference.externalId} style={{ gap: 8 }}>
+            <Text style={{ color: theme.global.textSecondary }}>{source.label}</Text>
+            {source.destination && !bindings && <Pressable accessibilityRole="button" accessibilityLabel="Abrir esta obra en MangaUpdates"
+              onPress={() => { if (source.destination) router.push(source.destination); }} style={{ minHeight: 44, justifyContent: "center" }}>
+              <Text style={{ color: theme.global.textPrimary }}>Ver en MangaUpdates</Text>
+            </Pressable>}
+            <Pressable accessibilityRole="link" accessibilityLabel="Abrir el sitio oficial de MangaUpdates"
+              onPress={() => { void Linking.openURL(source.providerUrl).catch(() => Alert.alert("MangaUpdates", "No pudimos abrir el sitio de la fuente.")); }}
+              style={{ minHeight: 44, justifyContent: "center" }}>
+              <Text style={{ color: theme.global.textPrimary }}>Sitio de MangaUpdates</Text>
+            </Pressable>
+          </View>
+        ))}
         <View style={{ flexDirection: "row", gap: 12 }}>
           <LocalPoster posterUrl={item.posterUrl ?? null} />
           <View style={{ flex: 1, gap: 6 }}>

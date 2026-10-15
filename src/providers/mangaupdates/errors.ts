@@ -14,7 +14,7 @@ const MESSAGES: Record<MangaUpdatesErrorCode, string> = {
   "not-found": "La obra no se encontró en MangaUpdates.",
   "invalid-response": "La respuesta de MangaUpdates no es válida.",
   "unsupported-type": "El tipo de obra de MangaUpdates está fuera de este alcance.",
-  "platform-unavailable": "MangaUpdates no está disponible en este entorno Web.",
+  "platform-unavailable": "MangaUpdates no está habilitado en esta plataforma. Tu biblioteca local sigue disponible.",
 };
 
 /** No credentials, raw response bodies or remote error strings escape this boundary. */

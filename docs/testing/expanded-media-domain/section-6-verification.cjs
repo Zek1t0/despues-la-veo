@@ -107,8 +107,10 @@ async function identityAndMapping() {
   assert.equal(attribution.mangaUpdatesProvenance(identity.mangaUpdatesReference("42")).label, "Datos: MangaUpdates");
   assert.equal(attribution.mangaUpdatesProvenance(identity.mangaUpdatesReference("42")).sourceUrl, "https://api.mangaupdates.com/v1/series/42");
   for (const platform of ["web", "android", "ios"]) {
-    assert.equal(attribution.mangaUpdatesAvailability(platform).productionEnabled, false);
-    assert.deepEqual(productionSearchCategories(platform).map(x => x.id), ["movie", "tv"]);
+    assert.equal(attribution.mangaUpdatesAvailability(platform).productionEnabled,
+      platform === "android" && require("../../../src/providers/mangaupdates/availability.ts").MANGAUPDATES_ANDROID_VALIDATED);
+    const enabled = attribution.mangaUpdatesAvailability(platform).productionEnabled;
+    assert.deepEqual(productionSearchCategories(platform).map(x => x.id), enabled ? ["movie", "tv", "manga", "manhwa", "manhua"] : ["movie", "tv"]);
     assert.equal(resolveProductionSearchCategory("manga", platform, {}), null);
   }
 }
@@ -229,8 +231,9 @@ async function main() {
     const source = fs.readFileSync(`src/providers/mangaupdates/${file}`, "utf8");
     assert.doesNotMatch(source, /from ["'][^"']*(?:tmdb|storage|credential)|Authorization:|Origin:|User-Agent:|localStorage|initDb|DetailCapability/);
   }
-  assert.doesNotMatch(fs.readFileSync("src/components/search/searchCategories.ts", "utf8"), /from .*mangaupdates/);
-  assert.equal(fs.existsSync("app/mangaupdates/series/[id].tsx"), false);
+  // Section 8 now consumes the foundation. It must keep HTTP outside the finite catalog.
+  assert.doesNotMatch(fs.readFileSync("src/components/search/searchCategories.ts", "utf8"), /fetch\(|from .*mangaupdates\/(?:client|adapter)/);
+  assert.match(fs.readFileSync("app/mangaupdates/series/[id].tsx", "utf8"), /loadMangaUpdatesProductDetail/);
   console.log("Section 6: MangaUpdates identity/DTO/mapping/ratings/genres/HTTPS, explicit search/detail, provider errors, cache/spacing/coalescing/bounded retry and production-off boundaries passed. No real network in this suite.");
 }
 main().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => { Module._load = originalLoad; global.fetch = previousFetch; });

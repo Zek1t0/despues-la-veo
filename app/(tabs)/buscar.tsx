@@ -6,6 +6,8 @@ import type { ProviderSearchResult } from "../../src/providers/providerContracts
 import { tmdbMovieSearchCapability, tmdbTvSearchCapability } from "../../src/providers/tmdb/tmdbAdapter";
 import { productionSearchCategories, resolveProductionSearchCategory, type ResolvedSearchCategory, type SearchCategory, type SearchCategoryId } from "../../src/components/search/searchCategories";
 import { useCategorySearch } from "../../src/components/search/useCategorySearch";
+import { mangaUpdatesSearchCapabilities } from "../../src/components/search/mangaUpdatesSearch";
+import { presentMangaUpdatesError } from "../../src/providers/mangaupdates/errorPresentation";
 import type { TmdbCredentialSnapshot } from "../../src/providers/tmdb/credential/tmdbCredentialTypes";
 import {
   VIEW_PREFERENCE_DEFAULTS,
@@ -29,7 +31,7 @@ import {
 } from "../../src/providers/tmdb/credential/tmdbCredentialUi";
 const tmdbSearchCapabilities = { movie: tmdbMovieSearchCapability, tv: tmdbTvSearchCapability };
 const resolveProductionCategory = (id: SearchCategoryId) =>
-  resolveProductionSearchCategory(id, Platform.OS, tmdbSearchCapabilities);
+  resolveProductionSearchCategory(id, Platform.OS, tmdbSearchCapabilities, mangaUpdatesSearchCapabilities);
 
 type TmdbSearchConfiguration = Readonly<{
   snapshot: TmdbCredentialSnapshot;
@@ -190,6 +192,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
   const debounceSettled = search.debounceSettled;
   const visibleLoading = search.loading;
   const visibleSearchError = isTmdb && search.error !== null ? presentTmdbRemoteError(search.error) : null;
+  const mangaUpdatesError = !isTmdb && search.error !== null ? presentMangaUpdatesError(search.error) : null;
   const visibleItems: readonly ProviderSearchResult[] = selected
     ? search.items.filter(item => selected.destination(item) !== null) : [];
 
@@ -411,19 +414,19 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
             <View style={{ gap: 8, paddingVertical: 20 }}>
               <Text accessibilityLiveRegion="polite" style={{ color: theme.global.textPrimary, fontSize: 17, fontWeight: "900" }}>
                 {currentQuery.length === 0
-                  ? "Buscá una película o serie"
+                  ? isTmdb ? "Buscá una película o serie" : `Buscá un título en ${selected?.category.label ?? "la categoría"}`
                   : credentialState
                     ? credentialState.title
                   : visibleSearchError
                     ? visibleSearchError.title
-                    : search.error !== null && !isTmdb ? "No pudimos completar la búsqueda" : "No encontré resultados"}
+                    : mangaUpdatesError?.title ?? "No encontré resultados"}
               </Text>
               <Text style={{ color: visibleSearchError ? theme.semantic.dangerText : theme.global.textSecondary }}>
                 {currentQuery.length === 0
-                  ? "Escribí un título para consultar TMDB."
+                  ? isTmdb ? "Escribí un título para consultar TMDB." : "Escribí un título para consultar MangaUpdates."
                   : credentialState
                     ? credentialState.message
-                    : visibleSearchError?.message ?? "Probá con otro título."}
+                    : visibleSearchError?.message ?? mangaUpdatesError?.message ?? "Probá con otro título."}
               </Text>
               {currentQuery.length > 0 && isTmdb && snapshot?.status === "not-configured" && (
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -439,7 +442,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
               )}
               {debounceSettled && currentQuery.length > 0 && isTmdb && snapshot?.status === "configured" && visibleSearchError?.action === "change" &&
                 actionButton("Cambiar token", () => router.push(TMDB_SETTINGS_ROUTE))}
-              {!isTmdb && search.error !== null && actionButton("Reintentar búsqueda", () => setSearchRetry((value) => value + 1))}
+              {mangaUpdatesError?.retryable && actionButton("Reintentar búsqueda", () => setSearchRetry((value) => value + 1))}
               {debounceSettled && currentQuery.length > 0 && isTmdb && snapshot?.status === "configured" && visibleSearchError?.action === "retry" &&
                 actionButton("Reintentar búsqueda", () => setSearchRetry((value) => value + 1))}
             </View>
