@@ -245,9 +245,8 @@ Permanecen documentados: límites/TTL oficiales y headers no verificados; retenc
 
 ## Android physical-device validation
 
-Validated on 2026-10-12.
+A physical Android validation for Section 3.4 passed. The exact device model and date were not recorded reliably for that validation.
 
-- Device: Redmi Note 13
 - Runtime: `expo run:android`
 - Result: PASS
 
