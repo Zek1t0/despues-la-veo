@@ -1,4 +1,4 @@
-const assert = require("node:assert/strict");
+﻿const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const Module = require("node:module");
 const ts = require("typescript");
@@ -62,7 +62,7 @@ async function identityAndMapping() {
     assert.equal(Object.hasOwn(details.snapshot, "voteAverage"), false); assert.equal(Object.hasOwn(input, "voteAverage"), false);
     assert.equal(Object.hasOwn(details, "initialTags"), false); assert.deepEqual(input.initialTags, []);
     assert.deepEqual(details.snapshot.genres, ["Action", "Sci-fi"]);
-    assert.equal(details.snapshot.overview, "Descripción original de prueba & texto legible.\n\nSin datos de un catálogo real.");
+    assert.equal(details.snapshot.overview, "DescripciÃ³n original de prueba & texto legible.\n\nSin datos de un catÃ¡logo real.");
     const item = materializeProviderSavedTitle(input, null, () => "opaque-local", 100);
     assert.equal(item.id, "opaque-local"); assert.equal(item.voteAverage, null); assert.deepEqual(item.tags, []);
     const personal = { ...item, primaryFormat: "webtoon", voteAverage: 7.9, status: "watching", tags: ["Personal"], notes: "Note", personalRating: 87 };
@@ -100,7 +100,7 @@ async function identityAndMapping() {
     assert.equal(mapping.mangaUpdatesPoster(url, "reference-https"), null);
   }
   assert.deepEqual(mapping.narrativeGenres([...mapping.MANGAUPDATES_NARRATIVE_GENRES, " science fiction ", "SCI-FI", "Shounen", "Shoujo", "Seinen", "Josei", "Webtoon/Webcomic", "Based on a Webcomic/Webtoon", "Unknown"]), [...mapping.MANGAUPDATES_NARRATIVE_GENRES]);
-  assert.equal(mapping.plainMangaUpdatesDescription('<script>alert(1)</script><p>A &amp; B &#x1f600;</p><p>[label](https://example.invalid) **bold**</p>'), "A & B 😀\n\nlabel bold");
+  assert.equal(mapping.plainMangaUpdatesDescription('<script>alert(1)</script><p>A &amp; B &#x1f600;</p><p>[label](https://example.invalid) **bold**</p>'), "A & B ðŸ˜€\n\nlabel bold");
   assert.equal(mapping.plainMangaUpdatesDescription("&lt;script&gt;bad()&lt;/script&gt;Useful"), "Useful");
   assert.equal(mapping.plainMangaUpdatesDescription("<style>bad</style> <p> </p>"), null);
   assert.equal(mapping.plainMangaUpdatesDescription("x".repeat(10000)).length, 10000);
@@ -234,6 +234,6 @@ async function main() {
   // Section 8 now consumes the foundation. It must keep HTTP outside the finite catalog.
   assert.doesNotMatch(fs.readFileSync("src/components/search/searchCategories.ts", "utf8"), /fetch\(|from .*mangaupdates\/(?:client|adapter)/);
   assert.match(fs.readFileSync("app/mangaupdates/series/[id].tsx", "utf8"), /loadMangaUpdatesProductDetail/);
-  console.log("Section 6: MangaUpdates identity/DTO/mapping/ratings/genres/HTTPS, explicit search/detail, provider errors, cache/spacing/coalescing/bounded retry and production-off boundaries passed. No real network in this suite.");
+  console.log("Section 6: MangaUpdates identity/DTO/mapping/ratings/genres/HTTPS, explicit search/detail, provider errors, cache/spacing/coalescing/bounded retry and platform-gated production boundaries passed. No real network in this suite.");
 }
 main().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => { Module._load = originalLoad; global.fetch = previousFetch; });

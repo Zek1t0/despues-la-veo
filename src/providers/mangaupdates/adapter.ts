@@ -1,9 +1,9 @@
-import type { ProviderSearchCapability } from "../providerContracts";
+﻿import type { ProviderSearchCapability } from "../providerContracts";
 import { getMangaUpdatesClient, type MangaUpdatesClient } from "./client";
 import { mapMangaUpdatesSearchResult, type MangaUpdatesCoverPolicy } from "./mapping";
 import { admittedType, type MangaUpdatesType } from "./validation";
 
-/** Ready for a future explicit category consumer; not registered or connected to production Buscar. */
+/** Provider-specific capability consumed only through explicit finite product bindings; no provider registry. */
 export function createMangaUpdatesSearchCapability(
   type: MangaUpdatesType, client: MangaUpdatesClient = getMangaUpdatesClient(), coverPolicy: MangaUpdatesCoverPolicy = "omit",
 ): ProviderSearchCapability {
