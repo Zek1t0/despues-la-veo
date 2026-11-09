@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Linking, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useAppTheme } from "../../../src/theme/AppThemeProvider";
 import { PosterPlaceholder } from "../../../src/components/browsing/PosterPlaceholder";
@@ -44,7 +44,7 @@ export default function MangaUpdatesDetailScreen() {
     void (async () => {
       try {
         const record = await loadMangaUpdatesProductDetail(routeId, Platform.OS, undefined, controller.signal);
-        const input = mangaUpdatesMaterializationInput(record); // Default omit policy is mandatory here.
+        const input = mangaUpdatesMaterializationInput(record, "omit");
         const saved = await getByProviderReference(input.reference);
         if (current === generation.current && !controller.signal.aborted) {
           setState({ id: routeId, record, savedId: saved?.id ?? null, error: null });
@@ -58,7 +58,8 @@ export default function MangaUpdatesDetailScreen() {
 
   const visible = state?.id === id && available ? state : null;
   const record = visible?.record;
-  const input = record ? mangaUpdatesMaterializationInput(record) : null;
+  // Presentation and save share this normalized input. Production never opts into covers.
+  const input = record ? mangaUpdatesMaterializationInput(record, "omit") : null;
   const snapshot = input?.snapshot;
   const provenance = input ? mangaUpdatesProvenance(input.reference) : null;
   const error = visible?.error ? presentMangaUpdatesError(visible.error) : null;
@@ -103,7 +104,10 @@ export default function MangaUpdatesDetailScreen() {
           {error.retryable && button("Reintentar MangaUpdates", () => setRetry(value => value + 1))}
         </View> : snapshot && provenance ? <>
           <View style={{ flexDirection: "row", gap: 12 }}>
-            <PosterPlaceholder style={{ width: 96, height: 144, borderRadius: 12 }} />
+            {snapshot.posterUrl ? <Image accessible={false} accessibilityElementsHidden importantForAccessibility="no" aria-hidden
+              source={{ uri: snapshot.posterUrl }} resizeMode="cover"
+              style={{ width: 96, height: 144, borderRadius: 12 }} />
+              : <PosterPlaceholder style={{ width: 96, height: 144, borderRadius: 12 }} />}
             <View style={{ flex: 1, gap: 8 }}>
               <Text style={{ color: theme.global.textPrimary, fontSize: 24, fontWeight: "900" }}>{snapshot.title}</Text>
               <Text style={{ color: theme.global.textSecondary }}>{mediaClassificationLabel(snapshot)}</Text>

@@ -12,7 +12,7 @@ function productSearch(type: MangaUpdatesType): ProviderSearchCapability {
       return Promise.reject(new MangaUpdatesError("platform-unavailable"));
     }
     // The default cover policy is omit; technical URL support is not rights authorization.
-    capability ??= createMangaUpdatesSearchCapability(type);
+    capability ??= createMangaUpdatesSearchCapability(type, undefined, "omit");
     return capability.search(query);
   } });
 }

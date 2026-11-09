@@ -1,12 +1,12 @@
 ## 1. Selección y validación de URL
 
-- [ ] 1.1 Implementar/probar selección original válido → thumbnail válido → null en mapping provider-specific, usando strings controlados del host MangaUpdates sin solicitudes de imagen; verificar casos originales/thumbnail ausentes o inválidos y npx tsc --noEmit.
-- [ ] 1.2 Reforzar/probar validación inicial HTTPS/host exacto, credenciales, puertos, controles, backslashes, URLs relativas/protocol-relative y hosts engañosos. Afirmar únicamente validación inicial, no destino final tras redirects; ejecutar tests focalizados y TypeScript.
+- [x] 1.1 Implementar/probar selección original válido → thumbnail válido → null en mapping provider-specific, usando strings controlados del host MangaUpdates sin solicitudes de imagen; verificar casos originales/thumbnail ausentes o inválidos y npx tsc --noEmit.
+- [x] 1.2 Reforzar/probar validación inicial HTTPS/host exacto, credenciales, puertos, controles, backslashes, URLs relativas/protocol-relative y hosts engañosos. Afirmar únicamente validación inicial, no destino final tras redirects; ejecutar tests focalizados y TypeScript.
 
 ## 2. Composición inactiva search/detail/materialization
 
-- [ ] 2.1 Preparar paso coherente de política en búsqueda, detalle y materialización manteniendo omit productivo; probar todas las entradas y ausencia de toggles/bypass/productive fixture providers, sin cambiar disponibilidad Android metadata ni gates Web/iOS; ejecutar tests y TypeScript.
-- [ ] 2.2 Preparar detalle remoto capaz de renderizar imagen mediante composición test-only, pero siempre placeholder/null en producción MangaUpdates. Verificar mismo input para save y detalle, sin HTTP de sondeo ni alteraciones del cliente API; ejecutar tests y TypeScript.
+- [x] 2.1 Preparar paso coherente de política en búsqueda, detalle y materialización manteniendo omit productivo; probar todas las entradas y ausencia de toggles/bypass/productive fixture providers, sin cambiar disponibilidad Android metadata ni gates Web/iOS; ejecutar tests y TypeScript.
+- [x] 2.2 Preparar detalle remoto capaz de renderizar imagen mediante composición test-only, pero siempre placeholder/null en producción MangaUpdates. Verificar mismo input para save y detalle, sin HTTP de sondeo ni alteraciones del cliente API; ejecutar tests y TypeScript.
 
 ## 3. Fallbacks reutilizables de UI
 
