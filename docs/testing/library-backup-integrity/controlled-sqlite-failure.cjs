@@ -28,6 +28,7 @@ const { parseLibraryBackupV1 } = require("../../../src/core/libraryBackupV1.ts")
 const {
   mergeLibraryBackupItemsWithDb,
 } = require("../../../src/storage/libraryBackupMerge.ts");
+const { ensureLibrarySchema } = require("../../../src/storage/databaseSchema.ts");
 Module._load = originalModuleLoad;
 
 const databasePath = path.join(
@@ -42,52 +43,27 @@ let sqlite;
 
 async function main() {
   sqlite = new DatabaseSync(databasePath);
+  const normalize = params => params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+  const db = {
+    async execAsync(sql) { sqlite.exec(sql); },
+    async getFirstAsync(sql, ...params) {
+      return sqlite.prepare(sql).get(...normalize(params)) ?? null;
+    },
+    async getAllAsync(sql, ...params) {
+      return sqlite.prepare(sql).all(...normalize(params));
+    },
+    async runAsync(sql, ...params) {
+      return sqlite.prepare(sql).run(...normalize(params));
+    },
+    async withTransactionAsync(task) {
+      sqlite.exec("BEGIN");
+      try { await task(); sqlite.exec("COMMIT"); } catch (error) { sqlite.exec("ROLLBACK"); throw error; }
+    },
+  };
+  sqlite.exec("PRAGMA foreign_keys=ON");
+  await ensureLibrarySchema(db);
+  assert.equal(sqlite.prepare("PRAGMA user_version").get().user_version, 5);
   sqlite.exec(`
-    CREATE TABLE saved_titles (
-      id TEXT NOT NULL PRIMARY KEY,
-      type TEXT NOT NULL,
-      title TEXT NOT NULL,
-      year INTEGER,
-      poster_url TEXT,
-      overview TEXT,
-      vote_average REAL,
-      personal_rating INTEGER CHECK (
-        personal_rating IS NULL OR (
-          typeof(personal_rating) = 'integer' AND
-          personal_rating >= 10 AND
-          personal_rating <= 100
-        )
-      ),
-      genres_json TEXT,
-      status TEXT NOT NULL,
-      tags_json TEXT NOT NULL,
-      notes TEXT,
-      created_at INTEGER NOT NULL,
-      updated_at INTEGER NOT NULL
-    );
-
-    CREATE TABLE media_provider_references (
-      provider TEXT NOT NULL, resource_namespace TEXT NOT NULL, external_id TEXT NOT NULL,
-      saved_title_id TEXT NOT NULL,
-      PRIMARY KEY(provider, resource_namespace, external_id),
-      FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE legacy_saved_title_identities (
-      legacy_format TEXT NOT NULL, legacy_provider TEXT NOT NULL,
-      legacy_external_id TEXT NOT NULL, saved_title_id TEXT NOT NULL,
-      PRIMARY KEY(legacy_format, legacy_provider, legacy_external_id),
-      FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE title_pins (
-      saved_title_id TEXT NOT NULL,
-      context_type TEXT NOT NULL,
-      context_key TEXT NOT NULL,
-      pinned_at INTEGER NOT NULL,
-      PRIMARY KEY(saved_title_id, context_type, context_key)
-    );
-
     CREATE TRIGGER controlled_import_failure
     BEFORE INSERT ON legacy_saved_title_identities
     WHEN NEW.legacy_external_id = 'controlled-failure'
@@ -95,18 +71,6 @@ async function main() {
       SELECT RAISE(ABORT, 'controlled import failure');
     END;
   `);
-
-  const db = {
-    async getFirstAsync(sql, params = []) {
-      return sqlite.prepare(sql).get(...params);
-    },
-    async getAllAsync(sql, ...params) {
-      return sqlite.prepare(sql).all(...params);
-    },
-    async runAsync(sql, ...params) {
-      return sqlite.prepare(sql).run(...params);
-    },
-  };
 
   const parsed = parseLibraryBackupV1(JSON.stringify({
     version: 1,
@@ -174,6 +138,8 @@ async function main() {
   );
   assert.match(result.failed[0].reason, /controlled import failure/i);
   assert.equal(rows.length, 2);
+  assert.equal(sqlite.prepare("SELECT count(*) AS n FROM saved_titles").get().n, 2, "failed item leaves no orphan title");
+  assert.deepEqual(sqlite.prepare("PRAGMA foreign_key_check").all(), []);
   assert.equal(failedRow, undefined);
   assert.equal(successAfter.id, "controlled-success-after-id");
 

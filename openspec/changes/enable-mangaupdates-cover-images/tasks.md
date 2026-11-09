@@ -15,8 +15,8 @@
 
 ## 4. Regresión SQLite v5 / backup v6 / re-save
 
-- [ ] 4.1 Verificar pipeline genérico real y SQLite aislada con URL/null de prueba sin descargar arte: re-save sin duplicación, ID/createdAt/referencias grandes/clasificación/datos personales/pins preservados, initialTags creación-only y voteAverage ausente; probar refresh URL → null y falta de backfill; ejecutar suites y TypeScript.
-- [ ] 4.2 Verificar export/import/merge v6 URL/null y regresión histórica v1–v6 mediante APIs reales/DBs aisladas, sin nuevas reglas del proveedor, binarios o versiones. Confirmar SQLite user_version 5 y backup 6; ejecutar suites afectadas y TypeScript.
+- [x] 4.1 Verificar pipeline genérico real y SQLite aislada con URL/null de prueba sin descargar arte: re-save sin duplicación, ID/createdAt/referencias grandes/clasificación/datos personales/pins preservados, initialTags creación-only y voteAverage ausente; probar refresh URL → null y falta de backfill; ejecutar suites y TypeScript.
+- [x] 4.2 Verificar export/import/merge v6 URL/null y regresión histórica v1–v6 mediante APIs reales/DBs aisladas, sin nuevas reglas del proveedor, binarios o versiones. Confirmar SQLite user_version 5 y backup 6; ejecutar suites afectadas y TypeScript.
 
 ## 5. Checks visuales y runtime sintéticos
 
