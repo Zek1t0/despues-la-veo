@@ -62,7 +62,7 @@ async function identityAndMapping() {
     assert.equal(Object.hasOwn(details.snapshot, "voteAverage"), false); assert.equal(Object.hasOwn(input, "voteAverage"), false);
     assert.equal(Object.hasOwn(details, "initialTags"), false); assert.deepEqual(input.initialTags, []);
     assert.deepEqual(details.snapshot.genres, ["Action", "Sci-fi"]);
-    assert.equal(details.snapshot.overview, "DescripciÃ³n original de prueba & texto legible.\n\nSin datos de un catÃ¡logo real.");
+    assert.equal(details.snapshot.overview, "Descripci\u00f3n original de prueba & texto legible.\n\nSin datos de un cat\u00e1logo real.");
     const item = materializeProviderSavedTitle(input, null, () => "opaque-local", 100);
     assert.equal(item.id, "opaque-local"); assert.equal(item.voteAverage, null); assert.deepEqual(item.tags, []);
     const personal = { ...item, primaryFormat: "webtoon", voteAverage: 7.9, status: "watching", tags: ["Personal"], notes: "Note", personalRating: 87 };
@@ -74,7 +74,7 @@ async function identityAndMapping() {
     }
     const hit = mapping.mapMangaUpdatesSearchResult(parsed, "reference-https");
     assert.equal(hit.displayTitle, fixture.title); assert.equal(hit.reference.resourceNamespace, "series");
-    assert.equal(hit.posterUrl, fixture.image.url.thumb); assert.equal(hit.releaseLabel, "2021");
+    assert.equal(hit.posterUrl, fixture.image.url.original); assert.equal(hit.releaseLabel, "2021");
   }
   const excluded = ["Novel", "Doujinshi", "OEL", "Artbook", "Drama CD", "Filipino", "Indonesian", "Thai", "Vietnamese", "Malaysian", "Nordic", "French", "Spanish", "German", "Russian", "Anime", "Unknown"];
   for (const type of excluded) assert.throws(() => validation.parseSeries(record({ type })), errorCode("unsupported-type"));
@@ -100,7 +100,7 @@ async function identityAndMapping() {
     assert.equal(mapping.mangaUpdatesPoster(url, "reference-https"), null);
   }
   assert.deepEqual(mapping.narrativeGenres([...mapping.MANGAUPDATES_NARRATIVE_GENRES, " science fiction ", "SCI-FI", "Shounen", "Shoujo", "Seinen", "Josei", "Webtoon/Webcomic", "Based on a Webcomic/Webtoon", "Unknown"]), [...mapping.MANGAUPDATES_NARRATIVE_GENRES]);
-  assert.equal(mapping.plainMangaUpdatesDescription('<script>alert(1)</script><p>A &amp; B &#x1f600;</p><p>[label](https://example.invalid) **bold**</p>'), "A & B ðŸ˜€\n\nlabel bold");
+  assert.equal(mapping.plainMangaUpdatesDescription('<script>alert(1)</script><p>A &amp; B &#x1f600;</p><p>[label](https://example.invalid) **bold**</p>'), "A & B \u{1f600}\n\nlabel bold");
   assert.equal(mapping.plainMangaUpdatesDescription("&lt;script&gt;bad()&lt;/script&gt;Useful"), "Useful");
   assert.equal(mapping.plainMangaUpdatesDescription("<style>bad</style> <p> </p>"), null);
   assert.equal(mapping.plainMangaUpdatesDescription("x".repeat(10000)).length, 10000);

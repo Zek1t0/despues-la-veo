@@ -45,9 +45,13 @@ export function publicationYear(value: string | null): number | null {
   return value !== null && /^[1-9][0-9]{3}$/.test(value.trim()) ? parseInt(value.trim(), 10) : null;
 }
 
-/** Host/HTTPS checks are technical, not copyright or hotlink permission. Default is no cover. */
+/** Initial URL checks only: native Image may follow redirects to other hosts.
+ * Technical validation is not copyright or hotlink permission. Default is no cover. */
 export function mangaUpdatesPoster(value: string | null, policy: MangaUpdatesCoverPolicy = "omit"): string | null {
   if (policy !== "reference-https" || !value) return null;
+  // Reject unsafe raw forms before URL can normalize them (controls, slashes, authority/port).
+  if (/[\s\u0000-\u001f\u007f-\u009f\\]/u.test(value) || /%(?![0-9a-f]{2})/i.test(value) ||
+      !/^https:\/\/cdn\.mangaupdates\.com(?::443)?(?=[/?#]|$)/i.test(value)) return null;
   try {
     const url = new URL(value);
     if (url.protocol !== "https:" || url.hostname !== "cdn.mangaupdates.com" ||
@@ -62,7 +66,8 @@ export function mapMangaUpdatesDetails(record: MangaUpdatesSeries, coverPolicy: 
   // Deliberately enumerate local fields: no spread of ratings/categories/provider DTOs.
   return Object.freeze({ reference: mangaUpdatesReference(record.seriesId), snapshot: Object.freeze({
     medium: "comic", contentFamily, primaryFormat: null, title: record.title,
-    year: publicationYear(record.year), posterUrl: mangaUpdatesPoster(record.originalImage, coverPolicy),
+    year: publicationYear(record.year), posterUrl: mangaUpdatesPoster(record.originalImage, coverPolicy)
+      ?? mangaUpdatesPoster(record.thumbnailImage, coverPolicy),
     overview: plainMangaUpdatesDescription(record.description), genres: narrativeGenres(record.genres),
   }) });
 }
@@ -75,7 +80,7 @@ export function mapMangaUpdatesSearchResult(record: MangaUpdatesSeries, coverPol
   const detail = mapMangaUpdatesDetails(record, coverPolicy);
   return Object.freeze({ reference: detail.reference, displayTitle: detail.snapshot.title,
     releaseLabel: detail.snapshot.year === null ? null : String(detail.snapshot.year),
-    posterUrl: mangaUpdatesPoster(record.thumbnailImage ?? record.originalImage, coverPolicy),
+    posterUrl: detail.snapshot.posterUrl,
     description: detail.snapshot.overview, kindLabel: record.type,
   });
 }
