@@ -125,6 +125,25 @@ async function main() {
     assert.strictEqual(saves.at(-1),shown);
     synthetic.unmount(); mapping.mangaUpdatesMaterializationInput=realMaterialize;
   }
+  // Section 3 extension: direct test-only developer asset composition, separate from URL policy.
+  const ownUrl = "https://assets.example.invalid/developer-poster.svg";
+  mapping.mangaUpdatesMaterializationInput = value => {
+    const input = realMaterialize(value, "omit");
+    return {...input, snapshot:{...input.snapshot, posterUrl:ownUrl}};
+  };
+  const owned=host(()=>Detail());await owned.flush();
+  pendingDetails.at(-1).resolve(parseSeries(fixture));await owned.flush();
+  const ownedImage=nodes(owned.tree).find(n=>n.type==="Image");
+  assert.equal(ownedImage.props.source.uri,ownUrl);
+  ownedImage.props.onError({nativeEvent:{error:"HTTP/network/decode stub failure"}});await owned.flush();
+  assert.equal(nodes(owned.tree).some(n=>n.type==="Image"),false);
+  assert.equal(nodes(owned.tree).some(n=>n.type?.name==="PosterPlaceholder"),true);
+  const before=saves.length;
+  await nodes(owned.tree).find(n=>n.props.accessibilityLabel==="Guardar en Biblioteca").props.onPress();
+  assert.equal(saves.length,before+1);
+  assert.equal(saves.at(-1).snapshot.posterUrl,ownUrl,"visual failure cannot change save input");
+  assert.equal(owned.navigation.at(-1),"/title/opaque-saved");
+  owned.unmount();mapping.mangaUpdatesMaterializationInput=realMaterialize;
   const source=fs.readFileSync("src/components/search/mangaUpdatesSearch.ts","utf8")+fs.readFileSync("app/mangaupdates/series/[id].tsx","utf8");
   assert.doesNotMatch(source,/reference-https|process.env|__DEV__|testOnly/);
   console.log("Section 2 injected selection and identical presentation/save input passed. Stub Image only; no artwork/network.");

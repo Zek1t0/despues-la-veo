@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import {
   Image,
@@ -16,9 +16,11 @@ import type { PersonalRating } from "../../core/personalRating";
 import { useAppTheme } from "../../theme/AppThemeProvider";
 import { PersonalRatingBadge } from "./PersonalRatingBadge";
 import { PosterPlaceholder } from "./PosterPlaceholder";
+import { usePosterImageError } from "./usePosterImageError";
 import { getPersonalRatingPresentation } from "./personalRatingPresentation";
 
 export type TitleGridCardProps = {
+  identity?: string;
   title: string;
   kindLabel: string;
   statusLabel?: string;
@@ -31,6 +33,7 @@ export type TitleGridCardProps = {
 };
 
 export function TitleGridCard({
+  identity,
   title,
   kindLabel,
   statusLabel,
@@ -42,11 +45,7 @@ export function TitleGridCard({
   style,
 }: TitleGridCardProps) {
   const { theme } = useAppTheme();
-  const [imageFailed, setImageFailed] = useState(false);
-
-  useEffect(() => {
-    setImageFailed(false);
-  }, [posterUrl]);
+  const { imageFailed, onImageError } = usePosterImageError(identity ?? accessibilityLabel, posterUrl);
 
   const showImage = Boolean(posterUrl) && !imageFailed;
   const personalRatingPresentation = getPersonalRatingPresentation(personalRating);
@@ -78,7 +77,7 @@ export function TitleGridCard({
       {showImage ? (
         <Image
           accessible={false}
-          onError={() => setImageFailed(true)}
+          onError={onImageError}
           resizeMode="cover"
           source={{ uri: posterUrl! }}
           style={styles.poster}

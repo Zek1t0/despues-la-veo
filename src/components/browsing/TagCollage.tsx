@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Image,
   StyleSheet,
@@ -9,6 +9,7 @@ import {
 
 import { useAppTheme } from "../../theme/AppThemeProvider";
 import { PosterPlaceholder } from "./PosterPlaceholder";
+import { usePosterImageError } from "./usePosterImageError";
 
 export type TagCollageItem = {
   id: string;
@@ -33,11 +34,7 @@ function CollageCell({
   surfaceColor: string;
   borderColor: string;
 }) {
-  const [imageFailed, setImageFailed] = useState(false);
-
-  useEffect(() => {
-    setImageFailed(false);
-  }, [item?.id, item?.posterUrl]);
+  const { imageFailed, onImageError } = usePosterImageError(item?.id, item?.posterUrl);
 
   const posterUrl = item?.posterUrl;
   const showImage = isValidPosterUrl(posterUrl) && !imageFailed;
@@ -55,7 +52,7 @@ function CollageCell({
       {showImage ? (
         <Image
           accessible={false}
-          onError={() => setImageFailed(true)}
+          onError={onImageError}
           resizeMode="cover"
           source={{ uri: posterUrl }}
           style={StyleSheet.absoluteFillObject}

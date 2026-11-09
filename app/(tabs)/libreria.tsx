@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Image, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { DetailPoster } from "../../src/components/browsing/DetailPoster";
 
 import { deleteSavedTitle, upsertSavedTitle } from "../../src/storage/savedTitlesRepo";
 import type { SavedTitleWithProviderReferences, TitleStatus } from "../../src/core/savedTitle";
@@ -760,6 +761,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
             if (viewMode === "grid") {
               return (
                 <TitleGridCard
+                  identity={item.id}
                   accessibilityLabel={savedTitleOpenAccessibilityLabel(item)}
                   isPinned={pinnedAtById.has(item.id)}
                   onPress={() =>
@@ -813,28 +815,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                     importantForAccessibility="no-hide-descendants"
                     style={{ flexDirection: "row", gap: 12 }}
                   >
-                    {item.posterUrl ? (
-                      <Image
-                        source={{ uri: item.posterUrl }}
-                        style={{ width: 70, height: 105, borderRadius: 12 }}
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View
-                        style={{
-                          width: 70,
-                          height: 105,
-                          borderRadius: 12,
-                          backgroundColor: theme.global.surfaceSecondary,
-                          borderWidth: 1,
-                          borderColor: theme.global.border,
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <Text style={{ color: theme.global.textSecondary, fontSize: 12 }}>Sin póster</Text>
-                      </View>
-                    )}
+                    <DetailPoster identity={item.id} posterUrl={item.posterUrl} style={{ width: 70, height: 105, borderRadius: 12 }} />
 
                     <View style={{ flex: 1, gap: 6 }}>
                       <Text style={{ fontSize: 16, fontWeight: "900", color: theme.global.textPrimary }}>

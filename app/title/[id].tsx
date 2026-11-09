@@ -23,6 +23,7 @@ import type {
 import { findUnambiguousTmdbReference } from "../../src/core/savedTitleProviderReferences";
 import { localMangaUpdatesSources } from "../../src/providers/mangaupdates/product";
 import { titleStatusLabel, mediaClassificationLabel, mediaYearLabel } from "../../src/core/presentationLabels";
+import { usePosterImageError } from "../../src/components/browsing/usePosterImageError";
 import { PosterPlaceholder } from "../../src/components/browsing/PosterPlaceholder";
 import { type PinContext } from "../../src/core/contextualPin";
 import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";
@@ -58,12 +59,11 @@ const STATUS_VALUES: TitleStatus[] = [
   "dropped",
 ];
 
-function LocalPoster({ posterUrl }: { posterUrl: string | null }) {
-  const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [posterUrl]);
+function LocalPoster({ posterUrl, identity }: { posterUrl: string | null; identity?: string }) {
+  const { imageFailed: failed, onImageError } = usePosterImageError(identity, posterUrl);
   const style = { width: 72, height: 108, borderRadius: 12 };
   return posterUrl && !failed
-    ? <Image accessible={false} source={{ uri: posterUrl }} resizeMode="cover" style={style} onError={() => setFailed(true)} />
+    ? <Image accessible={false} source={{ uri: posterUrl }} resizeMode="cover" style={style} onError={onImageError} />
     : <PosterPlaceholder style={style} />;
 }
 
@@ -637,7 +637,7 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
           </View>
         ))}
         <View style={{ flexDirection: "row", gap: 12 }}>
-          <LocalPoster posterUrl={item.posterUrl ?? null} />
+          <LocalPoster identity={item.id} posterUrl={item.posterUrl ?? null} />
           <View style={{ flex: 1, gap: 6 }}>
             <Text style={{ fontSize: 24, fontWeight: "900", color: theme.global.textPrimary }}>
               {item.title}

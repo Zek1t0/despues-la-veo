@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Pressable, Text, TextInput, View, Image, Linking, Platform, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Pressable, Text, TextInput, View, Linking, Platform, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { DetailPoster } from "../../src/components/browsing/DetailPoster";
 import type { ProviderSearchResult } from "../../src/providers/providerContracts";
 import { tmdbMovieSearchCapability, tmdbTvSearchCapability } from "../../src/providers/tmdb/tmdbAdapter";
 import { productionSearchCategories, resolveProductionSearchCategory, type ResolvedSearchCategory, type SearchCategory, type SearchCategoryId } from "../../src/components/search/searchCategories";
@@ -342,6 +343,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
           if (viewMode === "grid") {
             return (
               <TitleGridCard
+                identity={JSON.stringify(item.reference)}
                 accessibilityLabel={`Abrir ${item.kindLabel} ${item.displayTitle}`}
                 onPress={() => router.push(route)}
                 posterUrl={item.posterUrl}
@@ -371,28 +373,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
               }}
             >
               <View accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ flexDirection: "row", gap: 12, flex: 1 }}>
-              {item.posterUrl ? (
-                <Image
-                  source={{ uri: item.posterUrl }}
-                  style={{ width: 80, height: 120, borderRadius: 10 }}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View
-                  style={{
-                    width: 80,
-                    height: 120,
-                    borderRadius: 10,
-                    backgroundColor: theme.global.surfaceSecondary,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderWidth: 1,
-                    borderColor: theme.global.border,
-                  }}
-                >
-                  <Text style={{ color: theme.global.textSecondary, fontSize: 12 }}>Sin póster</Text>
-                </View>
-              )}
+              <DetailPoster identity={JSON.stringify(item.reference)} posterUrl={item.posterUrl} style={{ width: 80, height: 120, borderRadius: 10 }} />
 
               <View style={{ flex: 1, gap: 4 }}>
                 <Text style={{ fontSize: 16, fontWeight: "800", color: theme.global.textPrimary }}>

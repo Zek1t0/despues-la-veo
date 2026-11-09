@@ -10,8 +10,8 @@
 
 ## 3. Fallbacks reutilizables de UI
 
-- [ ] 3.1 Incorporar fallback mínimo en filas Detalle de Buscar/Biblioteca y reutilizar patrones de grid/local detail/collages sin rediseño. Probar ausencia y errores HTTP/red/decode con assets propios/stubs y conservar navegación/layout/accesibilidad/TMDB; ejecutar tests y TypeScript.
-- [ ] 3.2 Verificar reset por identidad/URL al reciclar vistas y recuperación con nueva imagen propia, sin escrituras de posterUrl por error visual. Cubrir búsqueda/library detail-grid, remoto, local y collages pertinentes; ejecutar tests y TypeScript.
+- [x] 3.1 Incorporar fallback mínimo en filas Detalle de Buscar/Biblioteca y reutilizar patrones de grid/local detail/collages sin rediseño. Probar ausencia y errores HTTP/red/decode con assets propios/stubs y conservar navegación/layout/accesibilidad/TMDB; ejecutar tests y TypeScript.
+- [x] 3.2 Verificar reset por identidad/URL al reciclar vistas y recuperación con nueva imagen propia, sin escrituras de posterUrl por error visual. Cubrir búsqueda/library detail-grid, remoto, local y collages pertinentes; ejecutar tests y TypeScript.
 
 ## 4. Regresión SQLite v5 / backup v6 / re-save
 

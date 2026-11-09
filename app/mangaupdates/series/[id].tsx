@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Image, Linking, Platform, Pressable, ScrollVi
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useAppTheme } from "../../../src/theme/AppThemeProvider";
 import { PosterPlaceholder } from "../../../src/components/browsing/PosterPlaceholder";
+import { usePosterImageError } from "../../../src/components/browsing/usePosterImageError";
 import { mediaClassificationLabel, mediaYearLabel } from "../../../src/core/presentationLabels";
 import { canonicalSeriesId } from "../../../src/providers/mangaupdates/identity";
 import { mangaUpdatesAvailability } from "../../../src/providers/mangaupdates/availability";
@@ -61,6 +62,7 @@ export default function MangaUpdatesDetailScreen() {
   // Presentation and save share this normalized input. Production never opts into covers.
   const input = record ? mangaUpdatesMaterializationInput(record, "omit") : null;
   const snapshot = input?.snapshot;
+  const { imageFailed, onImageError } = usePosterImageError(id ?? undefined, snapshot?.posterUrl);
   const provenance = input ? mangaUpdatesProvenance(input.reference) : null;
   const error = visible?.error ? presentMangaUpdatesError(visible.error) : null;
   const button = (label: string, onPress: () => void, disabled = false) => (
@@ -104,8 +106,8 @@ export default function MangaUpdatesDetailScreen() {
           {error.retryable && button("Reintentar MangaUpdates", () => setRetry(value => value + 1))}
         </View> : snapshot && provenance ? <>
           <View style={{ flexDirection: "row", gap: 12 }}>
-            {snapshot.posterUrl ? <Image accessible={false} accessibilityElementsHidden importantForAccessibility="no" aria-hidden
-              source={{ uri: snapshot.posterUrl }} resizeMode="cover"
+            {snapshot.posterUrl && !imageFailed ? <Image accessible={false} accessibilityElementsHidden importantForAccessibility="no" aria-hidden
+              source={{ uri: snapshot.posterUrl }} resizeMode="cover" onError={onImageError}
               style={{ width: 96, height: 144, borderRadius: 12 }} />
               : <PosterPlaceholder style={{ width: 96, height: 144, borderRadius: 12 }} />}
             <View style={{ flex: 1, gap: 8 }}>
