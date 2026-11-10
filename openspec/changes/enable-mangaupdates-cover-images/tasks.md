@@ -20,8 +20,8 @@
 
 ## 5. Checks visuales y runtime sintéticos
 
-- [ ] 5.1 Ejercitar componentes con assets originales del desarrollador por composición exclusivamente test-only, separada de tests de URL-policy. Probar carga/fallback/error/reset/offline sin garantía de cache; registrar entorno y checks efectivamente ejecutados sin requerir arte de terceros ni aceptación física Android de covers reales; ejecutar TypeScript.
-- [ ] 5.2 Realizar smoke Web productivo en omit/TMDB y smoke review aislado; comprobar gates Web/iOS con forbidden-fetch y ninguna nueva petición de imagen MangaUpdates por producción. Distinguir URLs locales históricas de nueva activación; registrar runtime/limitaciones sin afirmar Android real ni iOS validado; ejecutar suites y TypeScript.
+- [x] 5.1 Ejercitar componentes con assets originales del desarrollador por composición exclusivamente test-only, separada de tests de URL-policy. Probar carga/fallback/error/reset/offline sin garantía de cache; registrar entorno y checks efectivamente ejecutados sin requerir arte de terceros ni aceptación física Android de covers reales; ejecutar TypeScript.
+- [x] 5.2 Realizar smoke Web productivo en omit/TMDB y smoke review aislado; comprobar gates Web/iOS con forbidden-fetch y ninguna nueva petición de imagen MangaUpdates por producción. Distinguir URLs locales históricas de nueva activación; registrar runtime/limitaciones sin afirmar Android real ni iOS validado; ejecutar suites y TypeScript.
 
 ## 6. Limitaciones y handoff de activación futura
 
