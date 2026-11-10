@@ -25,8 +25,8 @@
 
 ## 6. Limitaciones y handoff de activación futura
 
-- [ ] 6.1 Documentar evidencia vigente y preguntas abiertas por metadatos, hotlink/display, renderer cache, URL retenida/exportada y binarios. Completar significa evaluación precisa, NO permiso concedido; conservar fuentes/fecha y no contactar al proveedor. Revisar consistencia con spec; TypeScript debe seguir pasando.
-- [ ] 6.2 Documentar handoff provisional a activate-mangaupdates-cover-images-android sin crearlo: futura verificación independiente de derechos, redirects finales, condiciones de retención/cache/atribución, prueba controlada y aceptación física real antes de activar. Explicar bloqueo futuro si restricciones no se satisfacen, sin proxy/downloader ni infraestructura nueva; verificar que nada de ello bloquea cierre actual y ejecutar TypeScript.
+- [x] 6.1 Documentar evidencia vigente y preguntas abiertas por metadatos, hotlink/display, renderer cache, URL retenida/exportada y binarios. Completar significa evaluación precisa, NO permiso concedido; conservar fuentes/fecha y no contactar al proveedor. Revisar consistencia con spec; TypeScript debe seguir pasando.
+- [x] 6.2 Documentar handoff provisional a activate-mangaupdates-cover-images-android sin crearlo: futura verificación independiente de derechos, redirects finales, condiciones de retención/cache/atribución, prueba controlada y aceptación física real antes de activar. Explicar bloqueo futuro si restricciones no se satisfacen, sin proxy/downloader ni infraestructura nueva; verificar que nada de ello bloquea cierre actual y ejecutar TypeScript.
 
 ## 7. Regresión técnica final y reporte
 
