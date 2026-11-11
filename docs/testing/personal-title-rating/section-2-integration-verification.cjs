@@ -25,7 +25,11 @@ assert.match(grid, /isPinned \? "fijado" : null/);
 assert.match(grid, /<PersonalRatingBadge[\s\S]*?value=\{personalRating\}[\s\S]*?style=\{styles\.ratingBadge\}[\s\S]*?\/>/);
 assert.match(grid, /<PersonalRatingBadge[\s\S]*?<Text[\s\S]*?ellipsizeMode="tail"[\s\S]*?numberOfLines=\{2\}/);
 assert.match(grid, /marginBottom: 5/);
-assert.match(grid, /showImage \? \([\s\S]*?<Image[\s\S]*?onError=\{\(\) => setImageFailed\(true\)\}[\s\S]*?: \([\s\S]*?<PosterPlaceholder/);
+// Error ownership moved to the identity/URL-aware hook in cover Section 3.
+// Keep checking the complete image/error/placeholder wiring, not the old inline setter.
+assert.match(grid, /const \{ imageFailed, onImageError \} = usePosterImageError\(identity \?\? accessibilityLabel, posterUrl\)/);
+assert.match(grid, /const showImage = Boolean\(posterUrl\) && !imageFailed/);
+assert.match(grid, /showImage \? \([\s\S]*?<Image[\s\S]*?onError=\{onImageError\}[\s\S]*?: \([\s\S]*?<PosterPlaceholder/);
 assert.match(grid, /<View[\s\S]*?accessible=\{false\}[\s\S]*?pointerEvents="none"[\s\S]*?styles\.badge[\s\S]*?>/);
 assert.match(grid, /<View[\s\S]*?accessible=\{false\}[\s\S]*?pointerEvents="none"[\s\S]*?styles\.pinBadge[\s\S]*?>/);
 assert.doesNotMatch(grid, /library|tags|search|voteAverage/);
@@ -60,7 +64,9 @@ assert.match(grid, /isPinned[\s\S]*?<PersonalRatingBadge/);
 assert.doesNotMatch(search, /personalRating|PersonalRatingBadge|getPersonalRatingPresentation/);
 assert.doesNotMatch(collage, /personalRating|PersonalRatingBadge|getPersonalRatingPresentation/);
 assert.match(collage, /posterUrl\?: string \| null/);
-assert.match(collage, /onError=\{\(\) => setImageFailed\(true\)\}/);
+assert.match(collage, /const \{ imageFailed, onImageError \} = usePosterImageError\(item\?\.id, item\?\.posterUrl\)/);
+assert.match(collage, /const showImage = isValidPosterUrl\(posterUrl\) && !imageFailed/);
+assert.match(collage, /onError=\{onImageError\}/);
 assert.match(collage, /<PosterPlaceholder/);
 
 console.log("Section 2 personal rating integration verification passed.");
