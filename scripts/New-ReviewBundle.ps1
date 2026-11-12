@@ -341,17 +341,31 @@ try {
         $phase = 'Incorporated checkpoint validation'
         $checkpoint = Resolve-Commit $ScriptsCheckpoint
         $null = Invoke-Git @('merge-base', '--is-ancestor', $checkpoint, $head)
+        $null = Invoke-Git @('merge-base', '--is-ancestor', $base, $head)
         $parents = (Git-Text @('rev-list', '--parents', '-n', '1', $checkpoint)).Trim().Split(' ')
         if ($parents.Count -ne 2) { throw 'ScriptsCheckpoint must be a non-merge incorporation commit.' }
-        Assert-ApprovedScripts (Read-Package $parents[1]) (Read-Package $checkpoint)
-        $null = Invoke-Git @('merge-base', '--is-ancestor', $base, $checkpoint)
+        $previousPackage = Read-Package $parents[1]
+        $incorporatedPackage = Read-Package $checkpoint
+        Assert-ApprovedScripts $previousPackage $incorporatedPackage
+        if (Json-Equal $previousPackage $incorporatedPackage) { throw 'ScriptsCheckpoint must actually incorporate the approved scripts.' }
+        if ($Boundary -eq 'Section') {
+            # Either temporal boundary is valid, but two merged sibling histories are not.
+            $common = (Git-Text @('merge-base', $base, $checkpoint)).Trim()
+            if ($common -ne $base -and $common -ne $checkpoint) { throw 'Section baseline and ScriptsCheckpoint must be on the same ancestry chain.' }
+        } else {
+            $null = Invoke-Git @('merge-base', '--is-ancestor', $base, $checkpoint)
+        }
+        # Later dependency changes remain reviewable; unapproved scripts do not.
+        foreach ($version in @((Read-Package $head), (Read-Package ''), (Parse-PackageJson ([IO.File]::ReadAllText((Relative-Path 'package.json'), $utf8))))) {
+            if (-not (Json-Equal $incorporatedPackage.scripts $version.scripts)) { throw 'Incorporated script changes require approval; checkpoint scripts must be preserved.' }
+        }
     }
     if ($Boundary -eq 'Complete') {
         $phase = 'Complete boundary validation'
         if ($PackageJsonPolicy -ne 'Incorporated') { throw 'Complete requires Incorporated and a valid ScriptsCheckpoint.' }
         # Complete is specific to this approved feature, not an arbitrary smaller boundary.
         if ($base -ne 'f234faaa2955ee2ce5ed2da95bd2a69c026a482f') { throw 'Complete requires the integrated feature baseline f234faa.' }
-        if ($denied.Count) { throw 'Complete rejected: changed paths are excluded; request an honest partial Section bundle.' }
+        if ($exclusions.Count -or $denied.Count) { throw 'Complete rejected: exclusions are not permitted; request an honest partial Section bundle.' }
     }
     if ((Snapshot) -ne $before) { throw 'Concurrent modification detected before export.' }
     $phase = 'external export and consistency verification'

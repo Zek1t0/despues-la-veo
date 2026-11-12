@@ -196,6 +196,95 @@ try {
     $inc = Check-Run 'incorporated-dependency-diff' @('-PackageJsonPolicy', 'Incorporated', '-ScriptsCheckpoint', $checkpoint)
     Assert (([IO.File]::ReadAllText((Join-Path $inc.Path 'net.patch'))).Contains('2.0.0')) 'incorporated includes later dependency content'
     $null = Check-Run 'complete-wrong-feature-baseline' @('-Boundary', 'Complete', '-PackageJsonPolicy', 'Incorporated', '-ScriptsCheckpoint', $checkpoint) $script:base $false
+    # Independent synthetic history: A1 incorporation, A2 boundary, then A3 changes.
+    $savedFixture = $script:fixture; $savedBase = $script:base; $savedHelper = $helper
+    $helperHash = Hash $helper
+    try {
+        $script:fixture = Join-Path $root 'history-fixture'
+        [IO.Directory]::CreateDirectory($script:fixture) | Out-Null
+        $null = Git @('init', '-q')
+        $null = Git @('config', 'user.name', 'Disposable History Test')
+        $null = Git @('config', 'user.email', 'fixture@example.invalid')
+        Put 'package.json' '{"name":"history-fixture","scripts":{"start":"expo start","android":"expo start --android","ios":"expo start --ios","web":"expo start --web"},"dependencies":{"example":"1.0.0"}}'
+        Put 'package-lock.json' '{"fixture":true}'; Put 'unchanged.txt' "unchanged`n"
+        Put 'tracked.txt' "baseline`n"; Put '.env.stable' 'SYNTHETIC_HISTORY_PRIVATE_7D21'
+        $null = Git @('add', '.'); $null = Git @('commit', '-qm', 'history baseline')
+        $script:base = Git @('rev-parse', 'HEAD'); $baseTree = Git @('rev-parse', 'HEAD^{tree}')
+        $historyPackage = [IO.File]::ReadAllText((Join-Path $script:fixture 'package.json')) | ConvertFrom-Json -AsHashtable
+        $historyPackage.scripts.android = 'expo run:android'; $historyPackage.scripts.ios = 'expo run:ios'
+        $historyPackage.scripts['android:start'] = 'expo start --android'; $historyPackage.scripts['ios:start'] = 'expo start --ios'
+        Put 'package.json' ($historyPackage | ConvertTo-Json -Depth 10)
+        $null = Git @('add', 'package.json'); $null = Git @('commit', '-qm', 'history A1 scripts')
+        $historyCheckpoint = Git @('rev-parse', 'HEAD'); $scriptsTree = Git @('rev-parse', 'HEAD^{tree}')
+        $historyPackage.dependencies.example = '2.0.0'; Put 'package.json' ($historyPackage | ConvertTo-Json -Depth 10)
+        Put 'tracked.txt' "A2 checkpoint`n"
+        $null = Git @('add', '.'); $null = Git @('commit', '-qm', 'history A2')
+        $a2 = Git @('rev-parse', 'HEAD')
+        Put 'tracked.txt' "A3 committed`n"
+        $null = Git @('add', '.'); $null = Git @('commit', '-qm', 'history A3 committed')
+        $a3 = Git @('rev-parse', 'HEAD'); $a3Tree = Git @('rev-parse', 'HEAD^{tree}')
+        Put 'tracked.txt' "A3 final working`n"
+        Bytes 'new 日本語 binary.bin' ([byte[]](0,255,0,128,13,10))
+        $policy = @('-PackageJsonPolicy', 'Incorporated', '-ScriptsCheckpoint', $historyCheckpoint)
+        $beforeCheckpoint = Check-Run 'section-before-scripts-checkpoint' $policy
+        Assert (([IO.File]::ReadAllText((Join-Path $beforeCheckpoint.Path 'net.patch'))).Contains('expo run:android')) 'Section before A1 includes approved scripts'
+        $afterCheckpoint = Check-Run 'section-after-scripts-checkpoint' $policy $a2
+        $afterPatch = [IO.File]::ReadAllText((Join-Path $afterCheckpoint.Path 'net.patch'))
+        Assert ($afterPatch.Contains('A3 final working') -and -not $afterPatch.Contains('expo run:android')) 'Section after A1 includes A3 result without pretending to include A1'
+        $null = Check-Run 'section-at-scripts-checkpoint' $policy $historyCheckpoint
+        $null = Check-Run 'incorporated-invalid-reference' @('-PackageJsonPolicy', 'Incorporated', '-ScriptsCheckpoint', 'missing-checkpoint') $a2 $false
+        $null = Check-Run 'incorporated-noncommit' @('-PackageJsonPolicy', 'Incorporated', '-ScriptsCheckpoint', (Git @('rev-parse', 'HEAD:tracked.txt'))) $a2 $false
+        $null = Check-Run 'incorporated-not-an-incorporation' @('-PackageJsonPolicy', 'Incorporated', '-ScriptsCheckpoint', $a2) $a2 $false
+        $orphan = Git @('commit-tree', $baseTree, '-m', 'unrelated root')
+        $unrelatedCheckpoint = Git @('commit-tree', $scriptsTree, '-p', $orphan, '-m', 'unrelated valid scripts')
+        $null = Check-Run 'section-unrelated-baseline' $policy $orphan $false
+        $null = Check-Run 'incorporated-unrelated-checkpoint' @('-PackageJsonPolicy', 'Incorporated', '-ScriptsCheckpoint', $unrelatedCheckpoint) $a2 $false
+        $sibling = Git @('commit-tree', $baseTree, '-p', $script:base, '-m', 'diverged sibling')
+        $null = Check-Run 'section-diverged-baseline' $policy $sibling $false
+        $merged = Git @('commit-tree', $a3Tree, '-p', $a3, '-p', $sibling, '-m', 'merge sibling into fixture HEAD')
+        $null = Git @('update-ref', 'HEAD', $merged)
+        $null = Git @('merge-base', '--is-ancestor', $historyCheckpoint, 'HEAD')
+        $null = Git @('merge-base', '--is-ancestor', $sibling, 'HEAD')
+        $null = Check-Run 'section-merged-sibling-baseline' $policy $sibling $false
+        $null = Check-Run 'incorporated-merge-checkpoint' @('-PackageJsonPolicy', 'Incorporated', '-ScriptsCheckpoint', $merged) $a2 $false
+        $validHistoryPackage = $historyPackage | ConvertTo-Json -Depth 10
+        $historyPackage.scripts.android = 'expo start --android'; Put 'package.json' ($historyPackage | ConvertTo-Json -Depth 10)
+        $null = Check-Run 'incorporated-unapproved-working-scripts' $policy $a2 $false
+        $null = Git @('add', 'package.json')
+        $badTree = Git @('write-tree')
+        Put 'package.json' $validHistoryPackage
+        $null = Check-Run 'incorporated-unapproved-staged-scripts' $policy $a2 $false
+        $null = Git @('add', 'package.json')
+        $badCheckpoint = Git @('commit-tree', $badTree, '-p', $script:base, '-m', 'unapproved incorporation')
+        $badHead = Git @('commit-tree', $badTree, '-p', $merged, '-m', 'unapproved HEAD scripts')
+        $null = Git @('update-ref', 'HEAD', $badHead)
+        $null = Check-Run 'incorporated-unapproved-head-scripts' $policy $a2 $false
+        $finalHead = Git @('commit-tree', $a3Tree, '-p', $badHead, '-p', $badCheckpoint, '-m', 'restore approved scripts')
+        $null = Git @('update-ref', 'HEAD', $finalHead)
+        $null = Check-Run 'incorporated-unapproved-checkpoint-scripts' @('-PackageJsonPolicy', 'Incorporated', '-ScriptsCheckpoint', $badCheckpoint) $script:base $false
+        $null = Check-Run 'complete-production-rejects-synthetic-baseline' (@('-Boundary', 'Complete') + $policy) $script:base $false
+        # A synthetic Git commit cannot have the real feature hash. Substitute ONLY
+        # that literal in an external test copy, never add a production bypass/flag.
+        $source = [IO.File]::ReadAllText($savedHelper)
+        $integratedLiteral = "'f234faaa2955ee2ce5ed2da95bd2a69c026a482f'"
+        Assert (([regex]::Matches($source, [regex]::Escape($integratedLiteral))).Count -eq 1) 'production Complete retains one fixed integrated-baseline literal'
+        $helper = Join-Path $root 'New-ReviewBundle.synthetic-complete.ps1'
+        [IO.File]::WriteAllText($helper, $source.Replace($integratedLiteral, "'$script:base'"), $utf8)
+        $complete = Check-Run 'complete-synthetic-integrated-baseline' (@('-Boundary', 'Complete') + $policy)
+        $completePatch = [IO.File]::ReadAllText((Join-Path $complete.Path 'net.patch'))
+        Assert ((Manifest $complete).Contains('Boundary: Complete; permitted scope') -and $completePatch.Contains('expo run:android') -and $completePatch.Contains('2.0.0') -and $completePatch.Contains('A3 final working')) 'Complete synthetic fixture covers approved scripts, dependencies and final tracked result'
+        Assert ((Hash (Join-Path $complete.Path 'untracked/new 日本語 binary.bin')) -eq (Hash (Join-Path $script:fixture 'new 日本語 binary.bin'))) 'Complete synthetic fixture preserves untracked binary Unicode content'
+        No-Marker $complete 'SYNTHETIC_HISTORY_PRIVATE_7D21'
+        $null = Check-Run 'complete-explicit-exclusion' (@('-Boundary', 'Complete', '-ExcludePath', 'tracked.txt') + $policy) $script:base $false
+        $null = Check-Run 'complete-unchanged-exclusion' (@('-Boundary', 'Complete', '-ExcludePath', 'unchanged.txt') + $policy) $script:base $false
+        Put '.env.new' 'SYNTHETIC_HISTORY_PRIVATE_7D21'
+        $null = Check-Run 'complete-sensitive-exclusion' (@('-Boundary', 'Complete') + $policy) $script:base $false
+        Remove-Item -LiteralPath (Join-Path $script:fixture '.env.new')
+        $null = Check-Run 'complete-synthetic-later-baseline-rejected' (@('-Boundary', 'Complete') + $policy) $a2 $false
+        Assert ((Hash $savedHelper) -eq $helperHash) 'Complete test substitution never modifies production helper'
+    } finally {
+        $script:fixture = $savedFixture; $script:base = $savedBase; $helper = $savedHelper
+    }
     Put 'index-link.txt' '/synthetic/external/target'
     $linkBlob = Git @('hash-object', '-w', (Join-Path $script:fixture 'index-link.txt'))
     $null = Git @('update-index', '--add', '--cacheinfo', "120000,$linkBlob,index-link.txt")
@@ -245,7 +334,7 @@ try {
         Assert (([IO.File]::ReadAllText((Join-Path $destination 'manifest.md'))).Contains('INVALID')) 'failed capture marked INVALID'
     }
     Assert ((Git @('rev-parse', 'HEAD')) -eq $checkpoint) 'concurrency test helper did not create commits'
-    $summary = [ordered]@{ passed = $checks.Count; failed = 0; checks = $checks; skipped = $skips; limitations = @('Fixtures only; no actual project bundle generated.', 'Complete positive path requires the real f234faa baseline and a later reviewed incorporation commit; not fabricated in fixtures.', 'Concurrent mutation test intentionally changes fixture working bytes; invariance assertions apply to all other invocations.'); evidence = $root }
+    $summary = [ordered]@{ passed = $checks.Count; failed = 0; checks = $checks; skipped = $skips; limitations = @('Fixtures only; no actual project bundle generated.', 'Complete positive fixture uses an external helper copy with only its fixed baseline literal substituted by the synthetic root; production exact f234faa restriction remains tested and unchanged. This is not a successful real Complete bundle.', 'Concurrent mutation test intentionally changes fixture working bytes; invariance assertions apply to all other invocations.'); evidence = $root }
     [IO.File]::WriteAllText((Join-Path $root 'result.json'), ($summary | ConvertTo-Json -Depth 6), $utf8)
     Write-Output "PASS: $($checks.Count) checks. Evidence: $root"
 } catch {

@@ -91,7 +91,7 @@ El grupo Babel MUST limitarse a core7.29.6/generator7.29.6/parser7.29.3/helpers7
 #### Scenario: verificación de Babel adicional
 - **WHEN** se implementa el grupo Babel autorizado
 - **THEN** se demuestran las ocho rutas exactas con metadata auténtica, grafo/peers/engines válidos, npm ci aislado reproducible, TypeScript, TSX/Flow/presets y source maps sintéticos, Metro/Web y regresiones pertinentes
-- **AND** A2 registra checks Android/Hermes de build/bundle disponibles y sus límites; aceptación física pertinente se exige en A3 antes del cierre final y no se sustituye por Node/Web, export ni semver
+- **AND** A2 registra checks Android/Hermes de build/bundle disponibles y sus límites; la regla física original de A3 se conserva como seguimiento, con la excepción explícita de este hito definida en el requisito de aceptación Android; Node/Web/export/semver por sí solos no satisfacen ese requisito ni acreditan teléfono físico
 
 #### Scenario: aceptación de cambios en navegadores
 - **WHEN** se propone o valida Browserslist y sus tres paquetes de datos
@@ -106,13 +106,26 @@ El grupo Babel MUST limitarse a core7.29.6/generator7.29.6/parser7.29.3/helpers7
 
 #### Scenario: aceptación automatizada A2 y aceptación final A3
 - **WHEN** A2 pasa los checks automatizados/aislados disponibles sin bloquear requisitos materiales
-- **THEN** se registran las versiones/entornos efectivamente probados y los checks manuales/físicos no ejecutados como pendientes de A3, sin declararlos pasados
+- **THEN** se registran las versiones/entornos efectivamente probados y los checks manuales/físicos no ejecutados como pendientes de A3 o DEFERRED únicamente bajo la excepción Android explícita de este hito, sin declararlos pasados
 - **AND** un requisito automatizado bloqueante pendiente o regresión material sigue impidiendo completar el criterio afectado hasta satisfacerse o resolverse explícitamente; no se acepta riesgo residual automáticamente
 
 #### Scenario: decoder y alternativas fuera de alcance
 - **WHEN** se revisan residuales antes de2.5
 - **THEN** se documenta que el fork Router6 observado usa URL.searchParams y seis entradas sintéticas cortas no invocaron el decoder, sin declarar inalcanzabilidad universal ni aceptar el riesgo
 - **AND** config-plugins/xcode y deps relacionadas, retirada uuid, override decoder, sustituciones forzadas glob/minimatch/PostCSS/image-size/deepmerge y migraciones mayores siguen evaluadas por separado o diferidas, sin implementación autorizada
+
+### Requirement: aceptación Android acotada al hito de mantenimiento
+La regla original exigía Android físico cuando el impacto runtime/native fuera material. Por decisión explícita del usuario del 2026-11-12, SOLO este hito MUST permitir satisfacer A3.2 con build Gradle APK exitoso, export Android/Hermes exitoso, regresión automatizada satisfactoria y nueve checks manuales BlueStacks 5 confirmados por el usuario, siempre que la validación física se documente DEFERRED hasta completar las funcionalidades restantes. MUST registrar evidencia manual como USER-REPORTED, APK identificado y conexión a Metro aislado reportada, sin atribuir ejecución independiente al agente ni inventar logs/modelo/versión Android. Esta excepción MUST NOT acreditar compatibilidad física ni release readiness ni autorizar omitir pruebas físicas en futuras features. La validación física MUST seguir siendo seguimiento obligatorio antes de afirmar aceptación real-device/release.
+
+#### Scenario: aceptación BlueStacks explícita de este hito
+- **WHEN** build Gradle/Hermes y regresión automatizada están verificados y el usuario confirma9/9 checks BlueStacks del APK A3 con deferral físico explícito
+- **THEN** A3.2 puede completarse bajo esta excepción trazable, con startup, tabs/stack/Back, múltiples saves/IDs, editar/borrar, persistencia SQLite, backupv6, imports históricos, TMDB/providers y errores/recuperación reportados por el usuario
+- **AND** Android físico permanece DEFERRED, iOS y Web manual NOT EXECUTED sin evidencia adicional;31 checks Chrome automatizados no se convierten en test humano
+- **AND** deep links externos entrantes permanecen NOT APPLICABLE al APK actual sin intent-filter entrante; revisión externa3.4 y checkpoint manual3.5 siguen obligatorios y pendientes
+
+#### Scenario: futura afirmación de compatibilidad física o release
+- **WHEN** se pretende afirmar aceptación real-device/release o evaluar otra feature
+- **THEN** la excepción de este hito no satisface pruebas físicas: se exige la validación real pendiente y los demás requisitos pertinentes, sin inferir aceptación por emulación
 
 ### Requirement: evidencia proporcional y cierre independiente
 El flujo MUST conservar validación relevante, revisión externa del diff real, corrección de bloqueantes y commit/push manual para A1 y A2 antes de continuar. A3 MUST completar validación y regresión final antes de UN evento externo que examine tanto el diff real A3 desde el checkpoint A2 como el diff real completo desde f234faa. Tras corregir bloqueantes, revalidar lo pertinente y obtener aprobación externa de ambas coberturas y aceptación de residuales, MUST realizarse UN checkpoint final manual, sin checkpoint A3 intermedio ni segunda revisión completa rutinaria. Archive, revisión externa del archive, checkpoint manual de archive e integración a main MUST ser posteriores y separados. MUST informar resueltos/residuales, archivos, scripts/lockfile, compatibilidad, comandos/resultados/límites y ambos baselines externos. MUST conservar datos, SQLite v5, backups v6/import histórico, providers y gates sin activar arte MangaUpdates.

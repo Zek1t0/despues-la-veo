@@ -42,7 +42,7 @@ $output = Join-Path $env:TEMP ('dlv-partial-' + [guid]::NewGuid().ToString('N'))
 
 ProtectPersonal es el default: package.json no se exporta y el bundle se declara PARTIAL/incomplete. No sirve para completar la revisión de scripts. Las exclusiones se registran por regla/motivo, con nombres privados redactados. No se registra contenido ni hashes de secretos.
 
-Después del checkpoint MANUAL A1, se puede usar Incorporated; requiere el commit exacto no-merge cuya diferencia de package.json respecto de su padre sea solo la incorporación de scripts aprobada. Debe ser ancestro de HEAD y descendiente del baseline de revisión. La política permite revisar cambios posteriores de dependencias, no los autoriza:
+Después del checkpoint MANUAL A1, se puede usar Incorporated; requiere el commit exacto no-merge cuya diferencia de package.json respecto de su padre sea solo la incorporación de scripts aprobada. Checkpoint y baseline deben ser ancestros de HEAD. Para Section, baseline y ScriptsCheckpoint deben pertenecer a una misma cadena de ascendencia: baseline anterior, igual o posterior al checkpoint son válidos; refs ajenas/divergentes se rechazan incluso si después fueron reunidas mediante merge. El checkpoint debe incorporar realmente los scripts (no un commit posterior sin ese cambio), y HEAD/índice/working tree conservan los scripts incorporados. La política permite revisar cambios posteriores de dependencias, no los autoriza:
 
 ```powershell
 $scriptsCheckpoint = Read-Host 'Hash del commit A1 revisado y creado manualmente'
@@ -53,7 +53,7 @@ $output = Join-Path $env:TEMP ('dlv-complete-' + [guid]::NewGuid().ToString('N')
   -PackageJsonPolicy Incorporated -ScriptsCheckpoint $scriptsCheckpoint
 ```
 
-Complete es el límite completo de este change: requiere baseline integrado f234faa, Incorporated válido y ninguna omisión de paths cambiados. Si hay omisiones, falla: usar Section para un bundle parcial y resolver el límite con el reviewer. No excluir package.json/lockfile para aparentar una revisión completa. Actualmente no existe aún un checkpoint A1; no fabricar su hash.
+Complete es el límite completo de este change: requiere EXACTAMENTE baseline integrado f234faaa2955ee2ce5ed2da95bd2a69c026a482f anterior al checkpoint, Incorporated válido y ninguna omisión de paths cambiados. Rechaza cualquier -ExcludePath explícito, incluso para un archivo sin cambios, y toda exclusión sensible de candidatos. Si hay omisiones, falla: usar Section para un bundle parcial y resolver el límite con el reviewer. No excluir package.json/lockfile para aparentar una revisión completa. Checkpoint A1 real: a793d459c841814291c1e3c0887c8bf7b77ecc10; baseline A3 real:197f4a3697bcf971cdbeb3250c7106ac9bc46e7b, posterior a A1. Estos hashes se verifican, no se fabrican.
 
 ## Contenido y límites
 
@@ -125,3 +125,25 @@ Resultado: exit 0, **63 assertions aprobadas, 20 invocaciones del helper, cero f
 Validaciones repetidas: `npx --no-install tsc --noEmit` exit 0; `openspec validate improve-dependency-security-and-review-workflow --strict` exit 0; parser PowerShell sobre ambos .ps1 sin errores; `git diff --check` exit 0 y comprobación de whitespace de los tres archivos editados sin errores. Solo se editaron New-ReviewBundle.ps1, Test-ReviewBundle.ps1 y este README durante la corrección. package.json y package-lock.json conservaron los hashes anteriores; tasks.md no se editó, 1.1–1.4 siguen checked y 1.5 pendiente. Sin A2, staging, commits ni ejecución del helper sobre el proyecto real.
 
 Límites vigentes: identidad exacta de versiones protegidas tracked en los estados seleccionados, no búsqueda de secretos en todo el historial. **Copias modificadas y copias de fuentes secretas ignoradas/untracked pueden escapar**: requieren exclusiones declaradas y revisión manual del bundle. Siguen vigentes las limitaciones de junctions, Complete positivo aún sin checkpoint A1 y snapshot no transaccional documentadas arriba.
+
+## Corrección A3 — baseline Section posterior a ScriptsCheckpoint
+
+La causa confirmada fue la exigencia unilateral baseline→ScriptsCheckpoint de Incorporated. Con A1=a793d459c841814291c1e3c0887c8bf7b77ecc10 y baseline A3=197f4a3697bcf971cdbeb3250c7106ac9bc46e7b, Git confirma A1→A3 (exit0), mientras la dirección anterior A3→A1 devuelve1. Esto explica el fallo durante Incorporated checkpoint validation; no se da por hecho un bundle A3 exitoso.
+
+Section ahora verifica que baseline y ScriptsCheckpoint sean ancestros de HEAD y comparables entre sí mediante merge-base: admite baseline anterior, igual o posterior a A1. Rechaza refs ajenas, inválidas y ramas divergentes, incluso cuando ambas ya son ancestros de un HEAD merge. ScriptsCheckpoint sigue siendo no-merge, debe incorporar realmente solo los scripts aprobados respecto de su padre, y los scripts de HEAD/índice/working tree deben conservarse; cambios posteriores de dependencias continúan revisables, sin aprobación implícita.
+
+Complete conserva el baseline integrado EXACTO f234faaa2955ee2ce5ed2da95bd2a69c026a482f anterior al checkpoint, Incorporated válido y cobertura de todos los cambios permitidos. Rechaza exclusiones sensibles de candidatos y cualquier -ExcludePath explícito, también de un path sin cambios. No se cambian filtros sensibles, protección de renames/identidades, snapshots concurrentes, escritura binaria ni aislamiento Git.
+
+La suite agrega historia sintética A1→A2→A3 en otra fixture externa, positivos Section antes/igual/después de A1, negativos unrelated/diverged/merged-sibling, checkpoints inexistentes/blob/root/unrelated/merge/no incorporación y scripts no aprobados en checkpoint/HEAD/índice/working tree. Cada invocación conserva las comprobaciones HEAD/índice/config/status/bytes originales. Complete sintético positivo comprueba scripts/dependencias/resultado final y nuevo binario Unicode; negativos verifican baseline erróneo, exclusión explícita cambiada/sin cambios y secreto nuevo. El resto de la suite original, incluida identidad de fuente sensible tracked sin cambios, permanece.
+
+**Límite de Complete positivo:** una fixture sintética no puede tener el hash real f234faa. Solo para esas pruebas, el runner crea una copia del helper FUERA del repo y sustituye ÚNICAMENTE el literal fijo por el hash raíz sintético. Se comprueba que existe exactamente un literal de producción y que el helper original queda byte-idéntico. El helper de producción rechaza ese baseline sintético; no hay flag/bypass/configuración de producción para cambiar el baseline. El resultado prueba el flujo Complete en fixture, NO constituye un bundle real Complete ni una aprobación de A3. Los resultados anteriores que decían que no había prueba positiva son históricos y quedan complementados por esta prueba sintética, sin afirmar una ejecución real.
+
+Resultado nuevo2026-11-12: exit0, **112 checks passed,0 failed;2 escenarios SKIP** por permisos al crear enlaces filesystem input/output. **41 invocaciones** del helper en fixtures externos. El symlink del índice, binarios reconstruidos, Unicode, capas/cancelaciones, secretos (incluida fuente tracked sin cambios), políticas package, divergencias y snapshot concurrente pasaron. PowerShell7.6.9/Git2.51.0.windows.1; parser de ambos scripts sin errores, OpenSpec strict y git diff --check exit0. TypeScript externo sobre la copia A3 con lock aprobado, sin instalaciones, exit0. Ninguna suite de aplicación costosa se repitió ni se modificaron dependencias.
+
+Evidencia: `C:/Users/elias/.codex/visualizations/2026/11/11/01a1cd0c-0601-72b0-b90c-2e3de09dc1bb/review-ancestry-20261112-01` (result.json y41 logs). Comando real desde raíz:
+
+```powershell
+pwsh -NoProfile -File docs/testing/maintenance-stability/Test-ReviewBundle.ps1 -EvidenceDirectory C:/Users/elias/.codex/visualizations/2026/11/11/01a1cd0c-0601-72b0-b90c-2e3de09dc1bb/review-ancestry-20261112-01
+```
+
+No se generaron bundles del proyecto real. Complete positivo usa exclusivamente el literal sintético de la copia externa documentada; no se afirma un Complete/A3 real exitoso. Se preservan riesgos de copias modificadas/secretos ignored-untracked, exclusiones declaradas e inspección manual.3.4/3.5 permanecen unchecked; sin staging/commit/push/archive/merge.
