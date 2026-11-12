@@ -78,6 +78,42 @@ Antes de cambiar dependencias, el flujo MUST presentar advisories completos vige
 - **THEN** se documentan condición de explotación, efecto, alternativas descartadas y revisión futura, sin inventar un parche ni exigir una migración mayor para cerrar
 - **AND** el cierre requiere aceptación explícita del riesgo residual por el usuario
 
+### Requirement: ampliación A2 con decisiones independientes y evidencia específica
+La ampliación A2 MUST conservar la aprobación/evidencia L1+L2 y, hasta aprobación explícita, tratar los doce nodos Babel/Browserslist exactos de design §6.1 y remediation-matrix G.12 como candidatos sin mutación autorizada. MUST obtener decisiones explícitas independientes por grupo, incluidos paths/versiones y las implicaciones de soporte Web de Browserslist. MUST preservar los25 nodos L1/L2, package.json, padres ajenos al cierre y familias Expo/RN/Router/Metro, sin overrides ni nuevas directas. MUST documentar cualquier reapertura de tareas sin borrar trabajo completado; el flujo conserva tres secciones/quince tareas, 2.5 pendiente y A3 sin iniciar hasta su checkpoint autorizado.
+
+El grupo Babel MUST limitarse a core7.29.6/generator7.29.6/parser7.29.3/helpers7.29.2/types7.29.0/traverse7.29.0 en sus paths node_modules/@babel/<nombre> existentes y code-frame7.29.0 SOLO en node_modules/@babel/core/node_modules/@babel/code-frame y node_modules/@babel/traverse/node_modules/@babel/code-frame. El grupo Browserslist MUST limitarse a browserslist4.28.7/caniuse-lite1.0.30001806/electron-to-chromium1.5.393/node-releases2.0.51 en sus paths node_modules/<nombre> existentes. MUST NOT añadir/eliminar/mover nodos ni actualizar otras copias por inferencia.
+
+#### Scenario: un grupo adicional aprobado y otro pendiente
+- **WHEN** el usuario aprueba Babel o Browserslist y no aprueba el otro
+- **THEN** solo el grupo exacto aprobado puede avanzar en APPLY tras validar en copias externas limpias
+- **AND** la aprobación L1/L2 sigue vigente sin extenderse a candidatos, padres/overrides diferidos ni aceptación de residuales
+
+#### Scenario: verificación de Babel adicional
+- **WHEN** se implementa el grupo Babel autorizado
+- **THEN** se demuestran las ocho rutas exactas con metadata auténtica, grafo/peers/engines válidos, npm ci aislado reproducible, TypeScript, TSX/Flow/presets y source maps sintéticos, Metro/Web y regresiones pertinentes
+- **AND** A2 registra checks Android/Hermes de build/bundle disponibles y sus límites; aceptación física pertinente se exige en A3 antes del cierre final y no se sustituye por Node/Web, export ni semver
+
+#### Scenario: aceptación de cambios en navegadores
+- **WHEN** se propone o valida Browserslist y sus tres paquetes de datos
+- **THEN** se comparan queries y targets efectivos antes/después, se documentan listas completas de versiones añadidas/retiradas y se obtiene aceptación explícita del soporte resultante
+- **AND** se preservan baseline-browser-mapping2.11.0 y update-browserslist-db1.2.3 y se verifican npm ci reproducible, metadata/grafo, export/smoke Web-CSS y navegación/SQLite Web según impacto
+- **AND** un resultado diferente del presentado para aprobación exige nueva decisión antes de incorporarlo; targets cambiados no se aceptan automáticamente
+
+#### Scenario: evidencia incompleta o grupo diferido
+- **WHEN** falta aprobación, reproducibilidad o una prueba material requerida, o se rechaza/difiere un grupo
+- **THEN** no se afirma que ese grupo fue implementado/validado y se conserva su estado y residual explícitos
+- **AND** no se atribuyen pruebas históricas L1/L2 ni audits hipotéticos de Explore como pruebas de las nuevas versiones
+
+#### Scenario: aceptación automatizada A2 y aceptación final A3
+- **WHEN** A2 pasa los checks automatizados/aislados disponibles sin bloquear requisitos materiales
+- **THEN** se registran las versiones/entornos efectivamente probados y los checks manuales/físicos no ejecutados como pendientes de A3, sin declararlos pasados
+- **AND** un requisito automatizado bloqueante pendiente o regresión material sigue impidiendo completar el criterio afectado hasta satisfacerse o resolverse explícitamente; no se acepta riesgo residual automáticamente
+
+#### Scenario: decoder y alternativas fuera de alcance
+- **WHEN** se revisan residuales antes de2.5
+- **THEN** se documenta que el fork Router6 observado usa URL.searchParams y seis entradas sintéticas cortas no invocaron el decoder, sin declarar inalcanzabilidad universal ni aceptar el riesgo
+- **AND** config-plugins/xcode y deps relacionadas, retirada uuid, override decoder, sustituciones forzadas glob/minimatch/PostCSS/image-size/deepmerge y migraciones mayores siguen evaluadas por separado o diferidas, sin implementación autorizada
+
 ### Requirement: evidencia proporcional y cierre independiente
 El flujo MUST conservar validación relevante, revisión externa del diff real, corrección de bloqueantes y commit/push manual para A1 y A2 antes de continuar. A3 MUST completar validación y regresión final antes de UN evento externo que examine tanto el diff real A3 desde el checkpoint A2 como el diff real completo desde f234faa. Tras corregir bloqueantes, revalidar lo pertinente y obtener aprobación externa de ambas coberturas y aceptación de residuales, MUST realizarse UN checkpoint final manual, sin checkpoint A3 intermedio ni segunda revisión completa rutinaria. Archive, revisión externa del archive, checkpoint manual de archive e integración a main MUST ser posteriores y separados. MUST informar resueltos/residuales, archivos, scripts/lockfile, compatibilidad, comandos/resultados/límites y ambos baselines externos. MUST conservar datos, SQLite v5, backups v6/import histórico, providers y gates sin activar arte MangaUpdates.
 

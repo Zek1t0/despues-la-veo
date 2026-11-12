@@ -2,6 +2,8 @@
 
 Ver proposal.md para motivación. Baseline integrado f234faaa2955ee2ce5ed2da95bd2a69c026a482f; rama observada feat/maintenance-stability. Solo package.json estaba modificado: android/ios pasaron de expo start --android/--ios a expo run:android/run:ios. Sin staged ni untracked previos. Expo 54.0.32, RN 0.81.5, Router 6.0.22, React 19.1.0; lockfile v3. Windows, PowerShell 7.6.9, Node 22.18.0 y npm 10.9.3 fueron observados en Explore. El inventario inicial 37 es evidencia fechada, no promesa del resultado futuro.
 
+Estado al ampliar la especificación (2026-11-12): HEAD1131ddefeac97a7f3fd88735cccf320f2600c5d2, ScriptsCheckpoint A1 a793d459c841814291c1e3c0887c8bf7b77ecc10. A1 completa; L1+L2 aplicados/validados en25 nodos, sin checkpoint A2; audit23 entradas/15 GHSA/0 críticas. Los criterios §6.1 reabrieron2.2–2.4 sin revocar aprobación/evidencia L1/L2. Estado posterior APPLY: G.13 registra aprobación adicional y G.14 su validación;37 nodos totales, audit21 entradas/12 GHSA/0 críticas,2.2–2.4 completas. HEAD/branch no cambiaron;2.5 y A3 siguen pendientes. El contexto original de Explore y los snapshots previos no describen como actuales los estados de ejecución posteriores.
+
 Se revisaron catálogo canónico, provider-neutral-media-review, library-backup-integrity, second-provider-discovery, configuración OpenSpec y propuesta/diseño/tasks archivados de enable-mangaupdates-cover-images. La revisión sintética de media no es revisión de Git; se introduce una sola capacidad de desarrollo nueva. El workflow anterior exige revisión externa y checkpoints manuales. No hay scripts de test agregados en package.json; existen 52 runners cjs. La regresión histórica pasó 50 suites deterministas, excluyendo live y browser; no es evidencia de nueva ejecución. expanded-media-domain/section-5-verification.cjs escribe TEST-section5-review-v6.json: no ejecutarlo en el checkout personal bajo una promesa de solo lectura.
 
 ## Goals / Non-Goals
@@ -90,11 +92,50 @@ Antes de editar dependencias, refrescar npm audit --json y consultar advisories 
 | Verificación | Tests exactos por cambio; build/startup, navegación, nativo si corresponde |
 | Decisión | Aprobar/rechazar/diferir por paquete y usuario; residual tras aplicar y motivo de diferimiento |
 
-shell-quote instalado es 1.8.3 vía react-native→react-devtools-core. Reconsultar el set COMPLETO aplicable, tanto al instalado como a cada candidato, incluyendo advisories posteriores a GHSA-w7jw-789q-3m8p y GHSA-395f-4hp3-45gv; no asumir que el 1.9.0 mencionado en Explore basta ni seleccionarlo desde esos dos advisories. Si no hay evidencia completa registrar incertidumbre y no aprobar target por descarte. Consultas primarias de referencia: https://github.com/ljharb/shell-quote/security/advisories y https://github.com/advisories?query=ecosystem%3Anpm+shell-quote. Este Propose no selecciona target seguro; búsquedas no exhaustivas no son certificación.
+En el inventario original shell-quote era1.8.3 vía react-native→react-devtools-core; L1 ya incorporó1.11.0 con evidencia en la matriz. Reconsultar el set COMPLETO aplicable, tanto al instalado como a cada candidato, incluyendo advisories posteriores a GHSA-w7jw-789q-3m8p y GHSA-395f-4hp3-45gv; no asumir que1.9.0 basta. Si no hay evidencia completa registrar incertidumbre. Consultas primarias: https://github.com/ljharb/shell-quote/security/advisories y https://github.com/advisories?query=ecosystem%3Anpm+shell-quote. Búsquedas no exhaustivas no son certificación.
 
 Revalidar ausencia de fix compatible de deepmerge (https://github.com/advisories/GHSA-gcqx-w48m-w2h4), no inferir parche de fixAvailable del padre. Priorizar hojas que satisfagan rangos; considerar padres compatibles; escaladas como decoder ^0.2.2→0.5.x, image-size ^1→2, PostCSS ~8.4→8.5, glob13→14, minimatch9/10→11 y uuid7→11 NO están autorizadas. Expo58/Router58 propuestos por npm no son mantenimiento compatible aprobado.
 
 No override por defecto. Una excepción debe indicar paquete/versión/ruta, razón, alternativas, API/semver y plan de verificación, y obtener aprobación específica antes de tocar archivos. Gate: presentar matriz completa al usuario, esperar aprobación identificable del subconjunto; aplicar solo ese subconjunto. Si la resolución introduce nuevos cambios fuera de aprobación, parar y renovar matriz/aprobación. No npm audit fix (incluido --force) automático ni actualizaciones masivas.
+
+### 6.1 Extensión A2: dos candidatos y gate adicional independiente
+
+Fuente: informe Explore externo `C:/Users/elias/.codex/visualizations/2026/11/11/01a1cd0c-0601-72b0-b90c-2e3de09dc1bb/a2-extra-explore-20261112/report.md`, closures.json y browser-targets.json; resumen durable y evidencia de constraints/advisories en remediation-matrix.md G.12. En ese snapshot ninguna versión adicional estaba aplicada ni autorizada; aprobación/ejecución posteriores se registran en G.13/G.14. La tabla conserva los valores de entrada y targets exactos del gate. No se crea sección A4 ni tareas extra.
+
+| Grupo | Path existente exacto | Actual locked | Candidato |
+| --- | --- | --- | --- |
+| Babel | node_modules/@babel/core | 7.28.6 | 7.29.6 |
+| Babel | node_modules/@babel/generator | 7.28.6 | 7.29.6 |
+| Babel | node_modules/@babel/parser | 7.28.6 | 7.29.3 |
+| Babel | node_modules/@babel/helpers | 7.28.6 | 7.29.2 |
+| Babel | node_modules/@babel/types | 7.28.6 | 7.29.0 |
+| Babel | node_modules/@babel/traverse | 7.28.6 | 7.29.0 |
+| Babel | node_modules/@babel/core/node_modules/@babel/code-frame | 7.28.6 | 7.29.0 |
+| Babel | node_modules/@babel/traverse/node_modules/@babel/code-frame | 7.28.6 | 7.29.0 |
+| Browserslist | node_modules/browserslist | 4.28.1 | 4.28.7 |
+| Browserslist | node_modules/caniuse-lite | 1.0.30001766 | 1.0.30001806 |
+| Browserslist | node_modules/electron-to-chromium | 1.5.283 | 1.5.393 |
+| Browserslist | node_modules/node-releases | 2.0.27 | 2.0.51 |
+
+Mantener baseline-browser-mapping2.11.0 y update-browserslist-db1.2.3; no otras copias de code-frame ni helpers adicionales. Los demás hijos ya satisfacen los manifests propuestos. No nodos añadidos/borrados/movidos, nuevas directas ni cambios de package.json; mantener los25 L1+L2 y padres de los doce nodos, excepto los cambios internos explícitamente enumerados del propio grupo. Expo54/RN0.81/Router6 y familias Metro permanecen byte/versión idénticas. No se aprueban upgrades de padres externos al cierre ni overrides.
+
+**Gate 2.2 ampliado:** presentar aprobar/rechazar/diferir para Babel y para Browserslist de forma independiente, con los paths/versiones de la tabla y compatibilidad Web resultante. La aprobación L1/L2 no se solicita otra vez ni se extiende por inferencia. Aprobar uno no permite mutar el otro. Para Browserslist, anexar listas completas antes/después y targets efectivos CSS, incluyendo cada versión retirada; aceptar expresamente el soporte resultante. Si el nuevo cálculo difiere del mostrado para aprobación, detenerse y renovar esa decisión antes de trasladar el lockfile al checkout. Esta actualización documental NO completa el gate ni acepta residuales. Si un grupo se rechaza/difiere, registrar decisión y su residual; no obligar a implementarlo para cerrar A2.
+
+Tras autorización específica, un grupo por vez: partir del lock L1/L2 actual en copia limpia externa sin secretos/datos/perfiles personales. Verificar versiones exactas/rutas, metadata publicada, URLs/integrity auténticas y tarballs, todos los padres/peers/engines e inventario completo. No audit fix, --force, padres/overrides/directas ni versiones nuevas para forzar resolución. Una preparación controlada del lockfile solo externa debe preservar metadata y demostrar npm ci limpio; no falsificar integrity ni copiar un candidato no validado al repo. Detenerse ante cualquier ampliación no autorizada. Instalar exclusivamente externamente y registrar flags, lifecycle, exits y hashes antes/después. Solo trasladar lockfile tras checks del subconjunto realmente aprobado.
+
+**Babel, 2.3/2.4:** npm ci aislado reproducible y diff de ocho rutas; TypeScript, Expo public config, TSX/JSX/Flow (incluidos presets Expo/RN y transformaciones pertinentes), source maps inline/externos y fixtures sintéticas de lectura permitida/rechazada fuera del fixture; Metro/Web export con assets/worker/WASM; suites relevantes de navegación/providers/SQLite/backup. Evaluar compatibilidad Android/Hermes con el entorno disponible y registrar exactamente build/bundle/bytecode ejecutados y checks no disponibles. La aceptación física material se conserva en A3 antes del cierre final, especialmente por nanoid; no sustituirla por Node/Web ni confundir export Hermes con APK instalado. No completar un requisito automatizado bloqueante faltante como aprobado.
+
+**Browserslist, 2.3/2.4:** npm ci aislado reproducible, diff de cuatro rutas, comparación reproducible de queries reales/defaults y targets CSS antes/después. Explore observó Edge mínimo142→148, Safari26.1→26.3 y Samsung28→29; guardar todas las adiciones/retiros, no solo ejemplos. Cambio de datos puede alterar CSS/prefijos/transforms; aceptación de targets no sustituye export y smoke funcional Web/CSS. Verificar Buscar/Biblioteca/detalle/back/recarga, assets/WASM y navegación/SQLite Web según impacto con fixtures externas; documentar navegadores/versiones realmente probados. No ampliar soporte ni declararlo eliminado sin decisión explícita. Si no hay entorno para un check requerido, queda pendiente.
+
+Validación proporcional: compartir evidencia pertinente entre grupos cuando siga vigente, sin repetir suites caras por cambios solo documentales. Después del último grupo aprobado verificar combinación final y audit por advisory; tests L1/L2 y loadVirtual/audits de Explore no acreditan npm ci/runtime de los candidatos. Mantener V0/T1/T2/T3/T4 de la matriz. 2.4 incluye compatibilidad del nuevo resultado y riesgos/limitaciones; no asumir cierre por cero errores semver.
+
+**Residuales y diferidos:** continúan fuera config-plugins54.0.6/xcode4, plist/json-file nativos relacionados y retirada uuid; su análisis es separado, no aprobación. También decoder directo, sustituciones forzadas de glob/minimatch/PostCSS/image-size/deepmerge y migraciones mayores. Router6.0.22 configura su fork getStateFromPath con URL.searchParams; seis inputs sintéticos cortos dieron cero llamadas instrumentadas al decoder. Upstream React Navigation mantiene query-string.parse: la observación reduce exposición demostrada, no prueba inalcanzabilidad universal ni aceptación del residual. No se añade mitigación de app en este cambio de especificación.
+
+Snapshot previo a APPLY adicional: audit23 entradas/15 GHSA/0 críticas. El candidato Explore no instalado Babel+Browserslist dio21 entradas/12 GHSA, sin nuevos; no acredita implementación ni garantiza el resultado futuro. La aprobación posterior se registra en matriz G.13 y los resultados reales en G.14. Quedan decoder, deepmerge, glob, minimatch, PostCSS, image-size y uuid más propagaciones; solicitar aceptación explícita de residuales reales en2.5.
+
+### 6.2 Límite de aceptación A2/A3 confirmado por el usuario
+
+A2 verifica compatibilidad de dependencias/build con pruebas automatizadas y aisladas disponibles, incluyendo navegador real automatizado cuando sea posible. A3 realiza aceptación manual final y en dispositivo físico; su pendiente se informa, nunca se marca pasado ni se usa para afirmar soporte universal. La aceptación condicional de defaults G.12.3 autoriza solo esas diferencias si los checks disponibles no muestran regresiones o pérdida inesperada de soporte requerido. Si falta un requisito automatizado bloqueante, cambia el grafo/soporte fuera de autorización o aparece regresión material, detenerse: registrarlo no equivale a resolverlo. Documentar navegadores/versiones realmente ejecutados; no atribuir Safari/Firefox/Android/iOS a Chrome headless ni una suite de stubs a navegador real. La aceptación manual/Android de A3 y la aceptación residual/revisión/checkpoint2.5 continúan pendientes hasta sus acciones propias; esta aclaración no inicia A3.
 
 ### 7. Validación proporcional, independiente de exportación
 
@@ -128,6 +169,6 @@ Sin migración de datos: SQLite 5→5 y backup 6→6 con imports históricos con
 
 ## Open Questions
 
-- Versiones exactas y advisories vigentes, residuales aceptables y posibles overrides: se resuelven en la matriz/gate A2 ya definidos, no mediante este Propose.
+- Aprobación independiente de los candidatos exactos §6.1 y soporte Web: pendiente en gate2.2, sin versiones implícitas ni overrides propuestos para implementar. Aceptación de residuales reales pendiente en2.5; son decisiones humanas obligatorias ya modeladas, no permisos inferidos de esta revisión.
 - Directorio externo elegido por el usuario y exclusiones personales adicionales: argumentos explícitos por captura, sin cambiar el contrato.
 - Alcance exacto de aceptación física Android según el subconjunto aprobado; la regla de obligatoriedad por impacto material ya está definida.
