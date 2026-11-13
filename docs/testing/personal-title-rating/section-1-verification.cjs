@@ -154,7 +154,7 @@ async function testFreshV5() {
   try {
     await evolve(fixture.db, 0);
     assert.equal(await readUserVersion(fixture.db), DATABASE_SCHEMA_VERSION);
-    assert.equal(DATABASE_SCHEMA_VERSION, 5);
+    assert.equal(DATABASE_SCHEMA_VERSION, 6);
     await verifyV5Schema(fixture.db);
     await verifyAppPreferencesTable(fixture.db);
     await verifyTitlePinsSchema(fixture.db);
@@ -255,7 +255,7 @@ async function testMigrationV2() {
     seedRealisticV2(fixture.sqlite);
 
     await evolve(fixture.db, 2);
-    assert.equal(await readUserVersion(fixture.db), 5);
+    assert.equal(await readUserVersion(fixture.db), DATABASE_SCHEMA_VERSION);
     await verifyV5Schema(fixture.db);
     await verifyAppPreferencesTable(fixture.db);
     await verifyTitlePinsSchema(fixture.db);
@@ -285,8 +285,8 @@ async function testMigrationV2() {
       "legacy-title"
     );
 
-    await evolveDatabaseSchema(fixture.db, 5);
-    assert.equal(await readUserVersion(fixture.db), 5);
+    await evolveDatabaseSchema(fixture.db, DATABASE_SCHEMA_VERSION);
+    assert.equal(await readUserVersion(fixture.db), DATABASE_SCHEMA_VERSION);
     assert.equal(
       fixture.sqlite.prepare("SELECT COUNT(*) AS count FROM saved_titles").get().count,
       1
@@ -330,7 +330,7 @@ async function testMigrationV3Rollback() {
     );
 
     await evolveDatabaseSchema(fixture.db, 2);
-    assert.equal(await readUserVersion(fixture.db), 5);
+    assert.equal(await readUserVersion(fixture.db), DATABASE_SCHEMA_VERSION);
     const columnsAfterRetry = fixture.sqlite.prepare(
       "PRAGMA table_info(saved_titles)"
     ).all();
@@ -360,7 +360,7 @@ async function testEarlierVersionsAndFutureRejection() {
         fixture.sqlite.exec("PRAGMA user_version = 1;");
       }
       await evolve(fixture.db, version);
-      assert.equal(await readUserVersion(fixture.db), 5);
+      assert.equal(await readUserVersion(fixture.db), DATABASE_SCHEMA_VERSION);
       await verifyV5Schema(fixture.db);
       await verifyTitlePinsSchema(fixture.db);
     } finally {
@@ -370,9 +370,9 @@ async function testEarlierVersionsAndFutureRejection() {
 
   const future = createDatabase("future");
   try {
-    future.sqlite.exec("PRAGMA user_version = 6;");
-    await assert.rejects(() => evolveDatabaseSchema(future.db, 6), /no soportada/i);
-    assert.equal(await readUserVersion(future.db), 6);
+    future.sqlite.exec("PRAGMA user_version = 7;");
+    await assert.rejects(() => evolveDatabaseSchema(future.db, 7), /no soportada/i);
+    assert.equal(await readUserVersion(future.db), 7);
   } finally {
     future.close();
   }
@@ -384,7 +384,7 @@ async function main() {
   await testMigrationV2();
   await testMigrationV3Rollback();
   await testEarlierVersionsAndFutureRejection();
-  console.log("Personal rating domain and SQLite v5 evolution verification passed.");
+  console.log("Personal rating domain and SQLite v6 evolution verification passed.");
 }
 
 main().catch((error) => {

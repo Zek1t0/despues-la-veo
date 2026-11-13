@@ -1,5 +1,10 @@
 # B3 — catálogo Anime preparado, activación pendiente
 
+Estado posterior, 2026-11-13: activación viva local Web/Android implementada por nueva
+decisión del usuario, release público aún cerrado. B4 anterior aceptado externamente.
+Ver development-activation-validation.md para la entrega combinada, resultados reales
+y pendientes. Las declaraciones inferiores de preparación solo sintética son históricas.
+
 Fecha de proyecto: 2026-11-12, America/Buenos_Aires. Change `add-anime-catalog-and-manual-entries`, schema `spec-driven`.
 
 ## Git y alcance
@@ -99,7 +104,7 @@ Fallos iniciales corregidos: TypeScript detectó una llamada accidental a un par
 
 Intento visual Web: Metro development TEST iniciado en 8143; IAB no pudo acceder a `http://127.0.0.1:8143` (ERR_CONNECTION_TIMED_OUT). No se obtuvo inspección visual ni aceptación runtime Web. Metro propio detenido con Ctrl+C (exit 1 por interrupción intencional). No se ejecutó BlueStacks/Android físico ni tráfico HTTP Kitsu nativo. Avisos experimentales node:sqlite, NO_COLOR, Browserslist viejo y LF/CRLF no son fallos; no se actualizó ninguna dependencia.
 
-## Checklist manual corto (pendiente B3)
+## Checklist manual histórico B3 (actualizado por reconciliación inferior)
 
 Usar exclusivamente perfil/instalación descartable. Para el entorno TEST development:
 
@@ -138,7 +143,7 @@ Get-Content -LiteralPath (Join-Path $b3ReviewDirectory 'manifest.md')
 
 Comando entregado, sin publicar bundle automáticamente. Estado final esperado: 13 archivos tracked modificados y 16 nuevos, nada staged; HEAD B2 intacto. **STOP para revisión externa B3**, sin marcar 3.5/3.6 ni avanzar B4.
 
-### Manual acceptance � B3 technical checkpoint
+### Manual acceptance — B3 technical checkpoint
 
 - Web / Kitsu TEST: PASS, confirmed by user.
 - BlueStacks: NOT TESTED successfully; application launch failed.
@@ -146,3 +151,24 @@ Comando entregado, sin publicar bundle automáticamente. Estado final esperado: 
 - Production Kitsu activation: BLOCKED pending usage eligibility.
 - External static code review: APPROVED.
 - This checkpoint covers technical preparation, not production activation.
+
+## Reconciliación del checkpoint — 2026-11-13
+
+Esta sección actualiza el estado histórico de entrega anterior, incluidos sus avisos
+STOP/no iniciar B4, limitaciones manuales y baseline B2. El usuario confirmó revisión
+externa aceptada de la preparación técnica B3 y PASS manual Web/Kitsu TEST. No se
+inspeccionaron nuevamente esos artefactos externos ni se inventan versión de navegador,
+build, origen o medidas que no fueron aportados. El checkpoint resultante es
+`da5520b8465478553587856bdc86a4a013eb666d` (`feat: prepare conditional Kitsu anime catalog`),
+verificado con git rev-parse, tracking local y git ls-remote origin en esta ejecución;
+árbol inicial limpio en feat/anime-catalog-manual-entries.
+
+BlueStacks no pudo iniciar la aplicación; el usuario difirió expresamente repetir B3.
+La investigación ambiental sigue pendiente, sin atribuir causa al emulador, Metro,
+SQLite o Kitsu. No se solicita otra aceptación B3 idéntica. Android físico permanece
+diferido al hito final de desarrollo acordado.
+
+Este checkpoint técnico aceptado autoriza B4 independiente. No habilita Kitsu:
+3.5 sigue pendiente por M/T; 3.6 conserva pendiente la decisión explícita de alcance
+antes de cerrar el catálogo activo. Ninguna plataforma productiva activa; arte omit,
+scores externos ausentes. Ver b4-validation.md para regresión actual y revisión pendiente.

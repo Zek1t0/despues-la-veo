@@ -1,4 +1,4 @@
-import { KITSU_API_BASE, canonicalAnimeId } from "./identity";
+import { KITSU_API_BASE, KITSU_DEVELOPMENT_API_BASE, canonicalAnimeId } from "./identity";
 import { KitsuError } from "./errors";
 import { parseAnimeDetail, parseAnimeSearch } from "./validation";
 
@@ -28,9 +28,12 @@ export type KitsuTiming = Readonly<{ now(): number; wait: typeof waitForKitsu }>
 export type KitsuClientOptions = Readonly<{
   /** Explicit injection only; product wrappers own real network access and its gates. */
   fetchImplementation: typeof fetch;
+  /** Explicit official endpoint for local live use; no arbitrary host or fallback. */
+  apiBase?: typeof KITSU_DEVELOPMENT_API_BASE;
   timing?: KitsuTiming; setTimer?: typeof setTimeout; clearTimer?: typeof clearTimeout;
 }>;
 export function createKitsuClient(options: KitsuClientOptions) {
+  const apiBase = options.apiBase ?? KITSU_API_BASE;
   const timing = options.timing ?? { now: Date.now, wait: waitForKitsu };
   const setTimer = options.setTimer ?? setTimeout, clearTimer = options.clearTimer ?? clearTimeout;
   let tail: Promise<unknown> = Promise.resolve(), pending = 0, nextStart = 0, blockedUntil = 0;
@@ -46,12 +49,12 @@ export function createKitsuClient(options: KitsuClientOptions) {
     const timer = setTimer(() => { timedOut = true; controller.abort(); rejectAbort(new KitsuError("timeout")); }, KITSU_REQUEST_POLICY.timeoutMs);
     const perform = async () => {
       checkKitsuCancellation(signal);
-      const response = await options.fetchImplementation(`${KITSU_API_BASE}${path}`, {
+      const response = await options.fetchImplementation(`${apiBase}${path}`, {
         method: "GET", headers: { Accept: "application/vnd.api+json" }, signal: controller.signal,
         credentials: "omit", redirect: "error",
       });
       checkKitsuCancellation(controller.signal);
-      if (response.redirected || (response.url && new URL(response.url).origin !== new URL(KITSU_API_BASE).origin)) throw new KitsuError("access-rejected");
+      if (response.redirected || (response.url && new URL(response.url).origin !== new URL(apiBase).origin)) throw new KitsuError("access-rejected");
       if (!response.ok) {
         if (response.status === 429) {
           const delay = kitsuRetryAfter(response.headers.get("Retry-After"), timing.now());

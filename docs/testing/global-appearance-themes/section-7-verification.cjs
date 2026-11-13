@@ -49,12 +49,12 @@ function testOptionsDisabledParity() {
 function testSearchBehaviorAndPreferences() {
   const lifecycle = read("src/components/search/useCategorySearch.ts");
   assert.match(search, /useCategorySearch\(/);
-  assert.match(lifecycle, /capability\.search\(query\)/);
+  assert.match(lifecycle, /capability\.search\(query, controller\.signal\)/);
   assert.match(lifecycle, /setTimeout\(\(\) => setDebounced\(query\), 350\)/);
   assert.match(lifecycle, /sameSearchRequest/);
   assert.doesNotMatch(search, /media_type|searchMulti/);
-  assert.match(search, /getViewPreference\("search\.viewMode"\)/);
-  assert.match(search, /setViewPreference\("search\.viewMode", next\)/);
+  assert.match(search, /\(bindings\?\.getViewPreference \?\? getViewPreference\)\("search\.viewMode"\)/);
+  assert.match(search, /\(bindings\?\.setViewPreference \?\? setViewPreference\)\("search\.viewMode", next\)/);
   assert.match(preferences, /"search\.viewMode": "detail"/);
   assert.doesNotMatch(search, /library\.viewMode|library\.sort|tags\.viewMode|tags\.sort/);
   assert.match(search, /viewMode === "grid"/);

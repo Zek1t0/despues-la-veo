@@ -12,14 +12,14 @@ export default function KitsuAnimeScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const router = useRouter();
   return <><Stack.Screen options={{ title: "Anime · Kitsu" }} />
-    <KitsuAnimeDetail id={id} services={{ available: kitsuAvailability(Platform.OS).productionEnabled,
+    <KitsuAnimeDetail id={id} services={{ available: kitsuAvailability(Platform.OS).enabled,
       load: (animeId, signal) => loadKitsuProductDetail(animeId, Platform.OS, signal),
       saved: async input => {
-        if (!kitsuAvailability(Platform.OS).productionEnabled) throw new KitsuError("unavailable");
+        if (!kitsuAvailability(Platform.OS).enabled) throw new KitsuError("unavailable");
         return (await getByProviderReference(input.reference))?.id ?? null;
       },
       save: input => {
-        if (!kitsuAvailability(Platform.OS).productionEnabled) return Promise.reject(new KitsuError("unavailable"));
+        if (!kitsuAvailability(Platform.OS).enabled) return Promise.reject(new KitsuError("unavailable"));
         return saveProviderTitle(input, generateManualEntryIdentity);
       },
       open: savedId => router.push({ pathname: "/title/[id]", params: { id: savedId } }), source: Linking.openURL }} />

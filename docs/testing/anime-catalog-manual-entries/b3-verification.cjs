@@ -44,7 +44,8 @@ function fixture(file = path.join(root, `${++serial}.sqlite`)) {
 const repo=require('../../../src/storage/savedTitlesRepo.ts');
 const {parseAnime}=require('../../../src/providers/kitsu/validation.ts');
 const {kitsuMaterializationInput}=require('../../../src/providers/kitsu/mapping.ts');
-const {createManualContentWithDb}=require('../../../src/storage/manualContentEntries.ts');
+const {createManualContentWithDb,editManualContentWithDb}=require('../../../src/storage/manualContentEntries.ts');
+const {deleteSavedTitleAndPinsWithDb}=require('../../../src/storage/savedTitleIntegrity.ts');
 const {setTitlePinStateWithDb}=require('../../../src/storage/titlePinsRepo.ts');
 const {matchesLibraryClassification}=require('../../../src/core/libraryView.ts');
 const {localKitsuSources}=require('../../../src/providers/kitsu/product.ts');
@@ -58,6 +59,9 @@ async function main(){
     await f.db.withTransactionAsync(()=>createManualContentWithDb(f.db,{title:input.snapshot.title,medium:'audiovisual',contentFamily:'anime',primaryFormat:'movie',year:null,overview:null},()=> 'manual-local',()=> 'manual-token',100));
     const tmdb={...input,reference:{provider:'tmdb',resourceNamespace:'movie',externalId:'77'},snapshot:{...input.snapshot,contentFamily:null,primaryFormat:'movie',voteAverage:8.5}};
     await repo.saveProviderTitle(tmdb,()=> 'tmdb-local',f.db);
+    // B4: equal external IDs and titles across every source/namespace are not identity.
+    await repo.saveProviderTitle({...tmdb,reference:{...tmdb.reference,resourceNamespace:'tv'},snapshot:{...tmdb.snapshot,primaryFormat:'tv'}},()=> 'tmdb-tv-local',f.db);
+    await repo.saveProviderTitle({...input,reference:{provider:'mangaupdates',resourceNamespace:'series',externalId:input.reference.externalId},snapshot:{...input.snapshot,medium:'comic',contentFamily:'manga',primaryFormat:null}},()=> 'mu-local',f.db);
     let generated=0;const id=await repo.saveProviderTitle(input,()=> {generated++;return 'anime-local';},f.db);assert.equal(id,'anime-local');
     const first=await repo.getSavedTitleByIdWithDb(f.db,id);
     assert.equal(first.voteAverage,null);assert.equal(first.posterUrl,null);assert.equal(first.status,'planned');assert.deepEqual(first.tags,[]);
@@ -74,7 +78,7 @@ async function main(){
     const after=await repo.getSavedTitleByIdWithDb(f.db,id);
     for(const field of ['id','createdAt','status','tags','notes','personalRating','providerReferences','manualIdentity','primaryFormat']) assert.deepEqual(after[field],before[field],field);
     assert.equal(after.title,'Updated synthetic');assert.ok(after.updatedAt>before.updatedAt);assert.equal(after.voteAverage,null);
-    assert.equal((await repo.listSavedTitlesWithDb(f.db)).length,3,'same titles do not merge');
+    assert.equal((await repo.listSavedTitlesWithDb(f.db)).length,5,'same titles and external IDs do not merge across providers/namespaces');
     assert.equal(localKitsuSources(after.providerReferences,'web')[0].label,'Datos: Kitsu');assert.equal(localKitsuSources(after.providerReferences,'web')[0].destination,null);
     assert.ok(matchesLibraryClassification(after,'anime'));assert.ok(matchesLibraryClassification({...after,primaryFormat:'movie'},'movie'));
     const appearance={status:'unavailable',reason:'pending'},data=await exportData(f.db,appearance),backup=createLibraryBackupV7(data.items,data.pins,appearance);
@@ -82,11 +86,37 @@ async function main(){
     await target.db.withTransactionAsync(()=>mergeLibraryBackupWithDb(target.db,parsed.payload,()=> 'collision-remap'));
     assert.deepEqual((await exportData(target.db,appearance)).items,data.items);assert.deepEqual((await exportData(target.db,appearance)).pins,data.pins);
     await target.db.withTransactionAsync(()=>mergeLibraryBackupWithDb(target.db,parsed.payload,()=> 'must-not-duplicate'));
-    assert.equal((await repo.listSavedTitlesWithDb(target.db)).length,3);
+    assert.equal((await repo.listSavedTitlesWithDb(target.db)).length,5);
+    // Restore the mixed library into an occupied manual ID, then edit/delete only
+    // the remapped manual. This bridges B1 remap and B2 mutations with B3 sources.
+    const occupied=fixture();
+    try {
+      await schema.evolveDatabaseSchema(occupied.db,0);
+      await occupied.db.withTransactionAsync(()=>createManualContentWithDb(occupied.db,{title:'Unrelated occupant',medium:'comic',contentFamily:null,primaryFormat:null,year:null,overview:null},()=> 'manual-local',()=> 'occupant-token',50));
+      const occupantBefore=await repo.getSavedTitleByIdWithDb(occupied.db,'manual-local');
+      for(let i=0;i<2;i++) await occupied.db.withTransactionAsync(()=>mergeLibraryBackupWithDb(occupied.db,parsed.payload,()=> 'manual-remapped'));
+      assert.equal((await repo.listSavedTitlesWithDb(occupied.db)).length,6);
+      const restored=await repo.getSavedTitleByIdWithDb(occupied.db,'manual-remapped');
+      assert.deepEqual(restored,{...await repo.getSavedTitleByIdWithDb(f.db,'manual-local'),id:'manual-remapped'});
+      const providerRows=(await repo.listSavedTitlesWithDb(occupied.db)).filter(x=>x.providerReferences.length);
+      await occupied.db.withTransactionAsync(()=>editManualContentWithDb(occupied.db,restored.id,{title:'Corrected offline',medium:'audiovisual',contentFamily:'anime',primaryFormat:'ona',year:2024,overview:'Owned correction'},200));
+      const edited=await repo.getSavedTitleByIdWithDb(occupied.db,restored.id);
+      assert.equal(edited.manualIdentity,restored.manualIdentity);assert.equal(edited.createdAt,restored.createdAt);assert.equal(edited.primaryFormat,'ona');
+      const editedData=await exportData(occupied.db,appearance);
+      const editedParsed=parseLibraryBackup(JSON.stringify(createLibraryBackupV7(editedData.items,editedData.pins,appearance)));
+      assert.equal(editedParsed.ok,true);
+      await occupied.db.withTransactionAsync(()=>mergeLibraryBackupWithDb(occupied.db,editedParsed.payload,()=>{throw Error('Reimport must resolve existing identities');}));
+      assert.deepEqual(await repo.getSavedTitleByIdWithDb(occupied.db,restored.id),edited);
+      await occupied.db.withTransactionAsync(()=>deleteSavedTitleAndPinsWithDb(occupied.db,restored.id));
+      assert.deepEqual((await repo.listSavedTitlesWithDb(occupied.db)).filter(x=>x.providerReferences.length),providerRows);
+      assert.deepEqual(await repo.getSavedTitleByIdWithDb(occupied.db,'manual-local'),occupantBefore);
+      assert.equal(occupied.sqlite.prepare('SELECT count(*) n FROM manual_entry_identities WHERE portable_id=?').get(restored.manualIdentity).n,0);
+      assert.deepEqual(occupied.sqlite.prepare('PRAGMA foreign_key_check').all(),[]);
+    } finally {occupied.close();}
     const path=f.file;f.close();reopened=fixture(path);await schema.evolveDatabaseSchema(reopened.db,6);
     assert.deepEqual(await repo.getSavedTitleByIdWithDb(reopened.db,id),after,'offline reopen preserves snapshot/personal/reference');
     assert.deepEqual(reopened.sqlite.prepare('PRAGMA foreign_key_check').all(),[]);assert.equal(network,0);
-    console.log('PASS B3 actual SQLite6: manual/TMDB/Kitsu coexistence, exact large reference, save/re-save preserving personal/classification/pins, offline reopen, v7 export/import/reimport and no network/personal DB.');
+    console.log('PASS B3/B4 actual SQLite6: manual/TMDB movie+tv/MangaUpdates/Kitsu coexistence, exact large references, save/re-save preservation, mixed v7 remap/reimport/edit/delete isolation, offline reopen and no network/personal DB.');
   }finally{if(reopened)reopened.close();else{try{f.close();}catch{}}target.close();global.fetch=oldFetch;}
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

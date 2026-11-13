@@ -77,6 +77,11 @@ function createDatabase(label) {
       PRIMARY KEY(legacy_format, legacy_provider, legacy_external_id),
       FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE
     );
+    CREATE TABLE manual_entry_identities (
+      portable_id TEXT PRIMARY KEY NOT NULL,
+      saved_title_id TEXT NOT NULL UNIQUE,
+      FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE
+    );
     CREATE TABLE title_pins (
       saved_title_id TEXT NOT NULL,
       context_type TEXT NOT NULL,

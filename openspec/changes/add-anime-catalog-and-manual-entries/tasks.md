@@ -1,4 +1,19 @@
-Estado APPLY: el usuario autorizó explícitamente B1 1.1–1.5, SQLite5→6/backup6→7, identidad portable separada, backfill limitado, preservación, imports históricos y rollback transaccional. B1 cerrado: revisión externa de dlv-b1-review.zip y dlv-b1-supplement.zip aprobada sin bloqueantes por el usuario; checkpoint manual publicado 4e99c6f75966541035a454d786b5e7beedfbe111. B2 aceptado mediante revisión externa y smoke Web/BlueStacks confirmados por el usuario; checkpoint publicado e75d813dd3e9508bb417e1b756e52fc22d5d3d08 verificado. APPLY B3 autorizado con preparación sintética si M/T siguen pendientes; B4 no iniciado. Gates externos Kitsu M/A y aceptación T mantienen los requisitos de design.md D4 y no se sustituyen con aprobación del usuario. M pendiente no bloquea B1/B2. BlueStacks solo satisface un hito de desarrollo con aceptación explícita para ese hito; release físico sigue separado (design, Validation and section boundaries).
+Estado vigente posterior — 2026-11-13: **22/24 tareas completas**. Desarrollo local vivo
+Web/Android autorizado e implementado en 3.7; release público cerrado por M/T pendientes.
+Búsqueda real cowboy bebop y navegación al detalle en Chrome aceptadas por el usuario.
+Revisión combinada del bundle dlv-b4-kitsu-dev-review-9a186a5050744fdfb04ec3e2989c75f8
+aprobada sin bloqueantes de código (USER-REPORTED); el revisor no reejecutó las 56 suites.
+3.6 completa por revisión/checkpoint técnico B3 y decisión explícita de alcance local con
+release diferido; 4.5 completa por entrega/revisión externa registradas. Checkpoint Git
+nuevo todavía pendiente de revisión manual. 3.5 y 4.4 siguen pendientes con límites en
+docs/testing/anime-catalog-manual-entries/development-activation-validation.md.
+
+Decisión de producto: priorizar funcionalidades completas y gratuitas; aceptar posibles
+cambios de proveedor o reimplementaciones futuras y separar experimentación local de
+requisitos de distribución pública. No autoriza expansión técnica, enriquecimiento de
+metadata, arte, scores ni release. No se crean tareas nuevas para esas posibilidades.
+
+Historial APPLY: el usuario autorizó explícitamente B1 1.1–1.5, SQLite5→6/backup6→7, identidad portable separada, backfill limitado, preservación, imports históricos y rollback transaccional. B1 cerrado: revisión externa de dlv-b1-review.zip y dlv-b1-supplement.zip aprobada sin bloqueantes por el usuario; checkpoint manual publicado 4e99c6f75966541035a454d786b5e7beedfbe111. B2 aceptado mediante revisión externa y smoke Web/BlueStacks confirmados por el usuario; checkpoint publicado e75d813dd3e9508bb417e1b756e52fc22d5d3d08 verificado. APPLY B3 autorizado con preparación sintética si M/T siguen pendientes; B3 preparación técnica y revisión externa aceptadas por el usuario; checkpoint publicado da5520b8465478553587856bdc86a4a013eb666d verificado el 2026-11-13. Web Kitsu TEST aceptado (USER-REPORTED). BlueStacks no logró iniciar la app; repetición B3 diferida explícitamente, causa sin determinar. APPLY B4 independiente autorizado sin exigir 3.5. Gates externos Kitsu M/A y aceptación T mantienen los requisitos de design.md D4 y no se sustituyen con aprobación del usuario. M pendiente no bloquea B1/B2 ni regresión B4 independiente. BlueStacks solo satisface un hito de desarrollo con aceptación explícita para ese hito; release físico sigue separado (design, Validation and section boundaries).
 
 Orden B1 → B2 → B3 → B4; una tarea de implementación a la vez. Al terminar cada sección: sus comprobaciones, revisión del diff real y un checkpoint manual para continuar; no checkpoints por cada detalle menor ni commits automáticos. TypeScript sin emisión por sección. Pruebas de storage usan fixtures aislados, nunca datos personales. Package.json/lock y dependencias fuera de alcance.
 
@@ -21,17 +36,38 @@ Orden B1 → B2 → B3 → B4; una tarea de implementación a la vez. Al termina
 
 ## 3. B3 — Catálogo anime Kitsu condicional
 
+Actualización de alcance autorizada 2026-11-13: desarrollo local vivo Web/Android habilitado
+sin MediaReview; M/T y 3.5 siguen siendo requisitos de release público. B4 previo aceptado
+externamente (USER-REPORTED), preservado. La revisión combinada posterior fue aprobada;
+registro vigente en el encabezado. No se hereda aceptación Android ni de producción.
+
 - [x] 3.1 Actualizar evaluación oficial de endpoints/host/auth/cuotas/uso/retención/backups/atribución y registrar resultado del gate M. Separar evidencia técnica y contractual y mantener arte omit. Si M sigue incierto, permitir solo preparación sintética autorizada y dejar activación pendiente; no contactar terceros ni solicitar credenciales personales ni afirmar autorización por acceso público.
 - [x] 3.2 Preparar cliente/transporte/validación/identidad/mapping Kitsu con inyección sintética, sin SDK/dependencias y producto cerrado por defecto. Verificar search/detail normalizados, seis subtipos+unknown, IDs grandes/mismatch/inválidos, year nullable/resumen seguro/géneros aprobados, initialTags vacío, voteAverage ausente y posterUrl null.
 - [x] 3.3 Preparar política de requests y errores Kitsu: concurrencia/espaciado/timeout/cache permitida por M, Retry-After y reintentos manuales. Verificar reloj/transporte falsos para 404/429/5xx/offline/timeout/payload inválido, espera sin bucles y cancelación; ningún gate se elude con cache o rutas directas.
 - [x] 3.4 Integrar categoría única Anime, destinos/detalle remoto/procedencia local, save/detección de guardado y errores por fuente explícita usando abstracción existente. Verificar scopes stale de query/source/category/retry/navegación, no confundir Kitsu con MangaUpdates, re-save conservando personales/clasificación, TMDB sin cambios y ausencia de auto-link por mappings o título.
 - [ ] 3.5 Solo si M está satisfecho, ejecutar T Android y T Web independientemente: runtime nativo, navegador/origen/headers reales y preflight aplicable, endpoints/redirects/payload/errores actuales sin arte. Activar metadata exclusivamente en plataformas aceptadas; comprobar rutas cerradas sin fetch y producto omit para arte. Si M/T bloquea, registrar exactamente qué falta y no marcar activación como completada ni habilitar iOS/proxy/fallback provider.
-- [ ] 3.6 Ejecutar suites B3/TypeScript y revisar diff real/checkpoint de sección. Presentar estado M/T/A y plataformas realmente activas; si B3 no puede cumplir catálogo activo, obtener decisión explícita sobre alcance diferido antes de cierre, sin dar por satisfecha tarea3.5 por tests sintéticos ni auto-crear otro change.
+- [x] 3.6 Ejecutar suites B3/TypeScript y revisar diff real/checkpoint de sección. Presentar estado M/T/A y plataformas realmente activas; si B3 no puede cumplir catálogo activo, obtener decisión explícita sobre alcance diferido antes de cierre, sin dar por satisfecha tarea3.5 por tests sintéticos ni auto-crear otro change.
+- [x] 3.7 Aplicar decisión explícita de activación viva local __DEV__ Web/Android en Buscar normal, separada de release público; fijar API io y conservar cliente B3/identidad/mapping/save/offline, TEST sin red y contratos SQLite6/backup7. Verificar gates release/iOS/unknown, transporte normal con fixtures nuevos, regresiones B3/B4, TypeScript y export Web; registrar conectividad real y límites sin cerrar M/T/Android ni alterar pruebas históricas. Evidencia: development-activation-validation.md.
+- [x] 3.8 Corregir únicamente la inyección de fetch con wrapper dinámico globalThis.fetch; ampliar la regresión para receptor global y reemplazo posterior de fetch con cliente compartido existente. Verificar fallo antes/paso después, suites B3 de contratos/UI/persistencia y TypeScript. Cliente HTTP, gates y políticas intactos; aceptación manual Web pendiente de revisión del diff. Evidencia: sección de corrección de transporte en development-activation-validation.md.
 
 ## 4. B4 — Integración y regresión final
 
-- [ ] 4.1 Ejecutar matriz real SQLite/migración/rollback e imports1–7 de design, incluyendo manual legacy/defensivo/nuevo, referencias múltiples/ausentes, colisiones/remap/reimport, conflictos, frescura/presencia/null, pins y Appearance. Verificar comparaciones de datos completos y ausencia de pérdida/sobrescritura de IDs/personales/timestamps fuera de cambios explícitos.
-- [ ] 4.2 Ejecutar recorridos cruzados manual create/edit/delete/export/import, proveedor search/detail/save/local/re-save, cards/lista/grid/tags/filtros/búsqueda y offline. Verificar coexistencia manual/TMDB/MangaUpdates/Kitsu sin equivalencia por título o ID externo y sin custom-image storage, progreso ni rating externo global.
-- [ ] 4.3 Ejecutar regresión TMDB (credenciales, search/detail, artwork, watch providers, atribución/save), MangaUpdates Android metadata/omit y gates Web-iOS, ratings/pins/Appearance y review isolation. Verificar disabled Kitsu sin red y errores/stale responses; no activar arte ni ampliar plataformas MangaUpdates.
+- [x] 4.1 Ejecutar matriz real SQLite/migración/rollback e imports1–7 de design, incluyendo manual legacy/defensivo/nuevo, referencias múltiples/ausentes, colisiones/remap/reimport, conflictos, frescura/presencia/null, pins y Appearance. Verificar comparaciones de datos completos y ausencia de pérdida/sobrescritura de IDs/personales/timestamps fuera de cambios explícitos.
+- [x] 4.2 Ejecutar recorridos cruzados manual create/edit/delete/export/import, proveedor search/detail/save/local/re-save, cards/lista/grid/tags/filtros/búsqueda y offline. Verificar coexistencia manual/TMDB/MangaUpdates/Kitsu sin equivalencia por título o ID externo y sin custom-image storage, progreso ni rating externo global.
+- [x] 4.3 Ejecutar regresión TMDB (credenciales, search/detail, artwork, watch providers, atribución/save), MangaUpdates Android metadata/omit y gates Web-iOS, ratings/pins/Appearance y review isolation. Verificar disabled Kitsu sin red y errores/stale responses; no activar arte ni ampliar plataformas MangaUpdates.
 - [ ] 4.4 Completar aceptación manual Android/Web y smoke productivo/review aislado con evidencia de runtime/dispositivo/origen y límites; TypeScript y openspec validate --strict. Confirmar regresión final de sección y revisar diff real/checkpoint sin afirmar suites no ejecutadas ni cerrar por M/T pendientes.
-- [ ] 4.5 Preparar entrega para revisión externa integral: diff, matriz de comandos/exits, conservación/rollback, decisiones pendientes, estado M/T/A y exclusiones. Registrar resultado de revisión externa antes de solicitar por separado archive → archive review → checkpoint manual → integración; no ejecutar archive/sync/merge ni Git staging/commit/push como parte de estas tareas.
+- [x] 4.5 Preparar entrega para revisión externa integral: diff, matriz de comandos/exits, conservación/rollback, decisiones pendientes, estado M/T/A y exclusiones. Registrar resultado de revisión externa antes de solicitar por separado archive → archive review → checkpoint manual → integración; no ejecutar archive/sync/merge ni Git staging/commit/push como parte de estas tareas.
+
+## Historial de preparación del checkpoint B4 — 2026-11-13
+
+El estado de este registro previo está superado por la consolidación del encabezado;
+se conserva como antecedente, sin afirmar que el nuevo checkpoint Git haya ocurrido.
+
+Ver docs/testing/anime-catalog-manual-entries/b4-validation.md para evidencia y límites.
+3.6 tiene revisión externa/checkpoint técnico aceptados; continúa pendiente únicamente
+su decisión explícita de alcance antes de cierre como catálogo activo. 3.5 no completada.
+4.4 no acredita nueva aceptación manual Android/Web ni checkpoint final; la aceptación
+B3 Web TEST existente se conserva sin extrapolarla. Android físico diferido al hito final
+acordado; investigación ambiental BlueStacks pendiente, sin repetir el test B3 diferido.
+4.5 tiene entrega preparada; resultado de revisión externa integral aún pendiente.
+No archive/sync/integración ni staging/commit/push autorizados en esta ejecución.

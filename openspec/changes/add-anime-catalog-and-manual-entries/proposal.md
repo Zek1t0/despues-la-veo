@@ -4,6 +4,21 @@ El dominio ya representa anime y sus formatos, pero no permite crear contenido m
 
 ## What Changes
 
+Decisión actualizada del usuario, 2026-11-13: habilitar API viva `https://kitsu.io/api/edge`
+solo en desarrollo local Web/Android dentro de Buscar normal, con guardado individual
+y detalle offline, sin MediaReview obligatorio. Esta autorización técnica no acredita
+derechos externos; release público sigue cerrado por M/T pendientes, arte omitido.
+Las referencias históricas siguientes a activación condicionada aplican al release.
+
+Consolidación 13/11/2026: el usuario acepta Chrome local (búsqueda real cowboy bebop y
+navegación al detalle) y la revisión externa combinada sin bloqueantes de código. Se
+priorizan funcionalidades completas y gratuitas, aceptando posibles sustituciones de
+proveedores o reimplementaciones futuras. La experimentación local queda separada de
+los requisitos de distribución pública, que siguen diferidos sin afirmar derechos
+externos. No se amplía el alcance técnico ni se inicia enriquecimiento de metadata.
+Producción/iOS, arte y puntuaciones conservan sus restricciones. Ver tasks.md y los
+informes de validación para evidencia, límites de revisión y pendientes Android/release.
+
 - B1: proponer identidad manual portable estable, distinta del ID local opaco, ProviderReference y legacyIdentity. Proponer SQLite v5 → v6 y backup v6 → v7; estas versiones y su migración requieren aprobación explícita antes de APPLY, no quedan autorizadas por crear esta propuesta.
 - B2: crear y editar manuales offline desde «Agregar manualmente» en Biblioteca, reutilizando detalle y datos personales existentes; título y medio obligatorios, familia/formato compatibles, año y resumen opcionales, estado inicial planned y cero referencias externas. Advertencia de duplicados no bloqueante, sin linking/merge ni imágenes propias.
 - B3: proponer Kitsu (kitsu.io) como candidato condicional, con una categoría Anime, mapping explícito de subtipos y uso de la abstracción actual. Activación de metadata sujeta a elegibilidad documentada y aceptación técnica por plataforma; arte tiene gate independiente y por defecto se omite. No se presupone permiso de retención, backups o redistribución por existir GET públicos.

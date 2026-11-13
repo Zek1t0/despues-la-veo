@@ -1,11 +1,16 @@
 ## Purpose
 
-Incorporar un catálogo dedicado de anime mediante Kitsu únicamente cuando su uso y cada plataforma hayan superado gates explícitos, reutilizando identidad y clasificación existentes.
+Incorporar un catálogo dedicado de anime mediante Kitsu, con uso vivo local de desarrollo autorizado y distribución pública sujeta a gates explícitos, reutilizando identidad y clasificación existentes.
 
 ## ADDED Requirements
 
 ### Requirement: activación condicionada de metadata y arte
-El sistema MUST mantener Kitsu inactivo en producción hasta documentar términos/políticas oficiales suficientemente compatibles o autorización expresa para tracker independiente, búsqueda/detalle, snapshots locales, retención y export/import/backups del uso previsto. MUST distinguir hechos técnicos, elegibilidad contractual y practicidad operativa. Acceso público, licencia de código, silencio o fixtures MUST NOT sustituir elegibilidad. La habilitación por plataforma MUST requerir además prueba real de Android o Web/CORS correspondiente. Arte MUST permanecer omitido hasta evaluación independiente de display/hotlink, redirects, cache del renderer, retención/exportación de URLs y atribución; no se redistribuyen binarios. Incertidumbre material MUST bloquear el uso afectado, sin bloquear manuales.
+El sistema MUST mantener Kitsu inactivo en builds de producción/distribución pública hasta documentar términos/políticas oficiales suficientemente compatibles o autorización externa expresa para tracker independiente, búsqueda/detalle, snapshots locales, retención y export/import/backups del uso previsto. MUST distinguir activación local de desarrollo, funcionalidad técnica verificada y elegibilidad de release. Por decisión explícita del usuario, builds locales __DEV__ Web/Android MUST permitir búsqueda/detalle vivos en https://kitsu.io/api/edge y guardado individual del snapshot mínimo vigente, sin requerir MediaReview TEST. Esta decisión MUST NOT presentarse como permiso externo de distribución o retención irrestricta. Release MUST requerir además prueba real de Android o Web/CORS correspondiente; desarrollo no validado MUST registrarse como tal. Arte MUST permanecer omitido, score Kitsu ausente, sin OAuth, scraping, descargas masivas, proxy ni fallback de host. TEST MUST conservar fixtures/transporte deterministas sin red real, incluso con desarrollo habilitado.
+
+#### Scenario: desarrollo local autorizado
+- **WHEN** se abre Buscar en un build local __DEV__ Web o Android
+- **THEN** se ofrece Anime con búsqueda/detalle vivos, guardado explícito y consulta offline del snapshot guardado, conservando identidad y personales
+- **AND** producción, iOS y plataformas desconocidas permanecen cerradas antes de fetch/guardado remoto, sin declarar M/T completados
 
 #### Scenario: metadata no resuelta
 - **WHEN** no hay evidencia suficiente sobre retención o backups
@@ -17,10 +22,10 @@ El sistema MUST mantener Kitsu inactivo en producción hasta documentar término
 
 #### Scenario: plataforma no validada
 - **WHEN** Web funciona en HTTP de escritorio pero no fue validada en navegador real
-- **THEN** no se declara Web/CORS aceptado ni se habilita por ese resultado
+- **THEN** no se declara Web/CORS aceptado ni se habilita release público por ese resultado, aunque desarrollo local esté autorizado
 
 ### Requirement: una categoría Anime y referencias explícitas
-Al superar sus gates, el sistema MUST ofrecer una categoría Anime que incluya todos los formatos admitidos y use búsqueda/detalle Kitsu específicos. MUST guardar referencia provider kitsu, namespace anime e ID decimal positivo canónico como string sin conversión numérica insegura; MUST comprobar correspondencia entre ID pedido y recibido. MUST NOT adjuntar mappings externos recibidos ni asociar obras a manuales, TMDB u otros proveedores automáticamente.
+En desarrollo local autorizado, y en release solo al superar sus gates, el sistema MUST ofrecer una categoría Anime que incluya todos los formatos admitidos y use búsqueda/detalle Kitsu específicos. MUST guardar referencia provider kitsu, namespace anime e ID decimal positivo canónico como string sin conversión numérica insegura; MUST comprobar correspondencia entre ID pedido y recibido. MUST NOT adjuntar mappings externos recibidos ni asociar obras a manuales, TMDB u otros proveedores automáticamente.
 
 #### Scenario: misma obra en dos proveedores
 - **WHEN** se guarda un resultado Kitsu cuyo título coincide con uno TMDB

@@ -5,7 +5,7 @@ import { useAppTheme } from "../../theme/AppThemeProvider";
 import { mediaClassificationLabel } from "../../core/presentationLabels";
 import type { ProviderMaterializationInput } from "../providerContracts";
 import type { KitsuAnime } from "./validation";
-import { KITSU_API_BASE, canonicalAnimeId } from "./identity";
+import { KITSU_DEVELOPMENT_API_BASE, canonicalAnimeId } from "./identity";
 import { kitsuMaterializationInput } from "./mapping";
 import { presentKitsuError } from "./errors";
 
@@ -79,7 +79,7 @@ export function KitsuAnimeDetail({ id: parameter, services }: { id: unknown; ser
           <View style={{ flex: 1, gap: 8 }}><Text accessibilityRole="header" style={{ color: theme.global.textPrimary, fontSize: 24, fontWeight: "900" }}>{snapshot.title}</Text>
             <Text style={{ color: theme.global.textSecondary }}>{mediaClassificationLabel(snapshot)} · {snapshot.year ?? "Sin año"}</Text></View></View>
         <Text style={{ color: theme.global.textSecondary }}>{snapshot.overview ?? "Sin descripción."}</Text>
-        {button("Datos: Kitsu · abrir fuente", () => { void services.source(`${KITSU_API_BASE}/anime/${id}`).catch(() => setWriteError("No pudimos abrir la fuente Kitsu.")); })}
+        {button("Datos: Kitsu · abrir fuente", () => { void services.source(`${KITSU_DEVELOPMENT_API_BASE}/anime/${id}`).catch(() => setWriteError("No pudimos abrir la fuente Kitsu.")); })}
         {button(saving ? "Guardando…" : visible.savedId ? "Actualizar guardado" : "Guardar en Biblioteca", () => { void save(); })}
         {visible.savedId && button("Abrir en Biblioteca", () => services.open(visible.savedId!))}
       </> : null}

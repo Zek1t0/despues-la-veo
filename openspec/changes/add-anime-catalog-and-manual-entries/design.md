@@ -1,3 +1,42 @@
+## Estado de ejecución actualizado — 2026-11-13
+
+Consolidación posterior: Chrome local aceptado por el usuario el 13/11/2026 para búsqueda
+real `cowboy bebop` en Buscar → Anime y navegación al detalle, después de implementar y
+revisar el wrapper dinámico de fetch. El fallo anterior queda resuelto en ese recorrido;
+no se extiende la aceptación a guardado vivo u otras plataformas/recorridos no informados.
+Revisión externa combinada `dlv-b4-kitsu-dev-review-9a186a5050744fdfb04ec3e2989c75f8`
+aprobada sin bloqueantes de código, USER-REPORTED (19 modificados/4 nuevos). El revisor
+examinó diff/pruebas nuevas, sin reejecutar las 56 suites contra el repositorio completo.
+
+Decisión explícita: priorizar funcionalidades completas y gratuitas; aceptar eventuales
+cambios de proveedor o reimplementaciones futuras. Experimentación local y distribución
+pública tienen requisitos separados. No se concede licencia externa ni se autoriza aquí
+ampliación técnica o enriquecimiento de metadata. M/T de release permanecen pendientes,
+producción/iOS cerrados, arte omit y puntuaciones intactas. Android/BlueStacks conserva
+investigación ambiental pendiente sin causa determinada; físico diferido al hito acordado.
+
+3.6 y 4.5 completas por decisión/revisión registradas; 3.5 y 4.4 pendientes. OpenSpec22/24.
+El checkpoint técnico B3 existente no equivale a un nuevo checkpoint Git: este último
+sigue pendiente de revisión manual. No archivar/integrar. Los párrafos siguientes
+conservan el historial previo y quedan actualizados por esta consolidación.
+
+Decisión posterior explícita: API Kitsu viva autorizada para desarrollo local Web/Android
+en Buscar normal, sin MediaReview. `kitsuAvailability` separa `enabled/developmentEnabled`
+de `productionEnabled=false`, con __DEV__ estricto y plataformas web/android. Release
+público, iOS y unknown permanecen cerrados. M/T de release y A no se declaran resueltos.
+B4 anterior revisado externamente y aceptado según usuario; sus cambios se preservan.
+La entrega combinada nueva y el checkpoint siguen pendientes. Ver
+docs/testing/anime-catalog-manual-entries/development-activation-validation.md.
+
+B1/B2 aceptados. Preparación B3 revisada externamente y aceptada; checkpoint Git
+`da5520b8465478553587856bdc86a4a013eb666d`, local y remoto verificados. Web Kitsu TEST
+PASS confirmado por el usuario; no equivale a T Web vivo ni a elegibilidad M.
+BlueStacks no inició la app, causa sin determinar y repetición B3 diferida explícitamente.
+Android físico diferido al hito final acordado. B4 independiente autorizado sin esperar
+3.5. Las restricciones históricas de avance inferiores describen checkpoints anteriores;
+el estado vigente está en tasks.md y b4-validation.md. Kitsu productivo permanece cerrado;
+3.5 y la decisión de alcance de 3.6 continúan pendientes.
+
 ## Context
 
 Ver proposal.md para motivación. Baseline inspeccionado: HEAD a5195c51873d117e286e0b442825eb81a046a3c9; rama ya activa feat/anime-catalog-manual-entries; árbol limpio antes del scaffold. No hay otros changes activos. Maintenance & Stability está archivado e integrado y no se reabre.
@@ -69,6 +108,19 @@ Advertencia local recomendada: comparar títulos trim, whitespace colapsado, min
 ### D4 — Kitsu como candidato, evidencia y gates
 
 El gate M no resuelto no bloquea la implementación independiente B1/B2 ni sus checkpoints. Sigue bloqueando el uso Kitsu afectado: se mantienen íntegros los requisitos contractuales M, técnicos T por plataforma y de arte A; no se activa Kitsu por completar B1/B2.
+
+Excepción de alcance autorizada posteriormente: M/T anteriores condicionan distribución
+pública. Desarrollo local __DEV__ Web/Android usa la API oficial io para search/detail
+y guardado selectivo; no implica licencia externa ni aceptación Android/Web automática.
+El wrapper real fija `KITSU_DEVELOPMENT_API_BASE=https://kitsu.io/api/edge`. El cliente
+inyectable conserva su base histórica app por defecto exclusivamente para no modificar
+contratos/fixtures B3; el wrapper real pasa io explícitamente y no tiene fallback.
+Validación de origin y redirect:error se aplican contra la base seleccionada. No cache
+ni persistencia de resultados de búsqueda. Solo snapshot seleccionado normalizado con
+título/año/resumen/clasificación/géneros aprobados y referencia completa, sin arte/score;
+SQLite6/backup7 y campos personales existentes permanecen sin cambios. TEST sigue
+inyectando un transporte que no delega a fetch. Los textos históricos de preparación
+solo sintética quedan superados por esta excepción local, no por una aprobación M.
 
 Consulta realizada durante PROPOSE, fecha de proyecto 2026-11-12:
 

@@ -1,5 +1,34 @@
 # B3 — Kitsu: evaluación de elegibilidad
 
+## Consolidación vigente — 2026-11-13
+
+USER-REPORTED: búsqueda real cowboy bebop en Buscar → Anime y navegación al detalle
+aceptadas en Chrome local después de corregir/revisar fetch. El fallo Web histórico
+descrito abajo queda resuelto en ese recorrido. Revisión externa combinada aprobada
+sin bloqueantes de código, sin reejecución independiente de las 56 suites por el revisor.
+Ver development-activation-validation.md y b4-validation.md para identificación y límites.
+
+La decisión explícita prioriza funcionalidades completas y gratuitas, acepta eventuales
+cambios de proveedor/reimplementaciones y difiere requisitos de distribución pública.
+No equivale a permiso externo ni a aceptación de release Web, Android, iOS o producción.
+M/T de release siguen pendientes; arte omit, scores intactos. No se inicia enriquecimiento
+de metadata ni cambios técnicos. Los registros inferiores son antecedentes históricos.
+
+## Decisión posterior de desarrollo local — 2026-11-13
+
+El usuario autorizó expresamente Kitsu vivo en desarrollo local Web/Android, dentro de
+Buscar normal: búsqueda/detalle API oficial `https://kitsu.io/api/edge`, guardado selectivo
+de metadata mínima y lectura local offline. No requiere TEST. Solo __DEV__ habilita esas
+plataformas; producción/release, iOS y unknown permanecen cerrados. No hay toggle de
+entorno que habilite release. Sin arte, score externo, OAuth, scraping, proxy o fallback.
+
+La aprobación del usuario es técnica/local y no una concesión externa de licencia.
+M de release (uso, retención/export/backups/atribución y cuotas) sigue sin resolver;
+T Web/Android vivo no se presume aceptado y A sigue omit. Las evaluaciones inferiores
+son evidencia histórica de preparación, superada únicamente en su restricción local
+a fixtures sintéticos. Ver development-activation-validation.md para resultados actuales,
+incluido HTTP200 io en escritorio y fallo de conexión observado en Buscar del navegador.
+
 Fecha de consulta del proyecto: 2026-11-12 (America/Buenos_Aires). Plataforma investigada: **Kitsu**, tracker de anime/manga `https://kitsu.app`, proyecto `hummingbird-me`. No es kitsu.cloud.
 
 ## Evidencia oficial
@@ -38,4 +67,4 @@ El cliente preparado usa **kitsu.app/api/edge** como endpoint candidato, no sigu
 
 **Estado productivo:** ninguna plataforma Kitsu activada, incluida iOS. Sin toggle de entorno para habilitarlo. Categoría no visible en producción; búsqueda/detalle y ruta directa se rechazan antes de fetch/cache/lectura personal/guardado. Los saved snapshots sintéticos/importados conservan detalle local offline y procedencia Kitsu, sin consulta remota automática. El entorno TEST opt-in usa registros originales, transporte inyectado que nunca llama fetch y DBs separadas; no satisface M/T/A.
 
-Se permite completar preparación aislada 3.1–3.4 según la autorización expresa del usuario. **3.5 permanece incompleta** por M/T. **3.6 permanece incompleta** por revisión externa/checkpoint y cierre de sección pendientes. No se declara catálogo activo ni B3 íntegramente cerrado; no se inicia B4.
+Se permite completar preparación aislada 3.1–3.4 según la autorización expresa del usuario. **3.5 permanece incompleta** por M/T. **3.6 permanece incompleta** por decisión de alcance/cierre de catálogo activo pendiente. Revisión externa y checkpoint técnico aceptados por el usuario; Git local/remoto `da5520b8465478553587856bdc86a4a013eb666d` verificado el 2026-11-13. B4 independiente autorizado. No se declara catálogo activo ni B3 íntegramente cerrado. Web TEST aceptado no satisface T Web vivo; BlueStacks no inició la app, repetición B3 diferida y causa ambiental por investigar. Android físico diferido al hito final acordado.

@@ -3,13 +3,13 @@ import type { ProviderSearchCapability } from "../providerContracts";
 import { kitsuAvailability } from "./availability";
 import { createKitsuClient, type KitsuClient } from "./client";
 import { KitsuError } from "./errors";
-import { assertKitsuReference, canonicalAnimeId, KITSU_API_BASE } from "./identity";
+import { assertKitsuReference, canonicalAnimeId, KITSU_DEVELOPMENT_API_BASE } from "./identity";
 import { mapKitsuSearchResult } from "./mapping";
 let shared: KitsuClient | undefined;
 function enabled(platform: string) {
-  if (!kitsuAvailability(platform).productionEnabled) throw new KitsuError("unavailable");
+  if (!kitsuAvailability(platform).enabled) throw new KitsuError("unavailable");
 }
-function client() { return shared ??= createKitsuClient({ fetchImplementation: fetch }); }
+function client() { return shared ??= createKitsuClient({ fetchImplementation: (input, init) => globalThis.fetch(input, init), apiBase: KITSU_DEVELOPMENT_API_BASE }); }
 export function createKitsuSearchCapability(injected: KitsuClient): ProviderSearchCapability {
   return { search: async (query, signal) => (await injected.searchAnime(query, 0, signal)).map(mapKitsuSearchResult) };
 }
@@ -24,8 +24,8 @@ export function localKitsuSources(references: readonly ProviderReference[], plat
     if (reference.provider !== "kitsu") return [];
     try {
       const id = assertKitsuReference(reference);
-      return [{ label: "Datos: Kitsu", sourceUrl: `${KITSU_API_BASE}/anime/${id}`, reference,
-        destination: kitsuAvailability(platform).productionEnabled ? `/kitsu/anime/${id}` as const : null }];
+      return [{ label: "Datos: Kitsu", sourceUrl: `${KITSU_DEVELOPMENT_API_BASE}/anime/${id}`, reference,
+        destination: kitsuAvailability(platform).enabled ? `/kitsu/anime/${id}` as const : null }];
     } catch { return []; }
   });
 }

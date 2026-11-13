@@ -30,7 +30,7 @@ export function productionSearchCategories(platform: string): readonly SearchCat
     switch (category.source) {
       case "tmdb": return true;
       case "mangaupdates": return mangaUpdatesAvailability(platform).productionEnabled;
-      case "kitsu": return kitsuAvailability(platform).productionEnabled;
+      case "kitsu": return kitsuAvailability(platform).enabled;
     }
   });
 }
