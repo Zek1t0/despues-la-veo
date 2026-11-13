@@ -51,6 +51,7 @@ import {
 import { getTitleDetailPinSnapshot } from "../../src/storage/titleDetailPinSnapshot";
 import { setTitlePinState } from "../../src/storage/titlePinsRepo";
 import { useAppTheme } from "../../src/theme/AppThemeProvider";
+import { isManualContentEditable } from "../../src/storage/manualContentEntries";
 
 const STATUS_VALUES: TitleStatus[] = [
   "planned",
@@ -211,6 +212,7 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
 
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState<SavedTitleWithProviderReferences | null>(null);
+  const [manualEditable, setManualEditable] = useState(false);
   const [effectivePinContext, setEffectivePinContext] = useState<PinContext | null>(null);
   const [pinnedAt, setPinnedAt] = useState<number | null>(null);
   const [pinReady, setPinReady] = useState(false);
@@ -262,7 +264,10 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
       );
       await ratingIntentQueues.current.get(savedTitleId)?.whenIdle();
       const snapshot = await getTitleDetailPinSnapshot(savedTitleId, { pinContext, tag });
+      const editable = !bindings && snapshot.item && snapshot.item.providerReferences.length === 0
+        ? await isManualContentEditable(savedTitleId) : false;
       if (generation !== loadGeneration.current) return;
+      setManualEditable(!!editable);
       setItem(snapshot.item);
       if (snapshot.item) {
         const ratingQueue = ratingIntentQueues.current.get(savedTitleId);
@@ -622,6 +627,11 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
           width: "100%",
         }}
       >
+        {!bindings && manualEditable && <Pressable accessibilityRole="button"
+          onPress={() => router.push({ pathname: "/manual-entry", params: { id: item.id } })}
+          style={{ minHeight: 44, justifyContent: "center", padding: 12, borderRadius: 12, backgroundColor: theme.global.surfaceSecondary }}>
+          <Text style={{ color: theme.global.textPrimary, fontWeight: "700" }}>Editar título</Text>
+        </Pressable>}
         {localMangaUpdatesSources(item.providerReferences, Platform.OS).map(source => (
           <View key={source.reference.externalId} style={{ gap: 8 }}>
             <Text style={{ color: theme.global.textSecondary }}>{source.label}</Text>

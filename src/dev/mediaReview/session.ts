@@ -14,6 +14,9 @@ import { VIEW_PREFERENCE_DEFAULTS, type ViewPreferenceKey, type ViewPreferenceVa
 import { DEFAULT_APPEARANCE_PREFERENCE } from "../../theme/appearancePreference";
 import type { ThemePersistence } from "../../theme/AppThemeProvider";
 import { isMediaReviewEnabled } from "./mode";
+import { getSavedTitleWithReferencesByIdWithDb, listSavedTitlesWithReferencesWithDb } from "../../storage/savedTitleStorage";
+import { createManualContentWithDb, editManualContentWithDb, isManualContentEditableWithDb } from "../../storage/manualContentEntries";
+import type { ManualContentInput } from "../../core/manualContentEntry";
 import { fixtureInput, reviewFixtures, type ReviewFixture } from "./fixtures";
 
 export type ReviewDatabase = SchemaDatabase & SavedTitlesMutationDatabase & { closeAsync(): Promise<void> };
@@ -56,6 +59,11 @@ export async function createReviewSession(options: Readonly<{
     write: async preference => { appearance = preference; },
   };
   const repository = (db: ReviewDatabase) => ({
+    get: (id: string) => { requireOpen(); return getSavedTitleWithReferencesByIdWithDb(db, id); },
+    list: () => { requireOpen(); return listSavedTitlesWithReferencesWithDb(db); },
+    eligible: (id: string) => { requireOpen(); return isManualContentEditableWithDb(db, id); },
+    save: (input: ManualContentInput, id?: string) => transaction(current => id
+      ? editManualContentWithDb(current, id, input) : createManualContentWithDb(current, input), db),
     getLibraryScreenSnapshot: () => { requireOpen(); return getLibraryScreenSnapshot(db); },
     getTitleDetailPinSnapshot: (id: string, params: Parameters<typeof getTitleDetailPinSnapshot>[1]) => {
       requireOpen(); return getTitleDetailPinSnapshot(id, params, db);

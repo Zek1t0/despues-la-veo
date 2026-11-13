@@ -101,6 +101,7 @@ Module._load = function(name, parent, main) {
   if (name === '@expo/vector-icons') return { Ionicons: 'Ionicons' };
   if (name.endsWith('AppThemeProvider')) return { useAppTheme: () => ({ theme }) };
   if (name.endsWith('savedTitlesRepo')) return repoBoundary;
+  if (name.endsWith('manualContentEntries')) return { isManualContentEditable: async id => localItems.get(id)?.manualIdentity === 'manual-test' };
   if (name.endsWith('libraryScreenSnapshot')) return { getLibraryScreenSnapshot: async () => ({ items: libraryItems, pins: [] }) };
   if (name.endsWith('titleDetailPinSnapshot')) return { getTitleDetailPinSnapshot: async id => ({ item: localItems.get(id), context: null, pinnedAt: null }) };
   if (name.endsWith('titlePinsRepo')) return { setTitlePinState: async () => { writes.push('pin'); } };
@@ -218,6 +219,7 @@ async function localScreen() {
   const screen = host(() => Local()); const c = composition();
   const render = async () => { await screen.flush(); c.set(screen.tree); return find(c.tree, 'Image'); };
   const initial = await render(); eligible(initial, a); assert.deepEqual(flatten(initial.props.style), { width: 72, height: 108, borderRadius: 12 });
+  assert.equal(nodes(c.tree).some(n => n.type === 'Pressable' && text(n).trim() === 'Editar título'),false,'provider snapshot has no manual editor');
   const snapshot = JSON.stringify([...localItems]), before = writes.length;
   initial.props.onError({ nativeEvent: { error: 'Offline without available image' } }); c.render();
   assert.equal(find(c.tree, 'Image'), undefined); assert.equal(placeholders(c.tree).length, 1);
@@ -234,6 +236,10 @@ async function localScreen() {
   localItems.set('42', saved('42', b)); focusRevision++; screen.dirty = true; await render(); eligible(find(c.tree, 'Image'), b);
   initial.props.onError(); c.render(); eligible(find(c.tree, 'Image'), b);
   localItems.set('42', saved('42', null)); focusRevision++; screen.dirty = true; await render(); assert.equal(find(c.tree, 'Image'), undefined); assert.equal(placeholders(c.tree).length, 1);
+  localItems.set('42', {...saved('42',null),providerReferences:[],manualIdentity:'manual-test'});
+  focusRevision++; screen.dirty=true; await render();
+  const manualEdit=nodes(c.tree).find(n=>n.type==='Pressable'&&text(n).trim()==='Editar título');
+  assert.ok(manualEdit);manualEdit.props.onPress();assert.deepEqual(navigation.at(-1),{pathname:'/manual-entry',params:{id:'42'}});
   screen.unmount(); c.unmount(); console.log('Local default screen: offline metadata/editing, focus refresh, URL/null and route ABA preserve saved poster/data (simulated Image).');
 }
 

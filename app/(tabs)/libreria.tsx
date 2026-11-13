@@ -613,6 +613,10 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
           width: "100%",
         }}
       >
+      {!bindings && <Pressable accessibilityRole="button" onPress={() => router.push("/manual-entry")}
+        style={{ minHeight: 44, justifyContent: "center", padding: 12, borderRadius: 12, backgroundColor: theme.global.surfaceSecondary }}>
+        <Text style={{ color: theme.global.textPrimary, fontWeight: "700" }}>Agregar manualmente</Text>
+      </Pressable>}
       {bindings || Platform.OS === "web" ? (
         <View style={{ gap: 10 }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>

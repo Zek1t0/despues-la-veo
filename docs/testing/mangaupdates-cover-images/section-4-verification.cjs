@@ -159,7 +159,7 @@ async function sqliteAndResave() {
   const productiveId = await repo.saveProviderTitle(productive,generate,db);
   assert.equal((await read(db,productiveId)).posterUrl,null);
   assert.equal(schemaSnapshot(db),schemaBefore);
-  assert.equal(db.sqlite.prepare('PRAGMA user_version').get().user_version,5);
+  assert.equal(db.sqlite.prepare('PRAGMA user_version').get().user_version,6);
   assert.equal(networkAttempts,0);
   console.log('PASS 4.1: real mapper -> serialized saveProviderTitle -> materializer -> SQLite; URL/null refresh, exact large references, no duplicates, personal/classification/pins/rating ownership and no backfill.');
   return {db,ids,oldId};
@@ -371,11 +371,11 @@ async function main() {
   await rollbackScenarios(backup);
   await historicalImports();
   for (const db of handles) {
-    assert.equal(db.sqlite.prepare('PRAGMA user_version').get().user_version,5,db.label);
+    assert.equal(db.sqlite.prepare('PRAGMA user_version').get().user_version,6,db.label);
     assert.deepEqual(db.sqlite.prepare('PRAGMA foreign_key_check').all(),[],db.label);
   }
   assert.equal(networkAttempts,0);
-  console.log(`PASS: ${handles.length} isolated real SQLite databases; user_version=5, backup=6, foreign keys valid, zero network attempts. No product code/schema/dependencies changed.`);
+  console.log(`PASS: ${handles.length} isolated real SQLite databases; user_version=6, historical backup=6, foreign keys valid, zero network attempts.`);
 }
 main().catch(error => { console.error(error); process.exitCode=1; }).finally(() => {
   for (const db of handles) db.sqlite.close();

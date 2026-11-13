@@ -123,3 +123,7 @@ Get-Content -LiteralPath (Join-Path $b1ReviewDirectory 'manifest.md')
 ```
 
 Comandos entregados; no se generó ni compartió bundle automáticamente. El helper incluye nuevos archivos permitidos sin staging. Revisar el manifiesto y el diff real con reviewer externo. **STOP: no comenzar B2 antes de completar 1.6 y el checkpoint manual.**
+
+## Cierre B1 confirmado por el usuario
+
+El usuario confirmó revisión externa de dlv-b1-review.zip y dlv-b1-supplement.zip sin bloqueantes y aprobación B1. Checkpoint manual: 4e99c6f75966541035a454d786b5e7beedfbe111, verificado como HEAD local y publicado en origin/feat/anime-catalog-manual-entries mediante git ls-remote (exit 0). Se cierra 1.6 administrativamente; no se afirma nueva aceptación manual ni inspección propia de los ZIP. Autorizado continuar B2 2.1–2.4, dejando 2.5 pendiente.

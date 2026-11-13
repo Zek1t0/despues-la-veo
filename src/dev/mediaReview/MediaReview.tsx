@@ -7,12 +7,15 @@ import { useAppTheme } from "../../theme/AppThemeProvider";
 import { mediaClassificationLabel } from "../../core/presentationLabels";
 import { fixtureDetails, fixtureSearch, reviewFixtures, reviewRefreshPairs, type ReviewFixture } from "./fixtures";
 import type { ReviewSession } from "./session";
+import { ManualEntryForm } from "../../components/ManualEntryForm";
 
 function useReviewFocusEffect(effect: () => void | (() => void)) { useEffect(effect, [effect]); }
 
 export function MediaReview({ session, onReset }: { session: ReviewSession; onReset(): Promise<void> }) {
   const { theme } = useAppTheme();
-  const [page, setPage] = useState<"discover" | "remote" | "library" | "local">("discover");
+  const [page, setPage] = useState<"discover" | "remote" | "library" | "local" | "manual">("discover");
+  const [manualDraft, setManualDraft] = useState<{ id?: string; key: number; target: "primary" | "restore" } | null>(null);
+  const [manualEligible, setManualEligible] = useState(false);
   const [target, setTarget] = useState<"primary" | "restore">("primary");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<ReviewFixture>(reviewFixtures[0]);
@@ -23,6 +26,11 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
   const [offline, setOffline] = useState(false);
   const [json, setJson] = useState<string | null>(null);
   const repository = target === "primary" ? session.source : session.restored;
+  useEffect(() => {
+    let active = true; setManualEligible(false);
+    if (page === "local" && localId) void repository.eligible(localId).then(value => { if (active) setManualEligible(value); }).catch(() => {});
+    return () => { active = false; };
+  }, [repository, page, localId, revision]);
   const navigation = useMemo(() => ({
     back: () => setPage("library"),
   }), []);
@@ -87,6 +95,9 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, padding: 8 }}>
       {button("Fixtures", () => setPage("discover"))}
       {button("Biblioteca de prueba", () => { setTarget("primary"); setPage("library"); })}
+      {button("Agregar manual TEST", () => { setManualDraft({ key: Date.now(), target }); setPage("manual"); }, !!manualDraft)}
+      {manualDraft && button("Volver al borrador TEST", () => setPage("manual"))}
+      {page === "local" && manualEligible && button("Editar manual TEST", () => { setManualDraft({ id: localId, key: Date.now(), target }); setPage("manual"); }, !!manualDraft)}
       {button("Biblioteca restaurada", () => { setTarget("restore"); setPage("library"); })}
       {button("Sembrar / resembrar corpus", () => void action(async () => { await session.seed(); return "20 fixtures guardadas por el pipeline real."; }), offline)}
       {button(offline ? "Reconectar fuente sintética" : "Simular sin red", () => setOffline(value => !value))}
@@ -99,6 +110,12 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
       {button("Reset SOLO estas DBs de revisión", () => void action(onReset))}
     </View>
     </ScrollView>
+    {manualDraft && <View style={{ flex: page === "manual" ? 1 : 0, display: page === "manual" ? "flex" : "none" }}>
+      <ManualEntryForm key={manualDraft.key} id={manualDraft.id} services={{ ...(manualDraft.target === "primary" ? session.source : session.restored),
+        inspect: id => { setTarget(manualDraft.target); setLocalId(id); setPage("local"); },
+        done: id => { setTarget(manualDraft.target); setLocalId(id); setManualDraft(null); setPage("local"); setRevision(v => v + 1); },
+        cancel: () => { setManualDraft(null); setPage("library"); } }} />
+    </View>}
     {page === "discover" && <ScrollView contentContainerStyle={{ padding: 12, gap: 10 }}>
       <TextInput accessibilityLabel="Buscar fixtures originales" value={query} onChangeText={setQuery} placeholder="Buscar corpus TEST…"
         style={{ color: theme.global.textPrimary, borderColor: theme.global.border, borderWidth: 1, padding: 12 }} />
