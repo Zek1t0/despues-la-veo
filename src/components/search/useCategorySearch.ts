@@ -62,18 +62,19 @@ export function useCategorySearch(input: Readonly<{
       ...(source === "tmdb" ? { configurationGeneration: generation } : {}),
     };
     active.current = identity;
+    const controller = new AbortController();
     let live = true;
     const isCurrent = () => live && sameSearchRequest(identity, active.current);
     setState({ identity, items: [], loading: true, error: null });
     void (async () => {
       try {
-        const items = await capability.search(query);
+        const items = await capability.search(query, controller.signal);
         if (isCurrent()) setState({ identity, items, loading: false, error: null });
       } catch (error) {
         if (isCurrent()) setState({ identity, items: [], loading: false, error });
       }
     })();
-    return () => { live = false; active.current = null; };
+    return () => { live = false; active.current = null; controller.abort(); };
   }, [query, debounced, category, source, capability, input.ready, input.retry, generation]);
 
   const scope: SearchRequestScope | null = category && source ? {

@@ -1,0 +1,92 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const Module = require('node:module');
+const { DatabaseSync } = require('node:sqlite');
+const ts = require('typescript');
+require.extensions['.ts'] = (module, filename) => module._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 }, fileName: filename,
+}).outputText, filename);
+const originalLoad = Module._load;
+Module._load = function(request, parent, main) {
+  return request === 'expo-sqlite' ? {} : originalLoad.call(this, request, parent, main);
+};
+const schema = require('../../../src/storage/databaseSchema.ts');
+const storage = require('../../../src/storage/savedTitleStorage.ts');
+const { getLibraryBackupExportDataWithDb: exportData } = require('../../../src/storage/libraryBackupExport.ts');
+const { createLibraryBackupV7 } = require('../../../src/core/libraryBackupV7.ts');
+const { parseLibraryBackup } = require('../../../src/core/libraryBackup.ts');
+const { mergeLibraryBackupWithDb } = require('../../../src/storage/libraryBackupMerge.ts');
+const dbModule = require('../../../src/storage/db.ts');
+dbModule.initDb = async () => { throw Error('Personal DB initialization forbidden in B2 fixtures'); };
+Module._load = originalLoad;
+
+// All SQLite files, WAL sidecars and JSON backups live outside the repository.
+const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dlv-b3-synthetic-'));
+let serial = 0;
+function fixture(file = path.join(root, `${++serial}.sqlite`)) {
+  const sqlite = new DatabaseSync(file);
+  sqlite.exec('PRAGMA foreign_keys=ON');
+  const params = values => values.length === 1 && Array.isArray(values[0]) ? values[0] : values;
+  const db = {
+    async execAsync(sql) { sqlite.exec(sql); },
+    async getFirstAsync(sql, ...values) { return sqlite.prepare(sql).get(...params(values)) ?? null; },
+    async getAllAsync(sql, ...values) { return sqlite.prepare(sql).all(...params(values)); },
+    async runAsync(sql, ...values) { return sqlite.prepare(sql).run(...params(values)); },
+    async withTransactionAsync(task) {
+      sqlite.exec('BEGIN');
+      try { await task(); sqlite.exec('COMMIT'); } catch (error) { sqlite.exec('ROLLBACK'); throw error; }
+    },
+  };
+  return { sqlite, db, file, close() { sqlite.close(); } };
+}
+const repo=require('../../../src/storage/savedTitlesRepo.ts');
+const {parseAnime}=require('../../../src/providers/kitsu/validation.ts');
+const {kitsuMaterializationInput}=require('../../../src/providers/kitsu/mapping.ts');
+const {createManualContentWithDb}=require('../../../src/storage/manualContentEntries.ts');
+const {setTitlePinStateWithDb}=require('../../../src/storage/titlePinsRepo.ts');
+const {matchesLibraryClassification}=require('../../../src/core/libraryView.ts');
+const {localKitsuSources}=require('../../../src/providers/kitsu/product.ts');
+const resource=(id,subtype='OVA',title='Synthetic same title')=>({id,type:'anime',attributes:{canonicalTitle:title,subtype,startDate:'2000-01-01',synopsis:'TEST owned summary',averageRating:'98',posterImage:{original:'https://invalid.test'}}});
+async function main(){
+  const f=fixture(),target=fixture();let reopened;
+  const oldFetch=global.fetch;let network=0;global.fetch=()=>{network++;throw Error('No remote access');};
+  try{
+    await schema.evolveDatabaseSchema(f.db,0);await schema.evolveDatabaseSchema(target.db,0);
+    const input=kitsuMaterializationInput(parseAnime(resource('90071992547409939999')));
+    await f.db.withTransactionAsync(()=>createManualContentWithDb(f.db,{title:input.snapshot.title,medium:'audiovisual',contentFamily:'anime',primaryFormat:'movie',year:null,overview:null},()=> 'manual-local',()=> 'manual-token',100));
+    const tmdb={...input,reference:{provider:'tmdb',resourceNamespace:'movie',externalId:'77'},snapshot:{...input.snapshot,contentFamily:null,primaryFormat:'movie',voteAverage:8.5}};
+    await repo.saveProviderTitle(tmdb,()=> 'tmdb-local',f.db);
+    let generated=0;const id=await repo.saveProviderTitle(input,()=> {generated++;return 'anime-local';},f.db);assert.equal(id,'anime-local');
+    const first=await repo.getSavedTitleByIdWithDb(f.db,id);
+    assert.equal(first.voteAverage,null);assert.equal(first.posterUrl,null);assert.equal(first.status,'planned');assert.deepEqual(first.tags,[]);
+    assert.equal(first.manualIdentity,undefined);assert.deepEqual(first.providerReferences,[input.reference]);assert.equal(first.primaryFormat,'ova');
+    await f.db.withTransactionAsync(async()=>{
+      await repo.updateSavedTitleMetadataWithDb(f.db,id,{status:'watching',tags:['Owned'],notes:'Keep notes'});
+      await repo.setPersonalRatingWithDb(f.db,id,91);
+      await setTitlePinStateWithDb(f.db,id,{contextType:'library',contextKey:''},123);
+      await setTitlePinStateWithDb(f.db,id,{contextType:'tag',contextKey:'Owned'},124);
+    });
+    const before=await repo.getSavedTitleByIdWithDb(f.db,id);
+    const repeated=kitsuMaterializationInput(parseAnime(resource(input.reference.externalId,'unknown','Updated synthetic')));
+    assert.equal(await repo.saveProviderTitle(repeated,()=> {generated++;return 'wrong-id';},f.db),id);assert.equal(generated,1);
+    const after=await repo.getSavedTitleByIdWithDb(f.db,id);
+    for(const field of ['id','createdAt','status','tags','notes','personalRating','providerReferences','manualIdentity','primaryFormat']) assert.deepEqual(after[field],before[field],field);
+    assert.equal(after.title,'Updated synthetic');assert.ok(after.updatedAt>before.updatedAt);assert.equal(after.voteAverage,null);
+    assert.equal((await repo.listSavedTitlesWithDb(f.db)).length,3,'same titles do not merge');
+    assert.equal(localKitsuSources(after.providerReferences,'web')[0].label,'Datos: Kitsu');assert.equal(localKitsuSources(after.providerReferences,'web')[0].destination,null);
+    assert.ok(matchesLibraryClassification(after,'anime'));assert.ok(matchesLibraryClassification({...after,primaryFormat:'movie'},'movie'));
+    const appearance={status:'unavailable',reason:'pending'},data=await exportData(f.db,appearance),backup=createLibraryBackupV7(data.items,data.pins,appearance);
+    const parsed=parseLibraryBackup(JSON.stringify(backup));assert.equal(parsed.ok,true);assert.equal(parsed.payload.version,7);
+    await target.db.withTransactionAsync(()=>mergeLibraryBackupWithDb(target.db,parsed.payload,()=> 'collision-remap'));
+    assert.deepEqual((await exportData(target.db,appearance)).items,data.items);assert.deepEqual((await exportData(target.db,appearance)).pins,data.pins);
+    await target.db.withTransactionAsync(()=>mergeLibraryBackupWithDb(target.db,parsed.payload,()=> 'must-not-duplicate'));
+    assert.equal((await repo.listSavedTitlesWithDb(target.db)).length,3);
+    const path=f.file;f.close();reopened=fixture(path);await schema.evolveDatabaseSchema(reopened.db,6);
+    assert.deepEqual(await repo.getSavedTitleByIdWithDb(reopened.db,id),after,'offline reopen preserves snapshot/personal/reference');
+    assert.deepEqual(reopened.sqlite.prepare('PRAGMA foreign_key_check').all(),[]);assert.equal(network,0);
+    console.log('PASS B3 actual SQLite6: manual/TMDB/Kitsu coexistence, exact large reference, save/re-save preserving personal/classification/pins, offline reopen, v7 export/import/reimport and no network/personal DB.');
+  }finally{if(reopened)reopened.close();else{try{f.close();}catch{}}target.close();global.fetch=oldFetch;}
+}
+main().catch(e=>{console.error(e);process.exitCode=1;});

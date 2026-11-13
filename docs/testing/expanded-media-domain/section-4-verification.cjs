@@ -61,7 +61,7 @@ const category = id => catalog.SEARCH_CATEGORIES.find(x => x.id === id);
 function binding(id, search) { const c = category(id); return { category: c, capability: { search }, destination: item => catalog.searchResultDestination(c, item) }; }
 
 async function catalogAndTransport() {
-  assert.deepEqual(catalog.SEARCH_CATEGORIES.map(x => x.id), ["movie", "tv", "manga", "manhwa", "manhua"]);
+  assert.deepEqual(catalog.SEARCH_CATEGORIES.map(x => x.id), ["movie", "tv", "anime", "manga", "manhwa", "manhua"]);
   for (const platform of ["web", "android", "ios"]) {
     const enabled = require("../../../src/providers/mangaupdates/availability.ts").mangaUpdatesAvailability(platform).productionEnabled;
     assert.deepEqual(catalog.productionSearchCategories(platform).map(x => x.id), enabled ? ["movie", "tv", "manga", "manhwa", "manhua"] : ["movie", "tv"]);

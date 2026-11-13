@@ -43,6 +43,7 @@ Module._load=function(request,parent,isMain){
   if(request==="@expo/vector-icons")return {Ionicons:"Ionicons"};
   if(request.endsWith("ProductionRootLayout")){productionImports++;return {default:function ProductionRoot(){return null;}};}
   if(request.endsWith("TmdbCredentialProvider"))return {TmdbCredentialProvider(){credentialMounts++;throw Error("Credential provider mounted");}};
+  if(request==="./tmdbClient"&&parent.filename.includes("tmdb"))return {tmdbFetch:async()=>{throw Error("Review must not request TMDB credentials/network");}};
   if(request.endsWith("AppThemeProvider") && (parent.filename.includes(`${require("node:path").sep}app${require("node:path").sep}`)||parent.filename.includes("browsing")))return {useAppTheme:()=>({theme})};
   if(request.endsWith("appearancePreferencesRepo"))return {getAppearancePreference:async()=>{preferencesTouched++;throw Error("Personal theme read");},setAppearancePreference:async()=>{preferencesTouched++;throw Error("Personal theme write");}};
   if(request==="./db"&&parent.filename.includes("storage"))return {initDb:async()=>{personalInit++;throw Error("Personal DB init");}};

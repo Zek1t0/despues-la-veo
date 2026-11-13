@@ -8,12 +8,18 @@ import { mediaClassificationLabel } from "../../core/presentationLabels";
 import { fixtureDetails, fixtureSearch, reviewFixtures, reviewRefreshPairs, type ReviewFixture } from "./fixtures";
 import type { ReviewSession } from "./session";
 import { ManualEntryForm } from "../../components/ManualEntryForm";
+import { SearchScreen } from "../../../app/(tabs)/buscar";
+import { SEARCH_CATEGORIES, searchResultDestination } from "../../components/search/searchCategories";
+import { createKitsuSearchCapability } from "../../providers/kitsu/product";
+import { KitsuAnimeDetail } from "../../providers/kitsu/AnimeDetail";
+import { createReviewKitsuClient } from "./kitsuFixture";
 
 function useReviewFocusEffect(effect: () => void | (() => void)) { useEffect(effect, [effect]); }
 
 export function MediaReview({ session, onReset }: { session: ReviewSession; onReset(): Promise<void> }) {
   const { theme } = useAppTheme();
-  const [page, setPage] = useState<"discover" | "remote" | "library" | "local" | "manual">("discover");
+  const [page, setPage] = useState<"discover" | "remote" | "library" | "local" | "manual" | "anime-search" | "anime-detail">("discover");
+  const [animeId, setAnimeId] = useState("1");
   const [manualDraft, setManualDraft] = useState<{ id?: string; key: number; target: "primary" | "restore" } | null>(null);
   const [manualEligible, setManualEligible] = useState(false);
   const [target, setTarget] = useState<"primary" | "restore">("primary");
@@ -26,6 +32,10 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
   const [offline, setOffline] = useState(false);
   const [json, setJson] = useState<string | null>(null);
   const repository = target === "primary" ? session.source : session.restored;
+  const animeClient = useMemo(() => createReviewKitsuClient(offline), [offline]);
+  const animeCategory = SEARCH_CATEGORIES.find(category => category.id === "anime")!;
+  const animeSearch = useMemo(() => ({ category: animeCategory, capability: createKitsuSearchCapability(animeClient),
+    destination: (result: Parameters<typeof searchResultDestination>[1]) => searchResultDestination(animeCategory, result) }), [animeCategory, animeClient]);
   useEffect(() => {
     let active = true; setManualEligible(false);
     if (page === "local" && localId) void repository.eligible(localId).then(value => { if (active) setManualEligible(value); }).catch(() => {});
@@ -94,6 +104,7 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
       <Text style={{ color: theme.global.textSecondary }}>Base activa: {target}. Fuente sintética: {offline ? "desconectada" : "disponible"}. La DB personal no participa.</Text>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, padding: 8 }}>
       {button("Fixtures", () => setPage("discover"))}
+      {button("Anime Kitsu TEST · sin red real", () => setPage("anime-search"))}
       {button("Biblioteca de prueba", () => { setTarget("primary"); setPage("library"); })}
       {button("Agregar manual TEST", () => { setManualDraft({ key: Date.now(), target }); setPage("manual"); }, !!manualDraft)}
       {manualDraft && button("Volver al borrador TEST", () => setPage("manual"))}
@@ -110,6 +121,16 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
       {button("Reset SOLO estas DBs de revisión", () => void action(onReset))}
     </View>
     </ScrollView>
+    {page === "anime-search" && <SearchScreen categories={[animeCategory]} initialCategory="anime" resolveCategory={() => animeSearch}
+      bindings={{ ...repository, openResult: destination => {
+        const match = /^\/kitsu\/anime\/([1-9][0-9]*)$/.exec(destination);
+        if (!match) throw new Error("Destino TEST inválido.");
+        setAnimeId(match[1]); setPage("anime-detail");
+      } }} />}
+    {page === "anime-detail" && <KitsuAnimeDetail key={`${target}-${animeId}-${offline}`} id={animeId} services={{
+      available: true, load: (id, signal) => animeClient.getAnime(id, signal), saved: repository.savedProvider, save: repository.saveProvider,
+      open: id => { setLocalId(id); setPage("local"); }, source: async () => { setMessage("TEST: no se abre la fuente real Kitsu."); },
+    }} />}
     {manualDraft && <View style={{ flex: page === "manual" ? 1 : 0, display: page === "manual" ? "flex" : "none" }}>
       <ManualEntryForm key={manualDraft.key} id={manualDraft.id} services={{ ...(manualDraft.target === "primary" ? session.source : session.restored),
         inspect: id => { setTarget(manualDraft.target); setLocalId(id); setPage("local"); },

@@ -22,6 +22,7 @@ import type {
 } from "../../src/core/savedTitle";
 import { findUnambiguousTmdbReference } from "../../src/core/savedTitleProviderReferences";
 import { localMangaUpdatesSources } from "../../src/providers/mangaupdates/product";
+import { localKitsuSources } from "../../src/providers/kitsu/product";
 import { titleStatusLabel, mediaClassificationLabel, mediaYearLabel } from "../../src/core/presentationLabels";
 import { usePosterImageError } from "../../src/components/browsing/usePosterImageError";
 import { PosterPlaceholder } from "../../src/components/browsing/PosterPlaceholder";
@@ -632,6 +633,11 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
           style={{ minHeight: 44, justifyContent: "center", padding: 12, borderRadius: 12, backgroundColor: theme.global.surfaceSecondary }}>
           <Text style={{ color: theme.global.textPrimary, fontWeight: "700" }}>Editar título</Text>
         </Pressable>}
+        {localKitsuSources(item.providerReferences, Platform.OS).map(source => <View key={source.reference.externalId} style={{ gap: 8 }}>
+          <Text style={{ color: theme.global.textSecondary }}>{source.label}</Text>
+          {source.destination && !bindings && <Pressable accessibilityRole="button" onPress={() => router.push(source.destination!)} style={{ minHeight: 44, justifyContent: "center" }}>
+            <Text style={{ color: theme.global.textPrimary }}>Ver en Kitsu</Text></Pressable>}
+        </View>)}
         {localMangaUpdatesSources(item.providerReferences, Platform.OS).map(source => (
           <View key={source.reference.externalId} style={{ gap: 8 }}>
             <Text style={{ color: theme.global.textSecondary }}>{source.label}</Text>

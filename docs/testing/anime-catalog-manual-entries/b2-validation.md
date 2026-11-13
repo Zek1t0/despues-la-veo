@@ -105,3 +105,7 @@ Get-Content -LiteralPath (Join-Path $b2ReviewDirectory 'manifest.md')
 ```
 
 STOP para revisión externa B2. El usuario realiza aceptación y checkpoint manual; 2.5 continúa pendiente y B3/B4 no se inician.
+
+## Cierre B2 confirmado por el usuario
+
+USER-REPORTED: revisión externa aprobada y aceptación manual completada en Web y BlueStacks (emulador Android). El usuario realizó el checkpoint manual; HEAD y remoto verificados en e75d813dd3e9508bb417e1b756e52fc22d5d3d08, árbol limpio antes de B3. 2.5 ya estaba marcada en ese checkpoint. No se inventa versión de navegador/build/emulador ni se hereda esta aceptación a B3 o a release físico.

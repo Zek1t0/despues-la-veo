@@ -38,7 +38,8 @@ type MaterializationIncludesInitialTags = Assert<Equal<
 >>;
 
 type SearchParameters = Parameters<ProviderSearchCapability["search"]>;
-type SearchHasOneParameter = Assert<Equal<SearchParameters["length"], 1>>;
+type SearchHasOptionalCancellation = Assert<Equal<SearchParameters["length"], 1 | 2>>;
+type SearchSignalIsOptional = Assert<Equal<SearchParameters[1], AbortSignal | undefined>>;
 type SearchQueryIsString = Assert<Equal<SearchParameters[0], string>>;
 type SearchResultIsReadonlyArray = Assert<Equal<
   Awaited<ReturnType<ProviderSearchCapability["search"]>>,
@@ -125,7 +126,7 @@ type ContractAssertions =
   | MaterializationKeys
   | DetailsExcludeInitialTags
   | MaterializationIncludesInitialTags
-  | SearchHasOneParameter
+  | SearchHasOptionalCancellation
   | SearchQueryIsString
   | SearchResultIsReadonlyArray;
 declare const contractAssertions: ContractAssertions;

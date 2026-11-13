@@ -14,7 +14,8 @@ import { VIEW_PREFERENCE_DEFAULTS, type ViewPreferenceKey, type ViewPreferenceVa
 import { DEFAULT_APPEARANCE_PREFERENCE } from "../../theme/appearancePreference";
 import type { ThemePersistence } from "../../theme/AppThemeProvider";
 import { isMediaReviewEnabled } from "./mode";
-import { getSavedTitleWithReferencesByIdWithDb, listSavedTitlesWithReferencesWithDb } from "../../storage/savedTitleStorage";
+import { getSavedTitleWithReferencesByIdWithDb, listSavedTitlesWithReferencesWithDb, getSavedTitleByProviderReferenceWithDb } from "../../storage/savedTitleStorage";
+import type { ProviderMaterializationInput } from "../../providers/providerContracts";
 import { createManualContentWithDb, editManualContentWithDb, isManualContentEditableWithDb } from "../../storage/manualContentEntries";
 import type { ManualContentInput } from "../../core/manualContentEntry";
 import { fixtureInput, reviewFixtures, type ReviewFixture } from "./fixtures";
@@ -59,6 +60,8 @@ export async function createReviewSession(options: Readonly<{
     write: async preference => { appearance = preference; },
   };
   const repository = (db: ReviewDatabase) => ({
+    savedProvider: async (input: ProviderMaterializationInput) => { requireOpen(); return (await getSavedTitleByProviderReferenceWithDb(db, input.reference))?.id ?? null; },
+    saveProvider: (input: ProviderMaterializationInput) => { requireOpen(); return saveProviderTitle(input, generateId, db); },
     get: (id: string) => { requireOpen(); return getSavedTitleWithReferencesByIdWithDb(db, id); },
     list: () => { requireOpen(); return listSavedTitlesWithReferencesWithDb(db); },
     eligible: (id: string) => { requireOpen(); return isManualContentEditableWithDb(db, id); },

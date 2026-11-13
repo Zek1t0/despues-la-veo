@@ -8,7 +8,8 @@ import { tmdbMovieSearchCapability, tmdbTvSearchCapability } from "../../src/pro
 import { productionSearchCategories, resolveProductionSearchCategory, type ResolvedSearchCategory, type SearchCategory, type SearchCategoryId } from "../../src/components/search/searchCategories";
 import { useCategorySearch } from "../../src/components/search/useCategorySearch";
 import { mangaUpdatesSearchCapabilities } from "../../src/components/search/mangaUpdatesSearch";
-import { presentMangaUpdatesError } from "../../src/providers/mangaupdates/errorPresentation";
+import { presentNonTmdbSearchError, SEARCH_SOURCE_NAMES } from "../../src/components/search/searchSourcePresentation";
+import { kitsuProductSearch } from "../../src/providers/kitsu/product";
 import type { TmdbCredentialSnapshot } from "../../src/providers/tmdb/credential/tmdbCredentialTypes";
 import {
   VIEW_PREFERENCE_DEFAULTS,
@@ -31,8 +32,9 @@ import {
   TMDB_TOKEN_URL,
 } from "../../src/providers/tmdb/credential/tmdbCredentialUi";
 const tmdbSearchCapabilities = { movie: tmdbMovieSearchCapability, tv: tmdbTvSearchCapability };
+const kitsuSearchCapability = kitsuProductSearch(() => Platform.OS);
 const resolveProductionCategory = (id: SearchCategoryId) =>
-  resolveProductionSearchCategory(id, Platform.OS, tmdbSearchCapabilities, mangaUpdatesSearchCapabilities);
+  resolveProductionSearchCategory(id, Platform.OS, tmdbSearchCapabilities, mangaUpdatesSearchCapabilities, kitsuSearchCapability);
 
 type TmdbSearchConfiguration = Readonly<{
   snapshot: TmdbCredentialSnapshot;
@@ -46,11 +48,13 @@ export default function ExploreScreen() {
 }
 
 /** Application search UI; test-only bindings need no credential provider. */
-export function SearchScreen({ categories, resolveCategory, tmdb, initialCategory = "movie" }: Readonly<{
+export function SearchScreen({ categories, resolveCategory, tmdb, initialCategory = "movie", bindings }: Readonly<{
   categories: readonly SearchCategory[];
   resolveCategory: (id: SearchCategoryId) => ResolvedSearchCategory | null;
   tmdb?: TmdbSearchConfiguration;
   initialCategory?: SearchCategoryId;
+  bindings?: Readonly<{ getViewPreference: typeof getViewPreference; setViewPreference: typeof setViewPreference;
+    openResult: (destination: NonNullable<ReturnType<ResolvedSearchCategory["destination"]>>) => void }>;
 }>) {
   const router = useRouter();
   const { theme } = useAppTheme();
@@ -91,7 +95,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
 
     async function loadViewMode() {
       const result = await Promise.allSettled([
-        getViewPreference("search.viewMode"),
+        (bindings?.getViewPreference ?? getViewPreference)("search.viewMode"),
       ]);
       if (!active) return;
 
@@ -123,7 +127,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
       viewModeWriteQueue.current = viewModeWriteQueue.current
         .then(async () => {
           try {
-            await setViewPreference("search.viewMode", next);
+            await (bindings?.setViewPreference ?? setViewPreference)("search.viewMode", next);
             confirmedViewMode.current = next;
           } catch (error) {
             console.error("No se pudo guardar la apariencia de Buscar.", error);
@@ -193,7 +197,8 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
   const debounceSettled = search.debounceSettled;
   const visibleLoading = search.loading;
   const visibleSearchError = isTmdb && search.error !== null ? presentTmdbRemoteError(search.error) : null;
-  const mangaUpdatesError = !isTmdb && search.error !== null ? presentMangaUpdatesError(search.error) : null;
+  const sourceError = presentNonTmdbSearchError(selected?.category.source, search.error);
+  const sourceName = selected ? SEARCH_SOURCE_NAMES[selected.category.source] : "la fuente seleccionada";
   const visibleItems: readonly ProviderSearchResult[] = selected
     ? search.items.filter(item => selected.destination(item) !== null) : [];
 
@@ -345,7 +350,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
               <TitleGridCard
                 identity={JSON.stringify(item.reference)}
                 accessibilityLabel={`Abrir ${item.kindLabel} ${item.displayTitle}`}
-                onPress={() => router.push(route)}
+                onPress={() => bindings ? bindings.openResult(route) : router.push(route)}
                 posterUrl={item.posterUrl}
                 style={{ width: gridCardWidth }}
                 title={item.displayTitle}
@@ -360,7 +365,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
               accessibilityLabel={`Abrir ${item.kindLabel} ${item.displayTitle}`}
               accessibilityRole="button"
               focusable
-              onPress={() => router.push(route)}
+              onPress={() => bindings ? bindings.openResult(route) : router.push(route)}
               style={{
                 flexDirection: "row",
                 gap: 12,
@@ -400,14 +405,14 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
                     ? credentialState.title
                   : visibleSearchError
                     ? visibleSearchError.title
-                    : mangaUpdatesError?.title ?? "No encontré resultados"}
+                    : sourceError?.title ?? "No encontré resultados"}
               </Text>
               <Text style={{ color: visibleSearchError ? theme.semantic.dangerText : theme.global.textSecondary }}>
                 {currentQuery.length === 0
-                  ? isTmdb ? "Escribí un título para consultar TMDB." : "Escribí un título para consultar MangaUpdates."
+                  ? `Escribí un título para consultar ${sourceName}.`
                   : credentialState
                     ? credentialState.message
-                    : visibleSearchError?.message ?? mangaUpdatesError?.message ?? "Probá con otro título."}
+                    : visibleSearchError?.message ?? sourceError?.message ?? "Probá con otro título."}
               </Text>
               {currentQuery.length > 0 && isTmdb && snapshot?.status === "not-configured" && (
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -423,7 +428,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
               )}
               {debounceSettled && currentQuery.length > 0 && isTmdb && snapshot?.status === "configured" && visibleSearchError?.action === "change" &&
                 actionButton("Cambiar token", () => router.push(TMDB_SETTINGS_ROUTE))}
-              {mangaUpdatesError?.retryable && actionButton("Reintentar búsqueda", () => setSearchRetry((value) => value + 1))}
+              {sourceError?.retryable && actionButton("Reintentar búsqueda", () => setSearchRetry((value) => value + 1))}
               {debounceSettled && currentQuery.length > 0 && isTmdb && snapshot?.status === "configured" && visibleSearchError?.action === "retry" &&
                 actionButton("Reintentar búsqueda", () => setSearchRetry((value) => value + 1))}
             </View>

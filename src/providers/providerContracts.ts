@@ -38,5 +38,5 @@ export type ProviderMaterializationInput = Readonly<{
 
 /** The only shared remote operation currently required by an application consumer. */
 export interface ProviderSearchCapability {
-  search(query: string): Promise<readonly ProviderSearchResult[]>;
+  search(query: string, signal?: AbortSignal): Promise<readonly ProviderSearchResult[]>;
 }

@@ -16,7 +16,7 @@ function normalizedConsumerBoundary() {
   assert.match(search, /import type \{ ProviderSearchResult \} from "\.\.\/\.\.\/src\/providers\/providerContracts"/);
   assert.match(search, /tmdbMovieSearchCapability, tmdbTvSearchCapability/);
   assert.match(search, /readonly ProviderSearchResult\[\]/);
-  assert.match(lifecycle, /capability\.search\(query\)/);
+  assert.match(lifecycle, /capability\.search\(query, controller\.signal\)/);
 
   for (const rawDependency of [
     "TmdbSearchItem",

@@ -2,20 +2,23 @@ import type { ProviderSearchCapability, ProviderSearchResult } from "../../provi
 import { createTmdbProviderReference } from "../../core/tmdbProviderReference";
 import { mangaUpdatesAvailability } from "../../providers/mangaupdates/availability";
 import { canonicalSeriesId } from "../../providers/mangaupdates/identity";
+import { kitsuAvailability } from "../../providers/kitsu/availability";
+import { assertKitsuReference } from "../../providers/kitsu/identity";
 
-export type SearchCategoryId = "movie" | "tv" | "manga" | "manhwa" | "manhua";
-export type SearchSource = "tmdb" | "mangaupdates";
+export type SearchCategoryId = "movie" | "tv" | "manga" | "manhwa" | "manhua" | "anime";
+export type SearchSource = "tmdb" | "mangaupdates" | "kitsu";
 export type SearchCategory = Readonly<{
   id: SearchCategoryId;
   label: string;
   source: SearchSource;
-  remoteResource: "movie" | "tv" | "Manga" | "Manhwa" | "Manhua";
+  remoteResource: "movie" | "tv" | "Manga" | "Manhwa" | "Manhua" | "anime";
 }>;
 
 /** Product categories, not a registry of executable providers. */
 export const SEARCH_CATEGORIES: readonly SearchCategory[] = Object.freeze([
   { id: "movie", label: "Películas", source: "tmdb", remoteResource: "movie" },
   { id: "tv", label: "Series", source: "tmdb", remoteResource: "tv" },
+  { id: "anime", label: "Anime", source: "kitsu", remoteResource: "anime" },
   { id: "manga", label: "Manga", source: "mangaupdates", remoteResource: "Manga" },
   { id: "manhwa", label: "Manhwa", source: "mangaupdates", remoteResource: "Manhwa" },
   { id: "manhua", label: "Manhua", source: "mangaupdates", remoteResource: "Manhua" },
@@ -23,14 +26,23 @@ export const SEARCH_CATEGORIES: readonly SearchCategory[] = Object.freeze([
 
 export function productionSearchCategories(platform: string): readonly SearchCategory[] {
   if (platform !== "web" && platform !== "android" && platform !== "ios") return [];
-  return SEARCH_CATEGORIES.filter(category => category.source === "tmdb" || mangaUpdatesAvailability(platform).productionEnabled);
+  return SEARCH_CATEGORIES.filter(category => {
+    switch (category.source) {
+      case "tmdb": return true;
+      case "mangaupdates": return mangaUpdatesAvailability(platform).productionEnabled;
+      case "kitsu": return kitsuAvailability(platform).productionEnabled;
+    }
+  });
 }
 
 /** A known future destination is not permission to activate an adapter or screen. */
 export function searchResultDestination(category: SearchCategory, result: ProviderSearchResult):
-  `/tmdb/movie/${string}` | `/tmdb/tv/${string}` | `/mangaupdates/series/${string}` | null {
+  `/tmdb/movie/${string}` | `/tmdb/tv/${string}` | `/mangaupdates/series/${string}` | `/kitsu/anime/${string}` | null {
   const { reference } = result;
   if (reference.provider !== category.source) return null;
+  if (category.id === "anime" && category.source === "kitsu") {
+    try { return `/kitsu/anime/${assertKitsuReference(reference)}`; } catch { return null; }
+  }
   if (category.id === "movie" || category.id === "tv") {
     if (category.source !== "tmdb" || reference.resourceNamespace !== category.id) return null;
     try {
@@ -57,10 +69,12 @@ export function resolveProductionSearchCategory(
   platform: string,
   tmdb: Readonly<{ movie: ProviderSearchCapability; tv: ProviderSearchCapability }>,
   mangaUpdates?: Readonly<{ manga: ProviderSearchCapability; manhwa: ProviderSearchCapability; manhua: ProviderSearchCapability }>,
+  kitsu?: ProviderSearchCapability,
 ): ResolvedSearchCategory | null {
   const category = productionSearchCategories(platform).find(candidate => candidate.id === id);
   if (!category) return null;
-  const capability = category.id === "movie" || category.id === "tv" ? tmdb[category.id] : mangaUpdates?.[category.id];
+  const capability = category.id === "movie" || category.id === "tv" ? tmdb[category.id]
+    : category.id === "anime" ? kitsu : mangaUpdates?.[category.id];
   if (!capability) return null;
   return { category, capability, destination: result => searchResultDestination(category, result) };
 }
