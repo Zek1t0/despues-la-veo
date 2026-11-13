@@ -17,7 +17,7 @@ Orden B1 → B2 → B3 → B4; una tarea de implementación a la vez. Al termina
 - [x] 2.2 Incorporar formulario compartido crear/editar y «Agregar manualmente» en Biblioteca, navegación al detalle y acción editar local-only; sin campos de imágenes/proveedor/score. Verificar mínimo/completo, cambio de medio con revisión explícita, cancelar/fallo conservando borrador, doble envío y funcionamiento sin red/credenciales.
 - [x] 2.3 Implementar advertencia local no bloqueante por título normalizado/año compatible; inspección por detalle, vuelta con borrador y creación separada. Verificar exclusión self, candidatos manual/provider-backed y ausencia de consultas remotas, auto-link o merge.
 - [x] 2.4 Integrar manuales en vistas/filtros/búsqueda/tag/rating/status/pins/delete existentes sin filtros nuevos de formato. Verificar Anime+Películas solapados, manga/manhwa/manhua, clasificación desconocida, placeholder, detalle offline, edición legacy y borrado con cascadas; export/reimport7 del flujo real conserva datos.
-- [ ] 2.5 Ejecutar suites B2, TypeScript y smoke manual Web/Android con datos aislados y accesibilidad/layout estrecho; revisar diff real y obtener checkpoint de sección antes de B3. Registrar por separado cualquier dispositivo no validado, sin inventar aceptación.
+- [x] 2.5 Ejecutar suites B2, TypeScript y smoke manual Web/Android con datos aislados y accesibilidad/layout estrecho; revisar diff real y obtener checkpoint de sección antes de B3. Registrar por separado cualquier dispositivo no validado, sin inventar aceptación.
 
 ## 3. B3 — Catálogo anime Kitsu condicional
 
