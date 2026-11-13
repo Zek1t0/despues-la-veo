@@ -1,3 +1,4 @@
+import { manualIdentityForItemWithDb } from "./manualEntryIdentities";
 import { assertMediaClassification } from "../core/mediaClassification";
 import { createProviderReference, type ProviderReference } from "../core/providerReference";
 import { parsePersonalRating } from "../core/personalRating";
@@ -83,9 +84,11 @@ export async function getSavedTitleWithReferencesByIdWithDb(
     [id]
   );
   if (!row) return null;
+  const manualIdentity = await manualIdentityForItemWithDb(db, id);
   return {
     ...rowToSavedTitle(row),
     providerReferences: await listProviderReferencesForSavedTitleWithDb(db, id),
+    ...(manualIdentity !== undefined ? { manualIdentity } : {}),
   };
 }
 
@@ -152,9 +155,11 @@ export async function listSavedTitlesWithReferencesWithDb(
   );
   return Promise.all(rows.map(async (row) => {
     const item = rowToSavedTitle(row);
+    const manualIdentity = await manualIdentityForItemWithDb(db, item.id);
     return {
       ...item,
       providerReferences: await listProviderReferencesForSavedTitleWithDb(db, item.id),
+      ...(manualIdentity !== undefined ? { manualIdentity } : {}),
     };
   }));
 }

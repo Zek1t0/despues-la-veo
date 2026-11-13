@@ -29,4 +29,5 @@ export type SavedTitle = MediaClassification & {
 
 export type SavedTitleWithProviderReferences = SavedTitle & {
   providerReferences: ProviderReference[];
+  manualIdentity?: string;
 };

@@ -1,3 +1,4 @@
+import { attachManualIdentityWithDb, assignManualIdentityWithDb, manualIdentityOwnerWithDb, ManualIdentityConflict } from "./manualEntryIdentities";
 import { classificationFromHistoricalType } from "../core/mediaClassification";
 import { savedTitleFromHistorical } from "../core/legacyMediaBoundary";
 import type { SavedTitle } from "../core/savedTitle";
@@ -23,6 +24,7 @@ class ImportConflict extends Error {}
 
 type ImportMediaItem = Omit<NormalizedBackupMediaItemV6, "contentFamily"> & {
   contentFamily?: NormalizedBackupMediaItemV6["contentFamily"];
+  manualIdentity?: string;
 };
 
 /** Historical files supply medium/format, but have no family field to restore. */
@@ -80,7 +82,7 @@ async function attachLegacy(db: LibraryBackupMergeDb, legacy: BackupLegacyIdenti
 }
 type Internal = LibraryImportMergeResult & { mapping: Map<string, string> };
 function baseResult(): Internal { return { inserted: 0, updated: 0, skipped: 0, conflicts: [], failed: [], mapping: new Map() }; }
-function report(result: Internal, error: unknown, reference: string) { const issue = { reference, reason: error instanceof Error ? error.message : "No se pudo persistir el elemento." }; (error instanceof ImportConflict ? result.conflicts : result.failed).push(issue); }
+function report(result: Internal, error: unknown, reference: string) { const issue = { reference, reason: error instanceof Error ? error.message : "No se pudo persistir el elemento." }; (error instanceof ImportConflict || error instanceof ManualIdentityConflict ? result.conflicts : result.failed).push(issue); }
 
 async function mergePortableItems(db: LibraryBackupMergeDb, items: ImportMediaItem[], generateId: () => string): Promise<Internal> {
   const result = baseResult();
@@ -90,12 +92,21 @@ async function mergePortableItems(db: LibraryBackupMergeDb, items: ImportMediaIt
       const resolved: SavedTitle[] = [];
       for (const reference of incoming.providerReferences) { const item = await getSavedTitleByProviderReferenceWithDb(db, reference); if (item) resolved.push(item); }
       if (incoming.legacyIdentity) { const item = await resolveLegacy(db, incoming.legacyIdentity); if (item) resolved.push(item); }
+      if (incoming.manualIdentity !== undefined) {
+        const owner = await manualIdentityOwnerWithDb(db, incoming.manualIdentity);
+        if (owner !== null) {
+          const item = await getSavedTitleWithReferencesByIdWithDb(db, owner);
+          if (!item) throw new Error("Identidad manual huérfana.");
+          resolved.push(item);
+        }
+      }
       const ids = [...new Set(resolved.map((item) => item.id))];
       if (ids.length > 1) throw new ImportConflict("Las identidades entrantes resuelven MediaItems locales diferentes.");
       const local = ids.length ? await getSavedTitleWithReferencesByIdWithDb(db, ids[0]) : null;
       const outcome = await savepoint(db, "backup_item", async () => {
         if (local) {
           if (local.medium !== incoming.medium) throw new ImportConflict("El medio entrante no coincide con el MediaItem local resuelto.");
+          if (incoming.manualIdentity !== undefined) await attachManualIdentityWithDb(db, incoming.manualIdentity, local.id);
           for (const reference of incoming.providerReferences) await attachProviderReferenceWithDb(db, reference, local.id);
           if (incoming.legacyIdentity) await attachLegacy(db, incoming.legacyIdentity, local.id);
           if (!incoming.updatedAt.present || incoming.updatedAt.value <= local.updatedAt) {
@@ -104,10 +115,12 @@ async function mergePortableItems(db: LibraryBackupMergeDb, items: ImportMediaIt
           await upsertSavedTitleAndCleanPinsWithDb(db, updateFrom(local, incoming));
           return { id: local.id, count: "updated" as const };
         } else {
-          const id = await freeId(db, backupId, generateId, incoming.providerReferences.length > 0 || !!incoming.legacyIdentity);
+          const id = await freeId(db, backupId, generateId, incoming.providerReferences.length > 0 || !!incoming.legacyIdentity || incoming.manualIdentity !== undefined);
           await upsertSavedTitleAndCleanPinsWithDb(db, materializeImportItem({ ...incoming, contentFamily: incoming.contentFamily ?? null }, id));
           for (const reference of incoming.providerReferences) await attachProviderReferenceWithDb(db, reference, id);
           if (incoming.legacyIdentity) await attachLegacy(db, incoming.legacyIdentity, id);
+          if (incoming.manualIdentity !== undefined) await attachManualIdentityWithDb(db, incoming.manualIdentity, id);
+          else if (incoming.providerReferences.length === 0 && !incoming.legacyIdentity) await assignManualIdentityWithDb(db, id);
           return { id, count: "inserted" as const };
         }
       });
@@ -178,8 +191,8 @@ export async function mergeLibraryBackupWithDb(
       : { version: 2, items: payloadOrItems, invalid: [], pins: generateIdOrPins as LibraryBackupPinV2[], invalidPins: [] })
     : payloadOrItems;
   const generateId = (Array.isArray(payloadOrItems) ? legacyGenerateId : generateIdOrPins) as () => string;
-  if (payload.version === 5 || payload.version === 6) {
-    const items = payload.version === 6 ? payload.items : payload.items.map(item => {
+  if (payload.version === 5 || payload.version === 6 || payload.version === 7) {
+    const items = payload.version === 6 || payload.version === 7 ? payload.items : payload.items.map(item => {
       const { type, ...historical } = item;
       return { ...historical, ...historicalClassificationForUpdate(type) };
     });

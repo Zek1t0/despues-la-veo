@@ -18,7 +18,7 @@ import type { BackupValidationError } from "../../src/core/libraryBackupV1";
 
 import { type BackupAppearanceImportOutcome } from "../../src/core/libraryBackupV4";
 
-import { createLibraryBackupV6 } from "../../src/core/libraryBackupV6";
+import { createLibraryBackupV7 } from "../../src/core/libraryBackupV7";
 
 import { getLibraryBackupExportData } from "../../src/storage/libraryBackupExport";
 
@@ -302,7 +302,7 @@ export default function SettingsScreen() {
 
         await getLibraryBackupExportData(backupAvailability);
 
-      const payload = createLibraryBackupV6(items, pins, appearanceAvailability);
+      const payload = createLibraryBackupV7(items, pins, appearanceAvailability);
 
 
 
@@ -334,7 +334,7 @@ export default function SettingsScreen() {
 
         setLastMsg(
 
-          `Export v6 listo: ${items.length} títulos y ${pins.length} pins.` +
+          `Export v7 listo: ${items.length} títulos y ${pins.length} pins.` +
 
           (payload.appearance ? " Apariencia incluida." : " Apariencia omitida por no estar confirmada.")
 
@@ -378,7 +378,7 @@ export default function SettingsScreen() {
 
       setLastMsg(
 
-        `Export v6 listo: ${items.length} títulos y ${pins.length} pins.` +
+        `Export v7 listo: ${items.length} títulos y ${pins.length} pins.` +
 
         (payload.appearance ? " Apariencia incluida." : " Apariencia omitida por no estar confirmada.")
 
@@ -442,7 +442,7 @@ export default function SettingsScreen() {
 
         : ["Este backup v1 no contiene ni modifica pins por ausencia."]),
 
-      ...(payload.version === 4 || payload.version === 5 || payload.version === 6
+      ...(payload.version === 4 || payload.version === 5 || payload.version === 6 || payload.version === 7
 
         ? [payload.appearance.status === "valid"
 
@@ -500,7 +500,7 @@ export default function SettingsScreen() {
 
     let deferredHandle: DeferredAppearanceHandle | null = null;
 
-    let appearanceOutcome: BackupAppearanceImportOutcome = payload.version === 4 || payload.version === 5 || payload.version === 6
+    let appearanceOutcome: BackupAppearanceImportOutcome = payload.version === 4 || payload.version === 5 || payload.version === 6 || payload.version === 7
 
       ? payload.appearance.status === "incompatible"
 
@@ -510,7 +510,7 @@ export default function SettingsScreen() {
 
       : { status: "absent" };
 
-    if ((payload.version === 4 || payload.version === 5 || payload.version === 6) && payload.appearance.status === "valid") {
+    if ((payload.version === 4 || payload.version === 5 || payload.version === 6 || payload.version === 7) && payload.appearance.status === "valid") {
 
       deferredHandle = reserveDeferred(payload.appearance.preference);
 
@@ -948,7 +948,7 @@ export default function SettingsScreen() {
 
       <Text style={{ color: theme.global.textMuted, marginTop: 6 }}>
 
-        Export genera un .json v6 versionado. Import acepta v1–v6 y hace MERGE: no borra títulos locales ausentes del
+        Export genera un .json v7 versionado. Import acepta v1–v7 y hace MERGE: no borra títulos locales ausentes del
 
         backup y restaura relaciones mediante la identidad interna del archivo.
 

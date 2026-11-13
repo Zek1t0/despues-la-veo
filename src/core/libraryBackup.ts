@@ -1,3 +1,4 @@
+import { parseLibraryBackupV7, type ParsedLibraryBackupV7 } from "./libraryBackupV7";
 import {
   parseLibraryBackupV1,
   type BackupValidationError,
@@ -16,7 +17,8 @@ export type ParsedLibraryBackup =
   | ParsedLibraryBackupV3
   | ParsedLibraryBackupV4
   | ParsedLibraryBackupV5
-  | ParsedLibraryBackupV6;
+  | ParsedLibraryBackupV6
+  | ParsedLibraryBackupV7;
 export type LibraryBackupParseResult =
   | { ok: true; payload: ParsedLibraryBackup }
   | { ok: false; error: BackupValidationError };
@@ -37,6 +39,7 @@ export function parseLibraryBackup(jsonText: string): LibraryBackupParseResult {
   if (version === 3) return parseLibraryBackupV3(jsonText);
   if (version === 4) return parseLibraryBackupV4(jsonText);
   if (version === 5) return parseLibraryBackupV5(jsonText);
+  if (version === 7) return parseLibraryBackupV7(jsonText);
   if (version === 6) return parseLibraryBackupV6(jsonText);
   return {
     ok: false,

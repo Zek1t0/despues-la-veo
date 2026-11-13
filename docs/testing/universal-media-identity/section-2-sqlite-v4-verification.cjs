@@ -171,8 +171,8 @@ async function testFreshV4AndReopen() {
   const fixture = createDatabase("fresh");
   try {
     await initialize(fixture, 0);
-    assert.equal(DATABASE_SCHEMA_VERSION, 5);
-    assert.equal(await readUserVersion(fixture.db), 5);
+    assert.equal(DATABASE_SCHEMA_VERSION, 6);
+    assert.equal(await readUserVersion(fixture.db), 6);
     await verifyV5Schema(fixture.db);
     const columns = fixture.sqlite.prepare("PRAGMA table_info(saved_titles)").all().map((row) => row.name);
     assert.equal(columns.includes("provider"), false);
@@ -197,7 +197,7 @@ async function testFreshV4AndReopen() {
       titles: fixture.sqlite.prepare("SELECT * FROM saved_titles ORDER BY id").all(),
       refs: fixture.sqlite.prepare("SELECT * FROM media_provider_references ORDER BY resource_namespace").all(),
     });
-    await evolveDatabaseSchema(fixture.db, 5);
+    await evolveDatabaseSchema(fixture.db, 6);
     const after = JSON.stringify({
       titles: fixture.sqlite.prepare("SELECT * FROM saved_titles ORDER BY id").all(),
       refs: fixture.sqlite.prepare("SELECT * FROM media_provider_references ORDER BY resource_namespace").all(),
@@ -220,7 +220,7 @@ async function testV3Migration() {
     );
     await initialize(fixture, 3);
     await verifyV5Schema(fixture.db);
-    assert.equal(await readUserVersion(fixture.db), 5);
+    assert.equal(await readUserVersion(fixture.db), 6);
     assert.deepEqual(
       fixture.sqlite.prepare(`SELECT provider, resource_namespace, external_id, saved_title_id
         FROM media_provider_references ORDER BY resource_namespace`).all().map((row) => ({ ...row })),
@@ -259,7 +259,7 @@ async function testHistoricalVersions() {
         type: "movie", title: `V${version}`,
       }]);
       await initialize(fixture, version);
-      assert.equal(await readUserVersion(fixture.db), 5);
+      assert.equal(await readUserVersion(fixture.db), 6);
       await verifyV5Schema(fixture.db);
       assert.equal(fixture.sqlite.prepare("SELECT id FROM saved_titles").get().id, `opaque-v${version}`);
       assert.equal(fixture.sqlite.prepare("SELECT legacy_external_id FROM legacy_saved_title_identities").get().legacy_external_id, `legacy-v${version}`);
@@ -320,10 +320,10 @@ async function testInjectedRollback() {
 async function testFutureVersionRejected() {
   const fixture = createDatabase("future");
   try {
-    fixture.sqlite.exec("PRAGMA user_version = 6;");
+    fixture.sqlite.exec("PRAGMA user_version = 7;");
     await enableAndVerifyForeignKeys(fixture.db);
-    await assert.rejects(() => evolveDatabaseSchema(fixture.db, 6), /no soportada/i);
-    assert.equal(await readUserVersion(fixture.db), 6);
+    await assert.rejects(() => evolveDatabaseSchema(fixture.db, 7), /no soportada/i);
+    assert.equal(await readUserVersion(fixture.db), 7);
   } finally { fixture.close(); }
 }
 

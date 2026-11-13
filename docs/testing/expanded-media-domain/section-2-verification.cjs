@@ -83,14 +83,14 @@ function seedV4(f, badType = false) {
 async function migrations() {
   const fresh = fixture();
   try {
-    await schema.evolveDatabaseSchema(fresh.db, 0); assert.equal(await schema.readUserVersion(fresh.db), 5);
+    await schema.evolveDatabaseSchema(fresh.db, 0); assert.equal(await schema.readUserVersion(fresh.db), 6);
     await schema.verifyV5Schema(fresh.db);
     assert.equal(fresh.sqlite.prepare("PRAGMA table_info(saved_titles)").all().some(x => x.name === "type"), false);
     const before = snapshot(fresh.sqlite);
-    await schema.evolveDatabaseSchema(fresh.db, 5, { afterV5ItemsCopied() { throw Error("Must not remigrate"); } });
+    await schema.evolveDatabaseSchema(fresh.db, 6, { afterV5ItemsCopied() { throw Error("Must not remigrate"); } });
     assert.equal(snapshot(fresh.sqlite), before);
-    fresh.sqlite.exec("PRAGMA user_version=6"); const future = snapshot(fresh.sqlite);
-    await assert.rejects(schema.evolveDatabaseSchema(fresh.db, 6), /no soportada/); assert.equal(snapshot(fresh.sqlite), future);
+    fresh.sqlite.exec("PRAGMA user_version=7"); const future = snapshot(fresh.sqlite);
+    await assert.rejects(schema.evolveDatabaseSchema(fresh.db, 7), /no soportada/); assert.equal(snapshot(fresh.sqlite), future);
   } finally { fresh.close(); }
   const valid = fixture();
   try {
@@ -134,8 +134,8 @@ async function migrations() {
     seedV4(f); await schema.evolveDatabaseSchema(f.db, 4);
     const before = snapshot(f.sqlite);
     f.close(); f = fixture(filename);
-    assert.equal(await schema.readUserVersion(f.db), 5);
-    await schema.evolveDatabaseSchema(f.db, 5, { afterV5ItemsCopied() { throw Error("Disk reopen must not migrate"); } });
+    assert.equal(await schema.readUserVersion(f.db), 6);
+    await schema.evolveDatabaseSchema(f.db, 6, { afterV5ItemsCopied() { throw Error("Disk reopen must not migrate"); } });
     assert.equal(snapshot(f.sqlite), before);
   } finally { f.close(); if (fs.existsSync(filename)) fs.unlinkSync(filename); }
 }
@@ -266,7 +266,7 @@ async function backupsAndMerge() {
     assert.equal(payload([], [], { appearance: { scheme: "bogus", palette: "bogus" } }).appearance.status, "incompatible");
     const settings = fs.readFileSync("app/(tabs)/ajustes.tsx", "utf8");
     assert.ok(settings.indexOf("await mergeLibraryBackup(payload, uuid)") < settings.indexOf("await activateDeferred(deferredHandle)"));
-    assert.match(settings, /createLibraryBackupV6/); assert.match(settings, /payload.version === 6/);
+    assert.match(settings, /createLibraryBackupV7/); assert.match(settings, /payload.version === 6/);
   } finally { source.close(); target.close(); }
 }
 async function appearanceAfterCommit() {

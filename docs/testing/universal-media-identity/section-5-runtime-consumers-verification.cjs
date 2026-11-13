@@ -34,6 +34,8 @@ function fixture() {
       PRIMARY KEY(legacy_format,legacy_provider,legacy_external_id), FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE);
     CREATE TABLE title_pins (saved_title_id TEXT NOT NULL, context_type TEXT NOT NULL, context_key TEXT NOT NULL, pinned_at INTEGER NOT NULL,
       PRIMARY KEY(saved_title_id,context_type,context_key), FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE);`);
+  // Runtime helpers now require the additive v6 identity table; historical payloads stay unchanged.
+  sqlite.exec(require("../../../src/storage/databaseSchema.ts").MANUAL_ENTRY_IDENTITIES_TABLE_SQL);
   const params = (v) => v.length === 1 && Array.isArray(v[0]) ? v[0] : v;
   const db = { async getFirstAsync(sql, ...v) { return sqlite.prepare(sql).get(...params(v)) ?? null; }, async getAllAsync(sql, ...v) { return sqlite.prepare(sql).all(...params(v)); }, async runAsync(sql, ...v) { return sqlite.prepare(sql).run(...params(v)); }, async withTransactionAsync(task) { sqlite.exec("BEGIN"); try { await task(); sqlite.exec("COMMIT"); } catch (e) { sqlite.exec("ROLLBACK"); throw e; } } };
   return { db, sqlite, close() { sqlite.close(); fs.unlinkSync(file); } };

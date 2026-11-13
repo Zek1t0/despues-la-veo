@@ -62,7 +62,7 @@ async function main() {
   };
   sqlite.exec("PRAGMA foreign_keys=ON");
   await ensureLibrarySchema(db);
-  assert.equal(sqlite.prepare("PRAGMA user_version").get().user_version, 5);
+  assert.equal(sqlite.prepare("PRAGMA user_version").get().user_version, 6);
   sqlite.exec(`
     CREATE TRIGGER controlled_import_failure
     BEFORE INSERT ON legacy_saved_title_identities

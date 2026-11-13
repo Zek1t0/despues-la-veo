@@ -62,7 +62,7 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
   });
   const download = async () => {
     const value = await session.exportTest(); setJson(value);
-    const name = `TEST-media-review-v6-${session.identity}.json`;
+    const name = `TEST-media-review-v7-${session.identity}.json`;
     if (Platform.OS === "web") {
       const url = URL.createObjectURL(new Blob([value], { type: "application/json" }));
       const link = document.createElement("a"); link.href = url; link.download = name; link.click(); URL.revokeObjectURL(url);
@@ -73,7 +73,7 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
       await files.writeAsStringAsync(path, value);
       if (await sharing.isAvailableAsync()) await sharing.shareAsync(path, { mimeType: "application/json" });
     }
-    return `Export TEST v6 listo: ${name}`;
+    return `Export TEST v7 listo: ${name}`;
   };
   return <View style={{ flex: 1, backgroundColor: theme.global.background }}>
     <View style={{ padding: 12, gap: 4, borderBottomWidth: 2, borderColor: theme.global.accent }}>
@@ -90,7 +90,7 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
       {button("Biblioteca restaurada", () => { setTarget("restore"); setPage("library"); })}
       {button("Sembrar / resembrar corpus", () => void action(async () => { await session.seed(); return "20 fixtures guardadas por el pipeline real."; }), offline)}
       {button(offline ? "Reconectar fuente sintética" : "Simular sin red", () => setOffline(value => !value))}
-      {button("Exportar TEST v6", () => void action(download))}
+      {button("Exportar TEST v7", () => void action(download))}
       {button("Restaurar TEST en segunda DB", () => void action(async () => {
         if (!json) throw new Error("Exportá TEST primero.");
         const result = await session.importTest(json); setTarget("restore"); setPage("library");

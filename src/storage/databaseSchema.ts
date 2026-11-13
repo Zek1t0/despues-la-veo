@@ -1,7 +1,15 @@
 import { assertMediaClassification } from "../core/mediaClassification";
 import { createTmdbProviderReference } from "../core/tmdbSavedTitle";
+import { parseManualEntryIdentity } from "../core/manualEntryIdentity";
+import { assignManualIdentityWithDb } from "./manualEntryIdentities";
 
-export const DATABASE_SCHEMA_VERSION = 5;
+export const DATABASE_SCHEMA_VERSION = 6;
+export const MANUAL_ENTRY_IDENTITIES_TABLE_SQL = `CREATE TABLE manual_entry_identities (
+  portable_id TEXT PRIMARY KEY NOT NULL,
+  saved_title_id TEXT NOT NULL UNIQUE,
+  FOREIGN KEY (saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE,
+  CHECK (length(trim(portable_id)) > 0 AND portable_id = trim(portable_id))
+);`;
 export const LEGACY_BACKUP_FORMAT = "library-backup-v1-v4";
 
 export const PERSONAL_RATING_COLUMN_SQL = `personal_rating INTEGER NULL CHECK (
@@ -131,11 +139,17 @@ export type SchemaDatabase = {
 
 type TableInfoRow = { name: string; type: string; notnull: number; pk: number };
 type ForeignKeyRow = { table: string; from: string; to: string; on_delete: string };
-type IndexListRow = { name: string; unique: number };
+type IndexListRow = { name: string; unique: number; partial: number };
 type IndexInfoRow = { name: string };
 type LegacySavedTitleRow = { id: string; provider: string; external_id: string; type: string };
 
 export type DatabaseMigrationHooks = {
+  generateManualIdentity?: () => string;
+  afterV6TableCreated?: () => void | Promise<void>;
+  afterV6IdentitiesAssigned?: () => void | Promise<void>;
+  beforeV6Verification?: () => void | Promise<void>;
+  beforeVersion6Published?: () => void | Promise<void>;
+  afterVersion6Published?: () => void | Promise<void>;
   afterV5TargetTablesCreated?: () => void | Promise<void>;
   afterV5ItemsCopied?: () => void | Promise<void>;
   afterV5DependentsCopied?: () => void | Promise<void>;
@@ -615,6 +629,56 @@ async function migrateV4ToV5(db: SchemaDatabase, hooks: DatabaseMigrationHooks):
   await verifyV5Schema(db);
 }
 
+export async function verifyV6Schema(db: SchemaDatabase): Promise<void> {
+  await verifyV5Schema(db);
+  const table = await db.getFirstAsync<{ sql: string }>(
+    "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'manual_entry_identities';"
+  );
+  if (!table?.sql || !normalizeSql(table.sql).includes(
+    "check (length(trim(portable_id)) > 0 and portable_id = trim(portable_id))"
+  )) throw new Error("Falta validación del token de identidad manual v6.");
+  const columns = await db.getAllAsync<TableInfoRow>("PRAGMA table_info(manual_entry_identities);");
+  if (!matchesColumns(columns, [
+    { name: "portable_id", type: "TEXT", notnull: 1, pk: 1 },
+    { name: "saved_title_id", type: "TEXT", notnull: 1, pk: 0 },
+  ])) throw new Error("La estructura de identidad manual v6 no coincide.");
+  await verifyCascadeForeignKey(db, "manual_entry_identities");
+  const indexes = await db.getAllAsync<IndexListRow>("PRAGMA index_list(manual_entry_identities);");
+  for (const column of ["portable_id", "saved_title_id"]) {
+    let found = false;
+    for (const index of indexes.filter(i => i.unique === 1 && i.partial === 0)) {
+      const fields = await db.getAllAsync<IndexInfoRow>(`PRAGMA index_info('${index.name.replace(/'/g, "''")}');`);
+      if (fields.length === 1 && fields[0].name === column) found = true;
+    }
+    if (!found) throw new Error("Falta unicidad de identidad manual v6.");
+  }
+  const rows = await db.getAllAsync<{ portable_id: string }>("SELECT portable_id FROM manual_entry_identities;");
+  for (const row of rows) parseManualEntryIdentity(row.portable_id);
+}
+
+async function migrateV5ToV6(db: SchemaDatabase, hooks: DatabaseMigrationHooks): Promise<void> {
+  await verifyV5Schema(db);
+  const tables = ["saved_titles", "media_provider_references", "legacy_saved_title_identities", "title_pins", "app_preferences"];
+  const snapshot = async () => Promise.all(tables.map(table => db.getAllAsync(`SELECT * FROM ${table} ORDER BY 1, 2;`)));
+  const before = JSON.stringify(await snapshot());
+  await db.execAsync(MANUAL_ENTRY_IDENTITIES_TABLE_SQL);
+  await hooks.afterV6TableCreated?.();
+  const eligible = await db.getAllAsync<{ id: string }>(`SELECT id FROM saved_titles s
+    WHERE NOT EXISTS (SELECT 1 FROM media_provider_references r WHERE r.saved_title_id = s.id)
+      AND NOT EXISTS (SELECT 1 FROM legacy_saved_title_identities l WHERE l.saved_title_id = s.id)
+    ORDER BY id;`);
+  for (const row of eligible) await assignManualIdentityWithDb(db, row.id, hooks.generateManualIdentity);
+  await hooks.afterV6IdentitiesAssigned?.();
+  await hooks.beforeV6Verification?.();
+  await verifyV6Schema(db);
+  const assigned = await db.getAllAsync<{ saved_title_id: string }>("SELECT saved_title_id FROM manual_entry_identities ORDER BY saved_title_id;");
+  if (JSON.stringify(assigned.map(row => row.saved_title_id)) !== JSON.stringify(eligible.map(row => row.id)) ||
+      JSON.stringify(await snapshot()) !== before) throw new Error("La migración v6 alteró datos o no completó el backfill exacto.");
+  await hooks.beforeVersion6Published?.();
+  await db.execAsync("PRAGMA user_version = 6;");
+  await hooks.afterVersion6Published?.();
+}
+
 /** Version-aware compatibility entry point; it never installs v3 before inspecting user_version. */
 export async function ensureLibrarySchema(db: SchemaDatabase): Promise<void> {
   await evolveDatabaseSchema(db, await readUserVersion(db));
@@ -632,7 +696,7 @@ export async function evolveDatabaseSchema(
   await db.execAsync("PRAGMA journal_mode = WAL;");
   await db.withTransactionAsync(async () => {
     if (currentVersion === DATABASE_SCHEMA_VERSION) {
-      await verifyV5Schema(db);
+      await verifyV6Schema(db);
       return;
     }
     const hasSavedTitles = await tableExists(db, "saved_titles");
@@ -650,11 +714,14 @@ export async function evolveDatabaseSchema(
         await db.execAsync("PRAGMA user_version = 4;");
         await hooks.afterVersion4Published?.();
       }
-      await migrateV4ToV5(db, hooks);
+      if (currentVersion < 5) await migrateV4ToV5(db, hooks);
     }
-    await hooks.beforeVersion5Published?.();
-    await db.execAsync(`PRAGMA user_version = ${DATABASE_SCHEMA_VERSION};`);
-    await hooks.afterVersion5Published?.();
+    if (currentVersion < 5) {
+      await hooks.beforeVersion5Published?.();
+      await db.execAsync("PRAGMA user_version = 5;");
+      await hooks.afterVersion5Published?.();
+    }
+    await migrateV5ToV6(db, hooks);
     if (await readUserVersion(db) !== DATABASE_SCHEMA_VERSION) {
       throw new Error(`La evolución SQLite no alcanzó la versión ${DATABASE_SCHEMA_VERSION}.`);
     }

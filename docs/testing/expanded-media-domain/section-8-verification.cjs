@@ -121,7 +121,7 @@ async function main() {
     const restoredNullable = await storage.getSavedTitleWithReferencesByIdWithDb(restored,nullableId);
     assert.equal(restoredNullable.primaryFormat,null); assert.equal(restoredNullable.medium,'comic'); assert.equal(restoredNullable.contentFamily,'manga');
     assert.equal(restoredNullable.providerReferences[0].resourceNamespace,'series');
-    for (const handle of [db,restored]) assert.equal(handle.sqlite.prepare('PRAGMA user_version').get().user_version,5);
+    for (const handle of [db,restored]) assert.equal(handle.sqlite.prepare('PRAGMA user_version').get().user_version,6);
     assert.equal(http,0,'Local save/provenance/backup/offline reads perform no HTTP');
   } finally { db.sqlite.close(); restored.sqlite.close(); }
   console.log('Section 8 contracts: finite platform gates, destinations, provider errors, unsupported Novel, real SQLite generic save/re-save/personal preservation/null refresh/rating ownership and backup v6 passed. No native claim.');

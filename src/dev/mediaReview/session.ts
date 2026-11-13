@@ -8,7 +8,7 @@ import { setTitlePinStateWithDb } from "../../storage/titlePinsRepo";
 import { runSerializedStorageMutation } from "../../storage/storageMutationQueue";
 import { getLibraryBackupExportDataWithDb } from "../../storage/libraryBackupExport";
 import { mergeLibraryBackupWithDb } from "../../storage/libraryBackupMerge";
-import { createLibraryBackupV6 } from "../../core/libraryBackupV6";
+import { createLibraryBackupV7 } from "../../core/libraryBackupV7";
 import { parseLibraryBackup } from "../../core/libraryBackup";
 import { VIEW_PREFERENCE_DEFAULTS, type ViewPreferenceKey, type ViewPreferenceValueByKey } from "../../core/viewPreferences";
 import { DEFAULT_APPEARANCE_PREFERENCE } from "../../theme/appearancePreference";
@@ -89,11 +89,11 @@ export async function createReviewSession(options: Readonly<{
   };
   const exportTest = () => transaction(async db => {
     const data = await getLibraryBackupExportDataWithDb(db, { status: "unavailable", reason: "pending" });
-    return JSON.stringify(createLibraryBackupV6(data.items, data.pins, data.appearanceAvailability), null, 2);
+    return JSON.stringify(createLibraryBackupV7(data.items, data.pins, data.appearanceAvailability), null, 2);
   });
   const importTest = (json: string) => {
     requireOpen(); const parsed = parseLibraryBackup(json);
-    if (!parsed.ok || parsed.payload.version !== 6) throw new Error("La revisión restaura únicamente backup TEST v6.");
+    if (!parsed.ok || parsed.payload.version !== 7) throw new Error("La revisión restaura únicamente backup TEST v7.");
     return transaction(db => mergeLibraryBackupWithDb(db, parsed.payload, generateId), restoreDb);
   };
   const close = () => runSerializedStorageMutation(async () => {

@@ -55,7 +55,7 @@ async function main() {
   const session = await createReviewSession({ development: true, flag: "1" });
   assert.equal(opened.length, 2); assert.notEqual(handles[0].filename, handles[1].filename);
   assert.ok(handles.every(db => fs.existsSync(db.filename)));
-  for (const db of handles) { assert.equal(sqliteVersion(db), 5); assert.equal(db.sqlite.prepare("PRAGMA foreign_keys").get().foreign_keys, 1); }
+  for (const db of handles) { assert.equal(sqliteVersion(db), 6); assert.equal(db.sqlite.prepare("PRAGMA foreign_keys").get().foreign_keys, 1); }
   assert.equal((await session.source.getLibraryScreenSnapshot()).items.length, 0);
   assert.equal((await session.restored.getLibraryScreenSnapshot()).items.length, 0);
   const mangaId = await session.save(fixture("manga"));
@@ -102,7 +102,7 @@ async function main() {
   await session.save(ova, { contentFamily: null, primaryFormat: null });
   const preserved = (await session.source.getTitleDetailPinSnapshot(ovaId, {})).item;
   assert.equal(preserved.voteAverage, 7.9); assert.equal(preserved.contentFamily, "anime"); assert.equal(preserved.primaryFormat, "ova");
-  const json = await session.exportTest(), backup = JSON.parse(json); assert.equal(backup.version, 6);
+  const json = await session.exportTest(), backup = JSON.parse(json); assert.equal(backup.version, 7);
   assert.equal(Object.hasOwn(backup, "test"), false); assert.equal(Object.hasOwn(backup, "appearance"), false);
   const outcome = await session.importTest(json); assert.equal(outcome.inserted, 20); assert.equal(outcome.pins.inserted, 1);
   const restored = await session.restored.getLibraryScreenSnapshot();
@@ -122,7 +122,7 @@ async function main() {
   await session.themePersistence.write({ ...originalTheme.preference, scheme: "light" }); assert.equal((await session.themePersistence.read()).preference.scheme, "light");
   await session.source.setViewPreference("library.viewMode", "grid"); assert.equal(await session.source.getViewPreference("library.viewMode"), "grid");
   assert.equal(personalInit, 0); assert.equal(networkCalls, 0);
-  const testFile = path.join(__dirname, "TEST-section5-review-v6.json"); fs.writeFileSync(testFile, json);
+  const testFile = path.join(folder, "TEST-section5-review-v7.json"); fs.writeFileSync(testFile, json);
   await session.close();
   const reopened = await createReviewSession({ development: true, flag: "1" });
   assert.deepEqual(reopened.names, session.names, "bounded review names across restart");

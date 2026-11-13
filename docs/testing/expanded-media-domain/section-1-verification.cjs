@@ -143,7 +143,7 @@ async function storageBoundary() {
     const before = writes;
     await assert.rejects(db.withTransactionAsync(() => repo.saveProviderTitleWithDb(db, input(classify("comic")), () => "mismatch", 103)));
     assert.equal(writes, before, "medium mismatch rejected before writes");
-    assert.equal(sqlite.prepare("PRAGMA user_version").get().user_version, 5);
+    assert.equal(sqlite.prepare("PRAGMA user_version").get().user_version, 6);
     const { createLibraryBackupV6, parseLibraryBackupV6 } = require("../../../src/core/libraryBackupV6.ts");
     const titles = await repo.listSavedTitlesWithDb(db);
     const backup = createLibraryBackupV6(titles, [], { status: "unavailable" });

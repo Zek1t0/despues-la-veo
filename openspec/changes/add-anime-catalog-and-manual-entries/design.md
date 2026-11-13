@@ -34,6 +34,8 @@ Todos los MUST en deltas describen el comportamiento objetivo sujeto a aprobaci�
 
 ### D1 — Identidad manual portable aditiva (recomendación pendiente)
 
+Autorización APPLY B1 recibida: SQLite5→6, backup6→7, identidad portable separada, backfill limitado, preservación de datos/identidades, imports1–6 y migración/rollback transaccionales. Alcance autorizado de esta ejecución: tareas 1.1–1.5. La revisión externa del diff real, las correcciones/revalidación y el checkpoint manual commit/push siguen pendientes en 1.6; B2–B4 no se inician.
+
 Proponer tabla manual_entry_identities con portable_id TEXT PRIMARY KEY NOT NULL y saved_title_id TEXT NOT NULL UNIQUE, FK a saved_titles(id) ON DELETE CASCADE. Token opaco canónico no vacío, generado aleatoriamente independientemente del ID local, no derivado de contenido, provider ni legacy. Exponer manualIdentity opcional como dato separado del snapshot y providerReferences; no fabricar provider=manual. Generación por helper compartido con reintentos acotados (25) ante colisión comprobada, fallo íntegro si se agotan. Verificar disponibilidad real del generador Expo/Android/Web al implementar, sin instalar SDK; no afirmar que Math.random sea criptográficamente seguro. IDs locales históricos siguen siendo strings opacos, no se exige UUID.
 
 Identidad nueva para cada creación manual y para local-only defensivos existentes sin legacyIdentity. Manuales históricos mantienen legacyIdentity como identidad portable suficiente; no se reemplaza ni normaliza. Los ítems con referencias externas no reciben identidad manual por backfill. No se añade un flag mutable de origen: edición de snapshot disponible solo si providerReferences está vacío y existe identidad manual o histórica válida. Si algún futuro linking agrega referencias, requiere otro diseño de propiedad de metadata.
@@ -65,6 +67,8 @@ Cambiar medio localmente no relaja el contrato import: si el mismo token ya exis
 Advertencia local recomendada: comparar títulos trim, whitespace colapsado, minúsculas es y normalización de diacríticos; año igual o desconocido en alguno. Excluir self en edición. Mostrar candidatos de cualquier fuente, abrir detalle local y permitir volver con borrador conservado o «Crear por separado». No búsqueda remota, fuzzy matching, deduplicación ni linking. Diferencias de puntuación fina no son contratos de identidad.
 
 ### D4 — Kitsu como candidato, evidencia y gates
+
+El gate M no resuelto no bloquea la implementación independiente B1/B2 ni sus checkpoints. Sigue bloqueando el uso Kitsu afectado: se mantienen íntegros los requisitos contractuales M, técnicos T por plataforma y de arte A; no se activa Kitsu por completar B1/B2.
 
 Consulta realizada durante PROPOSE, fecha de proyecto 2026-11-12:
 
@@ -133,6 +137,8 @@ Plan candidato sujeto a aprobación explícita antes de B1; esta fase no migra n
 7. Reversión después de commit: no bajar PRAGMA ni eliminar tabla para fingir v5. Restaurar copia consistente previa con aplicación anterior o usar versión compatible que preserve v6. Datos nuevos posteriores a la copia requieren recuperación mediante runtime compatible; app vieja no lee backup7. Documentar esta pérdida potencial antes del checkpoint, no ejecutar recuperación destructiva automáticamente.
 
 ## Validation and section boundaries
+
+BlueStacks puede satisfacer aceptación de un hito de desarrollo cuando el usuario lo acepta explícitamente para ese hito y se registran runtime, build, alcance y evidencia (USER-REPORTED cuando corresponda). No se hereda aceptación de un hito anterior. La aceptación de release en dispositivo físico permanece separada y pendiente hasta ejecutarla; la emulación no acredita compatibilidad física ni reemplaza los gates contractuales o la aceptación técnica específica de Kitsu.
 
 Cuatro secciones B1 identidad/backup, B2 manual UI, B3 catálogo condicional, B4 integración/regresión. Cada sección incluye tests pertinentes, TypeScript, revisión del diff real y un checkpoint manual antes de pasar a la siguiente; no commits automáticos ni gates duplicados por detalle menor. B4 reúne regresión final; revisión externa posterior y archive/review/checkpoint/integración siguen siendo etapas separadas solicitadas por el usuario.
 

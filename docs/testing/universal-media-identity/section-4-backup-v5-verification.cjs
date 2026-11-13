@@ -32,6 +32,8 @@ function fixture(label) {
       PRIMARY KEY(legacy_format,legacy_provider,legacy_external_id), FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE);
     CREATE TABLE title_pins (saved_title_id TEXT NOT NULL, context_type TEXT NOT NULL, context_key TEXT NOT NULL, pinned_at INTEGER NOT NULL,
       PRIMARY KEY(saved_title_id,context_type,context_key), FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE);`);
+  // Runtime helpers now require the additive v6 identity table; historical payloads stay unchanged.
+  sqlite.exec(require("../../../src/storage/databaseSchema.ts").MANUAL_ENTRY_IDENTITIES_TABLE_SQL);
   const normalize = (values) => values.length === 1 && Array.isArray(values[0]) ? values[0] : values;
   const db = {
     async getFirstAsync(sql, ...values) { return sqlite.prepare(sql).get(...normalize(values)) ?? null; },

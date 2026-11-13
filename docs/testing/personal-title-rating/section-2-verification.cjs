@@ -89,6 +89,7 @@ function createDatabase() {
       FOREIGN KEY(saved_title_id) REFERENCES saved_titles(id) ON DELETE CASCADE
     );
   `);
+  sqlite.exec(require("../../../src/storage/databaseSchema.ts").MANUAL_ENTRY_IDENTITIES_TABLE_SQL);
   const normalizeParams = (params) =>
     params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
   const db = {
