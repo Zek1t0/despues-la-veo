@@ -99,8 +99,8 @@ async function migrationAndRecovery() {
   try {
     let n = 0;
     await schema.evolveDatabaseSchema(f.db, 5, { generateManualIdentity: () => `portable-${++n}` });
-    assert.equal(await schema.readUserVersion(f.db), 6); assert.deepEqual(records(f), rows);
-    assert.deepEqual(f.sqlite.prepare('SELECT * FROM manual_entry_identities ORDER BY saved_title_id').all().map(r => [r.portable_id,r.saved_title_id]), [['portable-1','local'],['portable-2','local2']]);
+    assert.equal(await schema.readUserVersion(f.db), 7); assertLegacyEqual(records(f), rows);
+    assertLegacyEqual(f.sqlite.prepare('SELECT * FROM manual_entry_identities ORDER BY saved_title_id').all().map(r => [r.portable_id,r.saved_title_id]), [['portable-1','local'],['portable-2','local2']]);
     await schema.verifyV6Schema(f.db); const migrated = snapshot(f);
     await schema.evolveDatabaseSchema(f.db, 6, { generateManualIdentity() { throw Error('must not regenerate'); } });
     assert.equal(snapshot(f), migrated);
@@ -110,13 +110,13 @@ async function migrationAndRecovery() {
       const result = await merge(target, parseLibraryBackup(fs.readFileSync(json,'utf8')).payload);
       assert.equal(result.inserted, 6); assert.equal(result.pins.inserted, 3);
       // Export is a canonical logical comparison; raw nullable genres intentionally materializes to [].
-      assert.deepEqual(await backup(target), v7);
-      assert.deepEqual(records(target, ['media_provider_references','legacy_saved_title_identities','title_pins','manual_entry_identities']), records(f, ['media_provider_references','legacy_saved_title_identities','title_pins','manual_entry_identities']));
+      assertLegacyEqual(await backup(target), v7);
+      assertLegacyEqual(records(target, ['media_provider_references','legacy_saved_title_identities','title_pins','manual_entry_identities']), records(f, ['media_provider_references','legacy_saved_title_identities','title_pins','manual_entry_identities']));
       assert.equal((await merge(target, parsed(v7.items,v7.pins))).skipped, 6);
     } finally { target.close(); }
   } finally { f.close(); }
   const reopen = fixture(file); try { await schema.evolveDatabaseSchema(reopen.db, 6); assert.equal(await identities.manualIdentityForItemWithDb(reopen.db,'local'), 'portable-1'); } finally { reopen.close(); }
-  const recovered = fixture(copy); try { assert.equal(snapshot(recovered), baseline); assert.deepEqual(records(recovered), rows); } finally { recovered.close(); }
+  const recovered = fixture(copy); try { assert.equal(snapshot(recovered), baseline); assertLegacyEqual(records(recovered), rows); } finally { recovered.close(); }
 
   for (const hook of ['afterV6TableCreated','afterV6IdentitiesAssigned','beforeV6Verification','beforeVersion6Published','afterVersion6Published','commit']) {
     const f = fixture(); try {
@@ -147,7 +147,7 @@ async function migrationAndRecovery() {
       afterVersion6Published() {
         commitFailure.sqlite.exec("PRAGMA defer_foreign_keys=ON; INSERT INTO manual_entry_identities VALUES ('commit-orphan','absent');");
       },
-    }), /FOREIGN KEY/);
+    }), /FOREIGN KEY|huérfanas/);
     assert.equal(snapshot(commitFailure),before);
   } finally { commitFailure.close(); }
   const writeFailure = fixture(); try {
@@ -159,7 +159,7 @@ async function migrationAndRecovery() {
     }), /Injected backfill write/);
     assert.equal(snapshot(writeFailure),before);
   } finally { writeFailure.close(); }
-  const future = fixture(); try { seedV5(future); future.sqlite.exec('PRAGMA user_version=7'); const before = snapshot(future); await assert.rejects(schema.evolveDatabaseSchema(future.db,7),/no soportada/); assert.equal(snapshot(future),before); } finally { future.close(); }
+  const future = fixture(); try { seedV5(future); future.sqlite.exec('PRAGMA user_version=8'); const before = snapshot(future); await assert.rejects(schema.evolveDatabaseSchema(future.db,8),/no soportada/); assert.equal(snapshot(future),before); } finally { future.close(); }
   console.log('PASS mixed v5 migration, full records, reopen, future rejection, phase/commit/corruption rollback, consistent-copy recovery');
 }
 
@@ -172,7 +172,7 @@ async function identityContracts() {
     const before = snapshot(f);
     await assert.rejects(f.db.withTransactionAsync(() => identities.attachManualIdentityWithDb(f.db,'owned','b')), /propietario/);
     await assert.rejects(f.db.withTransactionAsync(() => identities.attachManualIdentityWithDb(f.db,'different','a')), /propietario/);
-    await assert.rejects(f.db.withTransactionAsync(() => identities.attachManualIdentityWithDb(f.db,'free','absent')), /FOREIGN KEY/);
+    await assert.rejects(f.db.withTransactionAsync(() => identities.attachManualIdentityWithDb(f.db,'free','absent')), /FOREIGN KEY|huérfanas/);
     let attempts = 0;
     await assert.rejects(f.db.withTransactionAsync(() => identities.assignManualIdentityWithDb(f.db,'b',() => { attempts++; return 'owned'; })), /25/);
     assert.equal(attempts,25); assert.equal(snapshot(f),before);
@@ -183,7 +183,7 @@ async function identityContracts() {
     assert.throws(() => f.sqlite.exec("INSERT INTO manual_entry_identities VALUES ('owned','b')"),/UNIQUE/);
     f.sqlite.exec("DELETE FROM saved_titles WHERE id='a'");
     assert.equal(await identities.manualIdentityOwnerWithDb(f.db,'owned'),null);
-    assert.deepEqual(f.sqlite.prepare('PRAGMA foreign_key_check').all(),[]);
+    assertLegacyEqual(f.sqlite.prepare('PRAGMA foreign_key_check').all(),[]);
   } finally { f.close(); }
   console.log('PASS canonical identities, bounded collision retries/exhaustion, ownership, FK and cascade');
 }
@@ -191,7 +191,7 @@ async function identityContracts() {
 async function parsersAndHistory() {
   for (const invalid of ['', ' ', ' padded', null, 9, 'x\u0000']) assert.equal(parsed([item('bad',invalid)]).invalid.length,1);
   const duplicate = parsed([item('a','same'),item('b','same'),item('c','other')]);
-  assert.equal(duplicate.invalid.length,2); assert.deepEqual(duplicate.items.map(x=>x.id.value),['c']);
+  assert.equal(duplicate.invalid.length,2); assertLegacyEqual(duplicate.items.map(x=>x.id.value),['c']);
   assert.throws(() => createLibraryBackupV7([item('a')],[],appearance),/identidad portable/);
   assert.throws(() => createLibraryBackupV7([item('a','x'),item('b','x')],[],appearance),/válido/);
   const f = fixture(); try {
@@ -214,7 +214,7 @@ async function parsersAndHistory() {
       }
     }
     const b = await backup(f); const g = fixture(); try {
-      await schema.evolveDatabaseSchema(g.db,0); assert.equal((await merge(g,parsed(b.items,b.pins))).inserted,6); assert.deepEqual(await backup(g),b);
+      await schema.evolveDatabaseSchema(g.db,0); assert.equal((await merge(g,parsed(b.items,b.pins))).inserted,6); assertLegacyEqual(await backup(g),b);
     } finally { g.close(); }
     // Two independent imports of the identity-less historical file are not equivalent.
     const g2 = fixture(); try {
@@ -234,7 +234,7 @@ async function mergeSemantics() {
     let n=0; const first = await merge(f,p,() => ++n<3 ? 'occupied' : 'remapped');
     assert.equal(first.inserted,1); assert.equal(first.pins.inserted,2); assert.equal(n,3);
     const full = snapshot(f); const repeat = await merge(f,p); assert.equal(repeat.skipped,1); assert.equal(repeat.pins.preserved,2); assert.equal(snapshot(f),full);
-    assert.deepEqual(await storage.getSavedTitleWithReferencesByIdWithDb(f.db,'occupied'),occupant);
+    assertLegacyEqual(await storage.getSavedTitleWithReferencesByIdWithDb(f.db,'occupied'),occupant);
     let attempts=0; const exhausted = await merge(f,parsed([item('occupied','new')]),() => { attempts++; return 'occupied'; });
     assert.equal(exhausted.failed.length,1); assert.equal(attempts,24); assert.equal(snapshot(f),full);
     // Resolve all supplied identities before any writes, irrespective of freshness.
@@ -276,7 +276,7 @@ async function mergeSemantics() {
     const beforeOuter=snapshot(f);
     await assert.rejects(f.db.withTransactionAsync(async()=>{ await mergeLibraryBackupWithDb(f.db,parsed([item('outer','outer-token')],[pin('outer')]),()=> 'unused'); throw Error('Injected outer'); }),/Injected outer/);
     assert.equal(snapshot(f),beforeOuter);
-    assert.deepEqual(f.sqlite.prepare('PRAGMA foreign_key_check').all(),[]);
+    assertLegacyEqual(f.sqlite.prepare('PRAGMA foreign_key_check').all(),[]);
     assert.notEqual(before,snapshot(f));
   } finally { f.close(); }
   console.log('PASS remap/reimport, bounded ID retries, contradictory ownership, freshness/presence/null, pins, savepoint/outer rollback');
@@ -308,7 +308,7 @@ async function appearanceAfterCommit() {
     }
   } finally { dbModule.initDb=previous; }
   const settings=fs.readFileSync(path.resolve(__dirname,'../../../app/(tabs)/ajustes.tsx'),'utf8');
-  assert.match(settings,/createLibraryBackupV7/);
+  assert.match(settings,/createLibraryBackupV8/);
   assert.equal((settings.match(/payload.version === 7/g)||[]).length,3);
   console.log('PASS v7 export composition and Appearance only after commit; postcommit failure preserves library');
 }
@@ -323,3 +323,13 @@ async function appearanceAfterCommit() {
     fs.rmSync(root,{recursive:true,force:true});
   }
 })().catch(error=>{ console.error(error); process.exitCode=1; });
+
+// These historical-contract assertions compare every original field. New v8 sidecars
+// are verified separately by section-2-backups/storage, and have no authority in v1-v7.
+function legacyShape(value) {
+  if (Array.isArray(value)) return value.map(legacyShape);
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value)
+    .filter(([key]) => !['metadataState','localAliases'].includes(key)).map(([key,entry]) => [key,legacyShape(entry)]));
+  return value;
+}
+function assertLegacyEqual(actual, expected, message) { assert.deepEqual(legacyShape(actual),legacyShape(expected),message); }

@@ -1,0 +1,62 @@
+const assert = require('node:assert/strict');
+const { fixture, createV6 } = require('./sqlite-fixtures.cjs');
+const { initialMetadataState, projectMediaMetadata } = require('../../../src/core/mediaMetadataState.ts');
+const { evolveDatabaseSchema } = require('../../../src/storage/databaseSchema.ts');
+const { updateMediaMetadata, selectMetadataSource } = require('../../../src/storage/mediaMetadataRepo.ts');
+const { getSavedTitleWithReferencesByIdWithDb: read } = require('../../../src/storage/savedTitleStorage.ts');
+const { getLibraryBackupExportDataWithDb: exportData } = require('../../../src/storage/libraryBackupExport.ts');
+const { createLibraryBackupV8 } = require('../../../src/core/libraryBackupV8.ts');
+const { parseLibraryBackup } = require('../../../src/core/libraryBackup.ts');
+const { mergeLibraryBackupWithDb } = require('../../../src/storage/libraryBackupMerge.ts');
+const tmdb = { provider:'tmdb', resourceNamespace:'tv', externalId:'1' };
+const kitsu = { provider:'kitsu', resourceNamespace:'anime', externalId:'1' };
+const poster = 'https://image.tmdb.org/t/p/w500/TEST.jpg';
+const image = url => [{variant:'original',url}];
+const doc = (fields, reference=tmdb) => ({version:1,provenance:{reference,normalizerVersion:1,fetchedAt:null,checkedAt:null,sourceUpdatedAt:null},fields});
+(async()=>{
+  const source=fixture(), target=fixture();
+  try {
+    createV6(source);
+    source.sqlite.prepare('UPDATE saved_titles SET poster_url=? WHERE id=?').run(poster,'tmdb');
+    await evolveDatabaseSchema(source.db,6);
+    const original=await read(source.db,'tmdb');
+    const state=initialMetadataState(original,[tmdb]);
+    const project = (fields, overrides={}) => projectMediaMetadata({...state,...overrides,documents:[{metadata:doc(fields),changedAt:100}]});
+    assert.equal(project({canonicalTitle:'Enriched',posterImages:image(poster)}).posterUrl,poster);
+    assert.equal(project({canonicalTitle:'Enriched'}).posterUrl,poster,'omission preserves historical value');
+    assert.equal(project({posterImages:null}).posterUrl,null,'explicit null clears');
+    assert.equal(project({posterImages:[]}).posterUrl,null,'complete empty clears');
+    assert.equal(project({posterImages:image('https://unapproved.example.test/x')}).posterUrl,poster,'unauthorized URL cannot erase or replace history');
+    assert.equal(project({posterImages:image('https://image.tmdb.org/t/p/w500/NEW.jpg')}).posterUrl,poster,'no new artwork selection');
+    for(const unsafe of ['https://image.tmdb.org.evil.test/x','http://image.tmdb.org/x','https://user@image.tmdb.org/x','https://127.0.0.1/x','https://image.tmdb.org:444/x']) {
+      assert.equal(project({posterImages:image(poster)},{baseline:{...state.baseline,snapshot:{...state.baseline.snapshot,posterUrl:unsafe}}}).posterUrl,null);
+    }
+    assert.equal(projectMediaMetadata(state).posterUrl,poster,'legacy without documents stays intact');
+    const foreign={...state,selection:{reference:kitsu,updatedAt:101},documents:[{metadata:doc({posterImages:image(poster)},kitsu),changedAt:101}]};
+    assert.equal(projectMediaMetadata(foreign).posterUrl,null,'Kitsu cannot borrow TMDB history or host authority');
+    assert.equal(projectMediaMetadata({...foreign,documents:[{...foreign.documents[0],snapshot:state.baseline.snapshot}]}).posterUrl,null,'Kitsu snapshot cannot grant visual permission');
+    const unknown={...state,baseline:{...state.baseline,reference:null},documents:[{metadata:doc({posterImages:image(poster)}),changedAt:100}]};
+    assert.equal(projectMediaMetadata(unknown).posterUrl,null,'unattributed baseline has no TMDB authority');
+    assert.equal(projectMediaMetadata({...unknown,documents:[{...unknown.documents[0],snapshot:state.baseline.snapshot}]}).posterUrl,poster,'document snapshot carries its own reference authority');
+    assert.equal(projectMediaMetadata({...state,selection:{reference:{...tmdb,externalId:'2'},updatedAt:100},documents:[]}).posterUrl,null,'same provider with different resource cannot borrow the baseline');
+    await updateMediaMetadata('tmdb',doc({canonicalTitle:'Enriched',posterImages:image(poster)}),100,undefined,source.db);
+    assert.equal((await read(source.db,'tmdb')).posterUrl,poster);
+    source.sqlite.exec("INSERT INTO media_provider_references VALUES ('kitsu','anime','77','tmdb')");
+    const other={...kitsu,externalId:'77'};
+    await updateMediaMetadata('tmdb',doc({canonicalTitle:'Other',posterImages:image('https://media.kitsu.app/x')},other),101,undefined,source.db);
+    await selectMetadataSource('tmdb',other,102,source.db);
+    assert.equal((await read(source.db,'tmdb')).posterUrl,null);
+    await selectMetadataSource('tmdb',tmdb,103,source.db);
+    assert.equal((await read(source.db,'tmdb')).posterUrl,poster);
+    const data=await exportData(source.db,{status:'unavailable'});
+    const backup=createLibraryBackupV8(data.items,data.pins,data.appearanceAvailability,undefined,{preferences:data.preferences,activity:data.activity});
+    assert.equal(backup.items.find(i=>i.id==='tmdb').posterUrl,poster);
+    const parsed=parseLibraryBackup(JSON.stringify(backup));assert.equal(parsed.ok,true);assert.deepEqual(parsed.payload.invalid,[]);
+    await evolveDatabaseSchema(target.db,0);
+    await target.db.withTransactionAsync(()=>mergeLibraryBackupWithDb(target.db,parsed.payload,()=>{throw Error('unexpected remap');}));
+    const restored=await read(target.db,'tmdb');assert.equal(restored.posterUrl,poster);
+    for(const key of ['notes','tags','status','personalRating','createdAt','updatedAt']) assert.deepEqual(restored[key],original[key]);
+    assert.deepEqual(restored.metadataState,(await read(source.db,'tmdb')).metadataState);
+    console.log('PASS poster regression: TMDB history, omitted/null/empty/unauthorized, safety, Kitsu closed, source switch, legacy and SQLite v7/backup v8 round-trip.');
+  } finally {source.close();target.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

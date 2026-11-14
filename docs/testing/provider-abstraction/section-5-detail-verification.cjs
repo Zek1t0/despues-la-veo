@@ -166,7 +166,7 @@ async function savingAndPresentation(db) {
     for (const key of ["id", "createdAt", "status", "tags", "notes", "personalRating", "providerReferences"]) {
       assert.deepEqual(saved[key], existing[key], `refresh preserves ${key}`);
     }
-    assert.equal(saved.updatedAt, existing.updatedAt + 1);
+    assert.equal(saved.updatedAt, existing.updatedAt);
     assert.equal(saved.title, "Refreshed"); assert.equal(saved.year, 2026);
     assert.equal(saved.overview, "Refreshed overview"); assert.equal(saved.voteAverage, 9.4);
     assert.ok(saved.posterUrl.endsWith("/new.jpg")); assert.deepEqual(saved.genres, ["New remote genre"]);
@@ -307,7 +307,7 @@ async function main() {
     await separate.flush(); await button(separate, "Guardar en Biblioteca").props.onPress(); await separate.flush();
     assert.deepEqual(separate.saves[0].snapshot.genres, ["Drama"]);
     assert.deepEqual(separate.saves[0].initialTags, ["Distinct creation policy"]); separate.unmount();
-    assert.equal(sqlite.prepare("PRAGMA user_version").get().user_version, 6);
+    assert.equal(sqlite.prepare("PRAGMA user_version").get().user_version, 7);
     assert.deepEqual(sqlite.prepare("PRAGMA foreign_key_check").all(), []);
     console.log("Section 5 actual TMDB screen effects, mapping, SQLite save/re-save and enrichment verification passed.");
     console.log("Hook-host coverage uses mocked UI/network modules; it does not replace browser visual QA.");

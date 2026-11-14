@@ -202,7 +202,7 @@ async function repositorySaving() {
     }
     for (const key of Object.keys(refreshedInput.snapshot).filter(key => key !== "primaryFormat")) assert.deepEqual(refreshed[key], refreshedInput.snapshot[key]);
     assert.equal(refreshed.primaryFormat, existing.primaryFormat);
-    assert.equal(refreshed.updatedAt, existing.updatedAt + 1);
+    assert.equal(refreshed.updatedAt, existing.updatedAt);
     assert.equal(sqlite.prepare("SELECT COUNT(*) AS n FROM saved_titles").get().n, countBefore);
     assert.equal(sqlite.prepare("SELECT COUNT(*) AS n FROM title_pins WHERE saved_title_id = ?").get(id).n, 2);
 
@@ -229,9 +229,9 @@ async function repositorySaving() {
     const compatBefore = materializations;
     await db.withTransactionAsync(() => repo.saveTmdbTitleWithDb(db, legacy,
       () => { throw new Error("unused ID"); }, 1000));
-    assert.equal(materializations, compatBefore + 1, "compatibility save uses authoritative materializer once");
+    assert.equal(materializations, compatBefore, "existing metadata avoids personal rematerialization");
     const legacyRefreshed = await repo.getSavedTitleWithReferencesByIdWithDb(db, "identity-0");
-    assert.equal(legacyRefreshed.updatedAt, 1001);
+    assert.equal(legacyRefreshed.updatedAt, 1000);
     assert.deepEqual(legacyRefreshed.genres, ["TMDB genre"]);
     assert.deepEqual(legacyRefreshed.tags, ["Creation policy"]);
     events.length = 0;
@@ -269,7 +269,7 @@ async function repositorySaving() {
     assert.deepEqual(results, ["concurrent-local", "concurrent-local"]);
     assert.equal((await repo.getSavedTitleByProviderReferenceWithDb(db, concurrent.reference)).title, "Latest");
     assert.equal(fixture.maximumTransactions, 1);
-    assert.equal(sqlite.prepare("PRAGMA user_version").get().user_version, 6);
+    assert.equal(sqlite.prepare("PRAGMA user_version").get().user_version, 7);
     assert.deepEqual(sqlite.prepare("PRAGMA foreign_key_check").all(), []);
   } finally {
     Module._load = originalLoad;

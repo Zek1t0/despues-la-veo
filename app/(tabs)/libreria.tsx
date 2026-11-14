@@ -1,3 +1,4 @@
+import { observeLibraryProjection } from "../../src/storage/libraryInvalidation";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
@@ -359,13 +360,17 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
     [selectSort, selectViewMode, sort, statusFilter, theme.global.textSecondary, classificationFilter, viewMode]
   );
 
+  const libraryReadGeneration = useRef(0);
+  useEffect(() => () => { libraryReadGeneration.current++; }, []);
   const refresh = useCallback(async () => {
+    const generation = ++libraryReadGeneration.current;
     setLoading(true);
     setSnapshotReady(false);
     setSnapshotError(null);
     try {
       await Promise.all([...pinIntentQueues.current.values()].map((queue) => queue.whenIdle()));
       const snapshot = await getLibraryScreenSnapshot();
+      if (generation !== libraryReadGeneration.current) return;
       setItems(snapshot.items);
       const loadedPinnedAtById = new Map(
         snapshot.pins.map((pin) => [pin.savedTitleId, pin.pinnedAt] as const)
@@ -380,13 +385,14 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
       setPinnedAtById(new Map(loadedPinnedAtById));
       setSnapshotReady(true);
     } catch (error) {
+      if (generation !== libraryReadGeneration.current) return;
       console.error("No se pudo cargar la Biblioteca.", error);
       const message = "No se pudo cargar la Biblioteca. Podés volver a intentar.";
       setSnapshotError(message);
       if (Platform.OS === "web") window.alert(message);
       else Alert.alert("Error al cargar", message);
     } finally {
-      setLoading(false);
+      if (generation === libraryReadGeneration.current) setLoading(false);
     }
   }, []);
 
@@ -395,6 +401,16 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
       refresh();
     }, [refresh])
   );
+
+  useEffect(() => observeLibraryProjection(async () => {
+    await Promise.all([...pinIntentQueues.current.values()].map(queue => queue.whenIdle()));
+    return getLibraryScreenSnapshot();
+  }, snapshot => {
+    libraryReadGeneration.current++;
+    setItems(snapshot.items);
+    setPinnedAtById(new Map(snapshot.pins.map(pin => [pin.savedTitleId, pin.pinnedAt])));
+    setSnapshotReady(true); setSnapshotError(null); setLoading(false);
+  }), []);
 
   const visibleItems = useMemo(() => {
     return selectVisibleLibraryTitles({

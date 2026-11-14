@@ -1,0 +1,20 @@
+[
+  {
+    "command": "npx.cmd tsc --noEmit",
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": "openspec.cmd validate add-enriched-media-metadata-and-library-updates --strict",
+    "exitCode": 0,
+    "stdout": "Change 'add-enriched-media-metadata-and-library-updates' is valid\n",
+    "stderr": ""
+  },
+  {
+    "command": "git diff --check",
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": ""
+  }
+]

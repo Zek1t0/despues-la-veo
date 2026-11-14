@@ -1,3 +1,4 @@
+import { ensureMetadataStateWithDb, acceptLegacyMetadataWriteWithDb } from "./mediaMetadataRepo";
 import { validateManualContent, type ManualContentInput } from "../core/manualContentEntry";
 import { generateManualEntryIdentity } from "../core/manualEntryIdentity";
 import { nextSavedTitleUpdatedAt } from "../core/savedTitleTimestamp";
@@ -32,6 +33,8 @@ export async function createManualContentWithDb(db: SavedTitlesMutationDatabase,
       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, NULL, NULL, '[]', 'planned', '[]', NULL, ?, ?);`,
     id, value.medium, value.contentFamily, value.primaryFormat, value.title, value.year, value.overview, now, now);
     await assignManualIdentityWithDb(db, id, generateIdentity);
+    const created = await getSavedTitleWithReferencesByIdWithDb(db, id);
+    if (created) await ensureMetadataStateWithDb(db, created);
     return id;
   }
   throw new Error("No se pudo generar un ID local libre después de 25 intentos.");
@@ -45,6 +48,7 @@ export async function editManualContentWithDb(db: SavedTitlesMutationDatabase, i
   const result = await db.runAsync(`UPDATE saved_titles SET title = ?, medium = ?, content_family = ?, primary_format = ?,
     year = ?, overview = ?, updated_at = ? WHERE id = ?;`, value.title, value.medium, value.contentFamily,
     value.primaryFormat, value.year, value.overview, nextSavedTitleUpdatedAt(current.updatedAt, now), id);
+  await acceptLegacyMetadataWriteWithDb(db, { ...current, ...value, updatedAt: nextSavedTitleUpdatedAt(current.updatedAt, now) }, current);
   if (result.changes !== 1) throw new Error("No se pudo actualizar el título.");
   return id;
 }

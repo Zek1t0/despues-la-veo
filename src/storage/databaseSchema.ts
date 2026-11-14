@@ -1,9 +1,10 @@
+import { createMetadataSchemaWithDb, backfillMetadataBaselinesWithDb, verifyMetadataSchemaWithDb } from "./mediaMetadataSchema";
 import { assertMediaClassification } from "../core/mediaClassification";
 import { createTmdbProviderReference } from "../core/tmdbSavedTitle";
 import { parseManualEntryIdentity } from "../core/manualEntryIdentity";
 import { assignManualIdentityWithDb } from "./manualEntryIdentities";
 
-export const DATABASE_SCHEMA_VERSION = 6;
+export const DATABASE_SCHEMA_VERSION = 7;
 export const MANUAL_ENTRY_IDENTITIES_TABLE_SQL = `CREATE TABLE manual_entry_identities (
   portable_id TEXT PRIMARY KEY NOT NULL,
   saved_title_id TEXT NOT NULL UNIQUE,
@@ -144,6 +145,10 @@ type IndexInfoRow = { name: string };
 type LegacySavedTitleRow = { id: string; provider: string; external_id: string; type: string };
 
 export type DatabaseMigrationHooks = {
+  afterV7TablesCreated?: () => void | Promise<void>;
+  afterV7BaselinesCreated?: () => void | Promise<void>;
+  beforeVersion7Published?: () => void | Promise<void>;
+  afterVersion7Published?: () => void | Promise<void>;
   generateManualIdentity?: () => string;
   afterV6TableCreated?: () => void | Promise<void>;
   afterV6IdentitiesAssigned?: () => void | Promise<void>;
@@ -693,10 +698,14 @@ export async function evolveDatabaseSchema(
     throw new Error(`Versión SQLite no soportada: ${currentVersion}. ` +
       `Esta aplicación admite hasta la versión ${DATABASE_SCHEMA_VERSION}.`);
   }
+  // The version may have changed since the caller read it (or the same fixture reopened).
+  currentVersion = await readUserVersion(db);
+  if (currentVersion > DATABASE_SCHEMA_VERSION) throw new Error(`Versión SQLite no soportada: ${currentVersion}.`);
   await db.execAsync("PRAGMA journal_mode = WAL;");
   await db.withTransactionAsync(async () => {
     if (currentVersion === DATABASE_SCHEMA_VERSION) {
       await verifyV6Schema(db);
+      await verifyMetadataSchemaWithDb(db);
       return;
     }
     const hasSavedTitles = await tableExists(db, "saved_titles");
@@ -721,7 +730,21 @@ export async function evolveDatabaseSchema(
       await db.execAsync("PRAGMA user_version = 5;");
       await hooks.afterVersion5Published?.();
     }
-    await migrateV5ToV6(db, hooks);
+    if (currentVersion < 6) await migrateV5ToV6(db, hooks);
+    await verifyV6Schema(db);
+    const preservedTables = ["saved_titles","media_provider_references","legacy_saved_title_identities","manual_entry_identities","title_pins","app_preferences"];
+    const captureV6 = async () => JSON.stringify(await Promise.all(preservedTables.map(table => db.getAllAsync(`SELECT * FROM ${table} ORDER BY 1,2;`))));
+    const preservedV6 = await captureV6();
+    await createMetadataSchemaWithDb(db);
+    await hooks.afterV7TablesCreated?.();
+    await backfillMetadataBaselinesWithDb(db);
+    await hooks.afterV7BaselinesCreated?.();
+    await verifyMetadataSchemaWithDb(db);
+    await hooks.beforeVersion7Published?.();
+    if (await captureV6() !== preservedV6) throw new Error("La migración v7 alteró datos v6.");
+    await db.execAsync("PRAGMA user_version = 7;");
+    await hooks.afterVersion7Published?.();
+    if (await captureV6() !== preservedV6) throw new Error("La publicación v7 alteró datos v6.");
     if (await readUserVersion(db) !== DATABASE_SCHEMA_VERSION) {
       throw new Error(`La evolución SQLite no alcanzó la versión ${DATABASE_SCHEMA_VERSION}.`);
     }

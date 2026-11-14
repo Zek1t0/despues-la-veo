@@ -1,3 +1,5 @@
+import { acceptLegacyMetadataWriteWithDb, ensureMetadataStateWithDb, writeMetadataStateWithDb } from "./mediaMetadataRepo";
+import { rowToSavedTitle } from "./savedTitleStorage";
 import { assertMediaClassification } from "../core/mediaClassification";
 import type { SavedTitle } from "../core/savedTitle";
 import { parsePersonalRating } from "../core/personalRating";
@@ -10,8 +12,10 @@ export type SavedTitleIntegrityDatabase = TitlePinsDatabase;
 
 export async function upsertSavedTitleAndCleanPinsWithDb(
   db: SavedTitleIntegrityDatabase,
-  item: SavedTitle
+  item: SavedTitle,
+  options: { preserveMetadataBaseline?: boolean } = {}
 ): Promise<string> {
+  const previousRow = await db.getFirstAsync<Record<string, unknown>>("SELECT * FROM saved_titles WHERE id=?;", item.id);
   const personalRating = parsePersonalRating(item.personalRating);
   assertMediaClassification(item);
   if (item.medium !== "audiovisual" && await db.getFirstAsync(
@@ -65,6 +69,10 @@ export async function upsertSavedTitleAndCleanPinsWithDb(
   );
   if (!row?.id) throw new Error("No se pudo leer el id guardado.");
 
+  if (options.preserveMetadataBaseline) {
+    const state = await ensureMetadataStateWithDb(db, item);
+    if (state) await writeMetadataStateWithDb(db, item.id, state);
+  } else await acceptLegacyMetadataWriteWithDb(db, item, previousRow ? rowToSavedTitle(previousRow) : null);
   await deleteTagPinsExceptWithDb(db, row.id, item.tags ?? []);
   return row.id;
 }

@@ -62,9 +62,9 @@ async function main() {
     await txCreate(f);
     let item=await storage.getSavedTitleWithReferencesByIdWithDb(f.db,'manual');
     assert.equal(item.title,'Árbol   azul'); assert.equal(item.manualIdentity,'portable');
-    assert.equal(item.status,'planned'); assert.equal(item.personalRating,null); assert.deepEqual(item.tags,[]);
+    assert.equal(item.status,'planned'); assert.equal(item.personalRating,null); assertLegacyEqual(item.tags,[]);
     assert.equal(item.notes,null); assert.equal(item.posterUrl,null); assert.equal(item.voteAverage,null);
-    assert.deepEqual(item.providerReferences,[]); assert.equal(item.createdAt,100);
+    assertLegacyEqual(item.providerReferences,[]); assert.equal(item.createdAt,100);
     const full={...base, title:'Complete',contentFamily:'anime',primaryFormat:'movie',year:9999,overview:'Plain <text>\nsummary'};
     await txCreate(f,full,'full','full-token');
     assert.equal((await storage.getSavedTitleWithReferencesByIdWithDb(f.db,'full')).overview,full.overview);
@@ -91,9 +91,9 @@ async function main() {
     const patch={...full,title:'Edited',year:1,primaryFormat:'ova',id:'ATTACK',status:'done',manualIdentity:'ATTACK',notes:'ATTACK'};
     await f.db.withTransactionAsync(()=>manual.editManualContentWithDb(f.db,'manual',patch,1));
     item=await storage.getSavedTitleWithReferencesByIdWithDb(f.db,'manual');
-    for(const key of ['id','createdAt','personalRating','status','tags','notes','genres','posterUrl','manualIdentity','providerReferences']) assert.deepEqual(item[key],beforeEdit[key],key);
+    for(const key of ['id','createdAt','personalRating','status','tags','notes','genres','posterUrl','manualIdentity','providerReferences']) assertLegacyEqual(item[key],beforeEdit[key],key);
     assert.equal(item.updatedAt,beforeEdit.updatedAt+1); assert.equal(item.title,'Edited'); assert.equal(item.primaryFormat,'ova');
-    assert.deepEqual(f.sqlite.prepare('SELECT * FROM title_pins').all(),pinsBefore);
+    assertLegacyEqual(f.sqlite.prepare('SELECT * FROM title_pins').all(),pinsBefore);
     f.sqlite.exec("INSERT INTO media_provider_references VALUES ('tmdb','movie','123','full');");
     assert.equal(await manual.isManualContentEditableWithDb(f.db,'full'),false);
     const beforeProvider=dump(f); await assert.rejects(f.db.withTransactionAsync(()=>manual.editManualContentWithDb(f.db,'full',base)),/edición/); assert.equal(dump(f),beforeProvider);
@@ -118,7 +118,7 @@ async function main() {
     // Missing identity fixture is deliberately ineligible for backup; delete it first.
     await f.db.withTransactionAsync(()=>deleteSavedTitleAndPinsWithDb(f.db,'invalid-local'));
     const all=await storage.listSavedTitlesWithReferencesWithDb(f.db);
-    for(const query of ['edited','keep']) assert.deepEqual(selectVisibleLibraryTitles({items:all,pinnedAtById:new Map([['manual',111]]),query,sort:'title-asc',statusFilter:'watching',classificationFilter:'anime'}).map(x=>x.id),['manual']);
+    for(const query of ['edited','keep']) assertLegacyEqual(selectVisibleLibraryTitles({items:all,pinnedAtById:new Map([['manual',111]]),query,sort:'title-asc',statusFilter:'watching',classificationFilter:'anime'}).map(x=>x.id),['manual']);
     const candidates=manualDuplicateCandidates(all,' arbol azul ',null,'collision-free');
     assert.ok(candidates.some(x=>x.id==='identity-retry')); assert.ok(!candidates.some(x=>x.id==='collision-free'));
     assert.ok(manualDuplicateCandidates(all,'complete',null).some(x=>x.id==='full'),'provider-backed candidate');
@@ -132,16 +132,25 @@ async function main() {
     const target=fixture(); try {
       await schema.evolveDatabaseSchema(target.db,0);
       await target.db.withTransactionAsync(()=>mergeLibraryBackupWithDb(target.db,parsed.payload,()=> 'remapped'));
-      const after=await exportData(target.db,appearance); assert.deepEqual(after.items,data.items); assert.deepEqual(after.pins,data.pins);
+      const after=await exportData(target.db,appearance); assertLegacyEqual(after.items,data.items); assertLegacyEqual(after.pins,data.pins);
     } finally {target.close();}
     const file=f.file; const persisted=dump(f); f.close(); reopened=fixture(file); await schema.evolveDatabaseSchema(reopened.db,6); assert.equal(dump(reopened),persisted);
     await reopened.db.withTransactionAsync(()=>deleteSavedTitleAndPinsWithDb(reopened.db,'manual'));
     assert.equal(await storage.getSavedTitleWithReferencesByIdWithDb(reopened.db,'manual'),null);
     assert.equal(reopened.sqlite.prepare("SELECT count(*) n FROM manual_entry_identities WHERE saved_title_id='manual'").get().n,0);
     assert.equal(reopened.sqlite.prepare("SELECT count(*) n FROM title_pins WHERE saved_title_id='manual'").get().n,0);
-    assert.deepEqual(reopened.sqlite.prepare('PRAGMA foreign_key_check').all(),[]);
+    assertLegacyEqual(reopened.sqlite.prepare('PRAGMA foreign_key_check').all(),[]);
     assert.equal(network,0);
     console.log('PASS B2 validation/defaults/full creation, collisions/exhaustion, atomic rollback, limited edits/preservation, provider rejection, historical identity, duplicates, filters, v7 round-trip, reopen/delete cascade; zero network/personal DB');
   } finally { if(reopened) reopened.close(); else {try{f.close();}catch{}} global.fetch=previousFetch; }
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
+
+// Preserve all v7 contract fields; v8 metadata sidecars are tested by section-2 suites.
+function legacyShape(value) {
+  if (Array.isArray(value)) return value.map(legacyShape);
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value)
+    .filter(([key]) => !['metadataState','localAliases'].includes(key)).map(([key,entry]) => [key,legacyShape(entry)]));
+  return value;
+}
+function assertLegacyEqual(actual, expected, message) { assert.deepEqual(legacyShape(actual),legacyShape(expected),message); }

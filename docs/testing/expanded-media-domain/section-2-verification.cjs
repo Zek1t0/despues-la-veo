@@ -83,14 +83,14 @@ function seedV4(f, badType = false) {
 async function migrations() {
   const fresh = fixture();
   try {
-    await schema.evolveDatabaseSchema(fresh.db, 0); assert.equal(await schema.readUserVersion(fresh.db), 6);
+    await schema.evolveDatabaseSchema(fresh.db, 0); assert.equal(await schema.readUserVersion(fresh.db), 7);
     await schema.verifyV5Schema(fresh.db);
     assert.equal(fresh.sqlite.prepare("PRAGMA table_info(saved_titles)").all().some(x => x.name === "type"), false);
     const before = snapshot(fresh.sqlite);
     await schema.evolveDatabaseSchema(fresh.db, 6, { afterV5ItemsCopied() { throw Error("Must not remigrate"); } });
     assert.equal(snapshot(fresh.sqlite), before);
-    fresh.sqlite.exec("PRAGMA user_version=7"); const future = snapshot(fresh.sqlite);
-    await assert.rejects(schema.evolveDatabaseSchema(fresh.db, 7), /no soportada/); assert.equal(snapshot(fresh.sqlite), future);
+    fresh.sqlite.exec("PRAGMA user_version=8"); const future = snapshot(fresh.sqlite);
+    await assert.rejects(schema.evolveDatabaseSchema(fresh.db, 8), /no soportada/); assert.equal(snapshot(fresh.sqlite), future);
   } finally { fresh.close(); }
   const valid = fixture();
   try {
@@ -100,10 +100,10 @@ async function migrations() {
     const current = valid.sqlite.prepare("SELECT * FROM saved_titles ORDER BY id").all();
     for (let index = 0; index < current.length; index++) {
       const { type, ...old } = original[index]; const { medium, content_family, primary_format, ...rest } = current[index];
-      assert.deepEqual(rest, old); assert.equal(medium, "audiovisual"); assert.equal(content_family, null); assert.equal(primary_format, type);
+      assertLegacyEqual(rest, old); assert.equal(medium, "audiovisual"); assert.equal(content_family, null); assert.equal(primary_format, type);
     }
-    assert.deepEqual(["media_provider_references", "legacy_saved_title_identities", "title_pins", "app_preferences"].map(name => valid.sqlite.prepare(`SELECT * FROM ${name} ORDER BY 1,2`).all()), children);
-    assert.deepEqual(valid.sqlite.prepare("PRAGMA foreign_key_check").all(), []);
+    assertLegacyEqual(["media_provider_references", "legacy_saved_title_identities", "title_pins", "app_preferences"].map(name => valid.sqlite.prepare(`SELECT * FROM ${name} ORDER BY 1,2`).all()), children);
+    assertLegacyEqual(valid.sqlite.prepare("PRAGMA foreign_key_check").all(), []);
     for (const table of ["media_provider_references", "legacy_saved_title_identities", "title_pins"]) assert.equal(valid.sqlite.prepare(`PRAGMA foreign_key_list(${table})`).get().table, "saved_titles");
   } finally { valid.close(); }
   for (const hook of ["afterV5TargetTablesCreated", "afterV5ItemsCopied", "afterV5DependentsCopied", "beforeV5Verification", "beforeVersion5Published", "afterVersion5Published"]) {
@@ -134,7 +134,7 @@ async function migrations() {
     seedV4(f); await schema.evolveDatabaseSchema(f.db, 4);
     const before = snapshot(f.sqlite);
     f.close(); f = fixture(filename);
-    assert.equal(await schema.readUserVersion(f.db), 6);
+    assert.equal(await schema.readUserVersion(f.db), 7);
     await schema.evolveDatabaseSchema(f.db, 6, { afterV5ItemsCopied() { throw Error("Disk reopen must not migrate"); } });
     assert.equal(snapshot(f.sqlite), before);
   } finally { f.close(); if (fs.existsSync(filename)) fs.unlinkSync(filename); }
@@ -161,15 +161,15 @@ async function backupsAndMerge() {
     const appearance = { status: "confirmed", preference: { version: 1, scheme: "dark", palette: "lavender" } };
     const data = await exportData(source.db, appearance);
     const backup = createLibraryBackupV6(data.items, data.pins, appearance, "2026-10-09T00:00:00Z");
-    assert.equal(backup.version, 6); assert.deepEqual(backup.appearance, { scheme: "dark", palette: "lavender" });
+    assert.equal(backup.version, 6); assertLegacyEqual(backup.appearance, { scheme: "dark", palette: "lavender" });
     const p = parsed(backup); assert.equal(p.invalid.length, 0); assert.equal(p.appearance.status, "valid");
     const result = await merge(target.db, p); assert.equal(result.inserted, 11); assert.equal(result.pins.inserted, 20);
     assert.equal(result.failed.length, 0); assert.equal(result.conflicts.length, 0);
-    for (const value of cases) assert.deepEqual(await storage.getSavedTitleWithReferencesByIdWithDb(target.db, value.id), {
+    for (const value of cases) assertLegacyEqual(await storage.getSavedTitleWithReferencesByIdWithDb(target.db, value.id), {
       ...value, providerReferences: [...value.providerReferences].sort((a,b) => a.provider.localeCompare(b.provider)),
     });
     const repeat = await merge(target.db, p); assert.equal(repeat.skipped, 11); assert.equal(repeat.pins.preserved, 20);
-    const newBackup = await exportData(target.db, appearance); assert.deepEqual(createLibraryBackupV6(newBackup.items, newBackup.pins, appearance, backup.exportedAt), backup);
+    const newBackup = await exportData(target.db, appearance); assertLegacyEqual(createLibraryBackupV6(newBackup.items, newBackup.pins, appearance, backup.exportedAt), backup);
     assert.throws(() => createLibraryBackupV6([item("unportable", "comic", null, null, [])], [], { status: "unavailable" }), /portable/);
     // Required nullable keys, vocabulary, matrix, canonical references and duplicates.
     for (const modify of [x => { delete x.contentFamily; }, x => { delete x.primaryFormat; }, x => { x.medium = "unknown"; },
@@ -260,13 +260,13 @@ async function backupsAndMerge() {
     assert.equal(target.sqlite.prepare("SELECT count(*) n FROM legacy_saved_title_identities WHERE saved_title_id='legacy'").get().n, 0);
     assert.equal(target.sqlite.prepare("SELECT count(*) n FROM media_provider_references WHERE saved_title_id='tv'").get().n, 0);
     assert.equal(target.sqlite.prepare("SELECT count(*) n FROM title_pins WHERE saved_title_id='tv'").get().n, 0);
-    assert.deepEqual(target.sqlite.prepare("PRAGMA foreign_key_check").all(), []);
+    assertLegacyEqual(target.sqlite.prepare("PRAGMA foreign_key_check").all(), []);
     // Appearance export availability is unchanged; Settings activates only after committed merge.
     assert.equal(Object.hasOwn(createLibraryBackupV6([], [], { status: "unavailable" }), "appearance"), false);
     assert.equal(payload([], [], { appearance: { scheme: "bogus", palette: "bogus" } }).appearance.status, "incompatible");
     const settings = fs.readFileSync("app/(tabs)/ajustes.tsx", "utf8");
     assert.ok(settings.indexOf("await mergeLibraryBackup(payload, uuid)") < settings.indexOf("await activateDeferred(deferredHandle)"));
-    assert.match(settings, /createLibraryBackupV7/); assert.match(settings, /payload.version === 6/);
+    assert.match(settings, /createLibraryBackupV8/); assert.match(settings, /payload.version === 6/);
   } finally { source.close(); target.close(); }
 }
 async function appearanceAfterCommit() {
@@ -311,3 +311,13 @@ async function appearanceAfterCommit() {
 }
 (async () => { await migrations(); await backupsAndMerge(); await appearanceAfterCommit(); console.log("Section 2 real-SQLite v5 migration/rollback, v1-v6 imports, v6 round-trip/merge, identities/pins/Appearance passed."); })()
   .catch(error => { console.error(error); process.exitCode = 1; });
+
+// These historical-contract assertions compare every original field. New v8 sidecars
+// are verified separately by section-2-backups/storage, and have no authority in v1-v7.
+function legacyShape(value) {
+  if (Array.isArray(value)) return value.map(legacyShape);
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value)
+    .filter(([key]) => !['metadataState','localAliases'].includes(key)).map(([key,entry]) => [key,legacyShape(entry)]));
+  return value;
+}
+function assertLegacyEqual(actual, expected, message) { assert.deepEqual(legacyShape(actual),legacyShape(expected),message); }

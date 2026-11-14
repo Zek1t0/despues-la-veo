@@ -1,3 +1,10 @@
+import { metadataSemanticKey } from "../core/metadataSemanticKey";
+import { assertMetadataReference } from "../core/metadataValidation";
+import { validateProviderMaterializationInput } from "../core/providerMaterializationValidation";
+import { publishMediaPreferences } from "./mediaPreferencesRepo";
+import { ensureMetadataStateWithDb, hasMetadataSchemaWithDb, updateMediaMetadataWithDb, writeMetadataStateWithDb } from "./mediaMetadataRepo";
+import { initialMetadataState, legacyMetadataSnapshot as providerSnapshot } from "../core/mediaMetadataState";
+import { publishLibraryInvalidation } from "./libraryInvalidation";
 import type {
   SavedTitle,
   SavedTitleWithProviderReferences,
@@ -166,16 +173,35 @@ export async function saveProviderTitleWithDb(
   generateId: () => string,
   now = Date.now()
 ): Promise<string> {
+  validateProviderMaterializationInput(input);
+  if (input.metadata) assertMetadataReference(input.metadata, input.reference);
   const existing = await getSavedTitleByProviderReferenceWithDb(db, input.reference);
+  const metadataEnabled = await hasMetadataSchemaWithDb(db);
+  if (existing && metadataEnabled) {
+    const fields = input.metadata?.fields ?? { canonicalTitle: input.snapshot.title, synopsis: input.snapshot.overview === null ? null : { text: input.snapshot.overview, language: null },
+      genres: [...input.snapshot.genres] };
+    await updateMediaMetadataWithDb(db, existing.id, { version: 1, provenance: input.metadata?.provenance ?? {
+      reference: input.reference, normalizerVersion: 1, fetchedAt: null, checkedAt: null, sourceUpdatedAt: null }, fields }, now, undefined, undefined, providerSnapshot({ ...existing, ...input.snapshot, genres: [...input.snapshot.genres], voteAverage: input.snapshot.voteAverage ?? null }));
+    return existing.id;
+  }
   const item = materializeProviderSavedTitle(
     input,
     existing,
     generateId,
     now
   );
+  if (!existing && (typeof item.id !== "string" || !item.id.trim() ||
+      await db.getFirstAsync("SELECT id FROM saved_titles WHERE id = ? LIMIT 1;", item.id))) {
+    throw new Error("El ID local generado es inválido o está ocupado; se conservó la biblioteca.");
+  }
   await upsertSavedTitleAndCleanPinsWithDb(db, item);
   if (!existing) {
     await attachProviderReferenceWithDb(db, input.reference, item.id);
+  }
+  if (metadataEnabled) {
+    const state = initialMetadataState(item, [input.reference]);
+    await writeMetadataStateWithDb(db, item.id, state);
+    if (input.metadata) await updateMediaMetadataWithDb(db, item.id, input.metadata, now, undefined, undefined, providerSnapshot(item));
   }
   return item.id;
 }
@@ -187,11 +213,14 @@ export async function saveProviderTitle(
 ): Promise<string> {
   const db = database ?? await initDb();
   return runSerializedStorageMutation(async () => {
+    const before = await getSavedTitleByProviderReferenceWithDb(db, input.reference);
     let savedTitleId: string | null = null;
     await db.withTransactionAsync(async () => {
       savedTitleId = await saveProviderTitleWithDb(db, input, generateId);
     });
     if (!savedTitleId) throw new Error("No se pudo completar el guardado del título.");
+    const after = await getSavedTitleByProviderReferenceWithDb(db, input.reference);
+    if (observableSavedTitle(before) !== observableSavedTitle(after)) publishLibraryInvalidation([savedTitleId]);
     return savedTitleId;
   });
 }
@@ -251,6 +280,7 @@ export async function upsertSavedTitle(item: SavedTitle): Promise<string> {
       savedTitleId = await upsertSavedTitleAndCleanPinsWithDb(db, item);
     });
     if (!savedTitleId) throw new Error("No se pudo completar el guardado del título.");
+    publishLibraryInvalidation([savedTitleId]);
     return savedTitleId;
   });
 }
@@ -272,9 +302,10 @@ export async function mergeLibraryBackupItems(
 
 export async function mergeLibraryBackup(
   payload: ParsedLibraryBackup,
-  generateId: () => string
+  generateId: () => string,
+  database?: SavedTitlesMutationDatabase
 ): Promise<LibraryBackupMergeResult> {
-  const db = await initDb();
+  const db = database ?? await initDb();
   return runSerializedStorageMutation(async () => {
     let result: LibraryBackupMergeResult | null = null;
     await db.withTransactionAsync(async () => {
@@ -285,7 +316,10 @@ export async function mergeLibraryBackup(
       );
     });
     if (!result) throw new Error("No se pudo completar la importación del backup.");
-    return result;
+    const committed = result as LibraryBackupMergeResult;
+    publishLibraryInvalidation(committed.changedIds ?? []);
+    if (committed.preferencesChanged) publishMediaPreferences(committed.preferencesChanged);
+    return committed;
   });
 }
 
@@ -305,4 +339,13 @@ export async function getByProviderReference(
 ): Promise<SavedTitleWithProviderReferences | null> {
   const db = await initDb();
   return getSavedTitleByProviderReferenceWithDb(db, reference);
+}
+
+function observableSavedTitle(item: SavedTitleWithProviderReferences | null): string {
+  if (!item) return "null";
+  const { metadataState, ...local } = item;
+  return metadataSemanticKey({ ...local, metadata: metadataState ? {
+    selected: metadataState.selection.reference,
+    documents: metadataState.documents.map(doc => ({ reference: doc.metadata.provenance.reference, fields: doc.metadata.fields, snapshot: doc.snapshot })),
+  } : undefined });
 }

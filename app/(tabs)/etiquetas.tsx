@@ -1,3 +1,4 @@
+import { observeLibraryProjection } from "../../src/storage/libraryInvalidation";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { Tabs, useRouter } from "expo-router";
@@ -443,6 +444,16 @@ export default function EtiquetasScreen() {
       };
     }, [selectedTag])
   );
+
+  useEffect(() => observeLibraryProjection(async () => {
+    for (const queues of tagPinIntentQueues.current.values()) await Promise.all([...queues.values()].map(queue => queue.whenIdle()));
+    return selectedTag === null ? listSavedTitles() : getTagScreenSnapshot(selectedTag);
+  }, snapshot => {
+    tagRefreshGeneration.current++;
+    setItems(Array.isArray(snapshot) ? snapshot : snapshot.items);
+    if (!Array.isArray(snapshot)) setTagPinnedAtById(new Map(snapshot.pins.map(pin => [pin.savedTitleId, pin.pinnedAt])));
+    setLoading(false);
+  }), [selectedTag]);
 
   const tagMap = useMemo(() => {
     const map = new Map<string, SavedTitle[]>();

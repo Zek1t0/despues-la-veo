@@ -135,6 +135,7 @@ export function selectVisibleLibraryTitles<T extends SavedTitle>({
     if (!matchesLibraryClassification(item, classificationFilter)) return false;
     if (!needle) return true;
     if (item.title.toLocaleLowerCase("es").includes(needle)) return true;
+    if ((item as SavedTitle & { localAliases?: string[] }).localAliases?.some(alias => alias.toLocaleLowerCase("es").includes(needle))) return true;
     return (item.tags ?? []).some((tag) =>
       tag.toLocaleLowerCase("es").includes(needle)
     );

@@ -1,3 +1,4 @@
+import type { MediaMetadataState } from "./mediaMetadataState";
 import type { PersonalRating } from "./personalRating";
 import type { ProviderReference } from "./providerReference";
 import type { MediaClassification } from "./mediaClassification";
@@ -28,6 +29,8 @@ export type SavedTitle = MediaClassification & {
 };
 
 export type SavedTitleWithProviderReferences = SavedTitle & {
+  metadataState?: MediaMetadataState;
+  localAliases?: string[];
   providerReferences: ProviderReference[];
   manualIdentity?: string;
 };

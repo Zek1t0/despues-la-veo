@@ -1,3 +1,4 @@
+import { observeLibraryProjection } from "../../src/storage/libraryInvalidation";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -238,6 +239,8 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
   const tags = useMemo(() => item?.tags ?? [], [item]);
   const formattedUpdatedAt = item ? formatUpdatedAt(item.updatedAt) : null;
 
+  useEffect(() => () => { loadGeneration.current++; }, []);
+
   const load = useCallback(async (options?: { preserveNotesDraft?: boolean }) => {
     const savedTitleId = typeof id === "string" ? id : null;
     const generation = ++loadGeneration.current;
@@ -323,6 +326,27 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
       void load();
     }, [load])
   );
+
+  useEffect(() => {
+    if (typeof id !== "string") return;
+    return observeLibraryProjection(async () => {
+      await ratingIntentQueues.current.get(id)?.whenIdle();
+      await Promise.all([...pinIntentQueues.current.values()].map(queue => queue.whenIdle()));
+      return getTitleDetailPinSnapshot(id, { pinContext, tag });
+    }, snapshot => {
+      loadGeneration.current++;
+      setItem(snapshot.item);
+      setLoading(false);
+      if (snapshot.item) ratingIntentQueues.current.get(id)?.reconcileConfirmed({ value: snapshot.item.personalRating, updatedAt: snapshot.item.updatedAt });
+      if (!notesDraftDirty.current) {
+        const persisted = snapshot.item?.notes ?? "";
+        notesDraft.current = persisted; setNotes(persisted);
+      }
+      setEffectivePinContext(snapshot.context);
+      setPinnedAt(snapshot.pinnedAt);
+      // Notes drafts and personal intent queues are deliberately retained.
+    }, ids => ids.includes(id));
+  }, [id, pinContext, tag]);
 
   const pinContextLabel = effectivePinContext
     ? titleDetailPinContextLabel(effectivePinContext)
