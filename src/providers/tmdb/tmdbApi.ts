@@ -1,3 +1,5 @@
+import { metadataImageUrl } from "../../core/metadataImageUrl";
+import { TMDB_IMAGE_HOSTS } from "../../core/mediaImagePresentation";
 import { tmdbFetch } from "./tmdbClient";
 import type {
   TmdbCreditsResponse,
@@ -57,7 +59,7 @@ export async function getTvCredits(id: number) {
 
 export function profileUrl(profilePath?: string | null, size: "w185" | "w342" = "w185") {
   if (!profilePath) return null;
-  return `https://image.tmdb.org/t/p/${size}${profilePath}`;
+  return metadataImageUrl(`https://image.tmdb.org/t/p/${size}${profilePath}`, TMDB_IMAGE_HOSTS);
 }
 
 import type { TmdbWatchProvidersResponse } from "./tmdbTypes";
@@ -68,6 +70,6 @@ export async function getWatchProviders(type: "movie" | "tv", id: number) {
 
 export function providerLogoUrl(logoPath?: string | null, size: "w92" | "w154" = "w92") {
   if (!logoPath) return null;
-  return `https://image.tmdb.org/t/p/${size}${logoPath}`;
+  return metadataImageUrl(`https://image.tmdb.org/t/p/${size}${logoPath}`, TMDB_IMAGE_HOSTS);
 }
 

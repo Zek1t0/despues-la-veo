@@ -77,11 +77,12 @@ async function main(){
     for(const announced of [mediaClassificationLabel(value),titleStatusLabel(value.status,value.medium),"Mi puntuación"]) assert.equal(rowLabel.split(announced).length-1,1);
   }
   const sparse=host(Screen,{...item("comic","manga",null),year:null,posterUrl:null,overview:null,genres:[]});await sparse.flush();assert.ok(text(sparse.tree).includes("Sin fecha"));
-  const poster=nodes(sparse.tree).find(x=>typeof x.type==="function" && x.type.name==="LocalPoster");
-  const posterHost=host(()=>poster.type({posterUrl:"https://example.invalid/poster.jpg"}),sparse.item);await posterHost.flush();
-  assert.equal(posterHost.tree.type,"Image");posterHost.tree.props.onError();await posterHost.flush();
-  assert.equal(posterHost.tree.type.name,"PosterPlaceholder");
-  const ratingOnly=host(Screen,{...item("audiovisual",null,null),voteAverage:7.5});await ratingOnly.flush();assert.ok(text(ratingOnly.tree).includes("TMDB"));assert.ok(text(ratingOnly.tree).includes("7.5"));
+  const poster=nodes(sparse.tree).find(x=>typeof x.type==="function" && x.type.name==="MediaPoster");
+  assert.ok(poster); assert.equal(poster.props.imageProvider,null,"manual lacks source authorization");
+  const ratingOnly=host(Screen,{...item("audiovisual",null,null),voteAverage:7.5});await ratingOnly.flush();
+  assert.equal(nodes(ratingOnly.tree).find(x=>x.type?.name==="PublicRating").props.value,null,"unattributed legacy score cannot claim TMDB");
+  const sourced=host(Screen,{...item("audiovisual",null,"movie",[refs[0]]),voteAverage:7.5});await sourced.flush();
+  assert.equal(nodes(sourced.tree).find(x=>x.type?.name==="PublicRating").props.value.originalValue,7.5);
   const ambiguous=host(Screen,item("audiovisual","anime","ova",[refs[0],{...refs[0],resourceNamespace:"tv"}]));await ambiguous.flush();assert.equal(nodes(ambiguous.tree).find(x=>x.type==="Stack.Screen").props.options.headerRight(),null);
   for(const filename of ["app/(tabs)/libreria.tsx","app/(tabs)/etiquetas.tsx"]){
     const source=fs.readFileSync(filename,"utf8");assert.match(source,/accessibilityElementsHidden/);assert.match(source,/statusLabel=\{titleStatusLabel\(item.status, item.medium\)\}/);

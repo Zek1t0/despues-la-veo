@@ -1,9 +1,12 @@
+import { PublicRating } from "../../src/components/browsing/PublicRating";
+import { savedMediaPresentation } from "../../src/core/mediaPresentation";
+import { MediaPoster } from "../../src/components/browsing/MediaPoster";
+import { MediaBanner } from "../../src/components/browsing/MediaBanner";
 import { observeLibraryProjection } from "../../src/storage/libraryInvalidation";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Linking,
   Platform,
   Pressable,
@@ -25,8 +28,6 @@ import { findUnambiguousTmdbReference } from "../../src/core/savedTitleProviderR
 import { localMangaUpdatesSources } from "../../src/providers/mangaupdates/product";
 import { localKitsuSources } from "../../src/providers/kitsu/product";
 import { titleStatusLabel, mediaClassificationLabel, mediaYearLabel } from "../../src/core/presentationLabels";
-import { usePosterImageError } from "../../src/components/browsing/usePosterImageError";
-import { PosterPlaceholder } from "../../src/components/browsing/PosterPlaceholder";
 import { type PinContext } from "../../src/core/contextualPin";
 import { ContextualPinIntentQueue } from "../../src/core/contextualPinIntent";
 import {
@@ -62,13 +63,6 @@ const STATUS_VALUES: TitleStatus[] = [
   "dropped",
 ];
 
-function LocalPoster({ posterUrl, identity }: { posterUrl: string | null; identity?: string }) {
-  const { imageFailed: failed, onImageError } = usePosterImageError(identity, posterUrl);
-  const style = { width: 72, height: 108, borderRadius: 12 };
-  return posterUrl && !failed
-    ? <Image accessible={false} source={{ uri: posterUrl }} resizeMode="cover" style={style} onError={onImageError} />
-    : <PosterPlaceholder style={style} />;
-}
 
 const UPDATED_AT_FORMATTER = new Intl.DateTimeFormat("es-AR", {
   dateStyle: "medium",
@@ -676,8 +670,9 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
             </Pressable>
           </View>
         ))}
+        <MediaBanner identity={item.id} {...savedMediaPresentation(item)} style={{ width: "100%", aspectRatio: 4.2, borderRadius: 12 }} />
         <View style={{ flexDirection: "row", gap: 12 }}>
-          <LocalPoster identity={item.id} posterUrl={item.posterUrl ?? null} />
+          <MediaPoster identity={item.id} {...savedMediaPresentation(item)} posterUrl={item.posterUrl} style={{ width: 72, height: 108, borderRadius: 12 }} />
           <View style={{ flex: 1, gap: 6 }}>
             <Text style={{ fontSize: 24, fontWeight: "900", color: theme.global.textPrimary }}>
               {item.title}
@@ -782,16 +777,7 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
                   : `${formatPersonalRating(item.personalRating)} / 10`}
               </Text>
             </View>
-            {(tmdbHref || (typeof item.voteAverage === "number" && Number.isFinite(item.voteAverage))) ? <View style={{ flex: 1, gap: 4 }}>
-              <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 16 }}>
-                TMDB
-              </Text>
-              <Text style={{ color: theme.global.textSecondary, fontSize: 26, fontWeight: "800" }}>
-                {typeof item.voteAverage === "number" && Number.isFinite(item.voteAverage)
-                  ? `${item.voteAverage.toFixed(1)} / 10`
-                  : "— / 10"}
-              </Text>
-            </View> : null}
+            <PublicRating value={savedMediaPresentation(item).rating} />
           </View>
 
           {item.personalRating === null ? (

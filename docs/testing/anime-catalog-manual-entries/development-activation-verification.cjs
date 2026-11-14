@@ -30,7 +30,7 @@ global.fetch = async function(url, options) {
   assert.ok(url.startsWith('https://kitsu.io/api/edge/anime'));
   assert.equal(options.credentials, 'omit'); assert.equal(options.redirect, 'error');
   assert.deepEqual(options.headers, { Accept: 'application/vnd.api+json' });
-  assert.ok(!/poster|averageRating|mappings/.test(url));
+  assert.ok(!url.includes('mappings')); assert.ok(url.includes('posterImage') && url.includes('averageRating'), 'section 3 verified development fieldset');
   return { ok: true, status: 200, url, redirected: false, text: async () => JSON.stringify({ data: url.includes('/anime/1?') ? record : [record] }) };
 };
 const { kitsuAvailability } = require('../../../src/providers/kitsu/availability.ts');

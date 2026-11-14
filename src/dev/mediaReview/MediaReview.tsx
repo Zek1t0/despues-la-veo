@@ -1,3 +1,4 @@
+import { ArtReview } from "./ArtReview";
 import React, { useEffect, useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import LibraryScreen, { type LibraryScreenServices } from "../../../app/(tabs)/libreria";
@@ -18,7 +19,7 @@ function useReviewFocusEffect(effect: () => void | (() => void)) { useEffect(eff
 
 export function MediaReview({ session, onReset }: { session: ReviewSession; onReset(): Promise<void> }) {
   const { theme } = useAppTheme();
-  const [page, setPage] = useState<"discover" | "remote" | "library" | "local" | "manual" | "anime-search" | "anime-detail">("discover");
+  const [page, setPage] = useState<"discover" | "remote" | "library" | "local" | "manual" | "anime-search" | "anime-detail" | "art">("discover");
   const [animeId, setAnimeId] = useState("1");
   const [manualDraft, setManualDraft] = useState<{ id?: string; key: number; target: "primary" | "restore" } | null>(null);
   const [manualEligible, setManualEligible] = useState(false);
@@ -118,9 +119,11 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
         const result = await session.importTest(json); setTarget("restore"); setPage("library");
         return `Restore real: ${result.inserted} insertados, ${result.updated} actualizados; ${result.pins.inserted} pins.`;
       }), !json)}
+      {button("Imágenes y puntuaciones sección 3", () => setPage("art"))}
       {button("Reset SOLO estas DBs de revisión", () => void action(onReset))}
     </View>
     </ScrollView>
+    {page === "art" && <ArtReview />}
     {page === "anime-search" && <SearchScreen categories={[animeCategory]} initialCategory="anime" resolveCategory={() => animeSearch}
       bindings={{ ...repository, openResult: destination => {
         const match = /^\/kitsu\/anime\/([1-9][0-9]*)$/.exec(destination);

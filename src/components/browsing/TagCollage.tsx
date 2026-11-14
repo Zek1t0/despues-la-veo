@@ -1,6 +1,7 @@
+import { MediaPoster } from "./MediaPoster";
+import type { EnrichedMediaMetadata } from "../../core/enrichedMediaMetadata";
 import React from "react";
 import {
-  Image,
   StyleSheet,
   View,
   type StyleProp,
@@ -8,11 +9,11 @@ import {
 } from "react-native";
 
 import { useAppTheme } from "../../theme/AppThemeProvider";
-import { PosterPlaceholder } from "./PosterPlaceholder";
-import { usePosterImageError } from "./usePosterImageError";
 
 export type TagCollageItem = {
   id: string;
+  imageProvider?: string | null;
+  metadata?: EnrichedMediaMetadata;
   posterUrl?: string | null;
 };
 
@@ -20,10 +21,6 @@ export type TagCollageProps = {
   items: readonly TagCollageItem[];
   style?: StyleProp<ViewStyle>;
 };
-
-function isValidPosterUrl(value: string | null | undefined): value is string {
-  return typeof value === "string" && /^https?:\/\//i.test(value);
-}
 
 function CollageCell({
   item,
@@ -34,10 +31,8 @@ function CollageCell({
   surfaceColor: string;
   borderColor: string;
 }) {
-  const { imageFailed, onImageError } = usePosterImageError(item?.id, item?.posterUrl);
 
   const posterUrl = item?.posterUrl;
-  const showImage = isValidPosterUrl(posterUrl) && !imageFailed;
 
   return (
     <View
@@ -49,17 +44,8 @@ function CollageCell({
         { backgroundColor: surfaceColor, borderColor },
       ]}
     >
-      {showImage ? (
-        <Image
-          accessible={false}
-          onError={onImageError}
-          resizeMode="cover"
-          source={{ uri: posterUrl }}
-          style={StyleSheet.absoluteFillObject}
-        />
-      ) : (
-        <PosterPlaceholder style={StyleSheet.absoluteFillObject} />
-      )}
+      <MediaPoster identity={item?.id ?? "empty"} imageProvider={item?.imageProvider ?? null} metadata={item?.metadata}
+        posterUrl={posterUrl} context="card" style={StyleSheet.absoluteFillObject} />
     </View>
   );
 }

@@ -1,3 +1,4 @@
+import type { KitsuMetadataOptions } from "./enrichedMetadata";
 import { KITSU_API_BASE, KITSU_DEVELOPMENT_API_BASE, canonicalAnimeId } from "./identity";
 import { KitsuError } from "./errors";
 import { parseAnimeDetail, parseAnimeSearch } from "./validation";
@@ -30,6 +31,7 @@ export type KitsuClientOptions = Readonly<{
   fetchImplementation: typeof fetch;
   /** Explicit official endpoint for local live use; no arbitrary host or fallback. */
   apiBase?: typeof KITSU_DEVELOPMENT_API_BASE;
+  metadataOptions?: KitsuMetadataOptions;
   timing?: KitsuTiming; setTimer?: typeof setTimeout; clearTimer?: typeof clearTimeout;
 }>;
 export function createKitsuClient(options: KitsuClientOptions) {
@@ -37,7 +39,8 @@ export function createKitsuClient(options: KitsuClientOptions) {
   const timing = options.timing ?? { now: Date.now, wait: waitForKitsu };
   const setTimer = options.setTimer ?? setTimeout, clearTimer = options.clearTimer ?? clearTimeout;
   let tail: Promise<unknown> = Promise.resolve(), pending = 0, nextStart = 0, blockedUntil = 0;
-  const fields = "canonicalTitle,titles,subtype,startDate,synopsis,categories";
+  const fields = "canonicalTitle,titles,subtype,startDate,synopsis,categories" +
+    (options.metadataOptions ? ",posterImage,coverImage,averageRating" : "");
   const metadata = { "fields[anime]": fields, include: "categories", "fields[categories]": "title" };
   async function attempt(path: string, signal?: AbortSignal): Promise<unknown> {
     const controller = new AbortController();
@@ -103,11 +106,11 @@ export function createKitsuClient(options: KitsuClientOptions) {
       if (!query.trim()) return [];
       // Construct pagination locally. Never follow response links to arbitrary origins.
       const params = new URLSearchParams({ "filter[text]": query.trim(), "page[limit]": "20", "page[offset]": String(offset), ...metadata });
-      return request(`/anime?${params}`, parseAnimeSearch, signal);
+      return request(`/anime?${params}`, value => parseAnimeSearch(value, options.metadataOptions), signal);
     },
     async getAnime(id: string, signal?: AbortSignal) {
       canonicalAnimeId(id);
-      return request(`/anime/${id}?${new URLSearchParams(metadata)}`, value => parseAnimeDetail(value, id), signal);
+      return request(`/anime/${id}?${new URLSearchParams(metadata)}`, value => parseAnimeDetail(value, id, options.metadataOptions), signal);
     },
   });
 }

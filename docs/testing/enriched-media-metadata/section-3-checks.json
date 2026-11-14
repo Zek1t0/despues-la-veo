@@ -1,0 +1,14 @@
+{
+  "baselineHead": "885ad93fa2d8438fd6611bea7cfedd311ede7cad",
+  "branch": "feat/anime-catalog-manual-entries",
+  "checks": [
+    { "command": "node docs/testing/enriched-media-metadata/section-3-regressions.cjs", "exitCode": 0, "suites": 28, "details": "section-3-results.json" },
+    { "command": "npx tsc --noEmit", "exitCode": 0 },
+    { "command": "openspec validate add-enriched-media-metadata-and-library-updates --strict", "exitCode": 0 },
+    { "command": "git diff --check", "exitCode": 0 }
+  ],
+  "webSmoke": "Not completed: IAB localhost timeout; Windows CUA stopped because current browser URL could not be determined confidently.",
+  "androidSmoke": "Not performed: adb absent from PATH, no active Android runtime observed.",
+  "tasks": { "2.9": "administratively complete", "3.1": "complete with documented terms evidence limit", "3.2": "complete, deterministic validation", "3.3": "complete, controls inspected and harness tested; native/browser acceptance pending", "3.4": "complete, deterministic validation", "3.5": "pending" },
+  "gitWrites": false
+}

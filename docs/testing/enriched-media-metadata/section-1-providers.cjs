@@ -155,9 +155,9 @@ async function transportIntegration() {
   const result = mapKitsuDetails(await client.getAnime(reference.externalId));
   assert.equal(calls.length, 1); assert.equal(result.metadata.fields.publicRating.originalValue, "82.280");
   assert.equal(Object.hasOwn(result.metadata.fields, "posterImages"), false);
-  assert.ok(!calls[0].url.includes("posterImage"), "HTTP projection not expanded in section 1");
+  assert.ok(!calls[0].url.includes("posterImage"), "default client remains closed without explicit metadata options");
   assert.equal(calls[0].init.credentials, "omit"); assert.equal(calls[0].init.redirect, "error");
   assert.equal(result.metadata.provenance.checkedAt, null, "parsing is not proof of local checkedAt");
-  console.log("PASS section 1 injected transport: one existing request, no artwork activation or new HTTP projection.");
+  console.log("PASS section 1 injected transport: one existing request, default artwork parser closed; section 3 HTTP projection verified.");
 }
 transportIntegration().catch(error => { console.error(error); process.exitCode = 1; });

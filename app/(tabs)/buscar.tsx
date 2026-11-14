@@ -1,8 +1,10 @@
+import { publicRatingLabel, resolvePublicRating } from "../../src/core/mediaPresentation";
+import { PublicRating } from "../../src/components/browsing/PublicRating";
+import { MediaPoster } from "../../src/components/browsing/MediaPoster";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, Pressable, Text, TextInput, View, Linking, Platform, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { DetailPoster } from "../../src/components/browsing/DetailPoster";
 import type { ProviderSearchResult } from "../../src/providers/providerContracts";
 import { tmdbMovieSearchCapability, tmdbTvSearchCapability } from "../../src/providers/tmdb/tmdbAdapter";
 import { productionSearchCategories, resolveProductionSearchCategory, type ResolvedSearchCategory, type SearchCategory, type SearchCategoryId } from "../../src/components/search/searchCategories";
@@ -351,7 +353,8 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
                 identity={JSON.stringify(item.reference)}
                 accessibilityLabel={`Abrir ${item.kindLabel} ${item.displayTitle}`}
                 onPress={() => bindings ? bindings.openResult(route) : router.push(route)}
-                posterUrl={item.posterUrl}
+                publicRating={resolvePublicRating(item.reference.provider, item.metadata)}
+                posterUrl={item.posterUrl} imageProvider={item.reference.provider} metadata={item.metadata}
                 style={{ width: gridCardWidth }}
                 title={item.displayTitle}
                 kindLabel={item.kindLabel}
@@ -362,7 +365,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
           return (
             <Pressable
               accessible
-              accessibilityLabel={`Abrir ${item.kindLabel} ${item.displayTitle}`}
+              accessibilityLabel={[`Abrir ${item.kindLabel} ${item.displayTitle}`, publicRatingLabel(resolvePublicRating(item.reference.provider, item.metadata))].filter(Boolean).join(". ")}
               accessibilityRole="button"
               focusable
               onPress={() => bindings ? bindings.openResult(route) : router.push(route)}
@@ -378,9 +381,11 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
               }}
             >
               <View accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ flexDirection: "row", gap: 12, flex: 1 }}>
-              <DetailPoster identity={JSON.stringify(item.reference)} posterUrl={item.posterUrl} style={{ width: 80, height: 120, borderRadius: 10 }} />
+              <MediaPoster context="list" identity={JSON.stringify(item.reference)} posterUrl={item.posterUrl} imageProvider={item.reference.provider} metadata={item.metadata} style={{ width: 80, height: 120, borderRadius: 10 }} />
 
               <View style={{ flex: 1, gap: 4 }}>
+              <PublicRating value={resolvePublicRating(item.reference.provider, item.metadata)} />
+
                 <Text style={{ fontSize: 16, fontWeight: "800", color: theme.global.textPrimary }}>
                   {item.displayTitle} {item.releaseLabel ? `(${item.releaseLabel})` : ""}
                 </Text>

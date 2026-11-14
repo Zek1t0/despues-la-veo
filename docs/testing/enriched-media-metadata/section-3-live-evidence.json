@@ -1,0 +1,167 @@
+{
+  "observedAt": "2026-11-14T07:58:38.004Z",
+  "kind": "real HTTP, not synthetic fixtures",
+  "requests": [
+    {
+      "url": "https://kitsu.app/api/edge/anime/1?fields%5Banime%5D=canonicalTitle%2Ctitles%2Csubtype%2CstartDate%2Csynopsis%2Ccategories%2CposterImage%2CcoverImage%2CaverageRating&include=categories&fields%5Bcategories%5D=title",
+      "status": 200,
+      "finalUrl": "https://kitsu.app/api/edge/anime/1?fields%5Banime%5D=canonicalTitle%2Ctitles%2Csubtype%2CstartDate%2Csynopsis%2Ccategories%2CposterImage%2CcoverImage%2CaverageRating&include=categories&fields%5Bcategories%5D=title",
+      "id": "1",
+      "keys": [
+        "canonicalTitle",
+        "titles",
+        "subtype",
+        "startDate",
+        "synopsis",
+        "posterImage",
+        "coverImage",
+        "averageRating"
+      ],
+      "averageRating": "82.28",
+      "posterImage": {
+        "tiny": "https://media.kitsu.app/anime/poster_images/1/tiny.jpg",
+        "large": "https://media.kitsu.app/anime/poster_images/1/large.jpg",
+        "small": "https://media.kitsu.app/anime/poster_images/1/small.jpg",
+        "medium": "https://media.kitsu.app/anime/poster_images/1/medium.jpg",
+        "original": "https://media.kitsu.app/anime/poster_images/1/original.jpg",
+        "meta": {
+          "dimensions": {
+            "tiny": {
+              "width": 110,
+              "height": 156
+            },
+            "large": {
+              "width": 550,
+              "height": 780
+            },
+            "small": {
+              "width": 284,
+              "height": 402
+            },
+            "medium": {
+              "width": 390,
+              "height": 554
+            }
+          }
+        }
+      },
+      "coverImage": {
+        "tiny": "https://media.kitsu.app/anime/1/cover_image/tiny-1f92cfe65c1b31d8b47e36f025d32b35.jpeg",
+        "large": "https://media.kitsu.app/anime/1/cover_image/large-88da0208ac7fdd1a978de8b539008bd8.jpeg",
+        "small": "https://media.kitsu.app/anime/1/cover_image/small-33ff2ab0f599bc15ed73856ecd13fe71.jpeg",
+        "original": "https://media.kitsu.app/anime/1/cover_image/fb57e5f25616633a41f0f5f1ded938ee.jpeg",
+        "meta": {
+          "dimensions": {
+            "tiny": {
+              "width": 840,
+              "height": 200
+            },
+            "large": {
+              "width": 3360,
+              "height": 800
+            },
+            "small": {
+              "width": 1680,
+              "height": 400
+            }
+          }
+        }
+      }
+    },
+    {
+      "url": "https://media.kitsu.app/anime/poster_images/1/small.jpg",
+      "status": 200,
+      "finalUrl": "https://media.kitsu.app/anime/poster_images/1/small.jpg",
+      "type": "image/jpeg",
+      "redirected": false
+    },
+    {
+      "url": "https://media.kitsu.app/anime/1/cover_image/tiny-1f92cfe65c1b31d8b47e36f025d32b35.jpeg",
+      "status": 200,
+      "finalUrl": "https://media.kitsu.app/anime/1/cover_image/tiny-1f92cfe65c1b31d8b47e36f025d32b35.jpeg",
+      "type": "image/jpeg",
+      "redirected": false
+    },
+    {
+      "url": "https://kitsu.app/api/edge/anime?filter%5Btext%5D=cowboy%20bebop&page%5Blimit%5D=1&fields%5Banime%5D=canonicalTitle%2Ctitles%2Csubtype%2CstartDate%2Csynopsis%2Ccategories%2CposterImage%2CcoverImage%2CaverageRating&include=categories&fields%5Bcategories%5D=title",
+      "status": 200,
+      "finalUrl": "https://kitsu.app/api/edge/anime?filter%5Btext%5D=cowboy%20bebop&page%5Blimit%5D=1&fields%5Banime%5D=canonicalTitle%2Ctitles%2Csubtype%2CstartDate%2Csynopsis%2Ccategories%2CposterImage%2CcoverImage%2CaverageRating&include=categories&fields%5Bcategories%5D=title",
+      "id": "1",
+      "keys": [
+        "canonicalTitle",
+        "titles",
+        "subtype",
+        "startDate",
+        "synopsis",
+        "posterImage",
+        "coverImage",
+        "averageRating"
+      ],
+      "averageRating": "82.28",
+      "posterImage": {
+        "tiny": "https://media.kitsu.app/anime/poster_images/1/tiny.jpg",
+        "large": "https://media.kitsu.app/anime/poster_images/1/large.jpg",
+        "small": "https://media.kitsu.app/anime/poster_images/1/small.jpg",
+        "medium": "https://media.kitsu.app/anime/poster_images/1/medium.jpg",
+        "original": "https://media.kitsu.app/anime/poster_images/1/original.jpg",
+        "meta": {
+          "dimensions": {
+            "tiny": {
+              "width": 110,
+              "height": 156
+            },
+            "large": {
+              "width": 550,
+              "height": 780
+            },
+            "small": {
+              "width": 284,
+              "height": 402
+            },
+            "medium": {
+              "width": 390,
+              "height": 554
+            }
+          }
+        }
+      },
+      "coverImage": {
+        "tiny": "https://media.kitsu.app/anime/1/cover_image/tiny-1f92cfe65c1b31d8b47e36f025d32b35.jpeg",
+        "large": "https://media.kitsu.app/anime/1/cover_image/large-88da0208ac7fdd1a978de8b539008bd8.jpeg",
+        "small": "https://media.kitsu.app/anime/1/cover_image/small-33ff2ab0f599bc15ed73856ecd13fe71.jpeg",
+        "original": "https://media.kitsu.app/anime/1/cover_image/fb57e5f25616633a41f0f5f1ded938ee.jpeg",
+        "meta": {
+          "dimensions": {
+            "tiny": {
+              "width": 840,
+              "height": 200
+            },
+            "large": {
+              "width": 3360,
+              "height": 800
+            },
+            "small": {
+              "width": 1680,
+              "height": 400
+            }
+          }
+        }
+      }
+    },
+    {
+      "url": "https://kitsu.app/terms",
+      "status": 403,
+      "finalUrl": "https://kitsu.app/terms",
+      "contentType": "text/html; charset=UTF-8",
+      "title": "Just a moment...",
+      "termsTextAvailable": false
+    },
+    {
+      "url": "https://kitsu.io/terms",
+      "status": 200,
+      "finalUrl": "https://kitsu.io/terms",
+      "contentType": "text/html",
+      "termsTextAvailable": false
+    }
+  ]
+}

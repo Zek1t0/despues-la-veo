@@ -1,10 +1,12 @@
+import { PublicRating } from "../../src/components/browsing/PublicRating";
+import { savedMediaPresentation } from "../../src/core/mediaPresentation";
+import { MediaPoster } from "../../src/components/browsing/MediaPoster";
 import { observeLibraryProjection } from "../../src/storage/libraryInvalidation";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, FlatList, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { DetailPoster } from "../../src/components/browsing/DetailPoster";
 
 import { deleteSavedTitle, upsertSavedTitle } from "../../src/storage/savedTitlesRepo";
 import type { SavedTitleWithProviderReferences, TitleStatus } from "../../src/core/savedTitle";
@@ -790,7 +792,8 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                       params: { id: item.id, pinContext: "library" },
                     })
                   }
-                  posterUrl={item.posterUrl}
+                  publicRating={savedMediaPresentation(item).rating}
+                  posterUrl={item.posterUrl} imageProvider={savedMediaPresentation(item).imageProvider} metadata={savedMediaPresentation(item).metadata}
                   personalRating={item.personalRating}
                   style={{ width: gridCardWidth }}
                   title={item.title}
@@ -800,7 +803,6 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
               );
             }
 
-            const tmdbRating = typeof item.voteAverage === "number" && Number.isFinite(item.voteAverage) ? item.voteAverage.toFixed(1) : null;
             const overview = item.overview?.trim() ?? "";
             const tagsPreview = (item.tags ?? []).slice(0, 3);
 
@@ -835,7 +837,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                     importantForAccessibility="no-hide-descendants"
                     style={{ flexDirection: "row", gap: 12 }}
                   >
-                    <DetailPoster identity={item.id} posterUrl={item.posterUrl} style={{ width: 70, height: 105, borderRadius: 12 }} />
+                    <MediaPoster context="list" identity={item.id} posterUrl={item.posterUrl} imageProvider={savedMediaPresentation(item).imageProvider} metadata={savedMediaPresentation(item).metadata} style={{ width: 70, height: 105, borderRadius: 12 }} />
 
                     <View style={{ flex: 1, gap: 6 }}>
                       <Text style={{ fontSize: 16, fontWeight: "900", color: theme.global.textPrimary }}>
@@ -846,7 +848,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                         <Pill text={mediaClassificationLabel(item)} />
                         <Pill text={`Estado: ${titleStatusLabel(item.status, item.medium)}`} />
-                        {tmdbRating && <Pill text={`TMDB ${tmdbRating}/10`} />}
+                        <PublicRating value={savedMediaPresentation(item).rating} />
                         <PersonalRatingBadge value={item.personalRating} />
                       </View>
 

@@ -1,3 +1,5 @@
+import { metadataImageUrl } from "../../core/metadataImageUrl";
+import { MANGAUPDATES_IMAGE_HOSTS } from "../../core/mediaImagePresentation";
 import type { ProviderMaterializationInput, ProviderMediaDetails, ProviderSearchResult } from "../providerContracts";
 import { mangaUpdatesReference } from "./identity";
 import { admittedType, type MangaUpdatesSeries } from "./validation";
@@ -49,15 +51,7 @@ export function publicationYear(value: string | null): number | null {
  * Technical validation is not copyright or hotlink permission. Default is no cover. */
 export function mangaUpdatesPoster(value: string | null, policy: MangaUpdatesCoverPolicy = "omit"): string | null {
   if (policy !== "reference-https" || !value) return null;
-  // Reject unsafe raw forms before URL can normalize them (controls, slashes, authority/port).
-  if (/[\s\u0000-\u001f\u007f-\u009f\\]/u.test(value) || /%(?![0-9a-f]{2})/i.test(value) ||
-      !/^https:\/\/cdn\.mangaupdates\.com(?::443)?(?=[/?#]|$)/i.test(value)) return null;
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" || url.hostname !== "cdn.mangaupdates.com" ||
-        url.username || url.password || (url.port && url.port !== "443")) return null;
-    return url.href;
-  } catch { return null; }
+  return metadataImageUrl(value, MANGAUPDATES_IMAGE_HOSTS);
 }
 
 export function mapMangaUpdatesDetails(record: MangaUpdatesSeries, coverPolicy: MangaUpdatesCoverPolicy = "omit"): ProviderMediaDetails {

@@ -1,3 +1,6 @@
+import { PublicRating } from "../../src/components/browsing/PublicRating";
+import { savedMediaPresentation } from "../../src/core/mediaPresentation";
+import { MediaPoster } from "../../src/components/browsing/MediaPoster";
 import { observeLibraryProjection } from "../../src/storage/libraryInvalidation";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
@@ -99,6 +102,7 @@ function TagGridCard({
   const collageItems = selectCollageTitles(info.items).map((item) => ({
     id: item.id,
     posterUrl: item.posterUrl,
+    ...savedMediaPresentation(item),
   }));
 
   return (
@@ -838,7 +842,8 @@ export default function EtiquetasScreen() {
                       params: { id: item.id, pinContext: "tag", tag: selectedTag },
                     })
                   }
-                  posterUrl={item.posterUrl}
+                  publicRating={savedMediaPresentation(item).rating}
+                  posterUrl={item.posterUrl} imageProvider={savedMediaPresentation(item).imageProvider} metadata={savedMediaPresentation(item).metadata}
                   personalRating={item.personalRating}
                   style={{ width: titleCardWidth }}
                   title={item.title}

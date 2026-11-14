@@ -247,6 +247,8 @@ async function main() {
       return { tmdbFetch: () => { throw new Error("Unexpected unmocked TMDB request"); } };
     }
     if (parent?.filename === routePath) {
+      if (request.endsWith("/browsing/DetailPoster")) return { DetailPoster: "DetailPoster" };
+      if (request.endsWith("/browsing/PublicRating")) return { PublicRating: "PublicRating" };
       if (request === "react") return react;
       if (request === "react-native") return {
         ...Object.fromEntries(["ActivityIndicator", "Image", "Pressable", "ScrollView", "Text", "View"].map((n) => [n, n])),

@@ -1,7 +1,11 @@
+import { PublicRating } from "./PublicRating";
+import { publicRatingLabel } from "../../core/mediaPresentation";
+import type { PublicRating as PublicRatingValue } from "../../core/publicRating";
+import { MediaPoster } from "./MediaPoster";
+import type { EnrichedMediaMetadata } from "../../core/enrichedMediaMetadata";
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import {
-  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -15,12 +19,13 @@ import type { PersonalRating } from "../../core/personalRating";
 
 import { useAppTheme } from "../../theme/AppThemeProvider";
 import { PersonalRatingBadge } from "./PersonalRatingBadge";
-import { PosterPlaceholder } from "./PosterPlaceholder";
-import { usePosterImageError } from "./usePosterImageError";
 import { getPersonalRatingPresentation } from "./personalRatingPresentation";
 
 export type TitleGridCardProps = {
+  publicRating?: PublicRatingValue | null;
   identity?: string;
+  imageProvider?: string | null;
+  metadata?: EnrichedMediaMetadata;
   title: string;
   kindLabel: string;
   statusLabel?: string;
@@ -34,6 +39,9 @@ export type TitleGridCardProps = {
 
 export function TitleGridCard({
   identity,
+  publicRating,
+  imageProvider = "tmdb",
+  metadata,
   title,
   kindLabel,
   statusLabel,
@@ -45,12 +53,13 @@ export function TitleGridCard({
   style,
 }: TitleGridCardProps) {
   const { theme } = useAppTheme();
-  const { imageFailed, onImageError } = usePosterImageError(identity ?? accessibilityLabel, posterUrl);
 
-  const showImage = Boolean(posterUrl) && !imageFailed;
+
+
   const personalRatingPresentation = getPersonalRatingPresentation(personalRating);
   const composedAccessibilityLabel = [
     accessibilityLabel,
+    publicRatingLabel(publicRating),
     isPinned ? "fijado" : null,
     personalRatingPresentation?.accessibilityLabel ?? null,
   ]
@@ -74,17 +83,8 @@ export function TitleGridCard({
         pressed && styles.pressed,
       ]}
     >
-      {showImage ? (
-        <Image
-          accessible={false}
-          onError={onImageError}
-          resizeMode="cover"
-          source={{ uri: posterUrl! }}
-          style={styles.poster}
-        />
-      ) : (
-        <PosterPlaceholder style={styles.poster} />
-      )}
+      <MediaPoster identity={identity ?? accessibilityLabel} imageProvider={imageProvider} metadata={metadata}
+        posterUrl={posterUrl} context="card" style={styles.poster} />
 
       <View
         accessible={false}
@@ -129,6 +129,7 @@ export function TitleGridCard({
           { backgroundColor: theme.structural.imageOverlay },
         ]}
       >
+        <PublicRating value={publicRating} style={{ color: theme.structural.onImageOverlaySecondary, fontSize: 10 }} />
         <PersonalRatingBadge value={personalRating} style={styles.ratingBadge} />
         {statusLabel ? <Text style={{ color: theme.structural.onImageOverlaySecondary, fontSize: 11, fontWeight: "700" }}>{statusLabel}</Text> : null}
         <Text

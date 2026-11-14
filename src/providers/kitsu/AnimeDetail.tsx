@@ -1,6 +1,9 @@
+import { PublicRating } from "../../components/browsing/PublicRating";
+import { resolvePublicRating } from "../../core/mediaPresentation";
+import { MediaPoster } from "../../components/browsing/MediaPoster";
+import { MediaBanner } from "../../components/browsing/MediaBanner";
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
-import { PosterPlaceholder } from "../../components/browsing/PosterPlaceholder";
 import { useAppTheme } from "../../theme/AppThemeProvider";
 import { mediaClassificationLabel } from "../../core/presentationLabels";
 import type { ProviderMaterializationInput } from "../providerContracts";
@@ -75,9 +78,11 @@ export function KitsuAnimeDetail({ id: parameter, services }: { id: unknown; ser
       : error ? <View style={{ gap: 12 }}><Text accessibilityRole="alert" style={{ color: theme.semantic.dangerText }}>{error.message}</Text>
         {error.retryable && button("Reintentar Kitsu", () => setRetry(value => value + 1))}</View>
       : snapshot ? <>
-        <View style={{ flexDirection: "row", gap: 12 }}><PosterPlaceholder style={{ width: 96, height: 144, borderRadius: 12 }} />
+        <MediaBanner identity={id!} imageProvider="kitsu" metadata={input?.metadata} style={{ width: "100%", aspectRatio: 4.2, borderRadius: 12 }} />
+        <View style={{ flexDirection: "row", gap: 12 }}><MediaPoster identity={id!} imageProvider="kitsu" metadata={input?.metadata} style={{ width: 96, height: 144, borderRadius: 12 }} />
           <View style={{ flex: 1, gap: 8 }}><Text accessibilityRole="header" style={{ color: theme.global.textPrimary, fontSize: 24, fontWeight: "900" }}>{snapshot.title}</Text>
             <Text style={{ color: theme.global.textSecondary }}>{mediaClassificationLabel(snapshot)} · {snapshot.year ?? "Sin año"}</Text></View></View>
+        <PublicRating value={resolvePublicRating("kitsu", input?.metadata)} />
         <Text style={{ color: theme.global.textSecondary }}>{snapshot.overview ?? "Sin descripción."}</Text>
         {button("Datos: Kitsu · abrir fuente", () => { void services.source(`${KITSU_DEVELOPMENT_API_BASE}/anime/${id}`).catch(() => setWriteError("No pudimos abrir la fuente Kitsu.")); })}
         {button(saving ? "Guardando…" : visible.savedId ? "Actualizar guardado" : "Guardar en Biblioteca", () => { void save(); })}

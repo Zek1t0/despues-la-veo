@@ -1,3 +1,6 @@
+import { PublicRating } from "../../../src/components/browsing/PublicRating";
+import { resolvePublicRating } from "../../../src/core/mediaPresentation";
+import { DetailPoster } from "../../../src/components/browsing/DetailPoster";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -249,11 +252,6 @@ export default function TmdbDetailScreen() {
     return yearFromDate(date);
   }, [data, type]);
 
-  const rating = useMemo(() => {
-    const v = data?.vote_average;
-    if (typeof v !== "number") return "—";
-    return `${v.toFixed(1)}/10`;
-  }, [data]);
 
   const runtimeText = useMemo(() => {
     if (!data) return null;
@@ -418,34 +416,8 @@ export default function TmdbDetailScreen() {
           <>
             <Card>
               <View style={{ flexDirection: "row", gap: 12 }}>
-                {poster ? (
-                  <Image
-                    source={{ uri: poster }}
-                    style={{
-                      width: 120,
-                      height: 180,
-                      borderRadius: 14,
-                      borderWidth: 1,
-                      borderColor: theme.global.border,
-                    }}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View
-                    style={{
-                      width: 120,
-                      height: 180,
-                      borderRadius: 14,
-                      backgroundColor: theme.global.surfaceSecondary,
-                      borderWidth: 1,
-                      borderColor: theme.global.border,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Text style={{ color: theme.global.textSecondary }}>Sin póster</Text>
-                  </View>
-                )}
+                <DetailPoster identity={`${type}:${id}`} imageProvider="tmdb" posterUrl={poster}
+                  resizeMode="contain" style={{ width: 120, height: 180, borderRadius: 14 }} />
 
                 <View style={{ flex: 1, gap: 8 }}>
                   <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 20 }}>
@@ -459,7 +431,7 @@ export default function TmdbDetailScreen() {
                   </Text>
 
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                    <Pill text={`⭐ ${rating}`} />
+                    <PublicRating value={resolvePublicRating("tmdb", undefined, data.vote_average)} />
                     {genres.slice(0, 4).map((g) => (
                       <Pill key={g.id} text={g.name} />
                     ))}

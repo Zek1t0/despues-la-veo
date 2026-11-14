@@ -1,3 +1,4 @@
+import { KITSU_DEVELOPMENT_IMAGE_HOSTS } from "../../core/mediaImagePresentation";
 import type { ProviderReference } from "../../core/providerReference";
 import type { ProviderSearchCapability } from "../providerContracts";
 import { kitsuAvailability } from "./availability";
@@ -9,7 +10,7 @@ let shared: KitsuClient | undefined;
 function enabled(platform: string) {
   if (!kitsuAvailability(platform).enabled) throw new KitsuError("unavailable");
 }
-function client() { return shared ??= createKitsuClient({ fetchImplementation: (input, init) => globalThis.fetch(input, init), apiBase: KITSU_DEVELOPMENT_API_BASE }); }
+function client() { return shared ??= createKitsuClient({ fetchImplementation: (input, init) => globalThis.fetch(input, init), apiBase: KITSU_DEVELOPMENT_API_BASE, metadataOptions: { imagePolicy: KITSU_DEVELOPMENT_IMAGE_HOSTS } }); }
 export function createKitsuSearchCapability(injected: KitsuClient): ProviderSearchCapability {
   return { search: async (query, signal) => (await injected.searchAnime(query, 0, signal)).map(mapKitsuSearchResult) };
 }

@@ -134,8 +134,7 @@ async function main() {
   const owned=host(()=>Detail());await owned.flush();
   pendingDetails.at(-1).resolve(parseSeries(fixture));await owned.flush();
   const ownedImage=nodes(owned.tree).find(n=>n.type==="Image");
-  assert.equal(ownedImage.props.source.uri,ownUrl);
-  ownedImage.props.onError({nativeEvent:{error:"HTTP/network/decode stub failure"}});await owned.flush();
+  assert.equal(ownedImage,undefined,"section 3 rejects unreviewed test hosts before Image; injected snapshot is not authorization");
   assert.equal(nodes(owned.tree).some(n=>n.type==="Image"),false);
   assert.equal(nodes(owned.tree).some(n=>n.type?.name==="PosterPlaceholder"),true);
   const before=saves.length;
