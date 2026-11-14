@@ -23,6 +23,7 @@ export type TmdbSearchMultiItem = {
   first_air_date?: string;
   overview?: string;
   poster_path?: string | null;
+  vote_average?: number | null;
 };
 
 export type TmdbGenre = {

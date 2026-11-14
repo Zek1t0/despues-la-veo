@@ -1,5 +1,6 @@
 import type { ProviderReference } from "../core/providerReference";
 import type { MediaClassification } from "../core/mediaClassification";
+import type { EnrichedMediaMetadata } from "../core/enrichedMediaMetadata";
 
 /** Remote search metadata already normalized for the current search UI. */
 export type ProviderSearchResult = Readonly<{
@@ -9,6 +10,8 @@ export type ProviderSearchResult = Readonly<{
   posterUrl: string | null;
   description: string | null;
   kindLabel: string;
+  /** Optional provider-owned sidecar; no persistence or presentation policy implied. */
+  metadata?: EnrichedMediaMetadata;
 }>;
 
 /** Remote snapshot fields that the current local media domain can persist. */
@@ -27,6 +30,7 @@ export type ProviderLocalSnapshot = Readonly<MediaClassification & {
 export type ProviderMediaDetails = Readonly<{
   reference: ProviderReference;
   snapshot: ProviderLocalSnapshot;
+  metadata?: EnrichedMediaMetadata;
 }>;
 
 /** Explicit input for local creation/refresh, including provider-supplied initial tags. */
@@ -34,6 +38,7 @@ export type ProviderMaterializationInput = Readonly<{
   reference: ProviderReference;
   snapshot: ProviderLocalSnapshot;
   initialTags: readonly string[];
+  metadata?: EnrichedMediaMetadata;
 }>;
 
 /** The only shared remote operation currently required by an application consumer. */

@@ -108,6 +108,7 @@ function detailMapping() {
   const tv = mapTmdbTvDetails(tvInput);
 
   assert.deepEqual(movie, {
+    metadata: movie.metadata,
     reference: { provider: "tmdb", resourceNamespace: "movie", externalId: "101" },
     snapshot: {
       medium: "audiovisual", contentFamily: null, primaryFormat: "movie",
@@ -120,6 +121,7 @@ function detailMapping() {
     },
   });
   assert.deepEqual(tv, {
+    metadata: tv.metadata,
     reference: { provider: "tmdb", resourceNamespace: "tv", externalId: "202" },
     snapshot: {
       medium: "audiovisual", contentFamily: null, primaryFormat: "tv",
@@ -143,7 +145,10 @@ function detailMapping() {
   assert.deepEqual(movieInput, movieBefore);
   assert.deepEqual(tvInput, tvBefore);
 
-  assert.deepEqual(Object.keys(movie).sort(), ["reference", "snapshot"]);
+  assert.deepEqual(Object.keys(movie).sort(), ["metadata", "reference", "snapshot"]);
+  assert.equal(movie.metadata.fields.publicRating.originalValue, movie.snapshot.voteAverage);
+  assert.deepEqual(movie.metadata.fields.publicRating.originalScale, { min: 0, max: 10 });
+  assert.deepEqual(tv.metadata.provenance.reference, tv.reference);
   assert.equal(Object.hasOwn(movie, "initialTags"), false);
   for (const enrichment of ["runtime", "episode_run_time", "number_of_seasons", "cast", "crew", "watchProviders"]) {
     assert.equal(Object.hasOwn(movie.snapshot, enrichment), false);
@@ -154,6 +159,7 @@ function detailMapping() {
   assert.deepEqual(initialTags, ["Drama", "Acción"]);
   const materialization = createTmdbMaterializationInput(movie, initialTags);
   assert.deepEqual(materialization, {
+    metadata: movie.metadata,
     reference: movie.reference,
     snapshot: movie.snapshot,
     initialTags: ["Drama", "Acción"],

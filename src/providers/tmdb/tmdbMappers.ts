@@ -1,3 +1,4 @@
+import { assertMetadataReference } from "../../core/metadataValidation";
 import { createTmdbProviderReference, type TmdbResourceNamespace } from "../../core/tmdbSavedTitle";
 import { classificationFromHistoricalType } from "../../core/mediaClassification";
 import type {
@@ -6,6 +7,7 @@ import type {
   ProviderSearchResult,
 } from "../providerContracts";
 import { posterUrl } from "./tmdbImages";
+import { tmdbPublicMetadata } from "./publicMetadata";
 import type {
   TmdbDetails,
   TmdbMovieDetails,
@@ -31,7 +33,9 @@ export function mapTmdbSearchItem(item: TmdbSearchMultiItem): ProviderSearchResu
   if (item.media_type !== "movie" && item.media_type !== "tv") return null;
 
   const isMovie = item.media_type === "movie";
+  const metadata = tmdbPublicMetadata(item.media_type, item.id, item);
   return {
+    ...(metadata ? { metadata } : {}),
     reference: createTmdbProviderReference(item.media_type, item.id),
     displayTitle: isMovie ? item.title ?? "Sin título" : item.name ?? "Sin nombre",
     releaseLabel: displayYear(isMovie ? item.release_date : item.first_air_date),
@@ -63,7 +67,9 @@ function mapTmdbDetails(
   title: string,
   date: string | undefined,
 ): ProviderMediaDetails {
+  const metadata = tmdbPublicMetadata(type, details.id, details);
   return {
+    ...(metadata ? { metadata } : {}),
     reference: createTmdbProviderReference(type, details.id),
     snapshot: {
       ...classificationFromHistoricalType(type),
@@ -92,9 +98,11 @@ export function createTmdbMaterializationInput(
   details: ProviderMediaDetails,
   initialTags: readonly string[],
 ): ProviderMaterializationInput {
+  if (details.metadata) assertMetadataReference(details.metadata, details.reference);
   return {
     reference: details.reference,
     snapshot: details.snapshot,
     initialTags,
+    ...(details.metadata ? { metadata: details.metadata } : {}),
   };
 }

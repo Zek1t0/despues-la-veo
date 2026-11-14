@@ -16,7 +16,7 @@ type HasKey<Value, Key extends PropertyKey> = Key extends keyof Value ? true : f
 
 type SearchResultKeys = Assert<Equal<
   keyof ProviderSearchResult,
-  "reference" | "displayTitle" | "releaseLabel" | "posterUrl" | "description" | "kindLabel"
+  "reference" | "displayTitle" | "releaseLabel" | "posterUrl" | "description" | "kindLabel" | "metadata"
 >>;
 type SnapshotKeys = Assert<Equal<
   keyof ProviderLocalSnapshot,
@@ -26,10 +26,10 @@ type SnapshotGenres = Assert<Equal<ProviderLocalSnapshot["genres"], readonly str
 type DetailsSnapshotGenres = Assert<Equal<ProviderMediaDetails["snapshot"]["genres"], readonly string[]>>;
 type SnapshotExcludesInitialTags = Assert<Equal<HasKey<ProviderLocalSnapshot, "initialTags">, false>>;
 type SearchCapabilityKeys = Assert<Equal<keyof ProviderSearchCapability, "search">>;
-type DetailKeys = Assert<Equal<keyof ProviderMediaDetails, "reference" | "snapshot">>;
+type DetailKeys = Assert<Equal<keyof ProviderMediaDetails, "reference" | "snapshot" | "metadata">>;
 type MaterializationKeys = Assert<Equal<
   keyof ProviderMaterializationInput,
-  "reference" | "snapshot" | "initialTags"
+  "reference" | "snapshot" | "initialTags" | "metadata"
 >>;
 type DetailsExcludeInitialTags = Assert<Equal<HasKey<ProviderMediaDetails, "initialTags">, false>>;
 type MaterializationIncludesInitialTags = Assert<Equal<
