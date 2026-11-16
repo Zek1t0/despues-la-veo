@@ -840,6 +840,8 @@ export default function SettingsScreen() {
 
 
 
+      <PrimaryButton label="Idiomas de títulos" onPress={() => router.push("/settings/metadata-languages")} />
+
       <PrimaryButton
 
         label="Apariencia"

@@ -1,3 +1,4 @@
+import { matchesLocalMediaQuery } from "./mediaViewProjection";
 import type { SavedTitle, TitleStatus } from "./savedTitle";
 import type { LibrarySort } from "./viewPreferences";
 
@@ -129,17 +130,9 @@ export function selectVisibleLibraryTitles<T extends SavedTitle>({
   statusFilter: LibraryStatusFilter;
   classificationFilter: LibraryClassificationFilter;
 }): T[] {
-  const needle = query.trim().toLocaleLowerCase("es");
-  const matchingItems = items.filter((item) => {
-    if (statusFilter !== "all" && item.status !== statusFilter) return false;
-    if (!matchesLibraryClassification(item, classificationFilter)) return false;
-    if (!needle) return true;
-    if (item.title.toLocaleLowerCase("es").includes(needle)) return true;
-    if ((item as SavedTitle & { localAliases?: string[] }).localAliases?.some(alias => alias.toLocaleLowerCase("es").includes(needle))) return true;
-    return (item.tags ?? []).some((tag) =>
-      tag.toLocaleLowerCase("es").includes(needle)
-    );
-  });
+  const matchingItems = [...new Map(items.filter(item =>
+    (statusFilter === "all" || item.status === statusFilter) && matchesLibraryClassification(item, classificationFilter) &&
+    matchesLocalMediaQuery(item, query)).map(item => [item.id,item])).values()];
 
   const pinned: T[] = [];
   const unpinned: T[] = [];

@@ -1,0 +1,18 @@
+const assert=require('node:assert/strict');
+require('./section-4-editorial.cjs');
+const {resolveMediaTitle}=require('../../../src/core/mediaTitlePresentation.ts');
+const {parseMediaPreferences,DEFAULT_MEDIA_PREFERENCES}=require('../../../src/core/mediaPreferences.ts');
+const {parseAnime}=require('../../../src/providers/kitsu/validation.ts');
+const metadata=parseAnime({type:'anime',id:'1',attributes:{canonicalTitle:'Canon',titles:{en:'English',en_jp:'Romaji',ja_jp:'日本語',es_ar:'Español AR',es_mx:'Español MX'}}}).metadata;
+assert.equal(resolveMediaTitle(metadata,'Old').title,'Español AR');
+assert.equal(resolveMediaTitle(metadata,'Old',['fr','en']).title,'English');
+assert.equal(resolveMediaTitle(metadata,'Old',['ja-Latn']).title,'Romaji');
+assert.equal(resolveMediaTitle(metadata,'Old',['ja']).title,'日本語');
+assert.equal(resolveMediaTitle(metadata,'Old',['de']).origin,'canonical');
+assert.equal(resolveMediaTitle(metadata,'Old',['en'],'Personal').title,'Personal');
+const unknown={...metadata,fields:{titles:[{value:'Sin idioma',language:null,script:null,kind:'localized'}]}};
+assert.equal(resolveMediaTitle(unknown,'Old',['es']).origin,'variant');assert.equal(resolveMediaTitle(unknown,'Old',['es']).language,null);
+assert.equal(resolveMediaTitle(undefined,'Old').origin,'historical');
+const before=JSON.stringify(metadata);resolveMediaTitle(metadata,'Old',['en']);assert.equal(JSON.stringify(metadata),before);
+for(const languages of [[],['en','en'],['en-US','en-us'],['bad code']])assert.throws(()=>parseMediaPreferences({value:{...DEFAULT_MEDIA_PREFERENCES,languages},updatedAt:1}));
+console.log('PASS S4.2 title resolution: Spanish regional, missing Spanish/English, ja-Latn vs ja, canonical/unknown variant/history, override, invalid/duplicate preferences and no mutations.');

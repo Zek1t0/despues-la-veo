@@ -1,3 +1,5 @@
+import { useMediaLanguages, type MediaLanguageServices } from "../../src/components/browsing/useMediaLanguages";
+import { presentRemoteTitle } from "../../src/core/mediaViewProjection";
 import { publicRatingLabel, resolvePublicRating } from "../../src/core/mediaPresentation";
 import { PublicRating } from "../../src/components/browsing/PublicRating";
 import { MediaPoster } from "../../src/components/browsing/MediaPoster";
@@ -55,11 +57,12 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
   resolveCategory: (id: SearchCategoryId) => ResolvedSearchCategory | null;
   tmdb?: TmdbSearchConfiguration;
   initialCategory?: SearchCategoryId;
-  bindings?: Readonly<{ getViewPreference: typeof getViewPreference; setViewPreference: typeof setViewPreference;
+  bindings?: Readonly<{ languagePreferences?: MediaLanguageServices; getViewPreference: typeof getViewPreference; setViewPreference: typeof setViewPreference;
     openResult: (destination: NonNullable<ReturnType<ResolvedSearchCategory["destination"]>>) => void }>;
 }>) {
   const router = useRouter();
   const { theme } = useAppTheme();
+  const { languages } = useMediaLanguages(!bindings || !!bindings.languagePreferences, bindings?.languagePreferences);
   const snapshot = tmdb?.snapshot;
   const [categoryId, setCategoryId] = useState<SearchCategoryId>(initialCategory);
   const selected = resolveCategory(categoryId);
@@ -333,7 +336,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
 
       <FlatList
         columnWrapperStyle={listColumns > 1 ? { gap: gridGap } : undefined}
-        data={visibleItems}
+        data={visibleItems.map(item => presentRemoteTitle(item, languages))}
         key={listLayoutKey}
         keyExtractor={(item) => `${item.reference.provider}/${item.reference.resourceNamespace}/${item.reference.externalId}`}
         numColumns={listColumns}

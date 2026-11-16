@@ -1,3 +1,7 @@
+import { useMediaLanguages, type MediaLanguageServices } from "../../components/browsing/useMediaLanguages";
+import { resolveMediaTitle, titleFallbackLabel } from "../../core/mediaTitlePresentation";
+import { EditorialDetails } from "../../components/browsing/EditorialDetails";
+import { editorialRows } from "../../core/editorialPresentation";
 import { PublicRating } from "../../components/browsing/PublicRating";
 import { resolvePublicRating } from "../../core/mediaPresentation";
 import { MediaPoster } from "../../components/browsing/MediaPoster";
@@ -13,6 +17,7 @@ import { kitsuMaterializationInput } from "./mapping";
 import { presentKitsuError } from "./errors";
 
 export type AnimeDetailServices = {
+  languagePreferences?: MediaLanguageServices;
   available: boolean;
   load(id: string, signal: AbortSignal): Promise<KitsuAnime>;
   saved(input: ProviderMaterializationInput): Promise<string | null>;
@@ -23,6 +28,7 @@ export type AnimeDetailServices = {
 /** Same component for production route and explicitly injected disposable review. */
 export function KitsuAnimeDetail({ id: parameter, services }: { id: unknown; services: AnimeDetailServices }) {
   const { theme } = useAppTheme();
+  const { languages } = useMediaLanguages(services.available && !!services.languagePreferences, services.languagePreferences);
   let id: string | null = null;
   try { id = canonicalAnimeId(parameter); } catch { /* No load for malformed routes. */ }
   const [retry, setRetry] = useState(0);
@@ -53,6 +59,7 @@ export function KitsuAnimeDetail({ id: parameter, services }: { id: unknown; ser
   const visible = state?.id === id && state.retry === retry && services.available ? state : null;
   const input = visible?.record ? kitsuMaterializationInput(visible.record) : null;
   const snapshot = input?.snapshot;
+  const displayTitle = resolveMediaTitle(input?.metadata, snapshot?.title ?? "", languages);
   const error = visible?.error ? presentKitsuError(visible.error) : null;
   const button = (label: string, action: () => void) => <Pressable accessibilityRole="button" accessibilityLabel={label}
     accessibilityState={{ disabled: saving }} disabled={saving} onPress={action}
@@ -80,10 +87,11 @@ export function KitsuAnimeDetail({ id: parameter, services }: { id: unknown; ser
       : snapshot ? <>
         <MediaBanner identity={id!} imageProvider="kitsu" metadata={input?.metadata} style={{ width: "100%", aspectRatio: 4.2, borderRadius: 12 }} />
         <View style={{ flexDirection: "row", gap: 12 }}><MediaPoster identity={id!} imageProvider="kitsu" metadata={input?.metadata} style={{ width: 96, height: 144, borderRadius: 12 }} />
-          <View style={{ flex: 1, gap: 8 }}><Text accessibilityRole="header" style={{ color: theme.global.textPrimary, fontSize: 24, fontWeight: "900" }}>{snapshot.title}</Text>
+          <View style={{ flex: 1, gap: 8 }}><Text accessibilityRole="header" style={{ color: theme.global.textPrimary, fontSize: 24, fontWeight: "900" }}>{displayTitle.title}</Text>
             <Text style={{ color: theme.global.textSecondary }}>{mediaClassificationLabel(snapshot)} · {snapshot.year ?? "Sin año"}</Text></View></View>
+        {titleFallbackLabel(displayTitle) && <Text style={{ color: theme.global.textMuted }}>{titleFallbackLabel(displayTitle)}</Text>}
         <PublicRating value={resolvePublicRating("kitsu", input?.metadata)} />
-        <Text style={{ color: theme.global.textSecondary }}>{snapshot.overview ?? "Sin descripción."}</Text>
+        <EditorialDetails rows={editorialRows(input?.metadata, snapshot, "Kitsu · snapshot de la misma consulta")} />
         {button("Datos: Kitsu · abrir fuente", () => { void services.source(`${KITSU_DEVELOPMENT_API_BASE}/anime/${id}`).catch(() => setWriteError("No pudimos abrir la fuente Kitsu.")); })}
         {button(saving ? "Guardando…" : visible.savedId ? "Actualizar guardado" : "Guardar en Biblioteca", () => { void save(); })}
         {visible.savedId && button("Abrir en Biblioteca", () => services.open(visible.savedId!))}

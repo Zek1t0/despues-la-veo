@@ -98,7 +98,7 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
     <View style={{ padding: 12, gap: 4, borderBottomWidth: 2, borderColor: theme.global.accent }}>
       <Text accessibilityRole="header" style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 18 }}>TEST · revisión de medios · DBs aisladas</Text>
     </View>
-    <ScrollView style={{ maxHeight: 240, flexGrow: 0 }} contentContainerStyle={{ padding: 12, gap: 4 }}>
+    <ScrollView style={{ height: 240, maxHeight: 240, flexGrow: 0, flexShrink: 0 }} contentContainerStyle={{ padding: 12, gap: 4 }}>
       <Text selectable style={{ color: theme.global.textSecondary }}>Origen: {session.names.primary}</Text>
       <Text selectable style={{ color: theme.global.textSecondary }}>Restore: {session.names.restore}</Text>
       <Text accessibilityLiveRegion="polite" style={{ color: theme.global.textPrimary }}>{message}</Text>
@@ -119,6 +119,8 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
         const result = await session.importTest(json); setTarget("restore"); setPage("library");
         return `Restore real: ${result.inserted} insertados, ${result.updated} actualizados; ${result.pins.inserted} pins.`;
       }), !json)}
+      {button("Idiomas TEST: inglés primero", () => void action(() => repository.setMediaLanguages(["en","es","ja-Latn"])))}
+      {button("Idiomas TEST: español primero", () => void action(() => repository.setMediaLanguages(["es","en","ja-Latn"])))}
       {button("Imágenes y puntuaciones sección 3", () => setPage("art"))}
       {button("Reset SOLO estas DBs de revisión", () => void action(onReset))}
     </View>
@@ -131,7 +133,7 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
         setAnimeId(match[1]); setPage("anime-detail");
       } }} />}
     {page === "anime-detail" && <KitsuAnimeDetail key={`${target}-${animeId}-${offline}`} id={animeId} services={{
-      available: true, load: (id, signal) => animeClient.getAnime(id, signal), saved: repository.savedProvider, save: repository.saveProvider,
+      languagePreferences: repository.languagePreferences, available: true, load: (id, signal) => animeClient.getAnime(id, signal), saved: repository.savedProvider, save: repository.saveProvider,
       open: id => { setLocalId(id); setPage("local"); }, source: async () => { setMessage("TEST: no se abre la fuente real Kitsu."); },
     }} />}
     {manualDraft && <View style={{ flex: page === "manual" ? 1 : 0, display: page === "manual" ? "flex" : "none" }}>

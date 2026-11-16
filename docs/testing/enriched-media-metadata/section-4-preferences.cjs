@@ -1,0 +1,17 @@
+const assert=require('node:assert/strict');
+const {fixture,createV6,originalTables}=require('./sqlite-fixtures.cjs');
+const {evolveDatabaseSchema}=require('../../../src/storage/databaseSchema.ts');
+const {getLibraryBackupExportDataWithDb}=require('../../../src/storage/libraryBackupExport.ts');
+const {createLibraryBackupV8}=require('../../../src/core/libraryBackupV8.ts');
+const {parseLibraryBackup}=require('../../../src/core/libraryBackup.ts');
+const {setMediaLanguages,readMediaPreferencesWithDb,subscribeMediaPreferences}=require('../../../src/storage/mediaPreferencesRepo.ts');
+(async()=>{const f=fixture();try{createV6(f);await evolveDatabaseSchema(f.db,6);const before=originalTables(f);const events=[];const stop=subscribeMediaPreferences(v=>events.push(v));
+await setMediaLanguages(['ja','en'],100,f.db);const p=await readMediaPreferencesWithDb(f.db);assert.deepEqual(p.value.languages,['ja','en']);assert.equal(p.value.autoRefresh.enabled,true);assert.equal(p.value.hideSensitive,false);assert.equal(events.length,1);
+await setMediaLanguages(['ja','en'],200,f.db);assert.equal(events.length,1,'no-op does not publish');
+await assert.rejects(setMediaLanguages(['en','en'],300,f.db));assert.deepEqual((await readMediaPreferencesWithDb(f.db)).value.languages,['ja','en']);assert.equal(events.length,1);
+const after=originalTables(f);for(const table of Object.keys(before).filter(x=>x!=='app_preferences'))assert.deepEqual(after[table],before[table]);
+const exported=await getLibraryBackupExportDataWithDb(f.db,{status:'unavailable'});
+const backup=createLibraryBackupV8(exported.items,exported.pins,exported.appearanceAvailability,undefined,{preferences:exported.preferences});
+const parsed=parseLibraryBackup(JSON.stringify(backup));assert.equal(parsed.ok,true);assert.deepEqual(parsed.payload.preferences.value.languages,['ja','en']);
+backup.preferences.value.languages=['en-US','en-us'];const invalid=parseLibraryBackup(JSON.stringify(backup));assert.equal(invalid.ok,true);assert.ok(invalid.payload.preferenceIssues.length);assert.ok(invalid.payload.items.length>0,'invalid languages do not reject restorable items');
+stop();console.log('PASS S4.2 language preferences: real SQLite commit/no-op/invalid rollback, postcommit notification, other preferences and all item/pin/identity data preserved.');}finally{f.close();}})().catch(e=>{console.error(e);process.exitCode=1});

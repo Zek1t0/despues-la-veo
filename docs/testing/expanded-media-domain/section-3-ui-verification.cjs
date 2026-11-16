@@ -60,7 +60,7 @@ async function main(){
     assert.equal(h.patches.at(-1).status,"watching","medium-aware wording preserves the persisted token");
     assert.ok(text(h.tree).includes(mediaClassificationLabel(value)));assert.ok(text(h.tree).includes("2020"));
     assert.ok(text(h.tree).includes(value.medium === "audiovisual" ? "Estreno / inicio":"Inicio / publicación"));
-    assert.ok(text(h.tree).includes("Local persisted summary")); assert.ok(text(h.tree).includes("Tu puntuación"));
+    assert.ok(nodes(h.tree).find(n=>n.type?.name==="EditorialDetails").props.rows.some(r=>r.value==="Local persisted summary")); assert.ok(text(h.tree).includes("Tu puntuación"));
     const stack=nodes(h.tree).find(x=>x.type === "Stack.Screen");active=h;
     const link=stack.props.options.headerRight();
     if(value.providerReferences.length){assert.ok(link);link.props.onPress();assert.equal(h.navigation[0],"/tmdb/movie/123");assert.equal(value.primaryFormat,h.item.primaryFormat);}

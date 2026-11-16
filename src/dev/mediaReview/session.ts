@@ -1,3 +1,5 @@
+import { selectMetadataSource } from "../../storage/mediaMetadataRepo";
+import { readMediaPreferencesWithDb, subscribeMediaPreferences, setMediaLanguages } from "../../storage/mediaPreferencesRepo";
 import * as SQLite from "expo-sqlite";
 import { enableAndVerifyForeignKeys, ensureLibrarySchema, type SchemaDatabase } from "../../storage/databaseSchema";
 import { saveProviderTitle, attachProviderReferenceWithDb, updateSavedTitleMetadataWithDb, setPersonalRatingWithDb, type SavedTitlesMutationDatabase } from "../../storage/savedTitlesRepo";
@@ -60,6 +62,9 @@ export async function createReviewSession(options: Readonly<{
     write: async preference => { appearance = preference; },
   };
   const repository = (db: ReviewDatabase) => ({
+    setMediaLanguages: (languages: readonly string[]) => setMediaLanguages(languages,Date.now(),db),
+    languagePreferences: { read: () => readMediaPreferencesWithDb(db), subscribe: subscribeMediaPreferences },
+    selectMetadataSource: (id: string, reference: Parameters<typeof selectMetadataSource>[1]) => selectMetadataSource(id,reference,Date.now(),db),
     savedProvider: async (input: ProviderMaterializationInput) => { requireOpen(); return (await getSavedTitleByProviderReferenceWithDb(db, input.reference))?.id ?? null; },
     saveProvider: (input: ProviderMaterializationInput) => { requireOpen(); return saveProviderTitle(input, generateId, db); },
     get: (id: string) => { requireOpen(); return getSavedTitleWithReferencesByIdWithDb(db, id); },

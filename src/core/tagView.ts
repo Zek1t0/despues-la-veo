@@ -1,3 +1,4 @@
+import { matchesLocalMediaQuery } from "./mediaViewProjection";
 import type { SavedTitle } from "./savedTitle";
 
 const SPANISH_COLLATOR = new Intl.Collator("es", {
@@ -23,11 +24,12 @@ export function compareTagTitles(a: SavedTitle, b: SavedTitle): number {
 
 export function selectVisibleTagTitles<T extends SavedTitle>(
   tagItems: readonly T[],
-  pinnedAtById: ReadonlyMap<string, number>
+  pinnedAtById: ReadonlyMap<string, number>,
+  query = ""
 ): T[] {
   const pinned: T[] = [];
   const unpinned: T[] = [];
-  for (const item of tagItems) {
+  for (const item of new Map(tagItems.filter(item => matchesLocalMediaQuery(item, query)).map(item => [item.id,item])).values()) {
     (pinnedAtById.has(item.id) ? pinned : unpinned).push(item);
   }
   pinned.sort((a, b) => {

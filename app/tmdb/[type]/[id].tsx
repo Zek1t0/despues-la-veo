@@ -1,3 +1,7 @@
+import { useMediaLanguages } from "../../../src/components/browsing/useMediaLanguages";
+import { resolveMediaTitle } from "../../../src/core/mediaTitlePresentation";
+import { EditorialDetails } from "../../../src/components/browsing/EditorialDetails";
+import { editorialRows } from "../../../src/core/editorialPresentation";
 import { PublicRating } from "../../../src/components/browsing/PublicRating";
 import { resolvePublicRating } from "../../../src/core/mediaPresentation";
 import { DetailPoster } from "../../../src/components/browsing/DetailPoster";
@@ -128,6 +132,7 @@ function uniqByName(arr: { provider_name: string }[]) {
 
 export default function TmdbDetailScreen() {
   const { theme } = useAppTheme();
+  const { languages } = useMediaLanguages();
   const router = useRouter();
   const { snapshot, retryInitialization } = useTmdbCredential();
   const { type, id } = useLocalSearchParams<{ type: "movie" | "tv"; id: string }>();
@@ -236,10 +241,11 @@ export default function TmdbDetailScreen() {
     }
   }, [retryInitialization]);
 
+  const editorial = useMemo(() => !data ? undefined : type === "movie" ? mapTmdbMovieDetails(data as TmdbMovieDetails) : mapTmdbTvDetails(data as TmdbTvDetails), [data,type]);
   const title = useMemo(() => {
     if (!data) return "";
-    return type === "movie" ? (data as TmdbMovieDetails).title : (data as TmdbTvDetails).name;
-  }, [data, type]);
+    return resolveMediaTitle(editorial?.metadata, editorial?.snapshot.title ?? "", languages).title;
+  }, [data, type, editorial, languages]);
 
   const headerTitle = useMemo(() => {
     const t = title || (type === "movie" ? "Película" : "Serie");
@@ -265,6 +271,17 @@ export default function TmdbDetailScreen() {
     if (!data?.genres || !Array.isArray(data.genres)) return [];
     return data.genres;
   }, [data]);
+
+  const complementaryEditorialRows = useMemo(() => editorialRows(editorial?.metadata).flatMap(row => {
+    if (row.label === "Título canónico" && row.value === title) return [];
+    if (row.label === "Sinopsis" && data?.overview?.trim()) return [];
+    if (row.label === "Duración total informada" && type === "movie" && runtimeText) return [];
+    if (row.label === "Géneros narrativos" && genres.length) {
+      const additional = genres.slice(4);
+      return additional.length ? [{ ...row, label: "Géneros narrativos adicionales", value: additional.map(genre => genre.name).join(", ") }] : [];
+    }
+    return [row];
+  }), [editorial, title, data, runtimeText, genres, type]);
 
   const poster = useMemo(() => posterUrl(data?.poster_path), [data]);
 
@@ -464,6 +481,8 @@ export default function TmdbDetailScreen() {
                 </View>
               </View>
             </Card>
+
+            <EditorialDetails rows={complementaryEditorialRows} />
 
             <Pressable
               onPress={saveToLibrary}

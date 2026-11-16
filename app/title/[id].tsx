@@ -1,3 +1,10 @@
+import { MetadataSourceSelector } from "../../src/components/browsing/MetadataSourceSelector";
+import { selectMetadataSource } from "../../src/storage/mediaMetadataRepo";
+import { titleFallbackLabel } from "../../src/core/mediaTitlePresentation";
+import { useMediaLanguages, type MediaLanguageServices } from "../../src/components/browsing/useMediaLanguages";
+import { presentSavedTitle } from "../../src/core/mediaViewProjection";
+import { EditorialDetails } from "../../src/components/browsing/EditorialDetails";
+import { savedEditorialRows } from "../../src/core/editorialPresentation";
 import { PublicRating } from "../../src/components/browsing/PublicRating";
 import { savedMediaPresentation } from "../../src/core/mediaPresentation";
 import { MediaPoster } from "../../src/components/browsing/MediaPoster";
@@ -182,6 +189,8 @@ function Card({ children }: { children: React.ReactNode }) {
 
 type DetailParams = { id?: string | string[]; pinContext?: string | string[]; tag?: string | string[] };
 export type TitleDetailServices = Readonly<{
+  languagePreferences?: MediaLanguageServices;
+  selectMetadataSource?: typeof selectMetadataSource;
   getTitleDetailPinSnapshot: typeof getTitleDetailPinSnapshot;
   deleteSavedTitle: typeof deleteSavedTitle;
   setPersonalRating: typeof setPersonalRating;
@@ -201,6 +210,7 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
   const { getTitleDetailPinSnapshot, deleteSavedTitle, setPersonalRating,
     updateSavedTitleMetadata, setTitlePinState, useFocusEffect, useRouter, useParams } = bindings ?? personalDetailServices;
   const { theme } = useAppTheme();
+  const { languages } = useMediaLanguages(!bindings || !!bindings.languagePreferences, bindings?.languagePreferences);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
@@ -342,6 +352,7 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
     }, ids => ids.includes(id));
   }, [id, pinContext, tag]);
 
+  const displayItem = item ? presentSavedTitle(item, languages) : null;
   const pinContextLabel = effectivePinContext
     ? titleDetailPinContextLabel(effectivePinContext)
     : "Biblioteca";
@@ -670,12 +681,14 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
             </Pressable>
           </View>
         ))}
+        {(!bindings || bindings.selectMetadataSource) && <MetadataSourceSelector key={item.id} item={item} select={bindings?.selectMetadataSource ?? selectMetadataSource} />}
+        {displayItem && titleFallbackLabel(displayItem.resolvedTitle) && <Text style={{ color: theme.global.textMuted }}>{titleFallbackLabel(displayItem.resolvedTitle)}</Text>}
         <MediaBanner identity={item.id} {...savedMediaPresentation(item)} style={{ width: "100%", aspectRatio: 4.2, borderRadius: 12 }} />
         <View style={{ flexDirection: "row", gap: 12 }}>
           <MediaPoster identity={item.id} {...savedMediaPresentation(item)} posterUrl={item.posterUrl} style={{ width: 72, height: 108, borderRadius: 12 }} />
           <View style={{ flex: 1, gap: 6 }}>
             <Text style={{ fontSize: 24, fontWeight: "900", color: theme.global.textPrimary }}>
-              {item.title}
+              {displayItem?.title ?? item.title}
             </Text>
             <Text style={{ color: theme.global.textSecondary, fontWeight: "700" }}>
               {mediaClassificationLabel(item)}
@@ -686,12 +699,7 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
           </View>
         </View>
 
-        {item.overview?.trim() || item.genres?.length ? (
-          <Card>
-            {item.overview?.trim() ? <Text style={{ color: theme.global.textPrimary }}>{item.overview}</Text> : null}
-            {item.genres?.length ? <Text style={{ color: theme.global.textSecondary }}>Géneros: {item.genres.join(", ")}</Text> : null}
-          </Card>
-        ) : null}
+        <EditorialDetails rows={savedEditorialRows(item)} />
 
         <Card>
           {pinReady ? (

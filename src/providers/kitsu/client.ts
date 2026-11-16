@@ -40,7 +40,7 @@ export function createKitsuClient(options: KitsuClientOptions) {
   const setTimer = options.setTimer ?? setTimeout, clearTimer = options.clearTimer ?? clearTimeout;
   let tail: Promise<unknown> = Promise.resolve(), pending = 0, nextStart = 0, blockedUntil = 0;
   const fields = "canonicalTitle,titles,subtype,startDate,synopsis,categories" +
-    (options.metadataOptions ? ",posterImage,coverImage,averageRating" : "");
+    (options.metadataOptions ? ",posterImage,coverImage,averageRating,abbreviatedTitles,description,endDate,status,episodeCount,episodeLength,totalLength,ageRating,ageRatingGuide,updatedAt" : "");
   const metadata = { "fields[anime]": fields, include: "categories", "fields[categories]": "title" };
   async function attempt(path: string, signal?: AbortSignal): Promise<unknown> {
     const controller = new AbortController();

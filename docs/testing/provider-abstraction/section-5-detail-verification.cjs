@@ -121,6 +121,15 @@ async function savingAndPresentation(db) {
       { kind: "details", type, id: 77 }, { kind: "credits", type, id: 77 }, { kind: "watch", type, id: 77 },
     ]);
     assert.deepEqual(h.lookups, [{ provider: "tmdb", resourceNamespace: type, externalId: "77" }]);
+    const presentationNodes = nodes(h.tree);
+    const mainCard = presentationNodes.find(n => typeof n.type === "function" && n.type.name === "Card");
+    const editorial = presentationNodes.find(n => n.type === "EditorialDetails");
+    assert.ok(presentationNodes.indexOf(mainCard) < presentationNodes.indexOf(editorial), "poster/title/main card precedes complementary editorial details");
+    assert.ok(nodes(mainCard).some(n => n.type === "DetailPoster"));
+    assert.ok(text(mainCard).includes(dto.title ?? dto.name));
+    assert.ok(!editorial.props.rows.some(row => ["Sinopsis", "Géneros narrativos", "Duración total informada", "Título canónico"].includes(row.label)), "main synopsis/genre badges/runtime/title are not repeated");
+    assert.ok(editorial.props.rows.some(row => row.label === "Estreno / publicación"), "full date remains complementary to header year");
+    assert.equal(nodes(mainCard).filter(n => n.type?.name === "Pill" && n.props.text === dto.genres[0].name).length, 1);
     const visible = text(h.tree);
     assert.ok(visible.includes(type === "movie" ? "Movie title" : "TV title"));
     assert.ok(visible.includes(type === "movie" ? "2h 5m" : "42m"));
@@ -133,7 +142,7 @@ async function savingAndPresentation(db) {
     assert.deepEqual(h.links, ["https://example.test/Argentina"]);
     await button(h, "Guardar en Biblioteca").props.onPress();
     await h.flush();
-    assert.equal(h.mappings.length, 1); assert.equal(h.mappings[0].type, type);
+    assert.equal(h.mappings.length, 2, "one memoized presentation projection and one save mapping"); assert.equal(h.mappings[0].type, type);
     assert.strictEqual(h.mappings[0].dto, dto, "mapper consumes original fetched DTO");
     assert.strictEqual(h.policies[0], dto, "creation policy consumes same fetched DTO");
     const input = h.saves[0];
@@ -150,6 +159,25 @@ async function savingAndPresentation(db) {
     assert.deepEqual(h.navigation, [`/title/${created.id}`]); assert.deepEqual(h.alerts, ["Guardado ✅"]);
     assert.equal(h.requests.length, 3, "saving does not fetch detail again");
     h.unmount();
+
+    const long = host(type, "78");
+    long.responses.details.overview = "Unique long synopsis. ".repeat(20);
+    long.responses.details.genres = Array.from({ length: 6 }, (_, i) => ({ id: i + 1, name: `Genre ${i + 1}` }));
+    await long.flush();
+    assert.ok(button(long, "Ver más"));
+    const detailRows = () => nodes(long.tree).find(n => n.type === "EditorialDetails").props.rows;
+    assert.ok(!detailRows().some(row => row.label === "Sinopsis"));
+    assert.deepEqual(detailRows().find(row => row.label === "Géneros narrativos adicionales").value, "Genre 5, Genre 6");
+    for (let i = 1; i <= 4; i++) assert.equal(nodes(long.tree).filter(n => n.type?.name === "Pill" && n.props.text === `Genre ${i}`).length, 1);
+    await button(long, "Ver más").props.onPress(); await long.flush();
+    assert.ok(button(long, "Ver menos"));
+    assert.equal(text(long.tree).split(long.responses.details.overview).length - 1, 1, "expanded synopsis appears once");
+    await button(long, "Ver menos").props.onPress(); await long.flush(); assert.ok(button(long, "Ver más"));
+    for (const label of ["Director name", "Actor", "Argentina", "Rental", "Purchase"]) {
+      if (label !== "Director name" || type === "movie") assert.ok(text(long.tree).includes(label));
+    }
+    assert.ok(button(long, "Guardar en Biblioteca")); assert.equal(long.requests.length, 3);
+    long.unmount();
 
     await db.withTransactionAsync(async () => {
       await repo.updateSavedTitleMetadataWithDb(db, created.id,
@@ -247,6 +275,8 @@ async function main() {
       return { tmdbFetch: () => { throw new Error("Unexpected unmocked TMDB request"); } };
     }
     if (parent?.filename === routePath) {
+      if (request.endsWith("/browsing/EditorialDetails")) return { EditorialDetails: "EditorialDetails" };
+      if (request.endsWith("/browsing/useMediaLanguages")) return { useMediaLanguages: () => ({ languages:["es","en","ja-Latn"] }) };
       if (request.endsWith("/browsing/DetailPoster")) return { DetailPoster: "DetailPoster" };
       if (request.endsWith("/browsing/PublicRating")) return { PublicRating: "PublicRating" };
       if (request === "react") return react;

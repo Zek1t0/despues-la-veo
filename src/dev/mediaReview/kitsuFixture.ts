@@ -4,6 +4,9 @@ import { createKitsuClient } from "../../providers/kitsu/client";
 export function createReviewKitsuClient(offline: boolean) {
   const records = ["TV", "movie", "OVA", "ONA", "special", "music", "unknown"].map((subtype, index) => ({
     type: "anime", id: String(index + 1), attributes: { canonicalTitle: `TEST Faro de papel · ${subtype}`,
+      titles: { es: `TEST Faro de papel · ${subtype}`, en: `TEST Paper Lighthouse · ${subtype}`, en_jp: `TEST Kami no todai · ${subtype}` },
+      status: "finished", episodeCount: 12, episodeLength: 24, totalLength: null,
+      ageRating: "R", ageRatingGuide: "Guía sintética TEST, sin equivalencia local", endDate: null,
       subtype, startDate: "2020-01-01", synopsis: "Historia sintética original para revisar el flujo Kitsu. Sin datos de catálogo real." },
   }));
   return createKitsuClient({ fetchImplementation: async (url: RequestInfo | URL) => {

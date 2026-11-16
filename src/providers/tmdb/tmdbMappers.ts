@@ -1,4 +1,4 @@
-import { assertMetadataReference } from "../../core/metadataValidation";
+import { assertMetadataReference, metadataDate, parseEnrichedMediaMetadata } from "../../core/metadataValidation";
 import { createTmdbProviderReference, type TmdbResourceNamespace } from "../../core/tmdbSavedTitle";
 import { classificationFromHistoricalType } from "../../core/mediaClassification";
 import type {
@@ -67,7 +67,18 @@ function mapTmdbDetails(
   title: string,
   date: string | undefined,
 ): ProviderMediaDetails {
-  const metadata = tmdbPublicMetadata(type, details.id, details);
+  const publicMetadata = tmdbPublicMetadata(type, details.id, details);
+  const fields: Record<string, unknown> = { ...publicMetadata?.fields, canonicalTitle: title, genres: tmdbGenreNames(details) };
+  if (metadataDate(date)) fields.startDate = date;
+  if (details.overview === null) fields.synopsis = null;
+  else if (normalizedOverview(details.overview)) fields.synopsis = { text: details.overview, language: null };
+  if (type === "movie") {
+    const runtime = (details as TmdbMovieDetails).runtime;
+    if (runtime === null) fields.totalLengthMinutes = null;
+    else if (typeof runtime === "number" && Number.isFinite(runtime) && runtime >= 0 && runtime <= 10000000) fields.totalLengthMinutes = runtime;
+  }
+  const metadata = parseEnrichedMediaMetadata({ version: 1, provenance: { reference: createTmdbProviderReference(type, details.id),
+    normalizerVersion: 1, fetchedAt: null, checkedAt: null, sourceUpdatedAt: null }, fields });
   return {
     ...(metadata ? { metadata } : {}),
     reference: createTmdbProviderReference(type, details.id),

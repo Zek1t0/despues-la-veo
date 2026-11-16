@@ -29,3 +29,22 @@ export async function setMediaPreferences(value: MediaPreferences, now = Date.no
     if (committed) publishMediaPreferences(committed);
   });
 }
+
+export async function getMediaPreferences(): Promise<PortableMediaPreferences> {
+  return runSerializedStorageMutation(async () => readMediaPreferencesWithDb(await (await import("./db")).initDb()));
+}
+/** Change only languages, after rereading the other preferences inside the transaction. */
+export async function setMediaLanguages(languages: readonly string[], now = Date.now(),
+  database?: MetadataDb & { withTransactionAsync(task: () => Promise<void>): Promise<void> }): Promise<void> {
+  const db = database ?? await (await import("./db")).initDb();
+  await runSerializedStorageMutation(async () => {
+    let committed: PortableMediaPreferences | undefined;
+    await db.withTransactionAsync(async () => {
+      const old = await readMediaPreferencesWithDb(db);
+      const next = parseMediaPreferences({ value: { ...old.value, languages }, updatedAt: Math.max(now,old.updatedAt+1) });
+      if (JSON.stringify(next.value.languages) === JSON.stringify(old.value.languages)) return;
+      if (await mergeMediaPreferencesWithDb(db,next)) committed=next;
+    });
+    if (committed) publishMediaPreferences(committed);
+  });
+}

@@ -8,7 +8,7 @@ export function parseMediaPreferences(value: unknown): PortableMediaPreferences 
   const p = value.value;
   if (p.version !== 1 || !Array.isArray(p.languages) || !p.languages.length || p.languages.length > 16 ||
       !p.languages.every(locale => typeof locale === "string" && locale.length <= 100 && /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(locale)) ||
-      new Set(p.languages).size !== p.languages.length || typeof p.hideSensitive !== "boolean" || !metadataObject(p.autoRefresh) ||
+      new Set(p.languages.map(locale => locale.toLowerCase())).size !== p.languages.length || typeof p.hideSensitive !== "boolean" || !metadataObject(p.autoRefresh) ||
       typeof p.autoRefresh.enabled !== "boolean" || typeof p.autoRefresh.intervalDays !== "number" ||
       !Number.isFinite(p.autoRefresh.intervalDays) || p.autoRefresh.intervalDays <= 0 || p.autoRefresh.intervalDays > 3650) throw new Error("Preferencias de metadata inválidas.");
   return { updatedAt: value.updatedAt, value: { version: 1, languages: [...p.languages], hideSensitive: p.hideSensitive,

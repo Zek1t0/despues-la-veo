@@ -1,3 +1,5 @@
+import { useMediaLanguages, type MediaLanguageServices } from "../../src/components/browsing/useMediaLanguages";
+import { presentSavedTitle } from "../../src/core/mediaViewProjection";
 import { PublicRating } from "../../src/components/browsing/PublicRating";
 import { savedMediaPresentation } from "../../src/core/mediaPresentation";
 import { MediaPoster } from "../../src/components/browsing/MediaPoster";
@@ -114,6 +116,7 @@ function Pill({
 }
 
 export type LibraryScreenServices = Readonly<{
+  languagePreferences?: MediaLanguageServices;
   getLibraryScreenSnapshot: typeof getLibraryScreenSnapshot;
   deleteSavedTitle: typeof deleteSavedTitle;
   upsertSavedTitle: typeof upsertSavedTitle;
@@ -136,6 +139,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
   } = bindings ?? personalLibraryServices;
   const router = useRouter();
   const { theme } = useAppTheme();
+  const { languages } = useMediaLanguages(!bindings || !!bindings.languagePreferences, bindings?.languagePreferences);
   const { width: windowWidth } = useWindowDimensions();
 
   const [items, setItems] = useState<SavedTitleWithProviderReferences[]>([]);
@@ -416,14 +420,14 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
 
   const visibleItems = useMemo(() => {
     return selectVisibleLibraryTitles({
-      items,
+      items: items.map(item => presentSavedTitle(item, languages)),
       pinnedAtById,
       query: q,
       sort,
       statusFilter,
       classificationFilter,
     });
-  }, [items, pinnedAtById, q, sort, statusFilter, classificationFilter]);
+  }, [items, languages, pinnedAtById, q, sort, statusFilter, classificationFilter]);
 
   const gridGap = 12;
   const availableListWidth = Math.max(0, Math.min(windowWidth - 32, 1168));
@@ -477,8 +481,11 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
 
   async function toggleDone(item: SavedTitleWithProviderReferences) {
     const now = Date.now();
-    const nextStatus: TitleStatus = item.status === "done" ? "planned" : "done";
-    await upsertSavedTitle({ ...item, status: nextStatus, updatedAt: now });
+    // Rows carry a localized display title; only the original snapshot may enter storage.
+    const storedItem = items.find(candidate => candidate.id === item.id);
+    if (!storedItem) return;
+    const nextStatus: TitleStatus = storedItem.status === "done" ? "planned" : "done";
+    await upsertSavedTitle({ ...storedItem, status: nextStatus, updatedAt: now });
     await refresh();
   }
 

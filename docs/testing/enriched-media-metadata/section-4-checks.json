@@ -1,0 +1,20 @@
+{
+  "branch": "feat/anime-catalog-manual-entries",
+  "baselineHead": "faa552a77c1dc225dce282e6df51ac33f540a507",
+  "initialWorktree": "clean",
+  "initialStaging": "empty",
+  "checks": [
+    { "command": "node docs/testing/enriched-media-metadata/section-4-regressions.cjs", "exitCode": 0, "suitesPassed": 33, "details": "section-4-results.json" },
+    { "command": "npx tsc --noEmit", "exitCode": 0 },
+    { "command": "openspec validate add-enriched-media-metadata-and-library-updates --strict", "exitCode": 0 },
+    { "command": "git diff --check", "exitCode": 0 },
+    { "command": "node docs/testing/enriched-media-metadata/section-4-live-probe.cjs", "exitCode": 0, "details": "section-4-live-evidence.json" }
+  ],
+  "tasks": { "3.5": "administratively complete: user-reported limited Web acceptance, Android not checked", "4.1": "complete", "4.2": "complete", "4.3": "complete", "4.4": "pending" },
+  "progress": { "complete": 23, "total": 46 },
+  "visualAcceptance": "Partial desktop Brave dark theme: synthetic Kitsu search/list/detail/editorial/date/source/unknown language and no missing-banner stripe. UI control stopped before full language/source/settings visual validation; current URL could not be determined confidently. Not Android acceptance.",
+  "android": "not checked; adb absent from PATH and no active Android runtime observed",
+  "gitWrites": false,
+  "dependenciesChanged": false,
+  "schemaVersionsChanged": false
+}

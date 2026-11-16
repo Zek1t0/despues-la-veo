@@ -1,3 +1,6 @@
+import { matchesLocalMediaQuery } from "../../src/core/mediaViewProjection";
+import { useMediaLanguages, type MediaLanguageServices } from "../../src/components/browsing/useMediaLanguages";
+import { presentSavedTitle } from "../../src/core/mediaViewProjection";
 import { PublicRating } from "../../src/components/browsing/PublicRating";
 import { savedMediaPresentation } from "../../src/core/mediaPresentation";
 import { MediaPoster } from "../../src/components/browsing/MediaPoster";
@@ -250,10 +253,12 @@ function DetailTitleRow({
 export default function EtiquetasScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
+  const { languages } = useMediaLanguages();
   const { width: windowWidth } = useWindowDimensions();
   const [items, setItems] = useState<SavedTitle[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const [itemQuery, setItemQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [tagPinnedAtById, setTagPinnedAtById] = useState<Map<string, number>>(new Map());
   const [tagLoadError, setTagLoadError] = useState<string | null>(null);
@@ -461,7 +466,7 @@ export default function EtiquetasScreen() {
 
   const tagMap = useMemo(() => {
     const map = new Map<string, SavedTitle[]>();
-    for (const item of items) {
+    for (const item of items.map(item => presentSavedTitle(item, languages))) {
       const titleTags = new Set<string>();
       for (const storedTag of item.tags ?? []) {
         const tag = storedTag.trim();
@@ -473,7 +478,7 @@ export default function EtiquetasScreen() {
       }
     }
     return map;
-  }, [items]);
+  }, [items, languages]);
 
   const allTags = useMemo<TagInfo[]>(() => {
     const result = Array.from(tagMap, ([tag, tagItems]) => ({
@@ -487,13 +492,13 @@ export default function EtiquetasScreen() {
   const visibleTags = useMemo(() => {
     const needle = normalizeTagSearch(q.trim());
     if (!needle) return allTags;
-    return allTags.filter((info) => normalizeTagSearch(info.tag).includes(needle));
+    return allTags.filter((info) => normalizeTagSearch(info.tag).includes(needle) || info.items.some(item => matchesLocalMediaQuery(item,q)));
   }, [allTags, q]);
 
   const selectedItems = useMemo(() => {
     if (!selectedTag) return [];
-    return selectVisibleTagTitles(tagMap.get(selectedTag) ?? [], tagPinnedAtById);
-  }, [selectedTag, tagMap, tagPinnedAtById]);
+    return selectVisibleTagTitles(tagMap.get(selectedTag) ?? [], tagPinnedAtById, itemQuery);
+  }, [selectedTag, tagMap, tagPinnedAtById, itemQuery]);
 
   const optionSections = useMemo<ViewOptionsSection[]>(
     () => [
@@ -797,6 +802,9 @@ export default function EtiquetasScreen() {
           </View>
         ) : null}
 
+        {selectedTag && <TextInput accessibilityLabel="Buscar títulos o alias en esta etiqueta" value={itemQuery} onChangeText={setItemQuery}
+          placeholder="Buscar título o alias…" placeholderTextColor={theme.global.textMuted}
+          style={{ color: theme.global.textPrimary, minHeight: 44, padding: 12, borderWidth: 1, borderRadius: 12, borderColor: theme.global.border }} />}
         {loading ? (
           <View style={{ alignItems: "center", gap: 10, paddingVertical: 32 }}>
             <ActivityIndicator color={theme.global.textPrimary} />
@@ -817,7 +825,7 @@ export default function EtiquetasScreen() {
             ListEmptyComponent={
               <View style={{ gap: 8, paddingVertical: 24 }}>
                 <Text style={{ color: theme.global.textPrimary, fontSize: 17, fontWeight: "900" }}>
-                  Esta etiqueta ya no tiene títulos
+                  {itemQuery ? "No hay títulos que coincidan" : "Esta etiqueta ya no tiene títulos"}
                 </Text>
                 <Text style={{ color: theme.global.textSecondary }}>
                   Volvé a la lista para elegir otra etiqueta.
