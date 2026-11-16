@@ -1,3 +1,5 @@
+import { savedContentVisible } from "../../src/core/sensitiveContent";
+import { SensitiveFilterStatus } from "../../src/components/browsing/SensitiveContentNotice";
 import { matchesLocalMediaQuery } from "../../src/core/mediaViewProjection";
 import { useMediaLanguages, type MediaLanguageServices } from "../../src/components/browsing/useMediaLanguages";
 import { presentSavedTitle } from "../../src/core/mediaViewProjection";
@@ -253,7 +255,7 @@ function DetailTitleRow({
 export default function EtiquetasScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
-  const { languages } = useMediaLanguages();
+  const { languages,preference,ready:mediaReady,error:mediaError,retry:retryMedia } = useMediaLanguages();
   const { width: windowWidth } = useWindowDimensions();
   const [items, setItems] = useState<SavedTitle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -466,7 +468,7 @@ export default function EtiquetasScreen() {
 
   const tagMap = useMemo(() => {
     const map = new Map<string, SavedTitle[]>();
-    for (const item of items.map(item => presentSavedTitle(item, languages))) {
+    for (const item of (mediaReady?items.filter(item=>savedContentVisible(item,preference.value.hideSensitive)):[]).map(item => presentSavedTitle(item, languages))) {
       const titleTags = new Set<string>();
       for (const storedTag of item.tags ?? []) {
         const tag = storedTag.trim();
@@ -478,7 +480,7 @@ export default function EtiquetasScreen() {
       }
     }
     return map;
-  }, [items, languages]);
+  }, [items, languages,mediaReady,preference.value.hideSensitive]);
 
   const allTags = useMemo<TagInfo[]>(() => {
     const result = Array.from(tagMap, ([tag, tagItems]) => ({
@@ -779,6 +781,7 @@ export default function EtiquetasScreen() {
           width: "100%",
         }}
       >
+        <SensitiveFilterStatus active={preference.value.hideSensitive} ready={mediaReady} error={mediaError} onRetry={retryMedia}/>
         {Platform.OS === "web" ? (
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
             <TextInput

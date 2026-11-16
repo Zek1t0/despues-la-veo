@@ -1,3 +1,5 @@
+import { savedContentVisible } from "../../src/core/sensitiveContent";
+import { SensitiveFilterStatus } from "../../src/components/browsing/SensitiveContentNotice";
 import { useMediaLanguages, type MediaLanguageServices } from "../../src/components/browsing/useMediaLanguages";
 import { presentSavedTitle } from "../../src/core/mediaViewProjection";
 import { PublicRating } from "../../src/components/browsing/PublicRating";
@@ -139,7 +141,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
   } = bindings ?? personalLibraryServices;
   const router = useRouter();
   const { theme } = useAppTheme();
-  const { languages } = useMediaLanguages(!bindings || !!bindings.languagePreferences, bindings?.languagePreferences);
+  const { languages,preference,ready:mediaReady,error:mediaError,retry:retryMedia } = useMediaLanguages(!bindings || !!bindings.languagePreferences, bindings?.languagePreferences);
   const { width: windowWidth } = useWindowDimensions();
 
   const [items, setItems] = useState<SavedTitleWithProviderReferences[]>([]);
@@ -420,14 +422,14 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
 
   const visibleItems = useMemo(() => {
     return selectVisibleLibraryTitles({
-      items: items.map(item => presentSavedTitle(item, languages)),
+      items: (mediaReady?items.filter(item=>savedContentVisible(item,preference.value.hideSensitive)):[]).map(item => presentSavedTitle(item, languages)),
       pinnedAtById,
       query: q,
       sort,
       statusFilter,
       classificationFilter,
     });
-  }, [items, languages, pinnedAtById, q, sort, statusFilter, classificationFilter]);
+  }, [items, languages, mediaReady,preference.value.hideSensitive,pinnedAtById, q, sort, statusFilter, classificationFilter]);
 
   const gridGap = 12;
   const availableListWidth = Math.max(0, Math.min(windowWidth - 32, 1168));
@@ -742,6 +744,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
         </View>
       ) : null}
 
+      <SensitiveFilterStatus active={preference.value.hideSensitive} ready={mediaReady} error={mediaError} onRetry={retryMedia}/>
       {loading ? (
         <View style={{ alignItems: "center", gap: 10, paddingVertical: 32 }}>
           <ActivityIndicator color={theme.global.textPrimary} />

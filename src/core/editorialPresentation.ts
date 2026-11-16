@@ -1,3 +1,4 @@
+import { sensitiveSignal } from "./sensitiveContent";
 import type { SavedTitleWithProviderReferences } from "./savedTitle";
 import { savedMediaPresentation } from "./mediaPresentation";
 import { activeMetadataDocument } from "./mediaMetadataState";
@@ -39,6 +40,10 @@ export function editorialRows(metadata?: EnrichedMediaMetadata, snapshot?: Provi
   }
   if (has("ageRating")) add("Clasificación de edad de la fuente",f.ageRating ? `${f.ageRating.value} · sistema ${mediaSourceName(f.ageRating.system)}` : "Desconocida");
   if (has("ageRatingGuide")) add("Guía de clasificación de la fuente",f.ageRatingGuide ?? "Desconocida");
+  if(metadata?.provenance.reference.provider==="kitsu" && has("sensitive")) {
+    const flag=sensitiveSignal(metadata);
+    add("Marca sensible explícita (NSFW)",flag===true?"Marcada por Kitsu; no representa todas las formas de contenido adulto":flag===false?"No marcada por Kitsu; no garantiza aptitud para menores":"Desconocida");
+  }
   if (f.classification) add("Formato / clasificación",mediaClassificationLabel(f.classification));
   else if (snapshot) add("Formato / clasificación",mediaClassificationLabel(snapshot),historicalSource);
   return rows;

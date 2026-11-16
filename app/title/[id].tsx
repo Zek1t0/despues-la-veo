@@ -1,3 +1,6 @@
+import { savedContentVisible } from "../../src/core/sensitiveContent";
+import { activeMetadataDocument } from "../../src/core/mediaMetadataState";
+import { SensitiveContentNotice } from "../../src/components/browsing/SensitiveContentNotice";
 import { SavedMetadataRefresh } from "../../src/components/browsing/SavedMetadataRefresh";
 import type { SavedMetadataRefreshService } from "../../src/application/savedMetadataRefreshService";
 import { MetadataSourceSelector } from "../../src/components/browsing/MetadataSourceSelector";
@@ -200,7 +203,7 @@ export type TitleDetailServices = Readonly<{
   updateSavedTitleMetadata: typeof updateSavedTitleMetadata;
   setTitlePinState: typeof setTitlePinState;
   useFocusEffect: typeof useFocusEffect;
-  useRouter: () => Pick<ReturnType<typeof useRouter>, "back" | "push">;
+  useRouter: () => Pick<ReturnType<typeof useRouter>, "back" | "push"> & Partial<Pick<ReturnType<typeof useRouter>, "canGoBack" | "replace">>;
   useParams: () => DetailParams;
 }>;
 const personalDetailServices: TitleDetailServices = {
@@ -213,7 +216,7 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
   const { getTitleDetailPinSnapshot, deleteSavedTitle, setPersonalRating,
     updateSavedTitleMetadata, setTitlePinState, useFocusEffect, useRouter, useParams } = bindings ?? personalDetailServices;
   const { theme } = useAppTheme();
-  const { languages } = useMediaLanguages(!bindings || !!bindings.languagePreferences, bindings?.languagePreferences);
+  const { languages,preference,ready:mediaReady,error:mediaError,retry:retryMedia } = useMediaLanguages(!bindings || !!bindings.languagePreferences, bindings?.languagePreferences);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
@@ -221,6 +224,15 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
 
   const [loading, setLoading] = useState(true);
   const [item, setItem] = useState<SavedTitleWithProviderReferences | null>(null);
+  const [revealed,setRevealed]=useState<string|null>(null);
+  // Hiding/revealing the same navigation must not create another automatic opening.
+  const automaticOpening=useRef<{id:unknown;used:boolean}>({id,used:false});
+  if(automaticOpening.current.id!==id)automaticOpening.current={id,used:false};
+  const claimAutomaticOpening=useCallback(()=>{if(automaticOpening.current.id!==id||automaticOpening.current.used)return false;automaticOpening.current.used=true;return true;},[id]);
+  const accessKey=JSON.stringify([id,item?.id,item?.createdAt,preference.updatedAt,item?.metadataState?.selection,
+    item?.metadataState?activeMetadataDocument(item.metadataState)?.changedAt:null]);
+  useEffect(()=>{setRevealed(null);},[accessKey]);
+  useFocusEffect(useCallback(()=>()=>{setRevealed(null);},[id]));
   const [manualEditable, setManualEditable] = useState(false);
   const [effectivePinContext, setEffectivePinContext] = useState<PinContext | null>(null);
   const [pinnedAt, setPinnedAt] = useState<number | null>(null);
@@ -575,12 +587,24 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
     ]);
   }, [doDelete, item]);
 
-  if (loading) {
+  const visibilityUnknown=!mediaReady;
+  const blocked=!!item&&item.id===id&&!savedContentVisible(item,preference.value.hideSensitive)&&revealed!==accessKey;
+  if(visibilityUnknown||(!loading&&blocked))return <>
+    {!bindings&&<Stack.Screen options={{title:"Contenido oculto",headerRight:()=>null}}/>}
+    <SensitiveContentNotice pending={visibilityUnknown} error={visibilityUnknown?mediaError:null} onReveal={()=>setRevealed(accessKey)} onBack={()=>{
+      if(router.canGoBack?.()===false){if(router.replace)router.replace("/(tabs)/libreria");else router.push("/(tabs)/libreria");}
+      else router.back();
+    }} onRetry={retryMedia}/>
+  </>;
+  if (loading || !!item && item.id !== id) {
     return (
+      <>
+      {!bindings&&<Stack.Screen options={{title:"Título",headerRight:()=>null}}/>}
       <View style={{ flex: 1, padding: 16, justifyContent: "center", gap: 10, backgroundColor: theme.global.background }}>
         <ActivityIndicator color={theme.global.accent} />
         <Text style={{ color: theme.global.textSecondary, textAlign: "center" }}>Cargando…</Text>
       </View>
+      </>
     );
   }
 
@@ -684,7 +708,7 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
             </Pressable>
           </View>
         ))}
-        <SavedMetadataRefresh key={item.id} item={item} enabled={!bindings || !!bindings.metadataRefreshService} service={bindings?.metadataRefreshService} />
+        <SavedMetadataRefresh claimAutomaticOpening={claimAutomaticOpening} key={item.id} item={item} enabled={!bindings || !!bindings.metadataRefreshService} service={bindings?.metadataRefreshService} />
         {(!bindings || bindings.selectMetadataSource) && <MetadataSourceSelector key={item.id} item={item} select={bindings?.selectMetadataSource ?? selectMetadataSource} />}
         {displayItem && titleFallbackLabel(displayItem.resolvedTitle) && <Text style={{ color: theme.global.textMuted }}>{titleFallbackLabel(displayItem.resolvedTitle)}</Text>}
         <MediaBanner identity={item.id} {...savedMediaPresentation(item)} style={{ width: "100%", aspectRatio: 4.2, borderRadius: 12 }} />

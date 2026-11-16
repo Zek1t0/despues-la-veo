@@ -1,6 +1,8 @@
-Estado: **APPLY parcial: S1–S5 con checkpoints manuales informados; 6.1–6.5 implementadas con validación acotada documentada; 6.6 pendiente de revisión externa, aceptación manual y checkpoint Git**.
+S7: checkpoint S6 `6ddd893d1e809ec9c6378b37953d25d63743247b` confirmado limpio con corrección de retención. 6.6 cerrada administrativamente por aprobación externa y siete comprobaciones Web informadas por el usuario; Android no comprobado. Solo 7.1–7.3 autorizadas; 7.4 pendiente.
 
-Checkpoint S5 verificado en rama `feat/anime-catalog-manual-entries`, HEAD `77e0588f9549d742215ce3a38ed4f03405d4df35`, incluyendo corrección final de Retry-After; staging y worktree iniciales limpios. 5.7 cerrada administrativamente por revisión/checkpoint informados: aceptación Web limitada, sin reproducción manual HTTP 429 y sin Android comprobado. Autorizadas solo 6.1–6.5. Evidencia S6 en `docs/testing/enriched-media-metadata/section-6-validation.md`. No se implementan S7/S8 ni se asume archive/integración/cierre del change anterior. Sin Git de escritura.
+Estado: **APPLY parcial: S1–S6 con checkpoints manuales informados; 7.1–7.3 implementadas con validación acotada documentada; 7.4 pendiente de revisión externa, aceptación manual y checkpoint Git**.
+
+Evidencia S6 en `docs/testing/enriched-media-metadata/section-6-validation.md`; evidencia S7 en `docs/testing/enriched-media-metadata/section-7-validation.md`. El cierre administrativo de 6.6 no implica validación Android. No se implementa S8 ni se asume archive/integración/cierre del change anterior. Sin Git de escritura.
 
 ## 1. Contratos y normalización de metadata
 
@@ -55,13 +57,13 @@ Checkpoint S5 verificado en rama `feat/anime-catalog-manual-entries`, HEAD `77e0
 - [x] 6.3 Agregar ruta y quinta pestaña Actualizaciones con temas/safe areas existentes. Verificar orden de tabs, etiquetas/iconos, anchos estrechos, fuentes grandes, lectores de pantalla y regreso al detalle guardado.
 - [x] 6.4 Construir cabecera de última revisión, acción/cancelación, progreso y resumen con errores acotados. Verificar vacío/offline/running/parcial/cancelled/interrupted, totales consistentes y última revisión completada distinta del último intento.
 - [x] 6.5 Incorporar feed virtualizado y agrupación por fecha local con Todos/Metadata/Mi actividad. Verificar navegación, medianoche/zona horaria, filtros, importación sin eventos masivos y revisión de 500 no-ops con un resumen.
-- [ ] 6.6 Checkpoint 6: suites de eventos/retención/backup y TypeScript; smoke Web/Android en todas las paletas/claro/oscuro/sistema. Revisar diff/evidencia y checkpoint manual.
+- [x] 6.6 Checkpoint 6: suites de eventos/retención/backup y TypeScript; smoke Web/Android en todas las paletas/claro/oscuro/sistema. Revisar diff/evidencia y checkpoint manual.
 
 ## 7. Contenido sensible y preferencias
 
-- [ ] 7.1 Implementar presentación de edad/guía/advertencias y semántica sensible por fuente conocida. Verificar nsfw true/false/ausente, ageRating sin equivalencia argentina y desconocido sin afirmación de aptitud.
-- [ ] 7.2 Incorporar preferencia opcional inicialmente desactivada y selectores en búsqueda/descubrimiento existente/biblioteca/Etiquetas. Verificar desconocidos visibles, cobertura parcial sin HTTP adicional, ocultamiento reversible sin borrar ni modificar pins/personales.
-- [ ] 7.3 Incorporar aviso/acceso deliberado a ficha guardada oculta y preservar alcance global/export. Verificar enlace directo sin arte previo al aviso, restore de preferencia válida/inválida y título oculto incluido en backup/revisión.
+- [x] 7.1 Implementar presentación de edad/guía/advertencias y semántica sensible por fuente conocida. Verificar nsfw true/false/ausente, ageRating sin equivalencia argentina y desconocido sin afirmación de aptitud.
+- [x] 7.2 Incorporar preferencia opcional inicialmente desactivada y selectores en búsqueda/descubrimiento existente/biblioteca/Etiquetas. Verificar desconocidos visibles, cobertura parcial sin HTTP adicional, ocultamiento reversible sin borrar ni modificar pins/personales.
+- [x] 7.3 Incorporar aviso/acceso deliberado a ficha guardada oculta y preservar alcance global/export. Verificar enlace directo sin arte previo al aviso, restore de preferencia válida/inválida y título oculto incluido en backup/revisión.
 - [ ] 7.4 Checkpoint 7: regresiones de filtros/preferencias y TypeScript, smoke de temas/accesibilidad/datos aislados. Revisar diff y obtener checkpoint manual.
 
 ## 8. Regresiones validación manual y revisión externa

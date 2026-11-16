@@ -64,3 +64,19 @@ export async function setMediaAutoRefresh(autoRefresh: MediaPreferences["autoRef
     if (committed) publishMediaPreferences(committed);
   });
 }
+
+/** Update only the visibility policy. Item/document/history data is never rewritten. */
+export async function setMediaHideSensitive(hideSensitive:boolean, now=Date.now(),
+  database?: MetadataDb & {withTransactionAsync(task:()=>Promise<void>):Promise<void>}):Promise<void> {
+ const db=database??await(await import("./db")).initDb();
+ await runSerializedStorageMutation(async()=>{
+  let committed:PortableMediaPreferences|undefined;
+  await db.withTransactionAsync(async()=>{
+   const old=await readMediaPreferencesWithDb(db);
+   const next=parseMediaPreferences({value:{...old.value,hideSensitive},updatedAt:Math.max(now,old.updatedAt+1)});
+   if(next.value.hideSensitive===old.value.hideSensitive)return;
+   if(await mergeMediaPreferencesWithDb(db,next))committed=next;
+  });
+  if(committed)publishMediaPreferences(committed);
+ });
+}

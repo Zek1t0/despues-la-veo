@@ -6,14 +6,15 @@ export const defaultMediaLanguageServices: MediaLanguageServices = { read:getMed
 /** Subscribe before hydration; a late initial read cannot replace a newer committed preference. */
 export function useMediaLanguages(enabled = true, services = defaultMediaLanguageServices) {
   const [value,setValue]=useState<PortableMediaPreferences>({value:DEFAULT_MEDIA_PREFERENCES,updatedAt:0});
+  const [ready,setReady]=useState(false),[retryToken,setRetryToken]=useState(0);
   const [error,setError]=useState<string | null>(null);
   useEffect(()=>{
     if (!enabled) return;
-    let active=true;
-    const apply=(next:PortableMediaPreferences)=>{ if(active){setValue(old=>next.updatedAt>=old.updatedAt?next:old);setError(null);} };
+    let active=true;setReady(false);
+    const apply=(next:PortableMediaPreferences)=>{ if(active){setValue(old=>next.updatedAt>=old.updatedAt?next:old);setError(null);setReady(true);} };
     const stop=services.subscribe(apply);
-    void services.read().then(apply).catch(()=>{if(active)setError("No se pudieron leer los idiomas guardados.");});
+    void services.read().then(apply).catch(()=>{if(active)setError("No se pudieron leer las preferencias guardadas.");});
     return ()=>{active=false;stop();};
-  },[enabled,services]);
-  return {languages:value.value.languages,preference:value,error};
+  },[enabled,services,retryToken]);
+  return {languages:value.value.languages,preference:value,error,ready:!enabled||ready,retry:()=>setRetryToken(token=>token+1)};
 }

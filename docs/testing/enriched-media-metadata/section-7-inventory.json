@@ -1,0 +1,37 @@
+{
+  "branch": "feat/anime-catalog-manual-entries",
+  "head": "6ddd893d1e809ec9c6378b37953d25d63743247b",
+  "initialWorktree": "clean",
+  "staging": "empty",
+  "modified": [
+    "app/(tabs)/ajustes.tsx",
+    "app/(tabs)/buscar.tsx",
+    "app/(tabs)/etiquetas.tsx",
+    "app/(tabs)/libreria.tsx",
+    "app/title/[id].tsx",
+    "openspec/changes/add-enriched-media-metadata-and-library-updates/tasks.md",
+    "src/components/browsing/SavedMetadataRefresh.tsx",
+    "src/components/browsing/useMediaLanguages.ts",
+    "src/core/editorialPresentation.ts",
+    "src/providers/kitsu/client.ts",
+    "src/providers/kitsu/metadataRefresh.ts",
+    "src/storage/mediaPreferencesRepo.ts"
+  ],
+  "created": [
+    "app/settings/sensitive-content.tsx",
+    "docs/testing/enriched-media-metadata/section-7-baseline-storage.cjs",
+    "docs/testing/enriched-media-metadata/section-7-contracts.cjs",
+    "docs/testing/enriched-media-metadata/section-7-fixture-diagnostics.cjs",
+    "docs/testing/enriched-media-metadata/section-7-fixture-results.json",
+    "docs/testing/enriched-media-metadata/section-7-inventory.json",
+    "docs/testing/enriched-media-metadata/section-7-legacy-fixture-preload.cjs",
+    "docs/testing/enriched-media-metadata/section-7-preferences.cjs",
+    "docs/testing/enriched-media-metadata/section-7-regressions.cjs",
+    "docs/testing/enriched-media-metadata/section-7-results.json",
+    "docs/testing/enriched-media-metadata/section-7-storage-clock.cjs",
+    "docs/testing/enriched-media-metadata/section-7-ui.cjs",
+    "docs/testing/enriched-media-metadata/section-7-validation.md",
+    "src/components/browsing/SensitiveContentNotice.tsx",
+    "src/core/sensitiveContent.ts"
+  ]
+}

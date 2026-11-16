@@ -1,3 +1,5 @@
+import { remoteContentVisible } from "../../src/core/sensitiveContent";
+import { SensitiveFilterStatus } from "../../src/components/browsing/SensitiveContentNotice";
 import { useMediaLanguages, type MediaLanguageServices } from "../../src/components/browsing/useMediaLanguages";
 import { presentRemoteTitle } from "../../src/core/mediaViewProjection";
 import { publicRatingLabel, resolvePublicRating } from "../../src/core/mediaPresentation";
@@ -62,7 +64,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
 }>) {
   const router = useRouter();
   const { theme } = useAppTheme();
-  const { languages } = useMediaLanguages(!bindings || !!bindings.languagePreferences, bindings?.languagePreferences);
+  const { languages,preference,ready:mediaReady,error:mediaError,retry:retryMedia } = useMediaLanguages(!bindings || !!bindings.languagePreferences, bindings?.languagePreferences);
   const snapshot = tmdb?.snapshot;
   const [categoryId, setCategoryId] = useState<SearchCategoryId>(initialCategory);
   const selected = resolveCategory(categoryId);
@@ -205,7 +207,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
   const sourceError = presentNonTmdbSearchError(selected?.category.source, search.error);
   const sourceName = selected ? SEARCH_SOURCE_NAMES[selected.category.source] : "la fuente seleccionada";
   const visibleItems: readonly ProviderSearchResult[] = selected
-    ? search.items.filter(item => selected.destination(item) !== null) : [];
+    ? search.items.filter(item => mediaReady && remoteContentVisible(item,preference.value.hideSensitive) && selected.destination(item) !== null) : [];
 
   const openTokenPage = useCallback(async () => {
     try {
@@ -285,6 +287,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
           </Pressable>
         ))}
       </View>
+      <SensitiveFilterStatus active={preference.value.hideSensitive} ready={mediaReady} error={mediaError} onRetry={retryMedia}/>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <TextInput
           accessibilityLabel={`Buscar en ${selected?.category.label ?? "la categoría"}`}

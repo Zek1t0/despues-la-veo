@@ -5,7 +5,7 @@ import { getSavedMetadataRefreshService, type SavedMetadataRefreshService, type 
 import type { RefreshResult } from "../../application/metadataRefreshCoordinator";
 import { REFRESH_ERROR_MESSAGES } from "../../application/metadataRefreshError";
 import { useAppTheme } from "../../theme/AppThemeProvider";
-export function SavedMetadataRefresh({item,enabled=true,service:injected}:{item:SavedTitleWithProviderReferences;enabled?:boolean;service?:SavedMetadataRefreshService}){
+export function SavedMetadataRefresh({item,enabled=true,service:injected,claimAutomaticOpening}:{item:SavedTitleWithProviderReferences;enabled?:boolean;service?:SavedMetadataRefreshService;claimAutomaticOpening?:()=>boolean}){
   const {theme}=useAppTheme();
   const [service,setService]=useState<SavedMetadataRefreshService|undefined>(injected),[status,setStatus]=useState<SavedRefreshStatus|null>(null),[result,setResult]=useState<RefreshResult|null>(null),[retry,setRetry]=useState(0);
   const locked=useRef(false),controller=useRef<AbortController|null>(null),context=useRef(0);
@@ -39,12 +39,13 @@ export function SavedMetadataRefresh({item,enabled=true,service:injected}:{item:
   // Mounting a detail is an opening. Presentation invalidations/focus are not new openings.
   useEffect(()=>{
     if(!service?.open||!enabled)return;
+    if(claimAutomaticOpening&&!claimAutomaticOpening())return;
     const automatic=new AbortController(),generation=context.current;let active=true;
     void service.open(item.id,automatic.signal).then(next=>{if(active&&generation===context.current&&next)setResult(next);}).catch(()=>{
       if(active&&generation===context.current)setResult({status:"failed",code:"persistence"});
     });
     return()=>{active=false;automatic.abort();};
-  },[service,enabled,item.id]);
+  },[service,enabled,item.id,claimAutomaticOpening]);
   async function refresh(){
     if(!service||!status?.enabled||locked.current)return;
     const generation=context.current;

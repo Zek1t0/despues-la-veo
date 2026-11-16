@@ -1,0 +1,32 @@
+[
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-7-baseline-storage.cjs",
+    "exitCode": 1,
+    "expectedExitCode": 1,
+    "output": "(node:2588) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n0 !== 1\n\n    at D:\\dev\\despues-la-veo\\docs\\testing\\enriched-media-metadata\\section-2-storage.cjs:24:49\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: 0,\n  expected: 1,\n  operator: 'strictEqual'\n}\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-7-storage-clock.cjs",
+    "exitCode": 0,
+    "expectedExitCode": 0,
+    "output": "PASS 2.3/2.4/2.8 storage: patches, authority, no-op, commit/rollback, tokens, delete, personal races, multi-source, re-save, aliases and observers.\n(node:932) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node -r ./docs/testing/enriched-media-metadata/section-7-legacy-fixture-preload.cjs docs/testing/expanded-media-domain/section-3-ui-verification.cjs",
+    "exitCode": 0,
+    "expectedExitCode": 0,
+    "output": "Section 3 actual local-detail/card hook-host: medium labels, offline metadata, rating applicability, OVA/null TMDB links and accessibility passed.\n"
+  },
+  {
+    "command": "node -r ./docs/testing/enriched-media-metadata/section-7-legacy-fixture-preload.cjs docs/testing/expanded-media-domain/section-4-verification.cjs",
+    "exitCode": 0,
+    "expectedExitCode": 0,
+    "output": "Section 4: finite resolution, TMDB endpoints, lifecycle races, credential isolation, real SearchScreen hook-host and accessibility passed.\nNo actual provider HTTP, production fixture adapter, review DB or native renderer was used.\n"
+  },
+  {
+    "command": "node -r ./docs/testing/enriched-media-metadata/section-7-legacy-fixture-preload.cjs docs/testing/mangaupdates-cover-images/section-2-verification.cjs",
+    "exitCode": 0,
+    "expectedExitCode": 0,
+    "output": "Section 2 injected selection and identical presentation/save input passed. Stub Image only; no artwork/network.\nSection 8 UI: cross-source/category stale errors/results, retry/empty/config isolation, TMDB missing-token independence, explicit routes, disabled-platform zero detail calls, invalid ID rejection, detail stale fetch, attribution/null cover/generic save passed. Hook host is not native validation.\n"
+  }
+]

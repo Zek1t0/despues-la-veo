@@ -1,0 +1,292 @@
+[
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-1-contracts.cjs",
+    "exitCode": 0,
+    "output": "PASS public score preserves decimal representation and scale without rounding\nPASS URL policy rejects unsafe forms before admitting hosts; no URL reconstruction\nPASS calendar dates, counts, durations and unknown values are honest\nPASS normalized document is bounded, detached, immutable and contains no personal/raw keys\nPASS patch distinguishes omission, explicit unknown and valid zero/empty values\nPASS section 1 core: 5 groups (all synthetic, no transport/storage/UI).\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-1-providers.cjs",
+    "exitCode": 0,
+    "output": "PASS Kitsu complete fixture: source, titles/scripts, images, scores and editorial metadata\nPASS Kitsu absence/null/invalid and independent title groups never invent deletions\nPASS Kitsu rejects structural identity errors, omits incomplete relations and bounded optional data\nPASS TMDB shared public projection leaves legacy values and creation policy intact\nPASS MangaUpdates/manual and existing materialization retain their personal contracts\nPASS section 1 providers: 5 groups, synthetic only (no Web/Android acceptance).\nPASS section 1 injected transport: one existing request, default artwork parser closed; section 3 HTTP projection verified.\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-2-recovery.cjs",
+    "exitCode": 0,
+    "output": "PASS 2.1: mixed v6, portable v7, committed WAL consistent copy and reopen; isolated fixtures only.\n(node:22624) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-2-migration.cjs",
+    "exitCode": 0,
+    "output": "PASS 2.2: empty/mixed v6->7, bootstrap0->7, preservation, FKs, reopen, four rollback phases plus commit/corruption and future rejection.\n(node:19932) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-2-storage.cjs",
+    "exitCode": 1,
+    "output": "(node:4008) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n0 !== 1\n\n    at D:\\dev\\despues-la-veo\\docs\\testing\\enriched-media-metadata\\section-2-storage.cjs:24:49\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: 0,\n  expected: 1,\n  operator: 'strictEqual'\n}\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-2-backups.cjs",
+    "exitCode": 0,
+    "output": "PASS 2.5/2.6/2.7: v8 round-trip, v7 preservation, per-source clocks, same-time conflict, remap, repeat, savepoints, preferences and commit rollback.\n(node:25280) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-2-observers.cjs",
+    "exitCode": 0,
+    "output": "PASS 2.8: affected IDs, coalesced reads, stale result discarded, unsubscribe/unmount and read errors.\n(node:9024) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-2-history-consistency.cjs",
+    "exitCode": 0,
+    "output": "PASS 2.5-2.7: imports1-7 preserve original personal fields/identity; WAL concurrent writer cannot tear export items/preferences snapshot.\n(node:1732) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/provider-abstraction/section-2-tmdb-mapping-verification.cjs",
+    "exitCode": 0,
+    "output": "Section 2 TMDB mapping verification passed.\n"
+  },
+  {
+    "command": "node docs/testing/provider-abstraction/section-4-materialization-save-verification.cjs",
+    "exitCode": 0,
+    "output": "Section 4 provider-independent materialization/save verification passed.\n(node:20068) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/provider-abstraction/section-5-detail-verification.cjs",
+    "exitCode": 0,
+    "output": "Section 5 actual TMDB screen effects, mapping, SQLite save/re-save and enrichment verification passed.\nHook-host coverage uses mocked UI/network modules; it does not replace browser visual QA.\n(node:15492) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/universal-media-identity/section-4-backup-v5-verification.cjs",
+    "exitCode": 0,
+    "output": "Section 4 backup v5 and historical import verification passed.\n(node:21400) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/anime-catalog-manual-entries/b1-verification.cjs",
+    "exitCode": 0,
+    "output": "PASS mixed v5 migration, full records, reopen, future rejection, phase/commit/corruption rollback, consistent-copy recovery\nPASS canonical identities, bounded collision retries/exhaustion, ownership, FK and cascade\nPASS v7 parser/export, all duplicate owners rejected, v1-v6 historical semantics, no retroactive deduplication\nPASS remap/reimport, bounded ID retries, contradictory ownership, freshness/presence/null, pins, savepoint/outer rollback\nPASS v7 export composition and Appearance only after commit; postcommit failure preserves library\nB1 synthetic real-SQLite verification passed. No personal library opened.\n(node:3280) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/anime-catalog-manual-entries/b2-verification.cjs",
+    "exitCode": 0,
+    "output": "PASS B2 validation/defaults/full creation, collisions/exhaustion, atomic rollback, limited edits/preservation, provider rejection, historical identity, duplicates, filters, v7 round-trip, reopen/delete cascade; zero network/personal DB\n(node:25488) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/anime-catalog-manual-entries/b3-contracts.cjs",
+    "exitCode": 0,
+    "output": "PASS B3 contracts: six subtypes+unknown, string IDs, malformed/missing data, plain text/year, no score/art/mappings, queue/spacing/pagination/no cache, 404/429/5xx/network/timeout/abort, Retry-After and closed product gates on every platform.\n"
+  },
+  {
+    "command": "node docs/testing/anime-catalog-manual-entries/b3-verification.cjs",
+    "exitCode": 0,
+    "output": "PASS B3/B4 actual SQLite6: manual/TMDB movie+tv/MangaUpdates/Kitsu coexistence, exact large references, save/re-save preservation, mixed v7 remap/reimport/edit/delete isolation, offline reopen and no network/personal DB.\n(node:18992) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/expanded-media-domain/section-2-verification.cjs",
+    "exitCode": 0,
+    "output": "Section 2 real-SQLite v5 migration/rollback, v1-v6 imports, v6 round-trip/merge, identities/pins/Appearance passed.\n(node:20576) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/expanded-media-domain/section-4-verification.cjs",
+    "exitCode": 1,
+    "output": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n0 !== 1\n\n    at screenBehavior (D:\\dev\\despues-la-veo\\docs\\testing\\expanded-media-domain\\section-4-verification.cjs:132:120)\n    at async main (D:\\dev\\despues-la-veo\\docs\\testing\\expanded-media-domain\\section-4-verification.cjs:156:76) {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: 0,\n  expected: 1,\n  operator: 'strictEqual'\n}\n"
+  },
+  {
+    "command": "node docs/testing/mangaupdates-cover-images/section-2-verification.cjs",
+    "exitCode": 1,
+    "output": "TypeError: Cannot destructure property 'reference' of 'result' as it is undefined.\n    at Object.searchResultDestination (D:\\dev\\despues-la-veo\\src\\components\\search\\searchCategories.ts:34:13)\n    at Object.destination (D:\\dev\\despues-la-veo\\docs\\testing\\mangaupdates-cover-images\\section-2-verification.cjs:69:147)\n    at Object.renderItem (D:\\dev\\despues-la-veo\\app\\(tabs)\\buscar.tsx:274:41)\n    at main (D:\\dev\\despues-la-veo\\docs\\testing\\mangaupdates-cover-images\\section-2-verification.cjs:94:112)\n"
+  },
+  {
+    "command": "node docs/testing/global-appearance-themes/section-9-verification.cjs",
+    "exitCode": 0,
+    "output": "Section 9 details runtime theme, PersonalRating error parity, draft/rating/tag/pin contracts and TMDB remote/re-save invariants verification passed.\n"
+  },
+  {
+    "command": "node docs/testing/anime-catalog-manual-entries/development-activation-verification.cjs",
+    "exitCode": 0,
+    "output": "PASS local development activation: Web/Android normal search + route/save wiring, official io endpoint, no artwork/scores/auth, release/iOS/unknown closed before HTTP/DB, synthetic TEST isolation.\n"
+  },
+  {
+    "command": "node docs/testing/anime-catalog-manual-entries/b2-ui-verification.cjs",
+    "exitCode": 0,
+    "output": "PASS actual shared form hook-host: explicit medium, validation, classification review, failed draft recovery, busy/double submit, confirmed retry, local duplicate inspection/draft/separate/self exclusion, editing, cancel, denied eligibility; zero network/database\n"
+  },
+  {
+    "command": "node docs/testing/anime-catalog-manual-entries/b3-ui-verification.cjs",
+    "exitCode": 0,
+    "output": "PASS B3 real search/detail hook-host: Anime category, loading/empty/Kitsu errors/retry, list/grid navigation, source/query/retry/credential/route/unmount races and aborts, no art, saved detection/double save/failure, closed detail without personal DB/network.\n"
+  },
+  {
+    "command": "node docs/testing/expanded-media-domain/section-3-ui-verification.cjs",
+    "exitCode": 1,
+    "output": "TypeError: Cannot read properties of undefined (reading 'props')\n    at main (D:\\dev\\despues-la-veo\\docs\\testing\\expanded-media-domain\\section-3-ui-verification.cjs:58:47)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-2-poster-regression.cjs",
+    "exitCode": 0,
+    "output": "PASS poster regression: TMDB history, omitted/null/empty/unauthorized, safety, Kitsu closed, source switch, legacy and SQLite v7/backup v8 round-trip.\n(node:12460) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-3-backups.cjs",
+    "exitCode": 0,
+    "output": "PASS section 3 backup v8 SQLite round-trip: active images and score, original scale, notes/tags/personal rating, retained unreviewed host -> placeholder, private document -> existing partial import rejection, legacy renderer rejection.\n(node:22284) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-3-presentation.cjs",
+    "exitCode": 0,
+    "output": "PASS section 3: malicious URLs, gates, direct/redirect policy, two hosts, widths/densities, real-response shape replay, active sources, score original/null/zero, personal preservation. Deterministic; no live renderer.\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-3-renderer.cjs",
+    "exitCode": 0,
+    "output": "PASS banner correction: manual/TMDB absence, Kitsu valid/omitted/null/empty, rejected URL, admitted load failure, title transitions, source isolation and unchanged normal poster fallback. Hook-host only; no visual acceptance.\nPASS section 3 component harness: pre-render rejection, failure fallback, stale callbacks, identity/URL recycling, reported unsafe URI, responsive width/density, null, iOS gate. Mocked host; no physical/browser acceptance.\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-4-editorial.cjs",
+    "exitCode": 0,
+    "output": "PASS S4.1 editorial: complete/partial/manual/legacy, real units and zero/null/omission/empty, calendar validation, provider attribution, no calculated duration or personal mutation. Synthetic only.\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-4-languages.cjs",
+    "exitCode": 0,
+    "output": "PASS S4.1 editorial: complete/partial/manual/legacy, real units and zero/null/omission/empty, calendar validation, provider attribution, no calculated duration or personal mutation. Synthetic only.\nPASS S4.2 title resolution: Spanish regional, missing Spanish/English, ja-Latn vs ja, canonical/unknown variant/history, override, invalid/duplicate preferences and no mutations.\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-4-preferences.cjs",
+    "exitCode": 0,
+    "output": "PASS S4.2 language preferences: real SQLite commit/no-op/invalid rollback, postcommit notification, other preferences and all item/pin/identity data preserved.\n(node:17456) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-4-sources.cjs",
+    "exitCode": 0,
+    "output": "PASS S4.3 real SQLite: ambiguity, A->B->A, authoritative null/partial, no inactive field contamination, languages/scripts/accent alias filters/dedup, mounted observer, draft retention, no-op, absent/deleted doc, v8 round-trip and all identities/personals unchanged. No HTTP.\n(node:21540) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-4-ui.cjs",
+    "exitCode": 0,
+    "output": "PASS S4 UI hook-host: actual source selector -> mounted detail invalidation, live language switch and dirty notes preserved, source personals intact, hydration race/unsubscribe, settings reorder/save/duplicate validation. Mock UI/storage binding, no visual acceptance.\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-4-correction-unicode.cjs",
+    "exitCode": 0,
+    "output": "PASS correction A: Latin accents/case, canonical Unicode equivalence, hiragana/katakana dakuten/handakuten distinctions, other-script marks, active/inactive SQLite aliases in Library/Tags, deduplication, unchanged stored strings/IDs, no HTTP.\n(node:23244) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/tmdb-user-credential/section-1-verification.cjs",
+    "exitCode": 0,
+    "output": "Section 1 TMDB credential service, transport, validator, races, and no-leakage verification passed.\n"
+  },
+  {
+    "command": "node docs/testing/tmdb-user-credential/section-2-verification.cjs",
+    "exitCode": 1,
+    "output": "AssertionError [ERR_ASSERTION]: D:\\dev\\despues-la-veo\\docs\\testing\\enriched-media-metadata\\section-5-checks.json\n\ntrue !== false\n\n    at testNoEnvAndNoLibraryCoupling (D:\\dev\\despues-la-veo\\docs\\testing\\tmdb-user-credential\\section-2-verification.cjs:206:12)\n    at main (D:\\dev\\despues-la-veo\\docs\\testing\\tmdb-user-credential\\section-2-verification.cjs:223:3) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: true,\n  expected: false,\n  operator: 'strictEqual'\n}\n"
+  },
+  {
+    "command": "node docs/testing/tmdb-user-credential/section-3-verification.cjs",
+    "exitCode": 0,
+    "output": "Section 3 TMDB settings and credential screen verification passed.\nReact Native interaction details use focused source inspection because this repo has no Node renderer; visual/manual behavior is not claimed by regex checks.\n"
+  },
+  {
+    "command": "node docs/testing/tmdb-user-credential/section-4-verification.cjs",
+    "exitCode": 0,
+    "output": "Section 4 TMDB credential verification: OK\nSource-inspection limits: React Native screens are not mounted in Node; inspection verifies wiring, atomic Promise.all preservation, CTA routes, and forbidden leakage. Pure coordination covers request gating and stale identities behaviorally.\n"
+  },
+  {
+    "command": "node docs/testing/tmdb-user-credential/section-5-verification.cjs",
+    "exitCode": 0,
+    "output": "Section 5 TMDB attribution and credits verification: OK\nVisual limits: source inspection verifies responsive constraints, aspect-ratio preservation, and accessibility wiring; real Android/iOS/web layout and keyboard behavior remain manual checks.\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-5-bindings.cjs",
+    "exitCode": 0,
+    "output": "PASS 5.1 finite bindings: credential/platform/dev gates, references/manual/ambiguity/type, exact endpoints, omitted optional fields, original scores, MU classification/year and no expanded cover/score policy.\n(node:18792) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-5-coordinator.cjs",
+    "exitCode": 0,
+    "output": "PASS 5.2 SQLite: single-flight consumers, independent cancel, ignored abort late response, personal race, checkedAt/no-op, source A->B->A, rollback and delete without recreation.\n(node:19440) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-5-ui.cjs",
+    "exitCode": 0,
+    "output": "PASS 5.3 real panel hook-host: initial date, manual single click flight/double touch, unchanged/error/retry, retained personal inputs and unmount cancellation. Auto mount vs rerender/unmount, settings hydration/disabled/custom/invalid/save. No browser/device acceptance.\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-5-runs.cjs",
+    "exitCode": 0,
+    "output": "PASS 5.4 SQLite runs: all real IDs, one active run, sequential global queries, shared individual, independent cancellation, reconciled persisted counters/omissions, incremental commits, postcommit cancellation, concurrent deletion and reopened interrupted without resume.\n(node:22808) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-5-http.cjs",
+    "exitCode": 0,
+    "output": "PASS 5.5 HTTP: seconds/date/unknown Retry-After, shared blocks, finite retries, serial waits/cancel, 401/403/404/5xx/offline/invalid, ignored abort timeout, fresh MU on shared queue; synthetic transports only.\n(node:22448) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-5-errors.cjs",
+    "exitCode": 0,
+    "output": "PASS 5.5 SQLite failure matrix: typed recoverable results, no 404 deletion, all local metadata/personal data preserved, attempt/error persistence, provider-wide access/rate blocks.\n(node:15352) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-5-automatic.cjs",
+    "exitCode": 0,
+    "output": "PASS 5.6 real SQLite/clock: defaults, first/recent/exact/custom/disabled, concurrent openings, failure completion cooldown/restart/exact expiry, manual retry, longer HTTP wait, future clocks, explicit source change, manuals/ambiguity, personal preservation, atomic prefs, actual v8 export/import and SQLite reopen. No global startup.\n(node:25312) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-5-product.cjs",
+    "exitCode": 0,
+    "output": "PASS 5 product wiring: shared lazy runtime, no HTTP/global startup, credential failure isolated, exact minimal TMDB detail, MU fresh selectedType and serial client binding, gated Kitsu normalized load, neutral/legacy zero and unchanged personal clock. Injected clients + real SQLite.\n(node:7268) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-5-retry-expiry.cjs",
+    "exitCode": 0,
+    "output": "PASS S5 correction: actual 429 transport -> shared clients/coordinator -> real isolated SQLite -> product inspect -> mounted panel; known deadline/exact expiry/no HTTP, longer deadline, indefinite wait, source/identity switch, unmount/stale reads, credential/network changes, one timer/no render reads and independent automatic cooldown. Hook-host and fake clock/HTTP, no visual acceptance.\n(node:19328) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-6-activity.cjs",
+    "exitCode": 0,
+    "output": "PASS S6.1: real SQLite additions/manual/combined personals/rating/pins, no-op/idempotent replay, rollback and poscommit signals, single initial addition, metadata semantic fields/no-op, private values omitted, FK cascade.\n(node:17500) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-6-retention.cjs",
+    "exitCode": 0,
+    "output": "PASS S6.2 real SQLite/clock: 90/30 day exact boundaries, 1999/2000/2001 and 19/20/21, active protection, 150 errors/100 details, independent last success, cursor tie pagination/filter/no duplicate, cascade.\n(node:24368) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-6-tabs.cjs",
+    "exitCode": 0,
+    "output": "PASS S6.3 actual tabs component: Library first, fifth tab between Tags/Settings, visible accessible labels, themed Ionicons, 320/390/800 widths and 1/1.6/2 font scale without shrinking/capping fonts. Hook-host, no visual acceptance.\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-6-run-ui.cjs",
+    "exitCode": 0,
+    "output": "PASS S6.4 actual screen/header: no global start on mount, double tap guard, shared start/cancel, terminal states, independent completion date, accessible counters, 150/100 truncation, recoverable error, remount/read/subscription cleanup/no render polling. Hook-host only.\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-6-feed.cjs",
+    "exitCode": 0,
+    "output": "PASS S6.5 actual FlatList: paged/virtual rows, local day/timezone grouping, filters, deterministic IDs/dedup, no render reads/global start, confirmed-change subscriptions, safe navigation/deleted item, error/retry and cleanup. Hook-host only.\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-6-service.cjs",
+    "exitCode": 0,
+    "output": "PASS S6 local service + real SQLite: lazy/no HTTP at reads, same S5 run, 500 no-ops/one summary/no events, actual changed event and current title, v8 500-item round-trip/reimport one event, safe deletion, actual 150 failures/100 details/independent last completion, reopen interrupted without resume. Injected provider load only.\n(node:6352) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-6-retention-clock.cjs",
+    "exitCode": 0,
+    "output": "PASS S6 retention clock correction: 21 groups; real isolated SQLite, fixed current retention clock, 120d/60d/future/exact90d, metadata and both pin writers, raw post-write pruning, 2000/tie ordering, atomic rollback/no false notifications, unchanged personal/pin/metadata clocks, read/export/import v8 compatibility. No HTTP/UI.\n(node:17556) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-7-contracts.cjs",
+    "exitCode": 0,
+    "output": "PASS S7.1: Kitsu true/false/null/omitted/invalid, R alone unknown, exact provenance, active/inactive/ambiguous docs, manual/legacy unknown, reversible shared visibility and distinct attributed editorial labels. Synthetic only.\n(node:11488) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-7-preferences.cjs",
+    "exitCode": 0,
+    "output": "PASS S7.2 SQLite: off default, atomic reversible/no-op/invalid preference, other prefs/personal/IDs/pins/documents/history preserved, v8 on/off/absent/invalid/tie merge, complete export and actual global run including hidden title, no filter HTTP/activity.\n(node:17860) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-7-ui.cjs",
+    "exitCode": 0,
+    "output": "PASS S7 UI: actual Library detail/grid, Tags grid/list and collections, real search debounce/request once across toggles, settings, pending/deep-link gate with no art/auto panel, reveal/back/remount, identity/source/metadata/preference invalidation, draft preserved, no filter HTTP/private mutations. Hook-host only, no visual acceptance.\n"
+  }
+]

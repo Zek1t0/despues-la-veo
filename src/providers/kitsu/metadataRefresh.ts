@@ -5,7 +5,7 @@ import { kitsuAvailability } from "./availability";
 import { loadKitsuProductDetail } from "./product";
 import { mapKitsuDetails } from "./mapping";
 export function createKitsuRefreshCapability(platform: () => string, load = loadKitsuProductDetail): ProviderMetadataRefreshCapability {
-    return { fields: ["titles", "synopsis", "posterImages", "bannerImages", "publicRating", "classification", "editorialStatus", "genres", "categories"], scope: () => "development",
+    return { fields: ["titles", "synopsis", "posterImages", "bannerImages", "publicRating", "classification", "editorialStatus", "genres", "categories", "sensitive", "ageRating", "ageRatingGuide"], scope: () => "development",
         eligibility(item) { try {
             assertKitsuReference(refreshReference(item)!);
             return kitsuAvailability(platform()).enabled ? { enabled: true } : { enabled: false, reason: "Kitsu solo está habilitado en Web/Android de desarrollo." };

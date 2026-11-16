@@ -1,0 +1,5 @@
+const fs=require('node:fs'),{spawnSync}=require('node:child_process');
+const prior=JSON.parse(fs.readFileSync('docs/testing/enriched-media-metadata/section-5-results.json','utf8')).map(x=>x.command);
+const commands=[...new Set([...prior,'node docs/testing/enriched-media-metadata/section-5-retry-expiry.cjs',...['activity','retention','tabs','run-ui','feed','service','retention-clock'].map(n=>'node docs/testing/enriched-media-metadata/section-6-'+n+'.cjs'),...['contracts','preferences','ui'].map(n=>'node docs/testing/enriched-media-metadata/section-7-'+n+'.cjs')])];
+const results=commands.map(command=>{const [exe,...args]=command.split(' ');const r=spawnSync(exe,args,{encoding:'utf8',timeout:180000});console.log((r.status===0?'PASS ':'FAIL ')+command);return {command,exitCode:r.status,output:(r.stdout??'')+(r.stderr??'')};});
+fs.writeFileSync('docs/testing/enriched-media-metadata/section-7-results.json',JSON.stringify(results,null,2)+'\n');console.log(results.filter(x=>x.exitCode===0).length+'/'+results.length+' passing');if(results.some(x=>x.exitCode!==0))process.exitCode=1;
