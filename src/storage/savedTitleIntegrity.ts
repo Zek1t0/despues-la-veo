@@ -1,3 +1,5 @@
+import { hasActivityWithDb } from "./libraryActivityRepo";
+import { markActivityWrite } from "./libraryActivitySignals";
 import { acceptLegacyMetadataWriteWithDb, ensureMetadataStateWithDb, writeMetadataStateWithDb } from "./mediaMetadataRepo";
 import { rowToSavedTitle } from "./savedTitleStorage";
 import { assertMediaClassification } from "../core/mediaClassification";
@@ -81,5 +83,7 @@ export async function deleteSavedTitleAndPinsWithDb(
   db: SavedTitleIntegrityDatabase,
   savedTitleId: string
 ): Promise<void> {
+  const existing = await db.getFirstAsync("SELECT id FROM saved_titles WHERE id=?;",savedTitleId);
   await db.runAsync("DELETE FROM saved_titles WHERE id = ?;", savedTitleId);
+  if(existing && await hasActivityWithDb(db)) markActivityWrite();
 }

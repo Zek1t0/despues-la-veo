@@ -1,0 +1,82 @@
+{
+  "branch": "feat/anime-catalog-manual-entries",
+  "head": "77e0588f9549d742215ce3a38ed4f03405d4df35",
+  "initialWorktreeAndStagingClean": true,
+  "checkpoint5_7": {
+    "status": "administratively complete",
+    "acceptance": "User-reported limited Web acceptance; no manual HTTP 429 reproduction; Android unverified"
+  },
+  "implementedTasks": [
+    "6.1",
+    "6.2",
+    "6.3",
+    "6.4",
+    "6.5"
+  ],
+  "checkpoint6_6": "pending",
+  "progress": {
+    "complete": 36,
+    "total": 46
+  },
+  "regressions": {
+    "passed": 53,
+    "total": 54,
+    "newSection6SuitesPassed": 6,
+    "newSection6SuitesTotal": 6,
+    "details": "section-6-results.json",
+    "baselineFailure": {
+      "command": "node docs/testing/tmdb-user-credential/section-2-verification.cjs",
+      "reason": "Documentation scanner rejects a legacy variable name in a committed S5 Metro console log.",
+      "artifact": "docs/testing/enriched-media-metadata/section-5-checks.json",
+      "verifiedPresentAtHEAD": true,
+      "artifactUnchanged": true,
+      "testUnchanged": true
+    }
+  },
+  "checks": [
+    {
+      "name": "regressions",
+      "command": "node docs/testing/enriched-media-metadata/section-6-regressions.cjs",
+      "exitCode": 1,
+      "output": "PASS node docs/testing/enriched-media-metadata/section-1-contracts.cjs\nPASS node docs/testing/enriched-media-metadata/section-1-providers.cjs\nPASS node docs/testing/enriched-media-metadata/section-2-recovery.cjs\nPASS node docs/testing/enriched-media-metadata/section-2-migration.cjs\nPASS node docs/testing/enriched-media-metadata/section-2-storage.cjs\nPASS node docs/testing/enriched-media-metadata/section-2-backups.cjs\nPASS node docs/testing/enriched-media-metadata/section-2-observers.cjs\nPASS node docs/testing/enriched-media-metadata/section-2-history-consistency.cjs\nPASS node docs/testing/provider-abstraction/section-2-tmdb-mapping-verification.cjs\nPASS node docs/testing/provider-abstraction/section-4-materialization-save-verification.cjs\nPASS node docs/testing/provider-abstraction/section-5-detail-verification.cjs\n\nPASS node docs/testing/universal-media-identity/section-4-backup-v5-verification.cjs\nPASS node docs/testing/anime-catalog-manual-entries/b1-verification.cjs\nPASS node docs/testing/anime-catalog-manual-entries/b2-verification.cjs\nPASS node docs/testing/anime-catalog-manual-entries/b3-contracts.cjs\nPASS node docs/testing/anime-catalog-manual-entries/b3-verification.cjs\nPASS node docs/testing/expanded-media-domain/section-2-verification.cjs\nPASS node docs/testing/expanded-media-domain/section-4-verification.cjs\nPASS node docs/testing/mangaupdates-cover-images/section-2-verification.cjs\nPASS node docs/testing/global-appearance-themes/section-9-verification.cjs\nPASS node docs/testing/anime-catalog-manual-entries/development-activation-verification.cjs\nPASS node docs/testing/anime-catalog-manual-entries/b2-ui-verification.cjs\nPASS node docs/testing/anime-catalog-manual-entries/b3-ui-verification.cjs\nPASS node docs/testing/expanded-media-domain/section-3-ui-verification.cjs\nPASS node docs/testing/enriched-media-metadata/section-2-poster-regression.cjs\nPASS node docs/testing/enriched-media-metadata/section-3-backups.cjs\nPASS node docs/testing/enriched-media-metadata/section-3-presentation.cjs\nPASS node docs/testing/enriched-media-metadata/section-3-renderer.cjs\nPASS node docs/testing/enriched-media-metadata/section-4-editorial.cjs\nPASS node docs/testing/enriched-media-metadata/section-4-languages.cjs\nPASS node docs/testing/enriched-media-metadata/section-4-preferences.cjs\nPASS node docs/testing/enriched-media-metadata/section-4-sources.cjs\nPASS node docs/testing/enriched-media-metadata/section-4-ui.cjs\nPASS node docs/testing/enriched-media-metadata/section-4-correction-unicode.cjs\nPASS node docs/testing/tmdb-user-credential/section-1-verification.cjs\nFAIL node docs/testing/tmdb-user-credential/section-2-verification.cjs\nPASS node docs/testing/tmdb-user-credential/section-3-verification.cjs\nPASS node docs/testing/tmdb-user-credential/section-4-verification.cjs\nPASS node docs/testing/tmdb-user-credential/section-5-verification.cjs\nPASS node docs/testing/enriched-media-metadata/section-5-bindings.cjs\nPASS node docs/testing/enriched-media-metadata/section-5-coordinator.cjs\nPASS node docs/testing/enriched-media-metadata/section-5-ui.cjs\nPASS node docs/testing/enriched-media-metadata/section-5-runs.cjs\nPASS node docs/testing/enriched-media-metadata/section-5-http.cjs\nPASS node docs/testing/enriched-media-metadata/section-5-errors.cjs\nPASS node docs/testing/enriched-media-metadata/section-5-automatic.cjs\nPASS node docs/testing/enriched-media-metadata/section-5-product.cjs\nPASS node docs/testing/enriched-media-metadata/section-5-retry-expiry.cjs\nPASS node docs/testing/enriched-media-metadata/section-6-activity.cjs\nPASS node docs/testing/enriched-media-metadata/section-6-retention.cjs\nPASS node docs/testing/enriched-media-metadata/section-6-tabs.cjs\nPASS node docs/testing/enriched-media-metadata/section-6-run-ui.cjs\nPASS node docs/testing/enriched-media-metadata/section-6-feed.cjs\nPASS node docs/testing/enriched-media-metadata/section-6-service.cjs\n53/54 passing\n"
+    },
+    {
+      "name": "typescript",
+      "command": "npx tsc --noEmit",
+      "exitCode": 0,
+      "output": "\n"
+    },
+    {
+      "name": "openspec",
+      "command": "openspec validate add-enriched-media-metadata-and-library-updates --strict",
+      "exitCode": 0,
+      "output": "Change 'add-enriched-media-metadata-and-library-updates' is valid\n"
+    },
+    {
+      "name": "diff-check",
+      "command": "git diff --check",
+      "exitCode": 0,
+      "output": ""
+    },
+    {
+      "name": "web-export",
+      "command": "$env:EXPO_OFFLINE='1'; npx expo export --platform web --output-dir .expo/s6-web-validation-20261116",
+      "exitCode": 0,
+      "output": "Static Web export completed: .expo/s6-web-validation-20261116. Console asset list omitted; Browserslist/NO_COLOR warnings; no visual acceptance."
+    }
+  ],
+  "smoke": {
+    "web": "Attempted; in-app browser connection timed out and local socket access was denied. No app UI observed.",
+    "android": "No real device/emulator run verified.",
+    "staticWebExport": true,
+    "visualAcceptance": false
+  },
+  "liveProviderHTTP": false,
+  "sqliteTests": "Real isolated SQLite files, injected providers/HTTP, controlled clocks; not real Expo browser/device acceptance.",
+  "gitWrites": false,
+  "sqliteVersion": 7,
+  "backupVersion": 8,
+  "dependenciesChanged": false,
+  "gatesChanged": false,
+  "previousChangeModified": false
+}

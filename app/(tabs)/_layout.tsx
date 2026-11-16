@@ -1,4 +1,5 @@
 import React from "react";
+import { Text, useWindowDimensions } from "react-native";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,6 +8,8 @@ import { useAppTheme } from "../../src/theme/AppThemeProvider";
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const { width, fontScale=1 } = useWindowDimensions();
+  const labelLines=Math.ceil(15*7*fontScale/Math.max(32,width/5-12));
   const { theme } = useAppTheme();
 
   return (
@@ -20,6 +23,8 @@ export default function TabsLayout() {
               return { on: "library", off: "library-outline" } as const;
             case "etiquetas":
               return { on: "pricetag", off: "pricetag-outline" } as const;
+            case "actualizaciones":
+              return { on: "refresh-circle", off: "refresh-circle-outline" } as const;
             case "ajustes":
               return { on: "settings", off: "settings-outline" } as const;
             default:
@@ -35,6 +40,8 @@ export default function TabsLayout() {
               return "Librería";
             case "etiquetas":
               return "Etiquetas";
+            case "actualizaciones":
+              return "Actualizaciones";
             case "ajustes":
               return "Ajustes";
             default:
@@ -46,7 +53,8 @@ export default function TabsLayout() {
           headerStyle: { backgroundColor: theme.global.background },
           headerTintColor: theme.global.textPrimary,
 
-          tabBarLabel: label,
+          tabBarAccessibilityLabel: label,
+          tabBarLabel: ({color}) => <Text style={{color,fontSize:12,fontWeight:"700",textAlign:"center",width:"100%"}}>{label}</Text>,
           tabBarLabelStyle: { fontSize: 12, fontWeight: "700" },
 
           tabBarActiveTintColor: theme.global.accent,
@@ -66,7 +74,7 @@ export default function TabsLayout() {
             borderTopWidth: 1,
 
             // ✅ evita conflicto con barra del sistema
-            height: 58 + insets.bottom,
+            height: Math.max(58,38+labelLines*14*fontScale) + insets.bottom,
             paddingBottom: 8 + insets.bottom,
             paddingTop: 6,
 
@@ -84,6 +92,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="libreria" options={{ title: "Librería" }} />
       <Tabs.Screen name="buscar" options={{ title: "Buscar" }} />
       <Tabs.Screen name="etiquetas" options={{ title: "Etiquetas" }} />
+      <Tabs.Screen name="actualizaciones" options={{ title: "Actualizaciones" }} />
       <Tabs.Screen name="ajustes" options={{ title: "Ajustes" }} />
     </Tabs>
   );

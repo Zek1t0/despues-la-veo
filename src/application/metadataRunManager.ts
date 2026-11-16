@@ -87,5 +87,7 @@ export function createMetadataRunManager(deps: {
         });
         return handle;
     }
-    return { start, getActive: () => active, latest: deps.runs.latest, subscribe(listener: (run: MetadataRunSummary) => void) { listeners.add(listener); return () => { listeners.delete(listener); }; } };
+    return { start, getActive: () => active, latest: deps.runs.latest, lastCompleted: deps.runs.lastCompleted, subscribe(listener: (run: MetadataRunSummary) => void) { listeners.add(listener); return () => { listeners.delete(listener); }; } };
 }
+
+export type MetadataRunManager = ReturnType<typeof createMetadataRunManager>;

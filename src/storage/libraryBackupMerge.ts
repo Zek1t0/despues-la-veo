@@ -1,3 +1,4 @@
+import { markActivityWrite } from "./libraryActivitySignals";
 import { legacyMetadataSnapshot, initialMetadataState, type MediaMetadataState } from "../core/mediaMetadataState";
 import { historicalBaselineItemWithDb, hasMetadataSchemaWithDb, writeMetadataStateWithDb } from "./mediaMetadataRepo";
 import { mergeMetadataStateWithDb, MetadataImportConflict } from "./mediaMetadataImport";
@@ -235,6 +236,7 @@ export async function mergeLibraryBackupWithDb(
             activityIssues.push("Conflicto de identidad o contenido del evento."); continue;
           }
           await db.runAsync("INSERT OR IGNORE INTO library_activity_events VALUES (?,?,?,?,?,?,?);", event.id, id, event.occurredAt, event.kind, event.origin, JSON.stringify(event.fields), event.operationKey);
+          if(!existing) markActivityWrite();
         }
         catch { activityIssues.push("No se pudo restaurar un evento."); }
       }

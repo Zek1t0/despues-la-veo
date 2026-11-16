@@ -1,3 +1,4 @@
+import { recordActivityWithDb } from "./libraryActivityRepo";
 import { metadataSemanticKey } from "../core/metadataSemanticKey";
 import { assertMetadataReference } from "../core/metadataValidation";
 import { validateProviderMaterializationInput } from "../core/providerMaterializationValidation";
@@ -100,6 +101,8 @@ export async function updateSavedTitleMetadataWithDb(
     updatedAt: nextSavedTitleUpdatedAt(current.updatedAt, now()),
   };
   await upsertSavedTitleAndCleanPinsWithDb(db, updated);
+  const changed=Object.keys(patch).filter(key=>metadataSemanticKey(current[key as keyof SavedTitle])!==metadataSemanticKey(updated[key as keyof SavedTitle]));
+  if(changed.length) await recordActivityWithDb(db,id,changed[0],changed,updated.updatedAt);
   return updated;
 }
 
@@ -128,8 +131,8 @@ export async function setPersonalRatingWithDb(
 ): Promise<number> {
   assertSavedTitleId(id);
   const personalRating = parsePersonalRating(value);
-  const current = await db.getFirstAsync<{ updated_at: number }>(
-    "SELECT updated_at FROM saved_titles WHERE id = ? LIMIT 1;",
+  const current = await db.getFirstAsync<{ updated_at: number; personal_rating: number | null }>(
+    "SELECT updated_at, personal_rating FROM saved_titles WHERE id = ? LIMIT 1;",
     [id]
   );
   if (!current) throw new Error("El título guardado no existe.");
@@ -146,6 +149,7 @@ export async function setPersonalRatingWithDb(
   if (result.changes !== 1) {
     throw new Error("El título guardado dejó de existir antes de actualizar su puntuación.");
   }
+  if(current.personal_rating!==personalRating) await recordActivityWithDb(db,id,"personalRating",["personalRating"],nextUpdatedAt);
   return nextUpdatedAt;
 }
 
@@ -201,8 +205,9 @@ export async function saveProviderTitleWithDb(
   if (metadataEnabled) {
     const state = initialMetadataState(item, [input.reference]);
     await writeMetadataStateWithDb(db, item.id, state);
-    if (input.metadata) await updateMediaMetadataWithDb(db, item.id, input.metadata, now, undefined, undefined, providerSnapshot(item));
+    if (input.metadata) await updateMediaMetadataWithDb(db, item.id, input.metadata, now, undefined, undefined, providerSnapshot(item), false);
   }
+  if(!existing) await recordActivityWithDb(db,item.id,"added",[],now);
   return item.id;
 }
 
@@ -277,7 +282,11 @@ export async function upsertSavedTitle(item: SavedTitle): Promise<string> {
   return runSerializedStorageMutation(async () => {
     let savedTitleId: string | null = null;
     await db.withTransactionAsync(async () => {
+      const previous=await getSavedTitleByIdWithDb(db,item.id);
       savedTitleId = await upsertSavedTitleAndCleanPinsWithDb(db, item);
+      const changed=["status","tags","notes","personalRating"].filter(key=>metadataSemanticKey(previous?.[key as keyof SavedTitle])!==metadataSemanticKey(item[key as keyof SavedTitle]));
+      if(!previous) await recordActivityWithDb(db,item.id,"added",[],item.updatedAt);
+      else if(changed.length) await recordActivityWithDb(db,item.id,changed[0],changed,item.updatedAt);
     });
     if (!savedTitleId) throw new Error("No se pudo completar el guardado del título.");
     publishLibraryInvalidation([savedTitleId]);

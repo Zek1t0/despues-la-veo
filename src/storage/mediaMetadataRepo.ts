@@ -1,3 +1,5 @@
+import { pruneLibraryActivityWithDb } from "./libraryActivityRepo";
+import { markActivityWrite } from "./libraryActivitySignals";
 import type { SavedTitle } from "../core/savedTitle";
 import { initialMetadataState, legacyMetadataSnapshot, parseMediaMetadataState, parsePortableMetadata, projectMediaMetadata, type MediaMetadataState, type LegacyMetadataSnapshot } from "../core/mediaMetadataState";
 import { providerReferencesEqual, type ProviderReference } from "../core/providerReference";
@@ -90,7 +92,7 @@ export async function beginMetadataRequestWithDb(db: MetadataDb, id: string, ref
   return row!.generation;
 }
 export async function updateMediaMetadataWithDb(db: MetadataDb, id: string, value: EnrichedMediaMetadata, now: number,
-  generation?: number, eventId?: string, snapshot?: LegacyMetadataSnapshot): Promise<{ changed: boolean; discarded: boolean; checkedAt?: number | null }> {
+  generation?: number, eventId?: string, snapshot?: LegacyMetadataSnapshot, recordEvent = true): Promise<{ changed: boolean; discarded: boolean; checkedAt?: number | null }> {
   if (!metadataTimestamp(now)) throw new Error("Reloj de metadata inválido.");
   const metadata = parsePortableMetadata(value), reference = metadata.provenance.reference;
   const owner = await db.getFirstAsync("SELECT saved_title_id FROM media_provider_references WHERE saved_title_id=? AND provider=? AND resource_namespace=? AND external_id=?;", id, reference.provider, reference.resourceNamespace, reference.externalId);
@@ -111,7 +113,7 @@ export async function updateMediaMetadataWithDb(db: MetadataDb, id: string, valu
     checkedAt: metadata.provenance.checkedAt ?? old?.metadata.provenance.checkedAt ?? null, sourceUpdatedAt: metadata.provenance.sourceUpdatedAt ?? old?.metadata.provenance.sourceUpdatedAt ?? null } });
   const document = { metadata: merged, ...(snapshot ?? old?.snapshot ? { snapshot: snapshot ?? old!.snapshot } : {}), changedAt: changed ? Math.max(now, (old && old.changedAt <= Date.now() ? old.changedAt : -1) + 1) : old?.changedAt ?? now };
   await writeMetadataStateWithDb(db, id, { ...state, documents: [...state.documents.filter(doc => !providerReferencesEqual(doc.metadata.provenance.reference, reference)), document] });
-  if (changed) {
+  if (changed && recordEvent) {
     const operation = JSON.stringify(["metadata", id, reference.provider, reference.resourceNamespace, reference.externalId, document.changedAt]);
     const previousEvent = await db.getFirstAsync("SELECT id FROM library_activity_events WHERE operation_key=?;", operation);
     if (!previousEvent) {
@@ -123,7 +125,9 @@ export async function updateMediaMetadataWithDb(db: MetadataDb, id: string, valu
           continue;
         }
         await db.runAsync("INSERT INTO library_activity_events VALUES (?,?,?,'metadata','metadata',?,?);",
-          candidate, id, now, JSON.stringify(Object.keys(metadata.fields)), operation);
+          candidate, id, now, JSON.stringify(Object.keys(metadata.fields).filter(key=>metadataSemanticKey(metadata.fields[key as keyof typeof metadata.fields])!==metadataSemanticKey(old?.metadata.fields[key as keyof typeof metadata.fields]))), operation);
+        await pruneLibraryActivityWithDb(db);
+        markActivityWrite();
         inserted = true; break;
       }
       if (!inserted) throw new Error("No se pudo generar un ID de actividad libre.");

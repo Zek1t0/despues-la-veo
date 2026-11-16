@@ -1,3 +1,4 @@
+import { recordActivityWithDb } from "./libraryActivityRepo";
 import { ensureMetadataStateWithDb, acceptLegacyMetadataWriteWithDb } from "./mediaMetadataRepo";
 import { validateManualContent, type ManualContentInput } from "../core/manualContentEntry";
 import { generateManualEntryIdentity } from "../core/manualEntryIdentity";
@@ -35,6 +36,7 @@ export async function createManualContentWithDb(db: SavedTitlesMutationDatabase,
     await assignManualIdentityWithDb(db, id, generateIdentity);
     const created = await getSavedTitleWithReferencesByIdWithDb(db, id);
     if (created) await ensureMetadataStateWithDb(db, created);
+    await recordActivityWithDb(db,id,"added",[],now);
     return id;
   }
   throw new Error("No se pudo generar un ID local libre después de 25 intentos.");
@@ -50,6 +52,11 @@ export async function editManualContentWithDb(db: SavedTitlesMutationDatabase, i
     value.primaryFormat, value.year, value.overview, nextSavedTitleUpdatedAt(current.updatedAt, now), id);
   await acceptLegacyMetadataWriteWithDb(db, { ...current, ...value, updatedAt: nextSavedTitleUpdatedAt(current.updatedAt, now) }, current);
   if (result.changes !== 1) throw new Error("No se pudo actualizar el título.");
+  const changed=["title","medium","contentFamily","primaryFormat","year","overview"].filter(key=>JSON.stringify(current[key as keyof typeof current])!==JSON.stringify(value[key as keyof typeof value]));
+  if (changed.length) {
+    const fields=[...new Set(changed.flatMap(key=>key==="title"?["title"]:key==="overview"?["synopsis"]:key==="year"?[]:["classification"]))];
+    await recordActivityWithDb(db,id,"manual-edit",fields,now);
+  }
   return id;
 }
 

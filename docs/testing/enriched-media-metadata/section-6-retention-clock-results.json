@@ -1,0 +1,86 @@
+[
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-6-retention-clock.cjs",
+    "exitCode": 0,
+    "baselineCheck": false,
+    "output": "PASS S6 retention clock correction: 21 groups; real isolated SQLite, fixed current retention clock, 120d/60d/future/exact90d, metadata and both pin writers, raw post-write pruning, 2000/tie ordering, atomic rollback/no false notifications, unchanged personal/pin/metadata clocks, read/export/import v8 compatibility. No HTTP/UI.\n(node:20900) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-6-activity.cjs",
+    "exitCode": 0,
+    "baselineCheck": false,
+    "output": "PASS S6.1: real SQLite additions/manual/combined personals/rating/pins, no-op/idempotent replay, rollback and poscommit signals, single initial addition, metadata semantic fields/no-op, private values omitted, FK cascade.\n(node:12276) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-6-retention.cjs",
+    "exitCode": 0,
+    "baselineCheck": false,
+    "output": "PASS S6.2 real SQLite/clock: 90/30 day exact boundaries, 1999/2000/2001 and 19/20/21, active protection, 150 errors/100 details, independent last success, cursor tie pagination/filter/no duplicate, cascade.\n(node:9184) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-6-tabs.cjs",
+    "exitCode": 0,
+    "baselineCheck": false,
+    "output": "PASS S6.3 actual tabs component: Library first, fifth tab between Tags/Settings, visible accessible labels, themed Ionicons, 320/390/800 widths and 1/1.6/2 font scale without shrinking/capping fonts. Hook-host, no visual acceptance.\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-6-run-ui.cjs",
+    "exitCode": 0,
+    "baselineCheck": false,
+    "output": "PASS S6.4 actual screen/header: no global start on mount, double tap guard, shared start/cancel, terminal states, independent completion date, accessible counters, 150/100 truncation, recoverable error, remount/read/subscription cleanup/no render polling. Hook-host only.\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-6-feed.cjs",
+    "exitCode": 0,
+    "baselineCheck": false,
+    "output": "PASS S6.5 actual FlatList: paged/virtual rows, local day/timezone grouping, filters, deterministic IDs/dedup, no render reads/global start, confirmed-change subscriptions, safe navigation/deleted item, error/retry and cleanup. Hook-host only.\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-6-service.cjs",
+    "exitCode": 0,
+    "baselineCheck": false,
+    "output": "PASS S6 local service + real SQLite: lazy/no HTTP at reads, same S5 run, 500 no-ops/one summary/no events, actual changed event and current title, v8 500-item round-trip/reimport one event, safe deletion, actual 150 failures/100 details/independent last completion, reopen interrupted without resume. Injected provider load only.\n(node:23316) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-2-backups.cjs",
+    "exitCode": 0,
+    "baselineCheck": false,
+    "output": "PASS 2.5/2.6/2.7: v8 round-trip, v7 preservation, per-source clocks, same-time conflict, remap, repeat, savepoints, preferences and commit rollback.\n(node:21604) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-3-backups.cjs",
+    "exitCode": 0,
+    "baselineCheck": false,
+    "output": "PASS section 3 backup v8 SQLite round-trip: active images and score, original scale, notes/tags/personal rating, retained unreviewed host -> placeholder, private document -> existing partial import rejection, legacy renderer rejection.\n(node:12304) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/enriched-media-metadata/section-5-coordinator.cjs",
+    "exitCode": 0,
+    "baselineCheck": false,
+    "output": "PASS 5.2 SQLite: single-flight consumers, independent cancel, ignored abort late response, personal race, checkedAt/no-op, source A->B->A, rollback and delete without recreation.\n(node:10680) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "command": "node docs/testing/tmdb-user-credential/section-2-verification.cjs",
+    "exitCode": 1,
+    "baselineCheck": true,
+    "output": "AssertionError [ERR_ASSERTION]: D:\\dev\\despues-la-veo\\docs\\testing\\enriched-media-metadata\\section-5-checks.json\n\ntrue !== false\n\n    at testNoEnvAndNoLibraryCoupling (D:\\dev\\despues-la-veo\\docs\\testing\\tmdb-user-credential\\section-2-verification.cjs:206:12)\n    at main (D:\\dev\\despues-la-veo\\docs\\testing\\tmdb-user-credential\\section-2-verification.cjs:223:3) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: true,\n  expected: false,\n  operator: 'strictEqual'\n}\n"
+  },
+  {
+    "command": "npx tsc --noEmit",
+    "exitCode": 0,
+    "baselineCheck": false,
+    "output": ""
+  },
+  {
+    "command": "openspec validate add-enriched-media-metadata-and-library-updates --strict",
+    "exitCode": 0,
+    "baselineCheck": false,
+    "output": "Change 'add-enriched-media-metadata-and-library-updates' is valid\n"
+  },
+  {
+    "command": "git diff --check",
+    "exitCode": 0,
+    "baselineCheck": false,
+    "output": ""
+  }
+]
