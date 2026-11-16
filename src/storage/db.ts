@@ -1,3 +1,4 @@
+import { recoverInterruptedMetadataRunsWithDb } from "./metadataRunRepo";
 import * as SQLite from "expo-sqlite";
 
 import {
@@ -27,6 +28,7 @@ async function initializeDatabase(): Promise<SQLite.SQLiteDatabase> {
 
     await enableAndVerifyForeignKeys(db);
     await evolveDatabaseSchema(db, currentVersion);
+    await recoverInterruptedMetadataRunsWithDb(db);
     return db;
   } catch (error) {
     try {

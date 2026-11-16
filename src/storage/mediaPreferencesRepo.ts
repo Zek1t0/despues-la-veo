@@ -48,3 +48,19 @@ export async function setMediaLanguages(languages: readonly string[], now = Date
     if (committed) publishMediaPreferences(committed);
   });
 }
+
+/** Re-read the other preferences inside the transaction; never overwrite a concurrent language edit. */
+export async function setMediaAutoRefresh(autoRefresh: MediaPreferences["autoRefresh"], now = Date.now(),
+  database?: MetadataDb & { withTransactionAsync(task: () => Promise<void>): Promise<void> }): Promise<void> {
+  const db = database ?? await (await import("./db")).initDb();
+  await runSerializedStorageMutation(async () => {
+    let committed: PortableMediaPreferences | undefined;
+    await db.withTransactionAsync(async () => {
+      const old = await readMediaPreferencesWithDb(db);
+      const next = parseMediaPreferences({ value: { ...old.value, autoRefresh }, updatedAt: Math.max(now, old.updatedAt + 1) });
+      if (JSON.stringify(next.value.autoRefresh) === JSON.stringify(old.value.autoRefresh)) return;
+      if (await mergeMediaPreferencesWithDb(db, next)) committed = next;
+    });
+    if (committed) publishMediaPreferences(committed);
+  });
+}

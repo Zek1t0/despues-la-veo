@@ -5,7 +5,7 @@ import type { MangaUpdatesSearchResponse, MangaUpdatesSeries } from "./validatio
 export const MANGAUPDATES_REQUEST_POLICY = Object.freeze({
   spacingMs: 1200, searchTtlMs: 60_000, detailTtlMs: 300_000,
   cacheEntries: 32, queuedRequests: 16, timeoutMs: 12_000,
-  automatic429Retries: 1, fallback429DelayMs: 3000, maximumAutomaticWaitMs: 30_000,
+  automatic429Retries: 1, maximumAutomaticWaitMs: 30_000,
 });
 
 export function checkCancellation(signal?: AbortSignal): void {
@@ -42,9 +42,9 @@ export class MangaUpdatesRequestPolicy {
     return entry.value as T; // Only the same validated endpoint/key stores this value.
   }
 
-  cached<T extends CacheValue>(key: string, kind: "search" | "detail", load: () => Promise<T>, signal?: AbortSignal): Promise<T> {
+  cached<T extends CacheValue>(key: string, kind: "search" | "detail", load: () => Promise<T>, signal?: AbortSignal, fresh = false): Promise<T> {
     checkCancellation(signal);
-    const hit = this.get<T>(key);
+    const hit = fresh ? undefined : this.get<T>(key);
     if (hit) return Promise.resolve(hit);
     if (!signal) {
       const pending = this.inFlight.get(key);
@@ -54,7 +54,7 @@ export class MangaUpdatesRequestPolicy {
     this.pending++;
     const result = this.tail.then(async () => {
       checkCancellation(signal);
-      const hit = this.get<T>(key);
+      const hit = fresh ? undefined : this.get<T>(key);
       if (hit) return hit;
       const value = await load();
       checkCancellation(signal);
@@ -87,13 +87,4 @@ export class MangaUpdatesRequestPolicy {
   blockFor(ms: number): void { this.blockedUntil = Math.max(this.blockedUntil, this.timing.now() + ms); }
 }
 
-export function mangaUpdatesRetryAfter(value: string | null, now: number): number | null {
-  if (value === null || !value.trim()) return null;
-  if (/^[0-9]+(?:\.[0-9]+)?$/.test(value.trim())) {
-    const ms = Math.ceil(parseFloat(value) * 1000);
-    return Number.isSafeInteger(ms) ? ms : null;
-  }
-  if (!/^[A-Za-z]{3}, [0-9]{2} [A-Za-z]{3} [0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} GMT$/.test(value.trim())) return null;
-  const date = Date.parse(value);
-  return Number.isFinite(date) ? Math.max(0, date - now) : null;
-}
+export { httpRetryAfter as mangaUpdatesRetryAfter } from "../httpRetryAfter";

@@ -1,0 +1,30 @@
+const assert=require('node:assert/strict');const {fixture,createV6}=require('./sqlite-fixtures.cjs');
+const {evolveDatabaseSchema}=require('../../../src/storage/databaseSchema.ts');
+const {createMetadataRefreshRepository}=require('../../../src/storage/metadataRefreshRepo.ts');
+const {createMetadataRefreshCoordinator}=require('../../../src/application/metadataRefreshCoordinator.ts');
+const {getSavedTitleWithReferencesByIdWithDb:read}=require('../../../src/storage/savedTitleStorage.ts');
+const {selectMetadataSource}=require('../../../src/storage/mediaMetadataRepo.ts');
+const {updateSavedTitleMetadataWithDb}=require('../../../src/storage/savedTitlesRepo.ts');
+const {subscribeLibraryInvalidation}=require('../../../src/storage/libraryInvalidation.ts');
+const ref={provider:'kitsu',resourceNamespace:'anime',externalId:'1'};
+const payload=(fields={canonicalTitle:'Remote',synopsis:null})=>({metadata:{version:1,provenance:{reference:ref,normalizerVersion:1,fetchedAt:null,checkedAt:null,sourceUpdatedAt:null},fields},diagnostics:[]});
+const deferred=()=>{let resolve;return {promise:new Promise(r=>resolve=r),resolve:x=>resolve(x)}};
+const tick=async()=>{for(let i=0;i<12;i++)await new Promise(setImmediate)};
+(async()=>{const f=fixture();try{createV6(f);await evolveDatabaseSchema(f.db,6);let clock=1000,calls=0,pending=deferred();const repo=createMetadataRefreshRepository(f.db);
+const capability={fields:[],scope:()=> '1',eligibility:()=>({enabled:true}),load:async()=>{calls++;return pending.promise;}};
+const coordinator=createMetadataRefreshCoordinator({repository:repo,bindings:{kitsu:capability,tmdb:capability,mangaupdates:capability},now:()=>clock});
+let invalidations=0;const stop=subscribeLibraryInvalidation(()=>invalidations++);
+const one=new AbortController(),two=new AbortController();const a=coordinator.refresh('kitsu',{signal:one.signal}),b=coordinator.refresh('kitsu',{signal:two.signal});await tick();assert.equal(calls,1);
+one.abort();assert.equal((await a).status,'cancelled');await f.db.withTransactionAsync(()=>updateSavedTitleMetadataWithDb(f.db,'kitsu',{notes:'Concurrent personal note',status:'done'},()=>2000));
+pending.resolve(payload());assert.equal((await b).status,'changed');let saved=await read(f.db,'kitsu');assert.equal(saved.notes,'Concurrent personal note');assert.equal(saved.status,'done');assert.equal(saved.updatedAt,2000);assert.equal(saved.title,'Remote');assert.equal(saved.overview,null);assert.equal(invalidations,1);
+clock=3000;pending=deferred();const noop=coordinator.refresh('kitsu');await tick();pending.resolve(payload());assert.equal((await noop).status,'unchanged');assert.equal(invalidations,1);assert.equal((await read(f.db,'kitsu')).metadataState.documents[0].metadata.provenance.checkedAt,3000);
+clock=4000;pending=deferred();const cancelled=new AbortController(),late=coordinator.refresh('kitsu',{signal:cancelled.signal});await tick();cancelled.abort();assert.equal((await late).status,'cancelled');pending.resolve(payload({canonicalTitle:'Must not commit'}));await tick();assert.equal((await read(f.db,'kitsu')).title,'Remote');
+// Selection changes, including A->B->A, invalidate the captured selection clock.
+clock=5000;await selectMetadataSource('multi',{...ref,externalId:'2'},clock++,f.db);pending=deferred();const old=coordinator.refresh('multi');await tick();await selectMetadataSource('multi',{provider:'tmdb',resourceNamespace:'tv',externalId:'2'},clock++,f.db);await selectMetadataSource('multi',{...ref,externalId:'2'},clock++,f.db);
+pending.resolve({...payload({canonicalTitle:'Obsolete'}),metadata:{...payload().metadata,provenance:{...payload().metadata.provenance,reference:{...ref,externalId:'2'}},fields:{canonicalTitle:'Obsolete'}}});assert.equal((await old).status,'skipped');assert.notEqual((await read(f.db,'multi')).title,'Obsolete');
+// Actual SQL rollback after metadata writing; no publication and no partial document.
+clock=6000;pending=deferred();const original=f.db.runAsync;f.db.runAsync=async function(sql,...args){if(sql.startsWith('UPDATE saved_titles SET title='))throw Error('Injected persistence failure');return original.call(this,sql,...args)};
+const failed=coordinator.refresh('kitsu');await tick();pending.resolve(payload({canonicalTitle:'Rollback'}));assert.equal((await failed).code,'persistence');f.db.runAsync=original;assert.equal((await read(f.db,'kitsu')).title,'Remote');
+clock=7000;pending=deferred();const deleted=coordinator.refresh('kitsu');await tick();await f.db.runAsync("DELETE FROM saved_titles WHERE id='kitsu'");pending.resolve(payload());assert.equal((await deleted).status,'skipped');assert.equal(await read(f.db,'kitsu'),null);
+stop();console.log('PASS 5.2 SQLite: single-flight consumers, independent cancel, ignored abort late response, personal race, checkedAt/no-op, source A->B->A, rollback and delete without recreation.');
+}finally{f.close();}})().catch(e=>{console.error(e);process.exitCode=1});

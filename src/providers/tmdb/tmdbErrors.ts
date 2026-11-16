@@ -14,6 +14,7 @@ type TmdbErrorDetails = Readonly<{
   status?: number;
   remoteCode?: number;
   networkCause?: TmdbNetworkCause;
+  retryAfterMs?: number;
 }>;
 
 const SAFE_MESSAGES: Record<TmdbErrorKind, string> = {
@@ -32,6 +33,7 @@ export class TmdbError extends Error {
   readonly status?: number;
   readonly remoteCode?: number;
   readonly networkCause?: TmdbNetworkCause;
+  readonly retryAfterMs?: number;
 
   constructor(kind: TmdbErrorKind, details: TmdbErrorDetails = {}) {
     super(SAFE_MESSAGES[kind]);
@@ -40,6 +42,7 @@ export class TmdbError extends Error {
     this.status = details.status;
     this.remoteCode = details.remoteCode;
     this.networkCause = details.networkCause;
+    this.retryAfterMs = details.retryAfterMs;
   }
 }
 

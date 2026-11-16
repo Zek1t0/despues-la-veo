@@ -840,6 +840,7 @@ export default function SettingsScreen() {
 
 
 
+      <PrimaryButton label="Actualización de metadata" onPress={() => router.push("/settings/metadata-refresh")} />
       <PrimaryButton label="Idiomas de títulos" onPress={() => router.push("/settings/metadata-languages")} />
 
       <PrimaryButton

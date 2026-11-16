@@ -1,3 +1,5 @@
+import { SavedMetadataRefresh } from "../../src/components/browsing/SavedMetadataRefresh";
+import type { SavedMetadataRefreshService } from "../../src/application/savedMetadataRefreshService";
 import { MetadataSourceSelector } from "../../src/components/browsing/MetadataSourceSelector";
 import { selectMetadataSource } from "../../src/storage/mediaMetadataRepo";
 import { titleFallbackLabel } from "../../src/core/mediaTitlePresentation";
@@ -189,6 +191,7 @@ function Card({ children }: { children: React.ReactNode }) {
 
 type DetailParams = { id?: string | string[]; pinContext?: string | string[]; tag?: string | string[] };
 export type TitleDetailServices = Readonly<{
+  metadataRefreshService?: SavedMetadataRefreshService;
   languagePreferences?: MediaLanguageServices;
   selectMetadataSource?: typeof selectMetadataSource;
   getTitleDetailPinSnapshot: typeof getTitleDetailPinSnapshot;
@@ -681,6 +684,7 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
             </Pressable>
           </View>
         ))}
+        <SavedMetadataRefresh key={item.id} item={item} enabled={!bindings || !!bindings.metadataRefreshService} service={bindings?.metadataRefreshService} />
         {(!bindings || bindings.selectMetadataSource) && <MetadataSourceSelector key={item.id} item={item} select={bindings?.selectMetadataSource ?? selectMetadataSource} />}
         {displayItem && titleFallbackLabel(displayItem.resolvedTitle) && <Text style={{ color: theme.global.textMuted }}>{titleFallbackLabel(displayItem.resolvedTitle)}</Text>}
         <MediaBanner identity={item.id} {...savedMediaPresentation(item)} style={{ width: "100%", aspectRatio: 4.2, borderRadius: 12 }} />

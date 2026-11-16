@@ -1,0 +1,24 @@
+const assert=require('node:assert/strict'),Module=require('node:module');
+require('./sqlite-fixtures.cjs');
+const orig=Module._load;Module._load=function(r,p,m){if(r==='react-native')return {Platform:{OS:'android'}};return orig.call(this,r,p,m)};
+const {createTmdbRefreshCapability}=require('../../../src/providers/tmdb/metadataRefresh.ts');
+const {createKitsuRefreshCapability}=require('../../../src/providers/kitsu/metadataRefresh.ts');
+const {createMangaUpdatesRefreshCapability}=require('../../../src/providers/mangaupdates/metadataRefresh.ts');
+const {resolveRefreshCapability}=require('../../../src/application/metadataRefreshBinding.ts');
+const {parseAnime}=require('../../../src/providers/kitsu/validation.ts');
+const {parseSeries}=require('../../../src/providers/mangaupdates/validation.ts');
+(async()=>{const old=global.__DEV__;global.__DEV__=true;let platform='web',credential=false,calls=[];
+const tmdb=createTmdbRefreshCapability({available:()=>credential,generation:()=>1,load:async(type,id)=>{calls.push([type,id]);return {id:Number(id),title:'Movie',name:'TV',vote_average:0,runtime:0};}});
+const kitsu=createKitsuRefreshCapability(()=>platform,async id=>{calls.push(['anime',id]);return parseAnime({id,type:'anime',attributes:{canonicalTitle:'Anime',averageRating:'82.28'}})});
+const mu=createMangaUpdatesRefreshCapability(()=>platform,async(id,p,type)=>{calls.push([p,id,type]);return parseSeries({series_id:Number(id),title:'Comic',type,year:'2000'});});
+const bindings={tmdb,kitsu,mangaupdates:mu};
+const item=(provider,namespace,medium='audiovisual',contentFamily=null)=>({id:'local',title:'Local',medium,contentFamily,primaryFormat:null,providerReferences:[{provider,resourceNamespace:namespace,externalId:'1'}]});
+const t=item('tmdb','movie');assert.equal(resolveRefreshCapability(t,bindings).enabled,false);credential=true;assert.equal(resolveRefreshCapability(t,bindings).enabled,true);
+const result=await tmdb.load(t,new AbortController().signal);assert.equal(result.metadata.fields.publicRating.originalValue,0);assert.equal(result.metadata.fields.totalLengthMinutes,0);assert.ok(!Object.hasOwn(result.metadata.fields,'genres'),'omitted genres cannot erase');
+for(const p of ['web','android','ios']){platform=p;assert.equal(resolveRefreshCapability(item('kitsu','anime'),bindings).enabled,p!=='ios');assert.equal(resolveRefreshCapability(item('mangaupdates','series','comic','manga'),bindings).enabled,p==='android');}
+platform='android';const comic=await mu.load(item('mangaupdates','series','comic','manga'),new AbortController().signal);assert.equal(comic.snapshotPatch.year,2000);assert.ok(!Object.hasOwn(comic.metadata.fields,'publicRating'));assert.ok(!Object.hasOwn(comic.metadata.fields,'synopsis'));
+global.__DEV__=false;assert.equal(resolveRefreshCapability(item('kitsu','anime'),bindings).enabled,false);
+for(const bad of [{...t,manualIdentity:'manual'}, {...t,providerReferences:[]},item('unknown','work'),{...t,providerReferences:[...t.providerReferences,{provider:'kitsu',resourceNamespace:'anime',externalId:'1'}]},item('mangaupdates','series','literature'),item('tmdb','anime')])assert.equal(resolveRefreshCapability(bad,bindings).enabled,false);
+assert.equal(calls.length,2,'eligibility performs zero requests');global.__DEV__=old;Module._load=orig;
+console.log('PASS 5.1 finite bindings: credential/platform/dev gates, references/manual/ambiguity/type, exact endpoints, omitted optional fields, original scores, MU classification/year and no expanded cover/score policy.');
+})().catch(e=>{console.error(e);process.exitCode=1});

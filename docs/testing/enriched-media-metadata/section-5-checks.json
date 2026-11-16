@@ -1,0 +1,65 @@
+{
+  "branch": "feat/anime-catalog-manual-entries",
+  "head": "c5039f579bb52245d0d54f4cc39384681f50d011",
+  "checkpoint4_4": "administratively complete; user-reported Web acceptance and manual checkpoint; Android unverified",
+  "tasksImplemented": [
+    "5.1",
+    "5.2",
+    "5.3",
+    "5.4",
+    "5.5",
+    "5.6"
+  ],
+  "checkpoint5_7": "pending",
+  "automatedSuites": {
+    "passed": 47,
+    "total": 47,
+    "details": "section-5-results.json"
+  },
+  "checks": [
+    {
+      "name": "regressions",
+      "command": "node docs/testing/enriched-media-metadata/section-5-regressions.cjs",
+      "exitCode": 0,
+      "output": "PASS node docs/testing/enriched-media-metadata/section-1-contracts.cjs\nPASS node docs/testing/enriched-media-metadata/section-1-providers.cjs\nPASS node docs/testing/enriched-media-metadata/section-2-recovery.cjs\nPASS node docs/testing/enriched-media-metadata/section-2-migration.cjs\nPASS node docs/testing/enriched-media-metadata/section-2-storage.cjs\nPASS node docs/testing/enriched-media-metadata/section-2-backups.cjs\nPASS node docs/testing/enriched-media-metadata/section-2-observers.cjs\nPASS node docs/testing/enriched-media-metadata/section-2-history-consistency.cjs\nPASS node docs/testing/provider-abstraction/section-2-tmdb-mapping-verification.cjs\nPASS node docs/testing/provider-abstraction/section-4-materialization-save-verification.cjs\nPASS node docs/testing/provider-abstraction/section-5-detail-verification.cjs\nPASS node docs/testing/universal-media-identity/section-4-backup-v5-verification.cjs\n\nPASS node docs/testing/anime-catalog-manual-entries/b1-verification.cjs\nPASS node docs/testing/anime-catalog-manual-entries/b2-verification.cjs\nPASS node docs/testing/anime-catalog-manual-entries/b3-contracts.cjs\nPASS node docs/testing/anime-catalog-manual-entries/b3-verification.cjs\nPASS node docs/testing/expanded-media-domain/section-2-verification.cjs\nPASS node docs/testing/expanded-media-domain/section-4-verification.cjs\nPASS node docs/testing/mangaupdates-cover-images/section-2-verification.cjs\nPASS node docs/testing/global-appearance-themes/section-9-verification.cjs\nPASS node docs/testing/anime-catalog-manual-entries/development-activation-verification.cjs\nPASS node docs/testing/anime-catalog-manual-entries/b2-ui-verification.cjs\nPASS node docs/testing/anime-catalog-manual-entries/b3-ui-verification.cjs\nPASS node docs/testing/expanded-media-domain/section-3-ui-verification.cjs\nPASS node docs/testing/enriched-media-metadata/section-2-poster-regression.cjs\nPASS node docs/testing/enriched-media-metadata/section-3-backups.cjs\nPASS node docs/testing/enriched-media-metadata/section-3-presentation.cjs\nPASS node docs/testing/enriched-media-metadata/section-3-renderer.cjs\nPASS node docs/testing/enriched-media-metadata/section-4-editorial.cjs\nPASS node docs/testing/enriched-media-metadata/section-4-languages.cjs\nPASS node docs/testing/enriched-media-metadata/section-4-preferences.cjs\nPASS node docs/testing/enriched-media-metadata/section-4-sources.cjs\nPASS node docs/testing/enriched-media-metadata/section-4-ui.cjs\nPASS node docs/testing/enriched-media-metadata/section-4-correction-unicode.cjs\nPASS node docs/testing/tmdb-user-credential/section-1-verification.cjs\nPASS node docs/testing/tmdb-user-credential/section-2-verification.cjs\nPASS node docs/testing/tmdb-user-credential/section-3-verification.cjs\nPASS node docs/testing/tmdb-user-credential/section-4-verification.cjs\nPASS node docs/testing/tmdb-user-credential/section-5-verification.cjs\nPASS node docs/testing/enriched-media-metadata/section-5-bindings.cjs\nPASS node docs/testing/enriched-media-metadata/section-5-coordinator.cjs\nPASS node docs/testing/enriched-media-metadata/section-5-ui.cjs\nPASS node docs/testing/enriched-media-metadata/section-5-runs.cjs\nPASS node docs/testing/enriched-media-metadata/section-5-http.cjs\nPASS node docs/testing/enriched-media-metadata/section-5-errors.cjs\nPASS node docs/testing/enriched-media-metadata/section-5-automatic.cjs\nPASS node docs/testing/enriched-media-metadata/section-5-product.cjs\n47/47 passing\n"
+    },
+    {
+      "name": "typescript",
+      "command": "npx tsc --noEmit",
+      "exitCode": 0,
+      "output": "\n"
+    },
+    {
+      "name": "openspec",
+      "command": "openspec validate add-enriched-media-metadata-and-library-updates --strict",
+      "exitCode": 0,
+      "output": "Change 'add-enriched-media-metadata-and-library-updates' is valid\n"
+    },
+    {
+      "name": "diff-check",
+      "command": "git diff --check",
+      "exitCode": 0,
+      "output": ""
+    },
+    {
+      "name": "web-export",
+      "command": "$env:EXPO_OFFLINE='1'; npx expo export --platform web --output-dir .expo/s5-web-final-20261115",
+      "exitCode": 0,
+      "output": "env: load .env.local\nenv: export EXPO_PUBLIC_TMDB_TOKEN\nStarting Metro Bundler\nWeb node_modules\\expo-router\\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)\n| (node:2176) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n| (Use `node --trace-warnings ...` to show where the warning was created)\n\nWarning: truncated output (original token count: 1547)\nTotal output lines: 69\n\n| (node:17340) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n| (Use `node --trace-warnings ...` to show where the warning was created)\n| (node:17644) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n| (Use `node --trace-warnings ...` to show where the warning was created)\n| (node:17280) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n| (Use `node --trace-warnings ...` to show where the warning was created)\nWeb node_modules\\expo-router\\entry.js ▓▓▓▓▓▓░░░░░░░░░░ 39.1% (15/43)\n| Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:\n|   npx update-browserslist-db@latest\n|   Why you should do it regularly: https://github.com/browserslist/update-db#readme\n| (node:15292) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n| (Use `node --trace-warnings ...` to show where the warning was created)\n| (node:16160) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n| (Use `node --trace-warnings ...` to show where the warning was created)\n| (node:6200) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n| (Use `node --trace-warnings ...` to show where the warning was created)\n| (node:2032) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.\n| (Use `node --trace-warnings ...` to show where the warning was created)\nWeb node_modules\\expo-router\\entry.js ▓▓▓▓▓▓░░░░░░░░░░ 39.1% (281/461)\nWeb node_modules\\expo-router\\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 83.7% (775/847)\nWeb Bundled 13103ms node_modules\\expo-router\\entry.js (984 modules)\n\n› Assets (39):\nassets\\tmdb-primary-full-blue.b47d5b3f5159b887ed3a072f444d3797.png (16.4 kB)\nnode_modules\\@expo\\vector-icons\\build\\vendor\\react-native-vector-icons\\Fonts\\AntDesign.3f78af31cca60105799838a1a7a59fbd.ttf (130 kB)\nnode_modules\\@expo\\vector…547 tokens truncated…les\\@expo\\vector-icons\\build\\vendor\\react-native-vector-icons\\Fonts\\SimpleLineIcons.d2285965fe34b05465047401b8595dd0.ttf (54.1 kB)\nnode_modules\\@expo\\vector-icons\\build\\vendor\\react-native-vector-icons\\Fonts\\Zocial.1681f34aaca71b8dfb70756bca331eb2.ttf (25.8 kB)\nnode_modules\\@react-navigation\\elements\\lib\\module\\assets\\back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png (653 B)\nnode_modules\\@react-navigation\\elements\\lib\\module\\assets\\back-icon.35ba0eaec5a4f5ed12ca16fabeae451d.png (207 B)\nnode_modules\\@react-navigation\\elements\\lib\\module\\assets\\clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55.png (4 variations | 425 B)\nnode_modules\\@react-navigation\\elements\\lib\\module\\assets\\close-icon.808e1b1b9b53114ec2838071a7e6daa7.png (4 variations | 235 B)\nnode_modules\\@react-navigation\\elements\\lib\\module\\assets\\search-icon.286d67d3f74808a60a78d3ebf1a5fb57.png (928 B)\nnode_modules\\expo-router\\assets\\arrow_down.017bc6ba3fc25503e5eb5e53826d48a8.png (9.46 kB)\nnode_modules\\expo-router\\assets\\error.d1ea1496f9057eb392d5bbf3732a61b7.png (469 B)\nnode_modules\\expo-router\\assets\\file.19eeb73b9593a38f8e9f418337fc7d10.png (138 B)\nnode_modules\\expo-router\\assets\\forward.d8b800c443b8972542883e0b9de2bdc6.png (188 B)\nnode_modules\\expo-router\\assets\\pkg.ab19f4cbc543357183a20571f68380a3.png (364 B)\nnode_modules\\expo-router\\assets\\sitemap.412dd9275b6b48ad28f5e3d81bb1f626.png (465 B)\nnode_modules\\expo-router\\assets\\unmatched.20e71bdf79e3a97bf55fd9e164041578.png (4.75 kB)\nnode_modules\\expo-sqlite\\web\\wa-sqlite\\wa-sqlite.783a2e11efab57e42036efde040ea8fd.wasm (618 kB)\n\n› web bundles (4):\n_expo/static/css/global-e9128e521fa84c8bcfa2cad9c6f8405b.css (845 B)\n_expo/static/js/web/entry-97336cf5c34dcb32725e65992426068f.js (1.98 MB)\n_expo/static/js/web/productMetadataRefresh-4f9fc9e41f2a35b545809ea144d63292.js (20.9 kB)\n_expo/static/js/web/worker-91b42cc4db42d09d020db50c159fdf7b.js (139 kB)\n\n› Files (3):\nfavicon.ico (14.5 kB)\nindex.html (1.41 kB)\nmetadata.json (49 B)\n\nExported: .expo/s5-web-final-20261115\n"
+    }
+  ],
+  "liveProviderHTTP": false,
+  "visualAcceptanceS5": {
+    "web": false,
+    "android": false,
+    "reasonWeb": "Computer Use ended before app actions: could not determine current browser URL confidently enough to enforce policy",
+    "reasonAndroid": "adb unavailable in PATH; no emulator/device verified"
+  },
+  "encodingAndUntrackedWhitespace": "UTF-8 strict and trailing-whitespace scan passed",
+  "gitWrites": false,
+  "notes": [
+    "Web export is static compilation only, not visual/runtime acceptance.",
+    "Web export console output was truncated by tool; exit code and exported output path verified.",
+    "No SQLite/backup version, dependencies, release gates, approved image policy or previous change modifications."
+  ]
+}

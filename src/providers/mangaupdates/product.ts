@@ -10,11 +10,11 @@ import type { MangaUpdatesType } from "./validation";
 /** Product gate is separate from the diagnostic transport, and checked before HTTP/cache. */
 export async function loadMangaUpdatesProductDetail(
   id: string, platform: string, selectedType?: MangaUpdatesType, signal?: AbortSignal,
-  client?: MangaUpdatesClient,
+  client?: MangaUpdatesClient, fresh = false,
 ) {
   canonicalSeriesId(id);
   if (!mangaUpdatesAvailability(platform).productionEnabled) throw new MangaUpdatesError("platform-unavailable");
-  return (client ?? getMangaUpdatesClient()).getSeries(id, selectedType, signal);
+  return (client ?? getMangaUpdatesClient()).getSeries(id, selectedType, signal, fresh);
 }
 
 /** Local provenance uses references only and never fetches remote metadata. */

@@ -1,0 +1,33 @@
+const assert=require('node:assert/strict'),{fixture,createV6}=require('./sqlite-fixtures.cjs');
+const {evolveDatabaseSchema}=require('../../../src/storage/databaseSchema.ts');
+const {createMetadataRefreshRepository}=require('../../../src/storage/metadataRefreshRepo.ts');
+const {createMetadataRefreshCoordinator}=require('../../../src/application/metadataRefreshCoordinator.ts');
+const {createMetadataRunRepository,recoverInterruptedMetadataRunsWithDb}=require('../../../src/storage/metadataRunRepo.ts');
+const {createMetadataRunManager}=require('../../../src/application/metadataRunManager.ts');
+const {getSavedTitleWithReferencesByIdWithDb:read}=require('../../../src/storage/savedTitleStorage.ts');
+const deferred=()=>{let r;return {promise:new Promise(resolve=>r=resolve),resolve:value=>r(value)}};
+const tick=async()=>{for(let i=0;i<15;i++)await new Promise(setImmediate)};
+(async()=>{let f=fixture();try{createV6(f);await evolveDatabaseSchema(f.db,6);const repository=createMetadataRefreshRepository(f.db),runs=createMetadataRunRepository(f.db);let loads=0,pending=deferred(),active=0,max=0,clock=1000;
+const cap={fields:[],scope:()=> '1',eligibility:()=>({enabled:true}),load:async item=>{loads++;active++;max=Math.max(max,active);await pending.promise;active--;const ref=item.providerReferences[0];return {metadata:{version:1,provenance:{reference:ref,normalizerVersion:1,fetchedAt:null,checkedAt:null,sourceUpdatedAt:null},fields:{canonicalTitle:'Refreshed '+item.id}},diagnostics:[]};}};
+const coord=createMetadataRefreshCoordinator({repository,bindings:{kitsu:cap,mangaupdates:cap,tmdb:{...cap,eligibility:()=>({enabled:false,reason:'Configurá una credencial TMDB disponible.'})}},now:()=>clock++});
+const manager=createMetadataRunManager({repository,coordinator:coord,runs,now:()=>clock++,id:(()=>{let id=0;return()=>`run-${++id}`})()});
+const individual=coord.refresh('kitsu');await tick();const first=manager.start();assert.equal(manager.start(),first);await tick();assert.equal(loads,1,'global joins individual');first.cancel();const cancelled=await first.done;assert.equal(cancelled.state,'cancelled');assert.equal(cancelled.counters.total,5);assert.equal(cancelled.counters.cancelled,5);assert.equal((await runs.latest()).state,'cancelled');
+pending.resolve();assert.equal((await individual).status,'changed','cancel global cannot revoke independent individual');assert.equal((await read(f.db,'kitsu')).title,'Refreshed kitsu');
+pending={promise:Promise.resolve()};loads=0;max=0;const result=await manager.start().done;assert.equal(result.state,'partial');assert.equal(result.counters.total,5);assert.equal(result.counters.processed,5);assert.equal(result.counters.skipped,3);assert.equal(result.counters.changed+result.counters.unchanged,2);assert.equal(result.counters.pending,0);assert.equal(max,1);assert.equal(loads,2);assert.equal(result.counters.omissions.credential,1);
+await runs.save({...result,id:'crashed-run',state:'running',startedAt:9000,finishedAt:null,counters:{...result.counters,processed:1,changed:1,unchanged:0,skipped:0,pending:4}});
+const before=loads,file=f.file;f.close();f=fixture(file);await recoverInterruptedMetadataRunsWithDb(f.db,10000);const interrupted=await createMetadataRunRepository(f.db).latest();assert.equal(interrupted.state,'interrupted');assert.equal(interrupted.counters.pending,4);assert.equal(loads,before);assert.equal(manager.getActive(),null);
+// Cancellation after a committed first item retains it; a deleted captured ID becomes a real skip.
+const reopenedRepo=createMetadataRefreshRepository(f.db);let rManager,deleted=false;
+const changingCap={...cap,load:async item=>{const result=await cap.load(item);if(item.id==='mu')await f.db.runAsync("DELETE FROM saved_titles WHERE id='tmdb'");return result;}};
+const reopenedCoordinator=createMetadataRefreshCoordinator({repository:reopenedRepo,bindings:{kitsu:changingCap,mangaupdates:changingCap,tmdb:changingCap},now:()=>clock++});
+rManager=createMetadataRunManager({repository:reopenedRepo,coordinator:reopenedCoordinator,runs:createMetadataRunRepository(f.db),now:()=>clock++,id:()=> 'after-reopen'});
+let handle;const unsubscribe=rManager.subscribe(run=>{if(run.counters.processed===1)handle.cancel();});handle=rManager.start();const afterFirst=await handle.done;unsubscribe();assert.equal(afterFirst.counters.changed+afterFirst.counters.unchanged,1);assert.equal(afterFirst.counters.cancelled,4);assert.equal((await read(f.db,'kitsu')).title,'Refreshed kitsu');
+const deletionRun=await rManager.start().done;assert.equal(deletionRun.counters.total,5);assert.equal(deletionRun.counters.omissions.deleted,1);assert.equal(deletionRun.counters.pending,0);assert.equal(deletionRun.counters.processed,5);
+// A failing source does not stop another eligible provider.
+const {RefreshError}=require('../../../src/application/metadataRefreshError.ts');
+let otherQueries=0;const failedCap={...cap,load:async()=>{throw new RefreshError('access-rejected');}},otherCap={...cap,load:async item=>{otherQueries++;return cap.load(item);}};
+const errorsCoordinator=createMetadataRefreshCoordinator({repository:reopenedRepo,bindings:{kitsu:failedCap,mangaupdates:otherCap,tmdb:otherCap},now:()=>clock++});
+const errorsManager=createMetadataRunManager({repository:reopenedRepo,coordinator:errorsCoordinator,runs:createMetadataRunRepository(f.db),now:()=>clock++,id:()=> 'mixed-errors'});
+const mixed=await errorsManager.start().done;assert.equal(mixed.counters.failed,1);assert.equal(otherQueries,1);assert.equal(mixed.counters.total,mixed.counters.changed+mixed.counters.unchanged+mixed.counters.skipped+mixed.counters.failed+mixed.counters.cancelled);
+console.log('PASS 5.4 SQLite runs: all real IDs, one active run, sequential global queries, shared individual, independent cancellation, reconciled persisted counters/omissions, incremental commits, postcommit cancellation, concurrent deletion and reopened interrupted without resume.');
+}finally{f.close();}})().catch(e=>{console.error(e);process.exitCode=1});

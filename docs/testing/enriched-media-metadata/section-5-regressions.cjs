@@ -1,0 +1,5 @@
+const fs=require('node:fs'),{spawnSync}=require('node:child_process');
+const baseline=JSON.parse(fs.readFileSync('docs/testing/enriched-media-metadata/section-4-correction-results.json','utf8'));
+const commands=[...new Set([...baseline.map(x=>x.command),...[1,2,3,4,5].map(n=>`node docs/testing/tmdb-user-credential/section-${n}-verification.cjs`),...['bindings','coordinator','ui','runs','http','errors','automatic','product'].map(name=>`node docs/testing/enriched-media-metadata/section-5-${name}.cjs`)])];
+const results=commands.map(command=>{const [exe,...args]=command.split(' ');const r=spawnSync(exe,args,{encoding:'utf8',timeout:120000});console.log((r.status===0?'PASS ':'FAIL ')+command);return {command,exitCode:r.status,output:(r.stdout??'')+(r.stderr??'')};});
+fs.writeFileSync('docs/testing/enriched-media-metadata/section-5-results.json',JSON.stringify(results,null,2)+'\n');console.log(`${results.filter(x=>x.exitCode===0).length}/${results.length} passing`);if(results.some(x=>x.exitCode!==0))process.exitCode=1;

@@ -27,10 +27,12 @@ export function createMangaUpdatesClient(options: MangaUpdatesClientOptions = {}
   async function attempt(path: string, body: ReturnType<typeof mangaUpdatesSearchBody> | undefined, signal?: AbortSignal): Promise<unknown> {
     const controller = new AbortController();
     let timedOut = false;
-    const abort = () => controller.abort();
+    let rejectInterrupted: (error: MangaUpdatesError) => void = () => {};
+    const interrupted = new Promise<never>((_, reject) => { rejectInterrupted = reject; });
+    const abort = () => { controller.abort(); rejectInterrupted(new MangaUpdatesError("cancelled")); };
     signal?.addEventListener("abort", abort, { once: true });
-    const timer = setTimer(() => { timedOut = true; controller.abort(); }, MANGAUPDATES_REQUEST_POLICY.timeoutMs);
-    try {
+    const timer = setTimer(() => { timedOut = true; controller.abort(); rejectInterrupted(new MangaUpdatesError("timeout")); }, MANGAUPDATES_REQUEST_POLICY.timeoutMs);
+    const perform = async () => {
       checkCancellation(signal);
       const response = await fetchImplementation(`${MANGAUPDATES_API_BASE}${path}`, {
         method: body ? "POST" : "GET", signal: controller.signal, redirect: "error",
@@ -53,7 +55,8 @@ export function createMangaUpdatesClient(options: MangaUpdatesClientOptions = {}
       if (text.length > 1_000_000) throw new MangaUpdatesError("invalid-response");
       try { return JSON.parse(text) as unknown; }
       catch { throw new MangaUpdatesError("invalid-response"); }
-    } catch (error) {
+    };
+    try { return await Promise.race([perform(), interrupted]); } catch (error) {
       if (timedOut) throw new MangaUpdatesError("timeout");
       if (signal?.aborted) throw new MangaUpdatesError("cancelled");
       if (error instanceof MangaUpdatesError) throw error;
@@ -70,7 +73,9 @@ export function createMangaUpdatesClient(options: MangaUpdatesClientOptions = {}
       try { return await attempt(path, body, signal); }
       catch (error) {
         if (!(error instanceof MangaUpdatesError) || error.code !== "rate-limited" || error.status !== 429) throw error;
-        const delay = error.retryAfterMs ?? MANGAUPDATES_REQUEST_POLICY.fallback429DelayMs;
+        const delay = error.retryAfterMs;
+        if (delay === undefined) { policy.blockFor(Infinity); throw error; }
+        policy.blockFor(delay);
         if (delay > MANGAUPDATES_REQUEST_POLICY.maximumAutomaticWaitMs || retry >= MANGAUPDATES_REQUEST_POLICY.automatic429Retries) {
           policy.blockFor(delay); throw error;
         }
@@ -88,11 +93,11 @@ export function createMangaUpdatesClient(options: MangaUpdatesClientOptions = {}
       return policy.cached(`search:${JSON.stringify(body)}`, "search", async () =>
         parseSearchResponse(await request("/v1/series/search", body, signal), type), signal);
     },
-    async getSeries(id: string, selectedType?: MangaUpdatesType, signal?: AbortSignal) {
+    async getSeries(id: string, selectedType?: MangaUpdatesType, signal?: AbortSignal, fresh = false) {
       eligibleTransport(); checkCancellation(signal); canonicalSeriesId(id);
       if (selectedType !== undefined) admittedType(selectedType);
       const record = await policy.cached(`detail:${id}`, "detail", async () =>
-        parseDetailResponse(await request(`/v1/series/${id}`, undefined, signal), id), signal);
+        parseDetailResponse(await request(`/v1/series/${id}`, undefined, signal), id), signal, fresh);
       if (selectedType !== undefined && record.type !== selectedType) throw new MangaUpdatesError("unsupported-type");
       return record;
     },
