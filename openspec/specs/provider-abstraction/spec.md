@@ -6,6 +6,8 @@ Define una frontera remota estrecha y estable para que la búsqueda, el detalle 
 
 ## Requirements
 
+Los escenarios de materialización y guardado repetido conservan su semántica histórica. No equivalen a la actualización de metadata enriquecida, cuyos relojes y protección de modificaciones personales se rigen por `library-metadata-refresh`.
+
 ### Requirement: Contrato compartido de búsqueda mínimo
 El sistema SHALL ofrecer resultados `ProviderSearchResult` mediante una única capability compartida de búsqueda con query y resultados readonly, sin paginación universal, descriptor, registry ni orquestación multiproveedor; la selección explícita de categoría y fuente pertenece a Buscar, fuera de la capability. TMDB SHALL normalizar sus DTOs antes de entregarlos a Buscar; Buscar SHALL consumir los valores normalizados sin interpretar `media_type`, `poster_path`, `title/name` ni `release_date/first_air_date`.
 
@@ -48,7 +50,7 @@ El sistema SHALL mantener películas y series de Buscar respaldadas por TMDB y p
 - **THEN** Buscar conserva el mensaje y las acciones actuales sin ejecutar la consulta remota
 
 ### Requirement: Metadata portable de detalle normalizada
-El sistema SHALL convertir un detalle compatible de un proveedor en `ProviderMediaDetails` compuesto por su `ProviderReference` y un `ProviderLocalSnapshot` compatible con el modelo `SavedTitle` actual: medium, contentFamily y primaryFormat compatibles, título, año útil nullable, URL absoluta de póster, resumen textual, `genres` como array readonly de strings normalizados y suministro opcional del campo legacy TMDB `voteAverage`. El sistema SHALL NOT afirmar que estos campos definen una taxonomía universal, IDs de género, procedencia, reglas de normalización entre proveedores ni una ontología universal de puntuaciones. `ProviderMediaDetails` SHALL NOT contener `initialTags`. Un recurso que no pueda mapearse honestamente al modelo local actual SHALL quedar fuera de la frontera de guardado y materialización.
+El sistema SHALL convertir un detalle compatible de un proveedor en `ProviderMediaDetails` compuesto por su `ProviderReference` y un `ProviderLocalSnapshot` compatible con el modelo `SavedTitle` actual: medium, contentFamily y primaryFormat compatibles, título, año útil nullable, URL absoluta de póster, resumen textual, `genres` como array readonly de strings normalizados y suministro opcional del campo legacy TMDB `voteAverage`. El sistema SHALL NOT afirmar que estos campos definen una taxonomía universal ni equivalencias de categorías o puntuaciones entre fuentes. SHALL admitir metadata enriquecida validada y acotada, con títulos/idiomas, imágenes por URL, puntuación pública con valor original/escala/proveedor, fechas, estado editorial, episodios, duraciones, edad/advertencias y procedencia. Los campos no suministrados SHALL permanecer desconocidos y voteAverage SHALL conservar exclusivamente su contrato legacy TMDB. `ProviderMediaDetails` SHALL NOT contener `initialTags`. Un recurso que no pueda mapearse honestamente al modelo local actual SHALL quedar fuera de la frontera de guardado y materialización.
 
 #### Scenario: Géneros normalizados desde un detalle TMDB
 - **WHEN** se normaliza un detalle TMDB ya obtenido con nombres de géneros
@@ -73,6 +75,10 @@ El sistema SHALL convertir un detalle compatible de un proveedor en `ProviderMed
 #### Scenario: Resumen vacío
 - **WHEN** el detalle remoto contiene un resumen ausente o compuesto solamente por espacios
 - **THEN** la metadata normalizada contiene resumen nulo
+
+#### Scenario: Enriquecimiento Kitsu separado
+- **WHEN** Kitsu entrega puntuación e imágenes válidas
+- **THEN** la frontera expone metadata enriquecida con su fuente y no suministra voteAverage para Kitsu
 
 ### Requirement: Identidad TMDB canónica en el adaptador
 El adaptador TMDB SHALL producir referencias movie/TV conforme a la canonicalización y a la identidad completa definidas en `universal-media-identity`, sin trasladar la interpretación de IDs TMDB a la materialización genérica.
@@ -121,7 +127,7 @@ La materialización SHALL aceptar `initialTags` como input explícito de políti
 - **THEN** `SavedTitle.genres` conserva la metadata del snapshot y `SavedTitle.tags` recibe exclusivamente los tags iniciales suministrados
 
 ### Requirement: Enriquecimientos TMDB permanecen específicos
-El sistema SHALL mantener fuera del contrato portable los datos TMDB de runtime, runtime de episodios, cantidad de temporadas, reparto, equipo, director, rutas de perfiles, disponibilidad regional, logos y enlaces de plataformas.
+El sistema SHALL mantener fuera del contrato portable los enriquecimientos específicos TMDB no incorporados a la metadata básica aprobada: cantidad de temporadas, reparto, equipo, director, rutas de perfiles, disponibilidad regional, logos y enlaces de plataformas. Los campos básicos de duración, cuando la fuente los suministre y estén soportados por el contrato enriquecido aprobado, SHALL conservar sus unidades y procedencia, sin convertir créditos ni disponibilidad en datos portables.
 
 #### Scenario: Detalle remoto completo
 - **WHEN** `/tmdb/[type]/[id]` carga detalles, créditos y proveedores de visualización
@@ -143,7 +149,7 @@ El sistema SHALL reutilizar una única respuesta tipada de detalle TMDB tanto pa
 - **THEN** la misma respuesta de detalle alimenta la presentación, el snapshot portable y la política separada de tags iniciales sin volver a solicitar el detalle
 
 ### Requirement: Límites de la frontera provider-neutral
-La frontera compartida SHALL excluir credenciales, generación y lifecycle de credenciales, presentación de errores TMDB, rutas TMDB, créditos, watch providers, configuración y atribución. Esas funciones SHALL permanecer en la integración explícita de cada fuente, con TMDB conforme a `tmdb-user-credential`. La frontera SHALL consumir el modelo local y sus referencias sin redefinir los contratos de persistencia y backup de `universal-media-identity` y `library-backup-integrity`; el snapshot normalizado SHALL usar la clasificación expandida persistida en SQLite v5 y backup v6, conservando migraciones e importaciones históricas mediante sus contratos originales.
+La frontera compartida SHALL excluir credenciales, generación y lifecycle de credenciales, presentación de errores TMDB, rutas TMDB, créditos, watch providers, configuración y atribución. Esas funciones SHALL permanecer en la integración explícita de cada fuente, con TMDB conforme a `tmdb-user-credential`. La frontera SHALL consumir el modelo local y sus referencias sin redefinir los contratos de persistencia y backup de `universal-media-identity` y `library-backup-integrity`; el snapshot normalizado SHALL conservar la clasificación expandida y las identidades vigentes, con evolución compatible desde SQLite v6 y backup v7 a la persistencia enriquecida. SHALL admitir capacidades explícitas y opcionales de actualización, manteniendo disponibilidad, credenciales, cuotas y semántica HTTP dentro de cada integración, sin imponer un endpoint universal ni habilitar fuentes bloqueadas.
 
 #### Scenario: Uso de funciones específicas TMDB
 - **WHEN** Buscar o el detalle TMDB requiere configuración, manejo de errores, navegación o enriquecimientos
