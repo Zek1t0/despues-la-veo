@@ -122,3 +122,16 @@ expuesto en la coincidencia documentada.
 
 Revisión S8: aprobable con limitaciones. Android y la aceptación
 manual integral de 8.3 continúan pendientes.
+
+## Cierre final S8 - aceptación y revisión externa
+
+- Android: 19/19 comprobaciones aprobadas según prueba manual informada por el usuario.
+- Dispositivo y runtime: SDK 54, xiaomi note 13.
+- Web: aceptaciones manuales previas consolidadas.
+- Revisión externa: APROBABLE CON LIMITACIONES.
+- Matriz original: 53/58; las cinco excepciones conocidas permanecen documentadas.
+- El probe TMDB contra S6 no reprodujo directamente el fallo original porque se detuvo al buscar un archivo inexistente en ese baseline.
+- 8.3: completada con evidencia manual Web/Android y sus límites documentados.
+- 8.5: completada tras revisión externa y checkpoint S8 confirmado.
+- Sin cambios adicionales de código, versiones o dependencias.
+- Archive e integración pendientes como operaciones separadas.
