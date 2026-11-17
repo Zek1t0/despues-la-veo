@@ -1,8 +1,8 @@
-S7: checkpoint S6 `6ddd893d1e809ec9c6378b37953d25d63743247b` confirmado limpio con corrección de retención. 6.6 cerrada administrativamente por aprobación externa y siete comprobaciones Web informadas por el usuario; Android no comprobado. Solo 7.1–7.3 autorizadas; 7.4 pendiente.
+S8: checkpoint S7 `fdedda6c6e99dccb6c3351667fd789406c41e5be` confirmado limpio. Revisión técnica previa sin bloqueantes (APROBABLE CON LIMITACIONES). 7.4 cerrada administrativamente: el usuario informó comprobar los cuatro recorridos Web propuestos y que funcionarían como esperaba; Android no comprobado. Autorizadas 8.1–8.4; 8.5 reservada para revisión externa y checkpoint manual.
 
-Estado: **APPLY parcial: S1–S6 con checkpoints manuales informados; 7.1–7.3 implementadas con validación acotada documentada; 7.4 pendiente de revisión externa, aceptación manual y checkpoint Git**.
+Estado: **APPLY parcial: S1–S7 con checkpoints manuales; 8.1, 8.2 y 8.4 verificadas con límites documentados, 8.3 pendiente de aceptación manual completa Web/Android; 8.5 pendiente**.
 
-Evidencia S6 en `docs/testing/enriched-media-metadata/section-6-validation.md`; evidencia S7 en `docs/testing/enriched-media-metadata/section-7-validation.md`. El cierre administrativo de 6.6 no implica validación Android. No se implementa S8 ni se asume archive/integración/cierre del change anterior. Sin Git de escritura.
+Evidencia consolidada S8 en `docs/testing/enriched-media-metadata/section-8-validation.md`; documentos S1–S7 conservados como evidencia histórica, sin atribuirles nuevas ejecuciones. Los cierres administrativos 6.6/7.4 no implican aceptación Android. No se asume archive/integración/cierre del change anterior. Sin Git de escritura.
 
 ## 1. Contratos y normalización de metadata
 
@@ -64,12 +64,12 @@ Evidencia S6 en `docs/testing/enriched-media-metadata/section-6-validation.md`; 
 - [x] 7.1 Implementar presentación de edad/guía/advertencias y semántica sensible por fuente conocida. Verificar nsfw true/false/ausente, ageRating sin equivalencia argentina y desconocido sin afirmación de aptitud.
 - [x] 7.2 Incorporar preferencia opcional inicialmente desactivada y selectores en búsqueda/descubrimiento existente/biblioteca/Etiquetas. Verificar desconocidos visibles, cobertura parcial sin HTTP adicional, ocultamiento reversible sin borrar ni modificar pins/personales.
 - [x] 7.3 Incorporar aviso/acceso deliberado a ficha guardada oculta y preservar alcance global/export. Verificar enlace directo sin arte previo al aviso, restore de preferencia válida/inválida y título oculto incluido en backup/revisión.
-- [ ] 7.4 Checkpoint 7: regresiones de filtros/preferencias y TypeScript, smoke de temas/accesibilidad/datos aislados. Revisar diff y obtener checkpoint manual.
+- [x] 7.4 Checkpoint 7: regresiones de filtros/preferencias y TypeScript, smoke de temas/accesibilidad/datos aislados. Revisar diff y obtener checkpoint manual.
 
 ## 8. Regresiones validación manual y revisión externa
 
-- [ ] 8.1 Ejecutar matriz TMDB de credenciales/búsqueda/detalle/watch providers/arte/atribución/save; MangaUpdates Android y gates Web/iOS; Kitsu desarrollo y bloqueo producción/iOS; manuales create/edit/delete/offline. Verificar alcance real sin nuevos proveedores/matching.
-- [ ] 8.2 Ejecutar regresiones de identidad universal, clasificación, ratings personales, tags/notas/status/pins, SQLite y backups1–8 con fixtures aislados. Verificar datos completos antes/después, errores parciales, rollback y documentos ausentes sin pérdida.
+- [x] 8.1 Ejecutar matriz TMDB de credenciales/búsqueda/detalle/watch providers/arte/atribución/save; MangaUpdates Android y gates Web/iOS; Kitsu desarrollo y bloqueo producción/iOS; manuales create/edit/delete/offline. Verificar alcance real sin nuevos proveedores/matching.
+- [x] 8.2 Ejecutar regresiones de identidad universal, clasificación, ratings personales, tags/notas/status/pins, SQLite y backups1–8 con fixtures aislados. Verificar datos completos antes/después, errores parciales, rollback y documentos ausentes sin pérdida.
 - [ ] 8.3 Completar validación manual Web/Android de todos los recorridos nuevos, cinco tabs, temas y layouts; registrar runtime/dispositivo/origen y resultados reales. No sustituir aceptación física por simulación ni cerrar tareas pendientes del change anterior.
-- [ ] 8.4 Ejecutar `npx tsc --noEmit` y `openspec validate add-enriched-media-metadata-and-library-updates --strict`; revisar diff final, paquete/lock intactos y exclusiones (sin binarios/ZIP, nube, episodios vistos o gates ampliados). Documentar comandos/exits y límites.
+- [x] 8.4 Ejecutar `npx tsc --noEmit` y `openspec validate add-enriched-media-metadata-and-library-updates --strict`; revisar diff final, paquete/lock intactos y exclusiones (sin binarios/ZIP, nube, episodios vistos o gates ampliados). Documentar comandos/exits y límites.
 - [ ] 8.5 Preparar entrega de implementación para revisión externa con evidencia, matriz de preservación/recuperación, decisiones ratificadas y pendientes reales; registrar resultado antes de cierre. Checkpoint manual separado; no archive/sync/merge/commit/push automáticos.

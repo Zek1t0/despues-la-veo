@@ -1,0 +1,29 @@
+{
+  "head": "fdedda6c6e99dccb6c3351667fd789406c41e5be",
+  "branch": "feat/anime-catalog-manual-entries",
+  "beforeChange": "1c14377bd95c31a3240bf9846ab2272cf45c1c55",
+  "protectedPaths": [
+    "package.json",
+    "package-lock.json",
+    "yarn.lock",
+    "src/providers/kitsu/availability.ts",
+    "src/providers/mangaupdates/availability.ts",
+    "openspec/changes/add-anime-catalog-and-manual-entries"
+  ],
+  "protectedDiff": "",
+  "historicalTests": [
+    "docs/testing/enriched-media-metadata/section-2-storage.cjs",
+    "docs/testing/expanded-media-domain/section-3-ui-verification.cjs",
+    "docs/testing/expanded-media-domain/section-4-verification.cjs",
+    "docs/testing/mangaupdates-cover-images/section-2-verification.cjs",
+    "docs/testing/tmdb-user-credential/section-2-verification.cjs",
+    "docs/testing/enriched-media-metadata/section-5-checks.json"
+  ],
+  "historicalDiff": "",
+  "runtimeDiff": "",
+  "newBinaryPaths": [],
+  "sqliteVersion": 7,
+  "backupVersion": 8,
+  "staging": "",
+  "checkedAt": "2026-11-17T00:03:42.634Z"
+}

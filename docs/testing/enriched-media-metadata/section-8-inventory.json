@@ -1,0 +1,21 @@
+{
+  "branch": "feat/anime-catalog-manual-entries",
+  "head": "fdedda6c6e99dccb6c3351667fd789406c41e5be",
+  "initialWorktree": "clean",
+  "initialStaging": "empty",
+  "modified": [
+    "openspec/changes/add-enriched-media-metadata-and-library-updates/tasks.md"
+  ],
+  "created": [
+    "docs/testing/enriched-media-metadata/section-8-baseline-probe.cjs",
+    "docs/testing/enriched-media-metadata/section-8-checks.cjs",
+    "docs/testing/enriched-media-metadata/section-8-checks.json",
+    "docs/testing/enriched-media-metadata/section-8-export-final.json",
+    "docs/testing/enriched-media-metadata/section-8-inventory.json",
+    "docs/testing/enriched-media-metadata/section-8-regressions.cjs",
+    "docs/testing/enriched-media-metadata/section-8-results.json",
+    "docs/testing/enriched-media-metadata/section-8-scope.cjs",
+    "docs/testing/enriched-media-metadata/section-8-scope.json",
+    "docs/testing/enriched-media-metadata/section-8-validation.md"
+  ]
+}

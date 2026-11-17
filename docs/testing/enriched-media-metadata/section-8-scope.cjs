@@ -1,0 +1,16 @@
+const fs=require('node:fs'),assert=require('node:assert/strict'),{execFileSync}=require('node:child_process');
+const git=(...args)=>execFileSync('git',args,{encoding:'utf8'}).trim();
+const beforeChange='1c14377bd95c31a3240bf9846ab2272cf45c1c55';
+const protectedPaths=['package.json','package-lock.json','yarn.lock','src/providers/kitsu/availability.ts','src/providers/mangaupdates/availability.ts','openspec/changes/add-anime-catalog-and-manual-entries'];
+const historicalTests=['docs/testing/enriched-media-metadata/section-2-storage.cjs','docs/testing/expanded-media-domain/section-3-ui-verification.cjs','docs/testing/expanded-media-domain/section-4-verification.cjs','docs/testing/mangaupdates-cover-images/section-2-verification.cjs','docs/testing/tmdb-user-credential/section-2-verification.cjs','docs/testing/enriched-media-metadata/section-5-checks.json'];
+const protectedDiff=git('diff','--name-only',beforeChange,'HEAD','--',...protectedPaths);
+const historicalDiff=git('diff','--name-only','6ddd893d1e809ec9c6378b37953d25d63743247b','HEAD','--',...historicalTests);
+const runtimeDiff=git('diff','--name-only','HEAD','--','app','src','package.json','package-lock.json');
+const newBinaryPaths=git('diff','--name-only',beforeChange,'HEAD').split('\n').filter(p=>/\.(?:png|jpe?g|webp|gif|zip|sqlite|db)$/i.test(p));
+assert.equal(protectedDiff,'');assert.equal(historicalDiff,'');assert.equal(runtimeDiff,'');assert.deepEqual(newBinaryPaths,[]);
+assert.match(fs.readFileSync('src/storage/databaseSchema.ts','utf8'),/DATABASE_SCHEMA_VERSION = 7/);
+assert.match(fs.readFileSync('src/core/libraryBackupV8.ts','utf8'),/version: 8/);
+const staged=git('diff','--cached','--name-only');assert.equal(staged,'');
+const report={head:git('rev-parse','HEAD'),branch:git('branch','--show-current'),beforeChange,protectedPaths,protectedDiff,historicalTests,historicalDiff,runtimeDiff,newBinaryPaths,sqliteVersion:7,backupVersion:8,staging:staged,checkedAt:new Date().toISOString()};
+fs.writeFileSync('docs/testing/enriched-media-metadata/section-8-scope.json',JSON.stringify(report,null,2)+'\n');
+console.log('PASS scope: package/lock, provider gates and previous change unchanged; old tests/log unchanged from S6; no S8 runtime diff or new binaries/ZIP/DB; SQLite7/backup8; staging empty.');
