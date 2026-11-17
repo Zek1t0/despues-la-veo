@@ -1,4 +1,98 @@
-## Estado de ejecución actualizado — 2026-11-13
+## Cierre de desarrollo local y obligaciones de producción — 2026-11-17
+
+Revisión administrativa autorizada por el usuario; no cambia la implementación.
+Baseline: rama `feat/anime-catalog-manual-entries`, HEAD
+`302222545dca77f4224fe5bbfca829bb0e2cb2ae`, worktree y staging limpios.
+El change enriquecido ya está archivado y commiteado. Esta revisión no modifica
+ese archive, las specs principales, código, pruebas, dependencias o gates.
+
+### Decisión y trazabilidad de los criterios
+
+Se cierra únicamente la aceptación técnica/funcional de desarrollo local. Se ajustan
+explícitamente 3.5 y 4.4 para separar el cierre de esa entrega del trabajo futuro de
+autorización/distribución. No se presenta como cumplimiento literal de activación
+productiva. Las obligaciones originales M/T/A de D4, reproducidas debajo sin cambios,
+siguen exigibles antes de cualquier habilitación productiva; no se eliminan al cerrar
+el contador de tareas. No se crea automáticamente otro change ni se habilita release.
+
+Criterio original de 3.5, conservado para auditoría:
+
+> Solo si M está satisfecho, ejecutar T Android y T Web independientemente: runtime nativo, navegador/origen/headers reales y preflight aplicable, endpoints/redirects/payload/errores actuales sin arte. Activar metadata exclusivamente en plataformas aceptadas; comprobar rutas cerradas sin fetch y producto omit para arte. Si M/T bloquea, registrar exactamente qué falta y no marcar activación como completada ni habilitar iOS/proxy/fallback provider.
+
+La rama de bloqueo ya estaba prevista, pero 3.5 permanecía abierta como tarea de
+activación. El criterio actualizado permite cerrar **la comprobación condicional**
+una vez documentados resultado bloqueado, faltantes y gates cerrados. No declara
+completada la activación. Comprobación realizada; M pendiente/bloqueado; T de
+producción no realizado por faltar M; activación productiva no autorizada.
+
+Criterio original de 4.4, conservado para auditoría:
+
+> Completar aceptación manual Android/Web y smoke productivo/review aislado con evidencia de runtime/dispositivo/origen y límites; TypeScript y openspec validate --strict. Confirmar regresión final de sección y revisar diff real/checkpoint sin afirmar suites no ejecutadas ni cerrar por M/T pendientes.
+
+El criterio actualizado exige aceptación de la aplicación normal **en desarrollo**
+y la evidencia aislada existente, no pruebas contra producción Kitsu sin autorización.
+M/T no se usan para inferir aprobación ni aceptación funcional. El cierre 24/24 es del
+alcance actualizado y debe leerse junto con los bloqueos de la siguiente tabla.
+
+### Registro de obligaciones antes de distribución
+
+| Comprobación / gate | Estado de esta revisión | Evidencia que falta / condición de habilitación |
+| --- | --- | --- |
+| Comprobación condicional 3.5 | Realizada, resultado bloqueado | Revisión de D4, b3-eligibility.md, development-activation-validation.md y gates reales; no hubo investigación nueva de términos ni prueba de producción |
+| M: metadata y uso | Pendiente/bloqueado | Fuente oficial fechada, cláusulas o autorización suficiente para tracker independiente, search/detail, snapshot seleccionado, retención, caché, backups/export/import, atribución, límites y distribución prevista. Acceso público/HTTP200 o aceptación del usuario no lo sustituyen |
+| T Android productivo | No realizado; bloqueado por precondición M | Solo después de M: runtime/build nativo identificado, host/base reales, search/detail/IDs/payload/errores/redirects y rutas deshabilitadas sin HTTP. La aceptación Expo Go de desarrollo no satisface T productivo |
+| T Web productivo | No realizado; bloqueado por precondición M | Solo después de M: navegador con origen y headers exactos de distribución, CORS/preflight cuando corresponda, endpoints/payload/errores/redirects y rutas cerradas sin HTTP. Chrome local y HTTP de escritorio no lo sustituyen |
+| A: arte para distribución | Sin autorización productiva acreditada | Evidencia suficiente de display/hotlink, caché, redirects finales, retención/exportación de URL, atribución y derechos aplicables. El arte de desarrollo aprobado en S3 no habilita distribución |
+| Activación productiva | No autorizada, gate cerrado | Revisión explícita de M y T por cada plataforma afectada y A si corresponde; decisión de activación y revisión específica posteriores, nunca por el cierre de estas tareas |
+
+Kitsu permanece limitado a __DEV__ Web/Android; producción, iOS y plataformas
+desconocidas continúan cerradas antes del acceso remoto. Sin proxy, fallback provider,
+hosts alternativos ni rutas nuevas. MangaUpdates conserva sus gates anteriores.
+Las referencias inferiores a arte omitido/score ausente corresponden al alcance
+histórico B3, sucedido solo en desarrollo por el change enriquecido ya archivado.
+
+### Correspondencia de evidencia para 4.4
+
+| Criterio B4 | Evidencia reutilizada y límite |
+| --- | --- |
+| Manuales crear/editar/offline, duplicados, navegación y restauración | `docs/testing/anime-catalog-manual-entries/b2-validation.md`, «Cierre B2 confirmado por el usuario»: revisión y aceptación Web/BlueStacks. Suites B2 funcional/UI y B3/B4 mixtas aisladas, repetidas en S8. El usuario confirma en este turno crear/editar manual offline, reabrir y exportar/restaurar en Xiaomi Note 13 |
+| Kitsu vivo local y guardado | development-activation-validation.md: Chrome local, búsqueda cowboy bebop y detalle aceptados; en este turno el usuario confirma búsqueda/apertura/guardado Kitsu en Xiaomi Note 13, Expo Go SDK 54. Es aceptación de desarrollo informada, no un probe HTTP del agente ni T productivo |
+| Android físico y Web finales | `docs/testing/enriched-media-metadata/section-8-validation.md`, «Cierre final S8»: 19/19 Android, SDK54/Xiaomi Note13 y aceptaciones Web consolidadas. El runtime Expo Go y los recorridos concretos anteriores fueron confirmados por el usuario en esta revisión; no se reconstruye ni inventa la lista de los 19 |
+| Identidad, personales, SQLite, backups, errores y recuperación | B1/B2/B4 y `section-8-results.json`: fixtures aislados y SQLite real, remap/reimport, presencia/null/frescura, rollback/reopen, pins/Appearance y coexistencia de fuentes. No son aceptación manual ni pruebas con bases personales |
+| Cards/listas/tags, filtros, temas y navegación | B2/B4 y suites UI S1–S7; aceptación Web S7 y final S8 informadas. Se conserva la diferencia entre árboles simulados y observación manual, sin inventar medidas o pruebas de lector de pantalla |
+| TypeScript, OpenSpec, revisión y checkpoint | `section-8-checks.json` y `section-8-export-final.json`, revisión externa B4/S8 informada y commits posteriores; código/paquetes sin diferencias desde el checkpoint S7. En esta revisión se repiten solo tipado, OpenSpec y una regresión acotada de gates |
+
+La respuesta del usuario a la consulta específica sobre los recorridos Android fue
+«si». Esa confirmación complementa el resultado agregado, no permite atribuir los
+otros casos no enumerados ni declarar validaciones de producción. No queda un smoke
+aislado indispensable sin acreditar para el cierre **de desarrollo** actualizado;
+no se repiten suites completas ni se prueba un proveedor productivo no autorizado.
+
+Las cinco excepciones de la matriz original 53/58 siguen abiertas como limitaciones
+conocidas y no se convierten en pases: fixture temporal S2, tres fixtures UI sin
+preferencias y escáner histórico TMDB. Se conserva la aclaración externa de que el
+probe S6 del escáner falló antes de su aserción; su clasificación histórica se apoya
+en la identidad del escáner/log. La revisión externa fue APROBABLE CON LIMITACIONES.
+
+### Preparación del archive posterior
+
+Validación de esta revisión: `npx tsc --noEmit`, `node
+docs/testing/anime-catalog-manual-entries/development-activation-verification.cjs`,
+`openspec validate add-anime-catalog-and-manual-entries --strict` y `git diff --check`
+terminaron con exit0. OpenSpec para las specs principales: 21/21 válidas, sin sync.
+La prueba acotada usa transporte/inspección de wiring sintéticos: acredita guards,
+no una nueva aceptación manual ni solicitudes productivas. No se repitió la matriz.
+
+Esta revisión no archiva ni sincroniza. Tras revisar el diff administrativo y realizar
+el checkpoint manual, verificar de nuevo limpieza y estado de gates. Consolidar
+selectivamente anime-catalog, manual-content-entries y universal-media-identity,
+preservando el enriquecimiento ya aprobado y sin reintroducir límites B3 históricos
+como prohibiciones globales actuales. La spec principal de backup mantiene v8 y los
+tres requisitos v7 exactos: **no reaplicar el MODIFIED de v7 sobre v8**. Verificar
+versiones y escenarios, duplicados y OpenSpec antes de archivar con `--skip-specs`.
+El archive y su checkpoint/revisión no autorizan producción ni integración automática.
+
+## Estado histórico de ejecución — 2026-11-13
 
 Consolidación posterior: Chrome local aceptado por el usuario el 13/11/2026 para búsqueda
 real `cowboy bebop` en Buscar → Anime y navegación al detalle, después de implementar y

@@ -4,6 +4,27 @@ El dominio ya representa anime y sus formatos, pero no permite crear contenido m
 
 ## What Changes
 
+Decisión de cierre autorizada — 2026-11-17: esta entrega se cierra en el alcance de
+desarrollo local Web/Android, con entradas manuales y catálogo Kitsu de desarrollo.
+Se separa la comprobación condicional de los gates de su resultado: M permanece
+pendiente/bloqueado; T productivo no se ejecutó; la activación productiva no está
+autorizada. Cerrar las tareas de esta entrega no satisface M/T ni concede derechos.
+Los criterios originales y la evidencia faltante se conservan en design.md, sección
+«Cierre de desarrollo local y obligaciones de producción». No se cambian gates,
+plataformas, endpoints o código; iOS, producción, proxy y fallback siguen cerrados.
+
+La aceptación final de desarrollo reutiliza B2 Web/BlueStacks, B4 y la evidencia final
+S8 Web/Android del change enriquecido; incluye la confirmación específica del usuario
+en Xiaomi Note 13, Expo Go SDK 54, sin inventar los 19 casos ni extrapolarlos a release.
+La matriz 53/58 conserva sus cinco excepciones. Arte/score y persistencia enriquecida
+son capacidades de desarrollo ya sucedidas por el change archivado, no nuevas
+autorizaciones de esta revisión. Backup v8 sigue vigente: los deltas v7 de esta
+propuesta son historia consolidada y no deben reaplicarse sobre la spec principal.
+El archive futuro requiere revisión y sincronización selectiva, seguida de
+`archive --skip-specs`; no se ejecutan esas operaciones en esta actualización.
+
+Antecedentes de alcance — 2026-11-13:
+
 Decisión actualizada del usuario, 2026-11-13: habilitar API viva `https://kitsu.io/api/edge`
 solo en desarrollo local Web/Android dentro de Buscar normal, con guardado individual
 y detalle offline, sin MediaReview obligatorio. Esta autorización técnica no acredita

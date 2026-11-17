@@ -1,3 +1,18 @@
+Estado vigente — 2026-11-17: **24/24 tareas del alcance de desarrollo local completas**.
+Se revisan explícitamente los criterios de 3.5/4.4 por autorización del usuario:
+3.5 cierra la comprobación condicional con resultado bloqueado, no la activación.
+M pendiente/bloqueado; T productivo no realizado; producción no autorizada. Kitsu
+continúa solo en __DEV__ Web/Android, sin iOS, proxy, fallback o nuevas rutas.
+4.4 cierra aceptación de desarrollo con evidencia B2/B4/S8 y confirmación específica
+del usuario: Xiaomi Note 13, Expo Go SDK54, Kitsu buscar/abrir/guardar y manual
+crear/editar offline/reabrir/exportar/restaurar. No se inventan los otros casos del
+19/19 ni se declara aprobada la matriz 53/58. Originales, faltantes de M/T/A y matriz
+de evidencia quedan en design.md, «Cierre de desarrollo local y obligaciones de
+producción». Esta revisión queda sin staging para revisión externa y checkpoint
+manual; no se ha archivado, sincronizado ni integrado. Backup principal v8 intacto.
+
+## Registro histórico — estado al 2026-11-13
+
 Estado vigente posterior — 2026-11-13: **22/24 tareas completas**. Desarrollo local vivo
 Web/Android autorizado e implementado en 3.7; release público cerrado por M/T pendientes.
 Búsqueda real cowboy bebop y navegación al detalle en Chrome aceptadas por el usuario.
@@ -45,7 +60,7 @@ registro vigente en el encabezado. No se hereda aceptación Android ni de produc
 - [x] 3.2 Preparar cliente/transporte/validación/identidad/mapping Kitsu con inyección sintética, sin SDK/dependencias y producto cerrado por defecto. Verificar search/detail normalizados, seis subtipos+unknown, IDs grandes/mismatch/inválidos, year nullable/resumen seguro/géneros aprobados, initialTags vacío, voteAverage ausente y posterUrl null.
 - [x] 3.3 Preparar política de requests y errores Kitsu: concurrencia/espaciado/timeout/cache permitida por M, Retry-After y reintentos manuales. Verificar reloj/transporte falsos para 404/429/5xx/offline/timeout/payload inválido, espera sin bucles y cancelación; ningún gate se elude con cache o rutas directas.
 - [x] 3.4 Integrar categoría única Anime, destinos/detalle remoto/procedencia local, save/detección de guardado y errores por fuente explícita usando abstracción existente. Verificar scopes stale de query/source/category/retry/navegación, no confundir Kitsu con MangaUpdates, re-save conservando personales/clasificación, TMDB sin cambios y ausencia de auto-link por mappings o título.
-- [ ] 3.5 Solo si M está satisfecho, ejecutar T Android y T Web independientemente: runtime nativo, navegador/origen/headers reales y preflight aplicable, endpoints/redirects/payload/errores actuales sin arte. Activar metadata exclusivamente en plataformas aceptadas; comprobar rutas cerradas sin fetch y producto omit para arte. Si M/T bloquea, registrar exactamente qué falta y no marcar activación como completada ni habilitar iOS/proxy/fallback provider.
+- [x] 3.5 Cerrar la comprobación condicional de gates para el alcance de desarrollo: si M está satisfecho, exigir T independiente por plataforma antes de habilitar producción; si M/T bloquea, documentar comprobación realizada, M pendiente/bloqueado, T productivo no realizado y activación productiva no autorizada, con evidencias faltantes y condiciones futuras de D4. Verificar rutas de producción/iOS/unknown cerradas sin fetch; no habilitar arte productivo, proxy o fallback. Cierre administrativo con resultado bloqueado; el criterio original y las obligaciones de release permanecen en design.md, sin declararlos satisfechos.
 - [x] 3.6 Ejecutar suites B3/TypeScript y revisar diff real/checkpoint de sección. Presentar estado M/T/A y plataformas realmente activas; si B3 no puede cumplir catálogo activo, obtener decisión explícita sobre alcance diferido antes de cierre, sin dar por satisfecha tarea3.5 por tests sintéticos ni auto-crear otro change.
 - [x] 3.7 Aplicar decisión explícita de activación viva local __DEV__ Web/Android en Buscar normal, separada de release público; fijar API io y conservar cliente B3/identidad/mapping/save/offline, TEST sin red y contratos SQLite6/backup7. Verificar gates release/iOS/unknown, transporte normal con fixtures nuevos, regresiones B3/B4, TypeScript y export Web; registrar conectividad real y límites sin cerrar M/T/Android ni alterar pruebas históricas. Evidencia: development-activation-validation.md.
 - [x] 3.8 Corregir únicamente la inyección de fetch con wrapper dinámico globalThis.fetch; ampliar la regresión para receptor global y reemplazo posterior de fetch con cliente compartido existente. Verificar fallo antes/paso después, suites B3 de contratos/UI/persistencia y TypeScript. Cliente HTTP, gates y políticas intactos; aceptación manual Web pendiente de revisión del diff. Evidencia: sección de corrección de transporte en development-activation-validation.md.
@@ -55,7 +70,7 @@ registro vigente en el encabezado. No se hereda aceptación Android ni de produc
 - [x] 4.1 Ejecutar matriz real SQLite/migración/rollback e imports1–7 de design, incluyendo manual legacy/defensivo/nuevo, referencias múltiples/ausentes, colisiones/remap/reimport, conflictos, frescura/presencia/null, pins y Appearance. Verificar comparaciones de datos completos y ausencia de pérdida/sobrescritura de IDs/personales/timestamps fuera de cambios explícitos.
 - [x] 4.2 Ejecutar recorridos cruzados manual create/edit/delete/export/import, proveedor search/detail/save/local/re-save, cards/lista/grid/tags/filtros/búsqueda y offline. Verificar coexistencia manual/TMDB/MangaUpdates/Kitsu sin equivalencia por título o ID externo y sin custom-image storage, progreso ni rating externo global.
 - [x] 4.3 Ejecutar regresión TMDB (credenciales, search/detail, artwork, watch providers, atribución/save), MangaUpdates Android metadata/omit y gates Web-iOS, ratings/pins/Appearance y review isolation. Verificar disabled Kitsu sin red y errores/stale responses; no activar arte ni ampliar plataformas MangaUpdates.
-- [ ] 4.4 Completar aceptación manual Android/Web y smoke productivo/review aislado con evidencia de runtime/dispositivo/origen y límites; TypeScript y openspec validate --strict. Confirmar regresión final de sección y revisar diff real/checkpoint sin afirmar suites no ejecutadas ni cerrar por M/T pendientes.
+- [x] 4.4 Consolidar aceptación final Web/Android de desarrollo y evidencia de aplicación normal/review aislado existente, con procedencia, runtime/dispositivo y límites: B2 manuales, B4 y S8, Xiaomi Note 13/Expo Go SDK54 y confirmación específica de recorridos manual/Kitsu; sin inventar los 19 casos. Verificar TypeScript, OpenSpec estricto y el diff administrativo; reutilizar revisión externa/checkpoints ya registrados y conservar las cinco excepciones 53/58. No probar producción no autorizada ni inferir M/T de esa aceptación. Revisión externa y checkpoint de esta actualización siguen como pasos manuales separados.
 - [x] 4.5 Preparar entrega para revisión externa integral: diff, matriz de comandos/exits, conservación/rollback, decisiones pendientes, estado M/T/A y exclusiones. Registrar resultado de revisión externa antes de solicitar por separado archive → archive review → checkpoint manual → integración; no ejecutar archive/sync/merge ni Git staging/commit/push como parte de estas tareas.
 
 ## Historial de preparación del checkpoint B4 — 2026-11-13
