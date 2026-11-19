@@ -1,0 +1,16 @@
+## 1. Fundamentos visuales y componentes compartidos
+
+- [ ] 1.1 Registrar un recorrido breve de la UI vigente en Web y Android con datos de prueba. Incorporar escalas de tipografía, espaciado y radios y aplicar patrones comunes de acción, sección y feedback. Comprobar foco, contraste, texto grande y tema sistema, claro y oscuro.
+- [ ] 1.2 Afinar Mosaico compartido y panel de opciones. Verificar título, clasificación, pin, puntuación personal, apertura en una sola acción y arte ausente/bloqueado/fallido. Recorrer las siete paletas sobre estas superficies, con una comprobación representativa de ambos esquemas efectivos y sin repetir toda la matriz por paleta.
+
+## 2. Pantallas y experiencia visual
+
+- [ ] 2.1 Aplicar la cabecera de Biblioteca, estados recuperables, resumen y limpieza de filtros y acciones de fila. Verificar ambas vistas, búsqueda, filtros y orden combinados, persistencia de orden y modo al reabrir, confirmación de borrado y pin contextual. Confirmar las cinco pestañas y un regreso correcto desde detalle.
+- [ ] 2.2 Reordenar ficha local y aplicar presentación compartida a los detalles remotos. Verificar en fixtures o entornos permitidos guardado, edición de estado, puntuación, etiquetas y notas, pin de origen, refresh y procedencia, más ficha manual offline y diferencias de TMDB, MangaUpdates y Kitsu. Comprobar indisponibilidad en las plataformas restringidas sin habilitar gates.
+- [ ] 2.3 Cerrar el hito visual con un recorrido en Web estrecha y ancha y Android físico. Revisar navegación por teclado y Escape, foco de retorno, TalkBack básico, texto grande, temas y placeholders. Pasar por Buscar, Etiquetas, Actualizaciones y Ajustes para detectar regresiones de componentes o navegación compartidos.
+
+## 3. Selector local y validación final
+
+- [ ] 3.1 Implementar y comprobar el motor puro con datos representativos. Cubrir intersección de criterios, muestra diaria reproducible con fecha o semilla inyectable, independencia del orden de entrada, cambio de día, muestreo sin reemplazo, orden explícito por duración y sus empates, límite exacto, duración inválida, desconocida o de otra fuente, lectura, duplicados evitados por ID, motivos y elección uniforme con RNG inyectable sobre el universo elegible.
+- [ ] 3.2 Enlazar la pantalla desde Biblioteca y conectar lectura local, idioma y visibilidad. Verificar offline en Android y Web, cero llamadas a proveedores desde el selector, acceso por ID y regreso con criterios, errores recuperables, conjunto vacío y reacción a cambios de criterios, día local (incluido al recuperar foco), idioma, visibilidad o snapshot sin fugas en opciones, resultados ni Sorprendeme.
+- [ ] 3.3 Cerrar el hito con TypeScript, validación estricta del change y pruebas focalizadas. Con datos de prueba, abrir una biblioteca existente y comprobar identidad y datos personales. Para SQLite y backups, comprobar ausencia de cambios y reutilizar evidencia histórica vigente. Ejecutar un smoke adicional solo si se identifica y documenta un riesgo concreto. Confirmar que solo las acciones explícitas escriben y que no hay cambios en esquemas, código de backups, gates ni dependencias. Registrar evidencia manual y cualquier limitación de plataforma.
