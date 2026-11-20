@@ -1,4 +1,5 @@
 import React, { useEffect, useState, type ReactNode } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import {
   AccessibilityInfo,
   Modal,
@@ -51,6 +52,9 @@ export type ViewOptionsPanelProps = {
   onClose: () => void;
   sections: readonly ViewOptionsSection[];
   title?: string;
+  collapsible?: boolean;
+  initialExpandedSection?: string;
+  onReset?: () => void;
 };
 
 type CompactOptionProps = CompactViewOptionDescriptor & {
@@ -114,12 +118,20 @@ export function ViewOptionsPanel({
   onClose,
   sections,
   title = "Opciones",
+  collapsible = false,
+  initialExpandedSection,
+  onReset,
 }: ViewOptionsPanelProps) {
   const { theme } = useAppTheme();
   const { width, fontScale } = useWindowDimensions();
   const compactWeb = Platform.OS === "web" && width >= 640 * Math.max(1, fontScale);
   const populatedSections = sections.filter((section) => section.options.length > 0);
   const [reduceMotion, setReduceMotion] = useState(true);
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (collapsible) setExpanded(visible ? initialExpandedSection ?? null : null);
+  }, [visible, collapsible, initialExpandedSection]);
 
   useEffect(() => {
     let current = true;
@@ -198,42 +210,66 @@ export function ViewOptionsPanel({
             </Pressable>
           </View>
 
-          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-            {populatedSections.map((section) => (
-              <View key={section.id} style={styles.section}>
-                <Text
-                  accessibilityRole="header"
-                  style={[styles.sectionTitle, { color: theme.global.textSecondary }]}
-                >
-                  {section.title}
-                </Text>
-                <View style={[styles.options, fontScale >= 1.4 && styles.stackedOptions]}>
-                  {section.presentation === "layout"
-                    ? section.options.map((option) => (
-                        <LayoutOption
-                          accessibilityLabel={option.accessibilityLabel}
-                          id={option.id}
-                          indicator={option.indicator}
-                          key={option.id}
-                          onPress={section.onSelect}
-                          selected={option.id === section.selectedId}
-                          title={option.title}
-                        />
-                      ))
-                    : section.options.map((option) => (
-                        <CompactOption
-                          accessibilityLabel={option.accessibilityLabel}
-                          id={option.id}
-                          indicator={option.indicator}
-                          key={option.id}
-                          onPress={section.onSelect}
-                          selected={option.id === section.selectedId}
-                          title={option.title}
-                        />
-                      ))}
+          <ScrollView contentContainerStyle={[styles.content, collapsible && { gap: space.sm }]} keyboardShouldPersistTaps="handled">
+            {populatedSections.map((section) => {
+              const isExpanded = expanded === section.id;
+              const selected = section.options.find(option => option.id === section.selectedId)?.title ?? "No disponible";
+              return (
+                <View key={section.id} style={styles.section}>
+                  {collapsible ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${section.title}: ${selected}`}
+                      accessibilityState={{ expanded: isExpanded }}
+                      focusable
+                      onPress={() => setExpanded(isExpanded ? null : section.id)}
+                      style={({ pressed }) => [
+                        styles.disclosure,
+                        { backgroundColor: theme.global.surfaceSecondary, borderColor: theme.global.borderStrong },
+                        pressed && pressedFeedback,
+                      ]}
+                    >
+                      <Text style={[type.control, { color: theme.global.textPrimary, flex: 1, minWidth: 0 }]}>{section.title}</Text>
+                      <Text style={[type.caption, { color: theme.global.textSecondary, flex: 1, minWidth: 0, textAlign: "right" }]}>{selected}</Text>
+                      <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={18} color={theme.global.textSecondary} />
+                    </Pressable>
+                  ) : (
+                  <Text
+                    accessibilityRole="header"
+                    style={[styles.sectionTitle, { color: theme.global.textSecondary }]}
+                  >
+                    {section.title}
+                  </Text>
+                  )}
+                  {(!collapsible || isExpanded) && <View style={[styles.options, fontScale >= 1.4 && styles.stackedOptions]}>
+                    {section.presentation === "layout"
+                      ? section.options.map((option) => (
+                          <LayoutOption
+                            accessibilityLabel={option.accessibilityLabel}
+                            id={option.id}
+                            indicator={option.indicator}
+                            key={option.id}
+                            onPress={section.onSelect}
+                            selected={option.id === section.selectedId}
+                            title={option.title}
+                          />
+                        ))
+                      : section.options.map((option) => (
+                          <CompactOption
+                            accessibilityLabel={option.accessibilityLabel}
+                            id={option.id}
+                            indicator={option.indicator}
+                            key={option.id}
+                            onPress={section.onSelect}
+                            selected={option.id === section.selectedId}
+                            title={option.title}
+                          />
+                        ))}
+                  </View>}
                 </View>
-              </View>
-            ))}
+              );
+            })}
+            {onReset && <CompactOption id="reset" title="Restablecer filtros" selected={false} onPress={onReset} />}
           </ScrollView>
         </View>
       </View>
@@ -242,6 +278,16 @@ export function ViewOptionsPanel({
 }
 
 const styles = StyleSheet.create({
+  disclosure: {
+    minHeight: controlTarget,
+    borderWidth: 1,
+    borderRadius: radius.control,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.sm,
+  },
   backdrop: {
     flex: 1,
   },

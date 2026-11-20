@@ -542,6 +542,19 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
     ?.options.find(option => option.id === sort)?.title;
 
   const addManual = () => router.push("/manual-entry");
+  const pickerAction = (iconOnly: boolean) => (
+    <Pressable accessibilityRole="button" accessibilityLabel="¿Qué veo hoy?" focusable
+              onPress={() => router.push("/library-picker")}
+              style={({ pressed }) => [{
+                minHeight: controlTarget, minWidth: controlTarget, justifyContent: "center", paddingHorizontal: space.sm, borderRadius: radius.control,
+                flexDirection: "row", alignItems: "center", alignSelf: "center", gap: space.xs,
+                backgroundColor: theme.global.surfaceSecondary,
+              }, pressed && pressedFeedback]}>
+              <Ionicons name="shuffle-outline" size={18} color={theme.global.accent} />
+              {!iconOnly && <Text style={[type.control, { color: theme.global.textPrimary }]}>¿Qué veo hoy?</Text>}
+            </Pressable>
+  );
+
   const manualAction = (iconOnly: boolean) => (
     <Pressable
       accessibilityRole="button"
@@ -650,6 +663,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                   </Pressable>
                 ) : null}
                 {renderMobileOptionsButton()}
+                {!isSearchActive && pickerAction(true)}
                 {!isSearchActive && manualAction(true)}
               </View>
             ),
@@ -718,16 +732,17 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                 name="options-outline"
                 size={20}
               />
-              <Text
+              {(windowWidth >= 420 && fontScale <= 1.3) && <Text
                 style={{
                   color: preferencesReady ? theme.global.textPrimary : theme.semantic.disabledText,
                   fontWeight: "800",
                 }}
               >
                 Opciones
-              </Text>
+              </Text>}
             </Pressable>
-            {!bindings && manualAction(windowWidth < 640)}
+            {!bindings && pickerAction(windowWidth < 850 || fontScale > 1.2)}
+            {!bindings && manualAction(windowWidth < 640 || fontScale > 1.2)}
           </View>
 
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -773,6 +788,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
               </Text>
             )}
             {preferencesReady && <Text style={[type.caption, { color: theme.global.textSecondary }]}>Orden: {sortLabel}</Text>}
+
           </View>
           {activeFilters.length > 0 && (
             <Text style={[type.caption, { color: theme.global.textSecondary }]}>

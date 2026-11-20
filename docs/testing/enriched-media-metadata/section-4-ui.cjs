@@ -31,13 +31,18 @@ function text(value) { if(Array.isArray(value))return value.map(text).join(" ");
 const item = (medium,family,format,refs=[]) => ({ id:"local",medium,contentFamily:family,primaryFormat:format,title:"Synthetic title",year:2020,posterUrl:null,
   overview:"Local persisted summary",genres:["Drama"],voteAverage:null,personalRating:80,status:"watching",tags:["Review"],notes:"Personal notes",createdAt:1,updatedAt:2,providerReferences:refs });
 const originalLoad=Module._load;
+const platform={OS:"web"};
+let viewport={width:800,height:800,fontScale:1};
+let queryImageCache=async()=>({});
 Module._load=function(request,parent,isMain){
   if(request === "react")return react;
-  if(request === "react-native")return { ...Object.fromEntries(["FlatList","ActivityIndicator","Image","Pressable","ScrollView","Text","TextInput","View"].map(x=>[x,x])),
-    Platform:{OS:"web"},Alert:{alert(){}},useWindowDimensions:()=>({width:800,height:800}),StyleSheet:{create:x=>x,absoluteFillObject:{},hairlineWidth:1} };
-  if(request === "expo-router")return {Stack:{Screen:"Stack.Screen"},useLocalSearchParams:()=>({id:active.item.id}),useRouter:()=>({push:r=>active.navigation.push(r),back(){}})};
+  if(request === "react-native")return { ...Object.fromEntries(["FlatList","ActivityIndicator","Modal","Pressable","ScrollView","Text","TextInput","View"].map(x=>[x,x])),
+    Platform:platform,Image:{queryCache:urls=>queryImageCache(urls)},PixelRatio:{get:()=>1},
+    AccessibilityInfo:{addEventListener:()=>({remove(){}}),isReduceMotionEnabled:async()=>true},
+    Alert:{alert(){}},AppState:{addEventListener:()=>({remove(){}})},useWindowDimensions:()=>viewport,StyleSheet:{create:x=>x,absoluteFillObject:{},hairlineWidth:1} };
+  if(request === "expo-router")return {Stack:{Screen:"Stack.Screen"},useFocusEffect:callback=>react.useEffect(callback,[callback]),useLocalSearchParams:()=>({id:active.item.id}),useRouter:()=>({push:r=>active.navigation.push(r),back(){}})};
   if(request === "@react-navigation/native")return {useFocusEffect:callback=>react.useEffect(callback,[callback])};
-  if(request === "react-native-safe-area-context")return {useSafeAreaInsets:()=>({bottom:0})};
+  if(request === "react-native-safe-area-context")return {useSafeAreaInsets:()=>({bottom:0,left:0,right:0})};
   if(request === "@expo/vector-icons")return {Ionicons:"Ionicons"};
   if(request.endsWith("AppThemeProvider"))return {useAppTheme:()=>({theme})};
   if(request.endsWith("titleDetailPinSnapshot"))return {getTitleDetailPinSnapshot:async()=>{active.reads++;return {item:active.item,context:null,pinnedAt:null};}};
@@ -53,8 +58,9 @@ const wrappedLoad=Module._load;
 let preference={value:{version:1,languages:['es','en','ja-Latn'],autoRefresh:{enabled:true,intervalDays:7},hideSensitive:false},updatedAt:1};
 const preferenceListeners=new Set(),languageWrites=[];
 let detailOwner;
+let readPickerSnapshot=async()=>{throw Error('Use injected isolated library snapshot');};
 Module._load=function(request,parent,main){
- if(request.endsWith('libraryScreenSnapshot'))return {getLibraryScreenSnapshot:async()=>{throw Error('Use injected isolated library snapshot');}};
+ if(request.endsWith('libraryScreenSnapshot'))return {getLibraryScreenSnapshot:()=>readPickerSnapshot()};
  if(request.endsWith('viewPreferencesRepo'))return {getViewPreference:async()=>{throw Error('Use injected preferences');},setViewPreference:async()=>{}};
  if(request.endsWith('mediaPreferencesRepo'))return {
   getMediaPreferences:async()=>preference,
@@ -68,7 +74,7 @@ Module._load=function(request,parent,main){
  }};
  return wrappedLoad.call(this,request,parent,main);
 };
-const {projectMediaMetadata}=require('../../../src/core/mediaMetadataState.ts');
+const {legacyMetadataSnapshot,projectMediaMetadata}=require('../../../src/core/mediaMetadataState.ts');
 const {publishLibraryInvalidation}=require('../../../src/storage/libraryInvalidation.ts');
 const Screen=require('../../../app/title/[id].tsx').default;
 const {useMediaLanguages}=require('../../../src/components/browsing/useMediaLanguages.ts');
@@ -195,5 +201,177 @@ const stopHost=h=>h.slots.forEach(slot=>slot?.cleanup?.());
  }
  await nodes(row).find(n=>n.props.accessibilityLabel==='Marcar English Kitsu como terminado').props.onPress();await library.flush();
  assert.equal(written.title,'Kitsu Canon','personal status write never persists translated presentation title');assert.equal(written.resolvedTitle,undefined);assert.equal(written.status,'done');stopHost(library);
- console.log('PASS UI hook-host: detail source invalidation, language/draft preservation, settings and library filters, preference writes, grid navigation and personal status write. Mock UI/storage binding, no visual acceptance.');
+ const Picker=require('../../../app/library-picker.tsx').default;
+ const manual={...item('comic','manga',null),id:'manual',title:'Guardado manual',manualIdentity:'manual-id',status:'planned'};
+ const sensitive={...raw,id:'sensitive',status:'planned',tags:['Etiqueta privada'],metadataState:{...state,
+  baseline:{...state.baseline,snapshot:legacyMetadataSnapshot(state.baseline.snapshot)},
+  documents:state.documents.map(document=>document.metadata.provenance.reference===k
+   ? {...document,metadata:{...document.metadata,fields:{...document.metadata.fields,sensitive:true}}} : document)}};
+ let pending=[];
+ readPickerSnapshot=()=>new Promise(resolve=>pending.push(resolve));
+ const picker=host(Picker,manual);
+ const originalFetch=global.fetch;
+ let requests=0;
+ global.fetch=()=>{requests++;throw Error('Picker must not use the network');};
+ try {
+  await picker.flush();
+  const named=name=>nodes(picker.tree).filter(node=>node.type?.name===name);
+  const action=label=>named('PickerAction').find(node=>node.props.label===label);
+  const cards=()=>named('CandidateCard');
+  assert.equal(cards().length,0);
+  const longTitle={...manual,id:'long-title',title:'Un título manual muy largo que debe seguir legible al ampliar el texto'};
+  pending.shift()({items:[manual,sensitive,longTitle],pins:[]});
+  await picker.flush();
+  assert.deepEqual(cards().map(node=>node.props.featured),[true,false,false]);
+  assert.equal(cards()[0].props.wide,true);
+  assert.equal((text(picker.tree).match(/¿Qué veo hoy\?/g)??[]).length,1);
+  assert.match(text(picker.tree),/Tu propuesta destacada.*1\s+de\s+3.*Otras propuestas/s);
+  assert.ok(nodes(picker.tree).indexOf(action('Sorpréndeme'))>nodes(picker.tree).indexOf(cards()[2]));
+  named('PickerAction').find(node=>node.props.accessibilityLabel?.startsWith('Estado:')).props.onPress();
+  await picker.flush();
+  assert.equal(named('ViewOptionsPanel')[0].props.initialExpandedSection,'status');
+  named('ViewOptionsPanel')[0].props.onClose();
+  await picker.flush();
+  const proposalIds=cards().map(node=>node.props.candidate.item.id);
+  cards()[1].props.onPress();
+  await picker.flush();
+  assert.deepEqual(cards().map(node=>node.props.candidate.item.id),[proposalIds[1],proposalIds[0],proposalIds[2]]);
+  assert.match(text(picker.tree),/2\s+de\s+3/);
+  viewport={...viewport,fontScale:2};picker.render();
+  assert.ok(cards().every(node=>!node.props.wide));
+  viewport={...viewport,width:390};picker.render();
+  assert.equal(cards()[0].props.stacked,true);
+  viewport={...viewport,fontScale:1};picker.render();
+  assert.equal(cards()[0].props.stacked,false);
+  viewport={...viewport,width:800};picker.render();
+  action('Sorpréndeme').props.onPress();
+  await picker.flush();
+  assert.equal(cards().length,1);
+  assert.equal(cards()[0].props.featured,true,'surprise uses the featured daily card');
+  assert.doesNotMatch(text(picker.tree),/Otras propuestas/);
+  action('Repetir sorpresa').props.onPress();
+  await picker.flush();
+  assert.equal(cards().length,1);
+  action('Volver a las propuestas').props.onPress();
+  await picker.flush();
+  const manualCard=cards().find(node=>node.props.candidate.item.id==='manual');
+  if(!manualCard.props.featured){manualCard.props.onPress();await picker.flush();}
+  active=picker;
+  cards()[0].props.onPress();
+  assert.deepEqual(picker.navigation.at(-1),{pathname:'/title/[id]',params:{id:'manual',pinContext:'library'}});
+  preference={...preference,updatedAt:100,value:{...preference.value,hideSensitive:true}};
+  for(const listener of preferenceListeners)listener(preference);
+  await picker.flush();
+  assert.deepEqual(cards().map(node=>node.props.candidate.item.id).sort(),['long-title','manual']);
+  const panel=named('ViewOptionsPanel')[0];
+  assert.ok(!panel.props.sections.flatMap(group=>group.options).some(option=>option.id==='Etiqueta privada'));
+  panel.props.sections.find(group=>group.id==='status').onSelect('done');
+  await picker.flush();
+  assert.ok(!action('Sorpréndeme'));
+  assert.match(text(picker.tree),/Ningún título cumple/);
+  action('Limpiar filtros').props.onPress();
+  await picker.flush();
+  nodes(picker.tree).find(node=>node.type==='TextInput').props.onChangeText('0');
+  await picker.flush();
+  assert.equal(cards().length,0);
+  assert.match(text(picker.tree),/Ingresá minutos enteros positivos/);
+  nodes(picker.tree).find(node=>node.type==='TextInput').props.onChangeText('30');
+  await picker.flush();
+  assert.equal(cards().length,0);
+  action('Quitar límite de tiempo').props.onPress();
+  await picker.flush();
+  assert.equal(cards().length,2);
+  publishLibraryInvalidation(['manual']);
+  publishLibraryInvalidation(['manual']);
+  await picker.flush();
+  assert.equal(cards().length,0);
+  const [old,current]=pending.splice(0);
+  current({items:[],pins:[]});
+  old({items:[manual],pins:[]});
+  await picker.flush();
+  assert.equal(cards().length,0);
+  assert.match(text(picker.tree),/No hay títulos visibles/);
+  readPickerSnapshot=async()=>{throw Error('Read failed');};
+  publishLibraryInvalidation(['manual']);
+  await picker.flush();
+  assert.match(text(picker.tree),/No se pudo leer la Biblioteca/);
+  const withArt={...manual,manualIdentity:undefined,medium:'audiovisual',contentFamily:null,primaryFormat:'movie',
+   providerReferences:[t],posterUrl:'https://image.tmdb.org/t/p/w342/cover.jpg'};
+  readPickerSnapshot=async()=>({items:[withArt],pins:[]});
+  action('Reintentar Biblioteca').props.onPress();
+  await picker.flush();
+  assert.equal(cards().length,1);
+  const candidateNode=cards()[0];
+  const candidate=host(()=>candidateNode.type(candidateNode.props),withArt);
+  await candidate.flush();
+  assert.equal(nodes(candidate.tree).find(node=>node.type?.name==='MediaPoster').props.cacheOnly,true);
+  action('Cargar portadas con conexión').props.onPress();
+  await picker.flush();
+  assert.equal(cards()[0].props.onlineArt,true);
+  assert.equal(requests,0);
+ } finally {
+  stopHost(picker);
+  global.fetch=originalFetch;
+ }
+ const {ViewOptionsPanel}=require('../../../src/components/browsing/ViewOptionsPanel.tsx');
+ let selected='', resets=0;
+ const groups=[
+  {id:'genre',title:'Género',presentation:'compact',selectedId:'',
+   options:[{id:'',title:'Cualquiera'},...Array.from({length:25},(_,i)=>({id:String(i),title:'Género '+i}))],onSelect:id=>{selected=id;}},
+  {id:'status',title:'Estado',presentation:'compact',selectedId:'planned',
+   options:[{id:'planned',title:'Planeado'}],onSelect(){}},
+ ];
+ const filters=host(()=>ViewOptionsPanel({visible:true,collapsible:true,sections:groups,onClose(){},onReset(){resets++;}}),manual);
+ await filters.flush();
+ const panelNodes=()=>nodes(filters.tree);
+ const toggle=label=>panelNodes().find(n=>n.props.accessibilityLabel===label);
+ const options=()=>panelNodes().filter(n=>n.type?.name==='CompactOption');
+ assert.equal(options().length,1,'only reset is rendered while all groups are closed');
+ toggle('Género: Cualquiera').props.onPress();
+ await filters.flush();
+ assert.equal(options().length,27);
+ const last=options().find(n=>n.props.title==='Género 24');
+ last.props.onPress(last.props.id);
+ assert.equal(selected,'24');
+ toggle('Estado: Planeado').props.onPress();
+ await filters.flush();
+ assert.equal(options().length,2,'opening the next group collapses the long list');
+ options().find(n=>n.props.id==='reset').props.onPress();
+ assert.equal(resets,1);
+ stopHost(filters);
+ const statusFirst=host(()=>ViewOptionsPanel({visible:true,collapsible:true,initialExpandedSection:'status',
+  sections:groups,onClose(){}}),manual);
+ await statusFirst.flush();
+ assert.equal(nodes(statusFirst.tree).find(n=>n.props.accessibilityLabel==='Estado: Planeado').props.accessibilityState.expanded,true);
+ assert.equal(nodes(statusFirst.tree).find(n=>n.props.accessibilityLabel==='Género: Cualquiera').props.accessibilityState.expanded,false);
+ stopHost(statusFirst);
+
+ const {MediaPoster}=require('../../../src/components/browsing/MediaPoster.tsx');
+ const small='https://image.tmdb.org/t/p/w92/cover.jpg';
+ const large='https://image.tmdb.org/t/p/w342/cover.jpg';
+ const blocked='https://example.invalid/cover.jpg';
+ const art={identity:'poster',imageProvider:'tmdb',context:'list',cacheOnly:true,
+  metadata:{provenance:{reference:t},fields:{posterImages:[
+   {url:small,width:92,variant:'small'},{url:large,width:342,variant:'large'},{url:blocked,width:100,variant:'blocked'},
+  ]}}, style:{width:64,height:96}};
+ const cacheCalls=[];
+ queryImageCache=async urls=>{cacheCalls.push(urls);return {[large]:'disk'};};
+ platform.OS='android';
+ const poster=host(()=>MediaPoster(art),manual);
+ await poster.flush();
+ poster.tree.props.onLayout({nativeEvent:{layout:{width:64}}});
+ await poster.flush();
+ const detailPoster=nodes(poster.tree).find(n=>n.type?.name==='DetailPoster');
+ assert.deepEqual(cacheCalls,[[small,large]]);
+ assert.equal(detailPoster.props.posterUrl,large,'reuse another admitted variant already cached by Biblioteca');
+ assert.equal(detailPoster.props.cacheOnly,true);
+ const androidPoster=host(()=>detailPoster.type(detailPoster.props),manual);
+ await androidPoster.flush();
+ assert.deepEqual(androidPoster.tree.props.source,{uri:large,cache:'only-if-cached'});
+ platform.OS='web';
+ const webPoster=host(()=>detailPoster.type(detailPoster.props),manual);
+ await webPoster.flush();
+ assert.equal(webPoster.tree.type.name,'PosterPlaceholder');
+ stopHost(poster);
+ console.log('PASS UI hook-host: Biblioteca, ficha y selector local; filtros, sorpresa, navegación y descarte de lecturas obsoletas. Sin aceptación visual.');
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>{Module._load=originalLoad;});

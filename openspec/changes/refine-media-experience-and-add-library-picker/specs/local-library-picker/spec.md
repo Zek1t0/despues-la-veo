@@ -23,6 +23,11 @@ Ayudar a elegir qué consumir hoy entre los títulos guardados, con criterios co
 - **WHEN** cambia el día local, un criterio, la visibilidad, el idioma o el snapshot
 - **THEN** se recalculan las propuestas con las condiciones vigentes y se retiran los resultados anteriores mientras falten datos confirmados
 
+#### Scenario: Propuesta destacada y alternativas
+- **WHEN** hay propuestas del día
+- **THEN** la primera aparece destacada y las restantes se pueden seleccionar para destacarlas sin cambiar el conjunto calculado
+- **AND** la sorpresa usa la misma presentación destacada y permite volver a las propuestas del día
+
 #### Scenario: orden explícito por duración
 - **WHEN** se elige «Más cortos primero»
 - **THEN** devuelve hasta tres elegibles por duración ascendente, con desconocidos al final y desempate por título e identidad
@@ -31,6 +36,11 @@ Ayudar a elegir qué consumir hoy entre los títulos guardados, con criterios co
 - **WHEN** hay candidatos y el usuario elige Sorprendeme
 - **THEN** obtiene uno con probabilidad uniforme dentro del conjunto elegible completo con su explicación
 - **AND** la elección aleatoria puede reproducirse en pruebas con la misma entrada aleatoria
+
+#### Scenario: Portadas en Web
+- **WHEN** se muestran propuestas o una sorpresa en Web
+- **THEN** la selección y la navegación local están disponibles sin cargar imágenes remotas
+- **AND** si hay portadas admitidas, una acción explícita puede cargarlas con conexión usando las mismas restricciones de Biblioteca, sin consultar metadata remota
 
 ### Requirement: Duración honesta y recuperación
 
