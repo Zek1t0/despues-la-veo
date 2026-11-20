@@ -1,3 +1,4 @@
+import { OrganizationButton } from "../../src/components/organization/OrganizationUI";
 import { radius, space, type } from "../../src/theme/presentation";
 import { savedContentVisible } from "../../src/core/sensitiveContent";
 import { activeMetadataDocument } from "../../src/core/mediaMetadataState";
@@ -904,6 +905,8 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
             </Text>
           ) : null}
         </Card>
+
+        {!bindings && <OrganizationButton label="Añadir a colecciones" onPress={() => router.push({ pathname: "/organize/collections/title", params: { itemId: item.id } })} />}
 
         {/* Etiquetas */}
         <Card>

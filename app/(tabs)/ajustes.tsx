@@ -18,7 +18,7 @@ import type { BackupValidationError } from "../../src/core/libraryBackupV1";
 
 import { type BackupAppearanceImportOutcome } from "../../src/core/libraryBackupV4";
 
-import { createLibraryBackupV8 } from "../../src/core/libraryBackupV8";
+import { createLibraryBackupV9 } from "../../src/core/libraryBackupV9";
 
 import { getLibraryBackupExportData } from "../../src/storage/libraryBackupExport";
 
@@ -298,11 +298,11 @@ export default function SettingsScreen() {
 
 
 
-      const { items, pins, appearanceAvailability, preferences, activity } =
+      const { items, pins, appearanceAvailability, preferences, activity, collections, collectionMemberships } =
 
         await getLibraryBackupExportData(backupAvailability);
 
-      const payload = createLibraryBackupV8(items, pins, appearanceAvailability, undefined, { preferences, activity });
+      const payload = createLibraryBackupV9(items, pins, appearanceAvailability, undefined, { preferences, activity, collections, collectionMemberships });
 
 
 
@@ -334,7 +334,7 @@ export default function SettingsScreen() {
 
         setLastMsg(
 
-          `Export v8 listo: ${items.length} títulos y ${pins.length} pins.` +
+          `Export v9 listo: ${items.length} títulos, ${pins.length} pins y ${collections.length} colecciones.` +
 
           (payload.appearance ? " Apariencia incluida." : " Apariencia omitida por no estar confirmada.")
 
@@ -378,7 +378,7 @@ export default function SettingsScreen() {
 
       setLastMsg(
 
-        `Export v8 listo: ${items.length} títulos y ${pins.length} pins.` +
+        `Export v9 listo: ${items.length} títulos, ${pins.length} pins y ${collections.length} colecciones.` +
 
         (payload.appearance ? " Apariencia incluida." : " Apariencia omitida por no estar confirmada.")
 
@@ -442,7 +442,7 @@ export default function SettingsScreen() {
 
         : ["Este backup v1 no contiene ni modifica pins por ausencia."]),
 
-      ...(payload.version === 4 || payload.version === 5 || payload.version === 6 || payload.version === 7 || payload.version === 8
+      ...(payload.version === 4 || payload.version === 5 || payload.version === 6 || payload.version === 7 || (payload.version === 8 || payload.version === 9)
 
         ? [payload.appearance.status === "valid"
 
@@ -458,7 +458,8 @@ export default function SettingsScreen() {
 
       "",
 
-      "La importación hace merge: no borra títulos locales ausentes del backup.",
+      "La importación hace merge: no borra datos locales ausentes. Puede recuperar colecciones o membresías eliminadas.",
+        ...(payload.version === 9 ? [`Colecciones válidas: ${payload.collections.length}. Membresías: ${payload.collectionMemberships.length}.`] : []),
 
       "Sólo actualiza coincidencias del mismo medio cuando el backup es más reciente; conserva los cambios locales iguales o más recientes.",
 
@@ -500,7 +501,7 @@ export default function SettingsScreen() {
 
     let deferredHandle: DeferredAppearanceHandle | null = null;
 
-    let appearanceOutcome: BackupAppearanceImportOutcome = payload.version === 4 || payload.version === 5 || payload.version === 6 || payload.version === 7 || payload.version === 8
+    let appearanceOutcome: BackupAppearanceImportOutcome = payload.version === 4 || payload.version === 5 || payload.version === 6 || payload.version === 7 || (payload.version === 8 || payload.version === 9)
 
       ? payload.appearance.status === "incompatible"
 
@@ -510,7 +511,7 @@ export default function SettingsScreen() {
 
       : { status: "absent" };
 
-    if ((payload.version === 4 || payload.version === 5 || payload.version === 6 || payload.version === 7 || payload.version === 8) && payload.appearance.status === "valid") {
+    if ((payload.version === 4 || payload.version === 5 || payload.version === 6 || payload.version === 7 || (payload.version === 8 || payload.version === 9)) && payload.appearance.status === "valid") {
 
       deferredHandle = reserveDeferred(payload.appearance.preference);
 
@@ -562,7 +563,7 @@ export default function SettingsScreen() {
 
         conflicts: result.conflicts,
 
-        invalid: [...payload.invalid.map(invalidProblemDetail), ...(payload.version === 8 ? [
+        invalid: [...payload.invalid.map(invalidProblemDetail), ...((payload.version === 8 || payload.version === 9) ? [
           ...payload.preferenceIssues.map(reason => ({ reference: "Preferencias", reason })),
           ...payload.invalidActivity.map(reason => ({ reference: "Actividad", reason })),
           ...(result.activityIssues ?? []).map(reason => ({ reference: "Actividad", reason })),
@@ -580,7 +581,8 @@ export default function SettingsScreen() {
 
       };
 
-      const persistedCount = finalResult.inserted + finalResult.updated + finalResult.pinsInserted;
+      const organizationCounts = result.organization ? [result.organization.collections, result.organization.memberships] : [];
+      const persistedCount = finalResult.inserted + finalResult.updated + finalResult.pinsInserted + organizationCounts.reduce((n, value) => n + value.inserted + value.updated, 0);
 
       const nonAppliedCount =
 
@@ -594,7 +596,7 @@ export default function SettingsScreen() {
 
         finalResult.pinsInvalid.length +
 
-        finalResult.pinsFailed.length;
+        finalResult.pinsFailed.length + organizationCounts.reduce((n, value) => n + value.issues.length, 0);
 
       let outcome: string;
 
@@ -610,13 +612,13 @@ export default function SettingsScreen() {
 
       } else if (
 
-        finalResult.skipped > 0 &&
+        (finalResult.skipped > 0 || organizationCounts.some(value => value.preserved > 0)) &&
 
         finalResult.conflicts.length === 0 &&
 
         finalResult.invalid.length === 0 &&
 
-        finalResult.failed.length === 0
+        finalResult.failed.length === 0 && organizationCounts.every(value => !value.issues.length)
 
       ) {
 
@@ -691,6 +693,11 @@ export default function SettingsScreen() {
         "",
 
         appearanceOutcomeCopy(appearanceOutcome),
+          ...(result.organization ? [
+            `Colecciones: ${result.organization.collections.inserted} nuevas, ${result.organization.collections.updated} actualizadas, ${result.organization.collections.preserved} conservadas.`,
+            `Membresías: ${result.organization.memberships.inserted} nuevas, ${result.organization.memberships.updated} actualizadas, ${result.organization.memberships.preserved} conservadas.`,
+            ...result.organization.collections.issues, ...result.organization.memberships.issues,
+          ] : []),
 
         ...(detailSections.length > 0 ? ["", ...detailSections] : []),
 
@@ -711,6 +718,11 @@ export default function SettingsScreen() {
           "",
 
           appearanceOutcomeCopy(appearanceOutcome),
+          ...(result.organization ? [
+            `Colecciones: ${result.organization.collections.inserted} nuevas, ${result.organization.collections.updated} actualizadas, ${result.organization.collections.preserved} conservadas.`,
+            `Membresías: ${result.organization.memberships.inserted} nuevas, ${result.organization.memberships.updated} actualizadas, ${result.organization.memberships.preserved} conservadas.`,
+            ...result.organization.collections.issues, ...result.organization.memberships.issues,
+          ] : []),
 
           "",
 
@@ -956,7 +968,7 @@ export default function SettingsScreen() {
 
       <Text style={{ color: theme.global.textMuted, marginTop: 6 }}>
 
-        Export genera un .json v8 versionado. Import acepta v1–v8 y hace MERGE: no borra títulos locales ausentes del
+        Export genera un .json v9 versionado. Import acepta v1–v9 y hace MERGE: no borra títulos locales ausentes del
 
         backup y restaura relaciones mediante la identidad interna del archivo.
 

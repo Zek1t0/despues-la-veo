@@ -1,3 +1,5 @@
+import { listCollectionsWithDb, listMembershipsWithDb } from "./collectionsRepo";
+import type { PersonalCollection, CollectionMembership } from "../core/personalCollection";
 import { readMediaPreferencesWithDb } from "./mediaPreferencesRepo";
 import { hasMetadataSchemaWithDb } from "./mediaMetadataRepo";
 import type { PortableMediaPreferences } from "../core/mediaPreferences";
@@ -16,6 +18,8 @@ import {
 export type LibraryBackupExportData = {
   items: Array<SavedTitleWithProviderReferences & { legacyIdentity?: BackupLegacyIdentityV7 }>;
   pins: BackupPinV7[];
+  collections: PersonalCollection[];
+  collectionMemberships: CollectionMembership[];
   preferences?: PortableMediaPreferences;
   activity?: PortableActivityEvent[];
   appearanceAvailability: AppearanceBackupAvailability;
@@ -41,15 +45,19 @@ export async function getLibraryBackupExportDataWithDb(
     const legacy = legacyIdentities[0];
     return legacy ? { ...item, legacyIdentity: { format: "library-backup-v1-v4" as const, provider: "manual" as const, externalId: legacy.legacy_external_id } } : item;
   }));
+  // Legacy injected databases can still export their historical payloads. Public callers initialize v8 first.
+  const hasOrganization = await db.getFirstAsync("SELECT name FROM sqlite_master WHERE type='table' AND name='personal_collections';");
+  const collections = hasOrganization ? await listCollectionsWithDb(db) : [];
+  const collectionMemberships = hasOrganization ? await listMembershipsWithDb(db) : [];
   const pins = await listAllPinsForBackupV5WithDb(db);
   if (await hasMetadataSchemaWithDb(db)) {
     const activityRows = await db.getAllAsync<Record<string, unknown>>(
       "SELECT * FROM library_activity_events WHERE occurred_at>=? ORDER BY occurred_at DESC,id DESC LIMIT 2000;", Date.now() - 90 * 86400000);
     const activity = activityRows.map(row => parsePortableActivity({ id: row.id, itemId: row.saved_title_id, occurredAt: row.occurred_at,
       kind: row.kind, origin: row.origin, fields: JSON.parse(String(row.fields_json)), operationKey: row.operation_key }));
-    return { items, pins, appearanceAvailability, preferences: await readMediaPreferencesWithDb(db), activity };
+    return { items, pins, collections, collectionMemberships, appearanceAvailability, preferences: await readMediaPreferencesWithDb(db), activity };
   }
-  return { items, pins, appearanceAvailability };
+  return { items, pins, collections, collectionMemberships, appearanceAvailability };
 }
 
 export async function getLibraryBackupExportData(

@@ -1,3 +1,4 @@
+import { publishOrganization } from "./organizationInvalidation";
 import { recordActivityWithDb } from "./libraryActivityRepo";
 import { metadataSemanticKey } from "../core/metadataSemanticKey";
 import { assertMetadataReference } from "../core/metadataValidation";
@@ -327,6 +328,7 @@ export async function mergeLibraryBackup(
     if (!result) throw new Error("No se pudo completar la importación del backup.");
     const committed = result as LibraryBackupMergeResult;
     publishLibraryInvalidation(committed.changedIds ?? []);
+    if (committed.organization) publishOrganization();
     if (committed.preferencesChanged) publishMediaPreferences(committed.preferencesChanged);
     return committed;
   });
@@ -334,9 +336,11 @@ export async function mergeLibraryBackup(
 
 export async function deleteSavedTitle(id: string): Promise<void> {
   const db = await initDb();
-  return runSerializedStorageMutation(() =>
-    db.withTransactionAsync(() => deleteSavedTitleAndPinsWithDb(db, id))
-  );
+  return runSerializedStorageMutation(async () => {
+    await db.withTransactionAsync(() => deleteSavedTitleAndPinsWithDb(db, id));
+    publishLibraryInvalidation([id]);
+    publishOrganization();
+  });
 }
 
 export async function getSavedTitleById(id: string): Promise<SavedTitleWithProviderReferences | null> {

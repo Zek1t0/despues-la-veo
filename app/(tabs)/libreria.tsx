@@ -573,6 +573,18 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
     </Pressable>
   );
 
+  const [organizeFocused,setOrganizeFocused] = useState(false);
+  const organizeAction = (iconOnly: boolean) => (
+    <Pressable accessibilityRole="button" accessibilityLabel="Organizar" focusable onFocus={() => setOrganizeFocused(true)} onBlur={() => setOrganizeFocused(false)} onPress={() => router.push("/organize")}
+      style={({ pressed }) => [{ minHeight: controlTarget, minWidth: controlTarget, maxWidth: iconOnly ? controlTarget : undefined,
+        flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.xs, paddingHorizontal: space.sm,
+        marginRight: space.sm, borderRadius: radius.control, borderWidth: 1, borderColor: organizeFocused ? theme.global.accent : theme.global.borderStrong,
+        backgroundColor: theme.global.surfaceSecondary }, pressed && pressedFeedback]}>
+      <Ionicons name="folder-outline" size={20} color={theme.global.textPrimary} accessible={false} />
+      {!iconOnly && <Text style={[type.control, { color: theme.global.textPrimary }]}>Organizar</Text>}
+    </Pressable>
+  );
+
   const renderMobileOptionsButton = () => (
     <Pressable
       accessibilityLabel="Abrir opciones de Biblioteca"
@@ -595,6 +607,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
 
   return (
     <>
+      {!bindings && Platform.OS === "web" && <Tabs.Screen options={{ headerRight: () => organizeAction(windowWidth < 640 || fontScale > 1.5) }} />}
       {!bindings && Platform.OS !== "web" ? (
         <Tabs.Screen
           options={{
@@ -639,7 +652,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                   value={q}
                 />
               ) : (
-                <Text style={{ color: theme.global.textPrimary, fontSize: 18, fontWeight: "900" }}>
+                <Text accessibilityLabel="Biblioteca" numberOfLines={1} style={{ maxWidth: Math.max(40, windowWidth - 276), color: theme.global.textPrimary, fontSize: 18, fontWeight: "900" }}>
                   Biblioteca
                 </Text>
               ),
@@ -665,6 +678,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                 {renderMobileOptionsButton()}
                 {!isSearchActive && pickerAction(true)}
                 {!isSearchActive && manualAction(true)}
+                {!isSearchActive && organizeAction(true)}
               </View>
             ),
           }}

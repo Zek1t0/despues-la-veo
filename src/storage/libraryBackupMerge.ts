@@ -1,3 +1,4 @@
+import { mergeOrganizationWithDb, type OrganizationImportResult } from "./organizationBackupImport";
 import { markActivityWrite } from "./libraryActivitySignals";
 import { legacyMetadataSnapshot, initialMetadataState, type MediaMetadataState } from "../core/mediaMetadataState";
 import { historicalBaselineItemWithDb, hasMetadataSchemaWithDb, writeMetadataStateWithDb } from "./mediaMetadataRepo";
@@ -24,7 +25,7 @@ export { rowToSavedTitle } from "./savedTitleStorage";
 export type LibraryImportIssue = { reference: string; reason: string };
 export type LibraryImportMergeResult = { inserted: number; updated: number; skipped: number; conflicts: LibraryImportIssue[]; failed: LibraryImportIssue[] };
 export type LibraryPinImportResult = { inserted: number; preserved: number; invalid: LibraryImportIssue[]; failed: LibraryImportIssue[] };
-export type LibraryBackupMergeResult = LibraryImportMergeResult & { pins: LibraryPinImportResult; changedIds?: string[]; preferencesChanged?: PortableMediaPreferences; activityIssues?: string[] };
+export type LibraryBackupMergeResult = LibraryImportMergeResult & { pins: LibraryPinImportResult; changedIds?: string[]; preferencesChanged?: PortableMediaPreferences; activityIssues?: string[]; organization?: OrganizationImportResult };
 export type LibraryBackupMergeDb = { getFirstAsync<T>(sql: string, ...params: any[]): Promise<T | null>; getAllAsync<T>(sql: string, ...params: any[]): Promise<T[]>; runAsync(sql: string, ...params: any[]): Promise<any>; withTransactionAsync(task: () => Promise<void>): Promise<void> };
 class ImportConflict extends Error {}
 
@@ -214,8 +215,8 @@ export async function mergeLibraryBackupWithDb(
       : { version: 2, items: payloadOrItems, invalid: [], pins: generateIdOrPins as LibraryBackupPinV2[], invalidPins: [] })
     : payloadOrItems;
   const generateId = (Array.isArray(payloadOrItems) ? legacyGenerateId : generateIdOrPins) as () => string;
-  if (payload.version === 5 || payload.version === 6 || payload.version === 7 || payload.version === 8) {
-    const items = payload.version === 6 || payload.version === 7 || payload.version === 8 ? payload.items : payload.items.map(item => {
+  if (payload.version === 5 || payload.version === 6 || payload.version === 7 || (payload.version === 8 || payload.version === 9)) {
+    const items = payload.version === 6 || payload.version === 7 || (payload.version === 8 || payload.version === 9) ? payload.items : payload.items.map(item => {
       const { type, ...historical } = item;
       return { ...historical, ...historicalClassificationForUpdate(type) };
     });
@@ -223,7 +224,7 @@ export async function mergeLibraryBackupWithDb(
     const pins = await portablePins(db, payload.pins, internal.mapping);
     const activityIssues: string[] = [];
     let preferencesChanged: PortableMediaPreferences | undefined;
-    if (payload.version === 8) {
+    if ((payload.version === 8 || payload.version === 9)) {
       if (payload.preferences && await mergeMediaPreferencesWithDb(db, payload.preferences)) preferencesChanged = payload.preferences;
       for (const event of payload.activity ?? []) {
         const id = internal.mapping.get(event.itemId);
@@ -244,6 +245,7 @@ export async function mergeLibraryBackupWithDb(
       await db.runAsync("DELETE FROM library_activity_events WHERE id NOT IN (SELECT id FROM library_activity_events ORDER BY occurred_at DESC,id DESC LIMIT 2000);");
     }
     const { mapping: _, ...titles } = internal;
-    return { ...titles, pins, ...(preferencesChanged ? { preferencesChanged } : {}), ...(activityIssues.length ? { activityIssues } : {}) }; }
+    const organization = payload.version === 9 ? await mergeOrganizationWithDb(db, payload, internal.mapping) : undefined;
+    return { ...titles, pins, ...(organization ? { organization } : {}), ...(preferencesChanged ? { preferencesChanged } : {}), ...(activityIssues.length ? { activityIssues } : {}) }; }
   const internal = await mergeHistorical(db, payload.items, generateId); const pins = payload.version === 1 ? pinResult() : await historicalPins(db, payload.pins, internal.historical); const { mapping: _, historical: __, ...titles } = internal; return { ...titles, pins };
 }
