@@ -1,3 +1,4 @@
+import { radius, space, type } from "../../../src/theme/presentation";
 import { admittedImageUrl, providerImagePolicy } from "../../../src/core/mediaImagePresentation";
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Image, Linking, Platform, Pressable, ScrollView, Text, View } from "react-native";
@@ -97,7 +98,7 @@ export default function MangaUpdatesDetailScreen() {
   return <>
     <Stack.Screen options={{ title: snapshot?.title ?? "MangaUpdates" }} />
     <ScrollView style={{ backgroundColor: theme.global.background }} contentContainerStyle={{
-      alignSelf: "center", maxWidth: 800, width: "100%", padding: 16, gap: 16, paddingBottom: 32,
+      alignSelf: "center", maxWidth: 800, width: "100%", padding: space.lg, gap: space.md, paddingBottom: 32,
     }}>
       {!id ? <Text accessibilityRole="alert" style={{ color: theme.semantic.dangerText }}>El identificador de MangaUpdates no es válido.</Text>
         : !available ? <Text style={{ color: theme.global.textPrimary }}>MangaUpdates no está habilitado en esta plataforma. Tu biblioteca local sigue disponible.</Text>
@@ -110,14 +111,16 @@ export default function MangaUpdatesDetailScreen() {
           <View style={{ flexDirection: "row", gap: 12 }}>
             {safePoster && !imageFailed ? <Image accessible={false} accessibilityElementsHidden importantForAccessibility="no" aria-hidden
               source={{ uri: safePoster }} resizeMode="cover" onError={onImageError}
-              style={{ width: 96, height: 144, borderRadius: 12 }} />
-              : <PosterPlaceholder style={{ width: 96, height: 144, borderRadius: 12 }} />}
+              style={{ width: 96, height: 144, borderRadius: radius.control }} />
+              : <PosterPlaceholder style={{ width: 96, height: 144, borderRadius: radius.control }} />}
             <View style={{ flex: 1, gap: 8 }}>
-              <Text style={{ color: theme.global.textPrimary, fontSize: 24, fontWeight: "900" }}>{snapshot.title}</Text>
+              <Text accessibilityRole="header" style={[type.heading, { color: theme.global.textPrimary }]}>{snapshot.title}</Text>
               <Text style={{ color: theme.global.textSecondary }}>{mediaClassificationLabel(snapshot)}</Text>
               <Text style={{ color: theme.global.textSecondary }}>{mediaYearLabel(snapshot.medium)}: {snapshot.year ?? "Sin año"}</Text>
             </View>
           </View>
+          {button(saving ? "Guardando…" : visible?.savedId ? "Actualizar guardado" : "Guardar en Biblioteca", () => void save(), saving)}
+          {visible?.savedId && button("Abrir en Biblioteca", () => router.push(`/title/${visible.savedId}`))}
           <Text style={{ color: theme.global.textSecondary, lineHeight: 22 }}>{snapshot.overview ?? "Sin descripción."}</Text>
           <Text style={{ color: theme.global.textSecondary }}>{snapshot.genres.join(" · ") || "Sin géneros."}</Text>
           <Pressable accessibilityRole="link" accessibilityLabel={`${provenance.label}, abrir fuente`} onPress={() => {
@@ -126,8 +129,6 @@ export default function MangaUpdatesDetailScreen() {
           }} style={{ minHeight: 44, justifyContent: "center" }}>
             <Text style={{ color: theme.global.textPrimary }}>{provenance.label}</Text>
           </Pressable>
-          {button(saving ? "Guardando…" : visible?.savedId ? "Actualizar guardado" : "Guardar en Biblioteca", () => void save(), saving)}
-          {visible?.savedId && button("Abrir en Biblioteca", () => router.push(`/title/${visible.savedId}`))}
         </> : null}
       {(saveError || linkError) && <Text accessibilityRole="alert" style={{ color: theme.semantic.dangerText }}>{saveError ?? linkError}</Text>}
     </ScrollView>

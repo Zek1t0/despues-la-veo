@@ -1,3 +1,4 @@
+import { radius, space, type } from "../../src/theme/presentation";
 import { savedContentVisible } from "../../src/core/sensitiveContent";
 import { activeMetadataDocument } from "../../src/core/mediaMetadataState";
 import { SensitiveContentNotice } from "../../src/components/browsing/SensitiveContentNotice";
@@ -179,8 +180,8 @@ function Card({ children }: { children: React.ReactNode }) {
   return (
     <View
       style={{
-        padding: 14,
-        borderRadius: 14,
+        padding: space.md,
+        borderRadius: radius.card,
         borderWidth: 1,
         borderColor: theme.global.border,
         backgroundColor: theme.global.surface,
@@ -677,45 +678,18 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
         style={{ backgroundColor: theme.global.background }}
         contentContainerStyle={{
           alignSelf: "center",
-          gap: 16,
+          gap: space.md,
           maxWidth: 800,
           padding: 16,
           paddingBottom: 16 + (Platform.OS === "web" ? 0 : insets.bottom),
           width: "100%",
         }}
       >
-        {!bindings && manualEditable && <Pressable accessibilityRole="button"
-          onPress={() => router.push({ pathname: "/manual-entry", params: { id: item.id } })}
-          style={{ minHeight: 44, justifyContent: "center", padding: 12, borderRadius: 12, backgroundColor: theme.global.surfaceSecondary }}>
-          <Text style={{ color: theme.global.textPrimary, fontWeight: "700" }}>Editar título</Text>
-        </Pressable>}
-        {localKitsuSources(item.providerReferences, Platform.OS).map(source => <View key={source.reference.externalId} style={{ gap: 8 }}>
-          <Text style={{ color: theme.global.textSecondary }}>{source.label}</Text>
-          {source.destination && !bindings && <Pressable accessibilityRole="button" onPress={() => router.push(source.destination!)} style={{ minHeight: 44, justifyContent: "center" }}>
-            <Text style={{ color: theme.global.textPrimary }}>Ver en Kitsu</Text></Pressable>}
-        </View>)}
-        {localMangaUpdatesSources(item.providerReferences, Platform.OS).map(source => (
-          <View key={source.reference.externalId} style={{ gap: 8 }}>
-            <Text style={{ color: theme.global.textSecondary }}>{source.label}</Text>
-            {source.destination && !bindings && <Pressable accessibilityRole="button" accessibilityLabel="Abrir esta obra en MangaUpdates"
-              onPress={() => { if (source.destination) router.push(source.destination); }} style={{ minHeight: 44, justifyContent: "center" }}>
-              <Text style={{ color: theme.global.textPrimary }}>Ver en MangaUpdates</Text>
-            </Pressable>}
-            <Pressable accessibilityRole="link" accessibilityLabel="Abrir el sitio oficial de MangaUpdates"
-              onPress={() => { void Linking.openURL(source.providerUrl).catch(() => Alert.alert("MangaUpdates", "No pudimos abrir el sitio de la fuente.")); }}
-              style={{ minHeight: 44, justifyContent: "center" }}>
-              <Text style={{ color: theme.global.textPrimary }}>Sitio de MangaUpdates</Text>
-            </Pressable>
-          </View>
-        ))}
-        <SavedMetadataRefresh claimAutomaticOpening={claimAutomaticOpening} key={item.id} item={item} enabled={!bindings || !!bindings.metadataRefreshService} service={bindings?.metadataRefreshService} />
-        {(!bindings || bindings.selectMetadataSource) && <MetadataSourceSelector key={item.id} item={item} select={bindings?.selectMetadataSource ?? selectMetadataSource} />}
-        {displayItem && titleFallbackLabel(displayItem.resolvedTitle) && <Text style={{ color: theme.global.textMuted }}>{titleFallbackLabel(displayItem.resolvedTitle)}</Text>}
         <MediaBanner identity={item.id} {...savedMediaPresentation(item)} style={{ width: "100%", aspectRatio: 4.2, borderRadius: 12 }} />
         <View style={{ flexDirection: "row", gap: 12 }}>
-          <MediaPoster identity={item.id} {...savedMediaPresentation(item)} posterUrl={item.posterUrl} style={{ width: 72, height: 108, borderRadius: 12 }} />
+          <MediaPoster identity={item.id} {...savedMediaPresentation(item)} posterUrl={item.posterUrl} style={{ width: 72, height: 108, borderRadius: radius.control }} />
           <View style={{ flex: 1, gap: 6 }}>
-            <Text style={{ fontSize: 24, fontWeight: "900", color: theme.global.textPrimary }}>
+            <Text accessibilityRole="header" style={{ ...type.heading, color: theme.global.textPrimary }}>
               {displayItem?.title ?? item.title}
             </Text>
             <Text style={{ color: theme.global.textSecondary, fontWeight: "700" }}>
@@ -727,7 +701,28 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
           </View>
         </View>
 
-        <EditorialDetails rows={savedEditorialRows(item)} />
+        {displayItem && titleFallbackLabel(displayItem.resolvedTitle) && <Text style={{ color: theme.global.textMuted }}>{titleFallbackLabel(displayItem.resolvedTitle)}</Text>}
+        {!bindings && manualEditable && <Pressable accessibilityRole="button"
+          onPress={() => router.push({ pathname: "/manual-entry", params: { id: item.id } })}
+          style={{ minHeight: 44, justifyContent: "center", padding: 12, borderRadius: 12, backgroundColor: theme.global.surfaceSecondary }}>
+          <Text style={{ color: theme.global.textPrimary, fontWeight: "700" }}>Editar título</Text>
+        </Pressable>}
+
+        {/* Estado */}
+        <Card>
+          <Text accessibilityRole="header" style={[type.title, { color: theme.global.textPrimary }]}>Estado</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {STATUS_VALUES.map((value) => (
+              <Chip
+                key={value}
+                label={titleStatusLabel(value, item.medium)}
+                active={item.status === value}
+                onPress={() => void setStatus(value)}
+              />
+            ))}
+          </View>
+          <Text style={{ color: theme.global.textMuted }}>Se guarda automáticamente.</Text>
+        </Card>
 
         <Card>
           {pinReady ? (
@@ -799,7 +794,7 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
             }}
           >
             <View style={{ flex: 1, gap: 4 }}>
-              <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 16 }}>
+              <Text accessibilityRole="header" style={[type.title, { color: theme.global.textPrimary }]}>
                 Tu puntuación
               </Text>
               <Text
@@ -910,26 +905,10 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
           ) : null}
         </Card>
 
-        {/* Estado */}
-        <Card>
-          <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 16 }}>Estado</Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {STATUS_VALUES.map((value) => (
-              <Chip
-                key={value}
-                label={titleStatusLabel(value, item.medium)}
-                active={item.status === value}
-                onPress={() => void setStatus(value)}
-              />
-            ))}
-          </View>
-          <Text style={{ color: theme.global.textMuted }}>Se guarda automáticamente.</Text>
-        </Card>
-
         {/* Etiquetas */}
         <Card>
           <View style={{ gap: 4 }}>
-            <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 16 }}>Etiquetas</Text>
+            <Text accessibilityRole="header" style={[type.title, { color: theme.global.textPrimary }]}>Etiquetas</Text>
             <Text style={{ color: theme.global.textMuted }}>Se guardan automáticamente al agregar o borrar.</Text>
             {!!tagHint && <Text style={{ color: theme.global.textSecondary, fontWeight: "800" }}>{tagHint}</Text>}
           </View>
@@ -994,9 +973,10 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
 
         {/* Notas */}
         <Card>
-          <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 16 }}>Notas</Text>
+          <Text accessibilityRole="header" style={[type.title, { color: theme.global.textPrimary }]}>Notas</Text>
 
           <TextInput
+            accessibilityLabel="Notas"
             value={notes}
             onChangeText={(t) => {
               notesDraft.current = t;
@@ -1008,7 +988,7 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
             placeholderTextColor={theme.global.textMuted}
             multiline
             style={{
-              minHeight: 140,
+              minHeight: 104,
               paddingHorizontal: 12,
               paddingVertical: 10,
               borderRadius: 12,
@@ -1047,6 +1027,30 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
           </Text>
         </Card>
 
+        <EditorialDetails rows={savedEditorialRows(item)} />
+
+        {localKitsuSources(item.providerReferences, Platform.OS).map(source => <View key={source.reference.externalId} style={{ gap: 8 }}>
+          <Text style={{ color: theme.global.textSecondary }}>{source.label}</Text>
+          {source.destination && !bindings && <Pressable accessibilityRole="button" onPress={() => router.push(source.destination!)} style={{ minHeight: 44, justifyContent: "center" }}>
+            <Text style={{ color: theme.global.textPrimary }}>Ver en Kitsu</Text></Pressable>}
+        </View>)}
+        {localMangaUpdatesSources(item.providerReferences, Platform.OS).map(source => (
+          <View key={source.reference.externalId} style={{ gap: 8 }}>
+            <Text style={{ color: theme.global.textSecondary }}>{source.label}</Text>
+            {source.destination && !bindings && <Pressable accessibilityRole="button" accessibilityLabel="Abrir esta obra en MangaUpdates"
+              onPress={() => { if (source.destination) router.push(source.destination); }} style={{ minHeight: 44, justifyContent: "center" }}>
+              <Text style={{ color: theme.global.textPrimary }}>Ver en MangaUpdates</Text>
+            </Pressable>}
+            <Pressable accessibilityRole="link" accessibilityLabel="Abrir el sitio oficial de MangaUpdates"
+              onPress={() => { void Linking.openURL(source.providerUrl).catch(() => Alert.alert("MangaUpdates", "No pudimos abrir el sitio de la fuente.")); }}
+              style={{ minHeight: 44, justifyContent: "center" }}>
+              <Text style={{ color: theme.global.textPrimary }}>Sitio de MangaUpdates</Text>
+            </Pressable>
+          </View>
+        ))}
+        <SavedMetadataRefresh claimAutomaticOpening={claimAutomaticOpening} key={`refresh:${item.id}`} item={item} enabled={!bindings || !!bindings.metadataRefreshService} service={bindings?.metadataRefreshService} />
+        {(!bindings || bindings.selectMetadataSource) && <MetadataSourceSelector key={`source:${item.id}`} item={item} select={bindings?.selectMetadataSource ?? selectMetadataSource} />}
+
         <Pressable
           accessibilityRole="button"
           focusable
@@ -1055,7 +1059,7 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
             minHeight: 44,
             justifyContent: "center",
             paddingVertical: 14,
-            borderRadius: 14,
+            borderRadius: radius.card,
             backgroundColor: theme.semantic.dangerSurface,
             alignItems: "center",
             borderWidth: 1,

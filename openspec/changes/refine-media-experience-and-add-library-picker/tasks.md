@@ -5,8 +5,8 @@
 
 ## 2. Pantallas y experiencia visual
 
-- [ ] 2.1 Aplicar la cabecera de Biblioteca, estados recuperables, resumen y limpieza de filtros y acciones de fila. Verificar ambas vistas, búsqueda, filtros y orden combinados, persistencia de orden y modo al reabrir, confirmación de borrado y pin contextual. Confirmar las cinco pestañas y un regreso correcto desde detalle.
-- [ ] 2.2 Reordenar ficha local y aplicar presentación compartida a los detalles remotos. Verificar en fixtures o entornos permitidos guardado, edición de estado, puntuación, etiquetas y notas, pin de origen, refresh y procedencia, más ficha manual offline y diferencias de TMDB, MangaUpdates y Kitsu. Comprobar indisponibilidad en las plataformas restringidas sin habilitar gates.
+- [x] 2.1 Aplicar la cabecera de Biblioteca, estados recuperables, resumen y limpieza de filtros y acciones de fila. Verificar ambas vistas, búsqueda, filtros y orden combinados, persistencia de orden y modo al reabrir, confirmación de borrado y pin contextual. Confirmar las cinco pestañas y un regreso correcto desde detalle.
+- [x] 2.2 Reordenar ficha local y aplicar presentación compartida a los detalles remotos. Verificar en fixtures o entornos permitidos guardado, edición de estado, puntuación, etiquetas y notas, pin de origen, refresh y procedencia, más ficha manual offline y diferencias de TMDB, MangaUpdates y Kitsu. Comprobar indisponibilidad en las plataformas restringidas sin habilitar gates.
 - [ ] 2.3 Cerrar el hito visual con un recorrido en Web estrecha y ancha y Android físico. Revisar navegación por teclado y Escape, foco de retorno, TalkBack básico, texto grande, temas y placeholders. Pasar por Buscar, Etiquetas, Actualizaciones y Ajustes para detectar regresiones de componentes o navegación compartidos.
 
 ## 3. Selector local y validación final

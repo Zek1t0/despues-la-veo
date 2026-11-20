@@ -1,3 +1,4 @@
+import { space, type as typography } from "../../../src/theme/presentation";
 import { useMediaLanguages } from "../../../src/components/browsing/useMediaLanguages";
 import { resolveMediaTitle } from "../../../src/core/mediaTitlePresentation";
 import { EditorialDetails } from "../../../src/components/browsing/EditorialDetails";
@@ -396,7 +397,7 @@ export default function TmdbDetailScreen() {
         }}
       />
 
-      <ScrollView style={{ backgroundColor: theme.global.background }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 40 }}>
+      <ScrollView style={{ backgroundColor: theme.global.background }} contentContainerStyle={{ alignSelf: "center", width: "100%", maxWidth: 800, padding: space.lg, gap: space.md, paddingBottom: 40 }}>
         {visibleLoading ? (
           <View style={{ gap: 10, alignItems: "center", paddingTop: 30 }}>
             <ActivityIndicator color={theme.global.accent} />
@@ -437,7 +438,7 @@ export default function TmdbDetailScreen() {
                   resizeMode="contain" style={{ width: 120, height: 180, borderRadius: 14 }} />
 
                 <View style={{ flex: 1, gap: 8 }}>
-                  <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 20 }}>
+                  <Text accessibilityRole="header" style={[typography.heading, { color: theme.global.textPrimary }]}>
                     {title} {year ? `(${year})` : ""}
                   </Text>
 
@@ -482,9 +483,9 @@ export default function TmdbDetailScreen() {
               </View>
             </Card>
 
-            <EditorialDetails rows={complementaryEditorialRows} />
-
             <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: saving }}
               onPress={saveToLibrary}
               disabled={saving}
               style={{
@@ -520,6 +521,8 @@ export default function TmdbDetailScreen() {
                 </Text>
               </Pressable>
             )}
+
+            <EditorialDetails rows={complementaryEditorialRows} />
 
             <Card>
               <Text style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 16 }}>

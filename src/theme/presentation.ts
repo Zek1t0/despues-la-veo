@@ -21,6 +21,17 @@ export const type = {
 } as const;
 
 export const controlTarget = 44;
+export const metadataPill = {
+  container: {
+    alignSelf: "flex-start",
+    borderRadius: radius.round,
+    borderWidth: 1,
+    paddingHorizontal: space.md,
+    paddingVertical: space.xs,
+  },
+  text: type.control,
+} as const;
+
 export const pressedFeedback = { opacity: 0.8 } as const;
 
 /** FlatList joins grid item keys with colons. Keep that delimiter out of each key. */

@@ -1,3 +1,4 @@
+import { radius, space, type } from "../../theme/presentation";
 import { useMediaLanguages, type MediaLanguageServices } from "../../components/browsing/useMediaLanguages";
 import { resolveMediaTitle, titleFallbackLabel } from "../../core/mediaTitlePresentation";
 import { EditorialDetails } from "../../components/browsing/EditorialDetails";
@@ -63,7 +64,7 @@ export function KitsuAnimeDetail({ id: parameter, services }: { id: unknown; ser
   const error = visible?.error ? presentKitsuError(visible.error) : null;
   const button = (label: string, action: () => void) => <Pressable accessibilityRole="button" accessibilityLabel={label}
     accessibilityState={{ disabled: saving }} disabled={saving} onPress={action}
-    style={{ minHeight: 44, padding: 12, borderWidth: 1, borderRadius: 12, borderColor: theme.global.borderStrong, backgroundColor: theme.global.surfaceSecondary }}>
+    style={{ minHeight: 44, padding: 12, borderWidth: 1, borderRadius: radius.control, borderColor: theme.global.borderStrong, backgroundColor: theme.global.surfaceSecondary }}>
     <Text style={{ color: theme.global.textPrimary }}>{label}</Text>
   </Pressable>;
   async function save() {
@@ -78,23 +79,23 @@ export function KitsuAnimeDetail({ id: parameter, services }: { id: unknown; ser
     } catch { if (current === generation.current) setWriteError("No se pudo guardar. Tu biblioteca conserva sus datos anteriores."); }
     finally { writeLock.current = false; if (current === generation.current) setSaving(false); }
   }
-  return <ScrollView style={{ backgroundColor: theme.global.background }} contentContainerStyle={{ width: "100%", maxWidth: 800, alignSelf: "center", padding: 16, gap: 16, paddingBottom: 32 }}>
+  return <ScrollView style={{ backgroundColor: theme.global.background }} contentContainerStyle={{ width: "100%", maxWidth: 800, alignSelf: "center", padding: space.lg, gap: space.md, paddingBottom: 32 }}>
     {!id ? <Text accessibilityRole="alert" style={{ color: theme.semantic.dangerText }}>El identificador de Kitsu no es válido.</Text>
       : !services.available ? <Text style={{ color: theme.global.textPrimary }}>Kitsu aún no está habilitado. Tu biblioteca local sigue disponible.</Text>
       : !visible ? <ActivityIndicator accessibilityLabel="Cargando anime de Kitsu" />
       : error ? <View style={{ gap: 12 }}><Text accessibilityRole="alert" style={{ color: theme.semantic.dangerText }}>{error.message}</Text>
         {error.retryable && button("Reintentar Kitsu", () => setRetry(value => value + 1))}</View>
       : snapshot ? <>
-        <MediaBanner identity={id!} imageProvider="kitsu" metadata={input?.metadata} style={{ width: "100%", aspectRatio: 4.2, borderRadius: 12 }} />
-        <View style={{ flexDirection: "row", gap: 12 }}><MediaPoster identity={id!} imageProvider="kitsu" metadata={input?.metadata} style={{ width: 96, height: 144, borderRadius: 12 }} />
-          <View style={{ flex: 1, gap: 8 }}><Text accessibilityRole="header" style={{ color: theme.global.textPrimary, fontSize: 24, fontWeight: "900" }}>{displayTitle.title}</Text>
+        <MediaBanner identity={id!} imageProvider="kitsu" metadata={input?.metadata} style={{ width: "100%", aspectRatio: 4.2, borderRadius: radius.control }} />
+        <View style={{ flexDirection: "row", gap: 12 }}><MediaPoster identity={id!} imageProvider="kitsu" metadata={input?.metadata} style={{ width: 96, height: 144, borderRadius: radius.control }} />
+          <View style={{ flex: 1, gap: 8 }}><Text accessibilityRole="header" style={[type.heading, { color: theme.global.textPrimary }]}>{displayTitle.title}</Text>
             <Text style={{ color: theme.global.textSecondary }}>{mediaClassificationLabel(snapshot)} · {snapshot.year ?? "Sin año"}</Text></View></View>
         {titleFallbackLabel(displayTitle) && <Text style={{ color: theme.global.textMuted }}>{titleFallbackLabel(displayTitle)}</Text>}
+        {button(saving ? "Guardando…" : visible.savedId ? "Actualizar guardado" : "Guardar en Biblioteca", () => { void save(); })}
+        {visible.savedId && button("Abrir en Biblioteca", () => services.open(visible.savedId!))}
         <PublicRating value={resolvePublicRating("kitsu", input?.metadata)} />
         <EditorialDetails rows={editorialRows(input?.metadata, snapshot, "Kitsu · snapshot de la misma consulta")} />
         {button("Datos: Kitsu · abrir fuente", () => { void services.source(`${KITSU_DEVELOPMENT_API_BASE}/anime/${id}`).catch(() => setWriteError("No pudimos abrir la fuente Kitsu.")); })}
-        {button(saving ? "Guardando…" : visible.savedId ? "Actualizar guardado" : "Guardar en Biblioteca", () => { void save(); })}
-        {visible.savedId && button("Abrir en Biblioteca", () => services.open(visible.savedId!))}
       </> : null}
     {writeError && <Text accessibilityRole="alert" style={{ color: theme.semantic.dangerText }}>{writeError}</Text>}
   </ScrollView>;

@@ -7,6 +7,9 @@ for (const extension of [".ts", ".tsx"]) require.extensions[extension] = (module
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React, esModuleInterop: true }, fileName: filename,
 }).outputText, filename);
 let active;
+const {contrastRatio, resolveTheme}=require('../../../src/theme/resolver.ts');
+const {APPEARANCE_PALETTE_IDS}=require('../../../src/theme/types.ts');
+let theme=resolveTheme('light','original');
 const same = (a,b) => a && b && a.length === b.length && a.every((v,i) => Object.is(v,b[i]));
 const react = {
   Fragment: "Fragment", createElement(type, props, ...children) { return { type, props: { ...props, children } }; },
@@ -36,7 +39,7 @@ Module._load=function(request,parent,isMain){
   if(request === "@react-navigation/native")return {useFocusEffect:callback=>react.useEffect(callback,[callback])};
   if(request === "react-native-safe-area-context")return {useSafeAreaInsets:()=>({bottom:0})};
   if(request === "@expo/vector-icons")return {Ionicons:"Ionicons"};
-  if(request.endsWith("AppThemeProvider"))return {useAppTheme:()=>({theme:{global:{},semantic:{},structural:{}}})};
+  if(request.endsWith("AppThemeProvider"))return {useAppTheme:()=>({theme})};
   if(request.endsWith("titleDetailPinSnapshot"))return {getTitleDetailPinSnapshot:async()=>{active.reads++;return {item:active.item,context:null,pinnedAt:null};}};
   if(request.endsWith("savedTitlesRepo"))return {deleteSavedTitle:async()=>{},setPersonalRating:async()=>{},updateSavedTitleMetadata:async(id,patch)=>{active.patches.push(patch);active.item={...active.item,...patch};return active.item;}};
   if(request.endsWith("manualContentEntries"))return {isManualContentEditable:async()=>false};
@@ -102,13 +105,95 @@ const stopHost=h=>h.slots.forEach(slot=>slot?.cleanup?.());
  nodes(settings.tree).find(n=>n.type==='TextInput').props.onChangeText('en');await settings.flush();nodes(settings.tree).find(n=>n.props.accessibilityLabel==='Agregar idioma').props.onPress();await settings.flush();assert.ok(nodes(settings.tree).some(n=>n.props.accessibilityRole==='alert'));stopHost(settings);
  const LibraryScreen=require('../../../app/(tabs)/libreria.tsx').default;
  const raw={...base,...projectMediaMetadata(state),metadataState:state};let written;
+ const navigation=[], writes=[], pins=[], deletions=[];
  preference={...preference,value:{...preference.value,languages:['en']},updatedAt:40};
- const bindings={getLibraryScreenSnapshot:async()=>({items:[raw],pins:[]}),deleteSavedTitle:async()=>{},upsertSavedTitle:async value=>{written=value;},setTitlePinState:async()=>{},
- getViewPreference:async key=>key==='library.viewMode'?'detail':key==='library.sort'?'title-asc':'all',setViewPreference:async()=>{},
- useFocusEffect:callback=>react.useEffect(callback,[callback]),useRouter:()=>({push(){}}),languagePreferences:{read:async()=>preference,subscribe:listener=>{preferenceListeners.add(listener);return()=>preferenceListeners.delete(listener);}}};
+ const bindings={getLibraryScreenSnapshot:async()=>({items:[raw],pins:[]}),deleteSavedTitle:async id=>{deletions.push(id);},upsertSavedTitle:async value=>{written=value;},setTitlePinState:async(...args)=>{pins.push(args);},
+ getViewPreference:async key=>key==='library.viewMode'?'detail':key==='library.sort'?'title-asc':'all',setViewPreference:async(key,value)=>{writes.push([key,value]);},
+ useFocusEffect:callback=>react.useEffect(callback,[callback]),useRouter:()=>({push:route=>navigation.push(route)}),languagePreferences:{read:async()=>preference,subscribe:listener=>{preferenceListeners.add(listener);return()=>preferenceListeners.delete(listener);}}};
  const library=host(()=>LibraryScreen({bindings}),raw);await library.flush();
  const list=nodes(library.tree).find(n=>n.type==='FlatList');assert.ok(list);const displayed=list.props.data[0];assert.equal(displayed.title,'English Kitsu');
- const row=list.props.renderItem({item:displayed});await nodes(row).find(n=>n.props.accessibilityLabel==='Marcar English Kitsu como terminado').props.onPress();await library.flush();
+ const getList=()=>nodes(library.tree).find(n=>n.type==='FlatList');
+ const panel=()=>nodes(library.tree).find(n=>n.type?.name==='ViewOptionsPanel');
+ const section=id=>panel().props.sections.find(group=>group.id===id);
+ section('appearance').onSelect('grid');
+ section('sort').onSelect('rating-desc');
+ section('status').onSelect('dropped');
+ nodes(library.tree).find(n=>n.type==='TextInput').props.onChangeText('missing');
+ await library.flush();
+ assert.equal(getList().props.data.length,0);
+ assert.match(text(getList().props.ListEmptyComponent),/No hay coincidencias/);
+ nodes(library.tree).find(n=>n.props.label==='Limpiar filtros').props.onPress();
+ await library.flush();
+ assert.deepEqual(writes,[['library.viewMode','grid'],['library.sort','rating-desc']]);
+ assert.equal(section('appearance').selectedId,'grid');
+ assert.equal(section('sort').selectedId,'rating-desc');
+ const grid=getList().props.renderItem({item:getList().props.data[0]});
+ grid.props.onPress();
+ assert.deepEqual(navigation[0],{pathname:'/title/[id]',params:{id:raw.id,pinContext:'library'}});
+ section('appearance').onSelect('detail');
+ await library.flush();
+ const row=list.props.renderItem({item:displayed});
+ for(const [status, personalRating, expectedState] of [
+  ['planned',10,'Planeado'], ['watching',null,'Viendo'], ['done',80,'Terminado'], ['done',100,'Terminado'],
+ ]){
+  const entry={...displayed,status,personalRating};
+  const rendered=list.props.renderItem({item:entry});
+  const personalRow=nodes(rendered).find(n=>n.props.children.some(child=>child?.type?.name==='PersonalRatingBadge'));
+  const [statePill,badge]=personalRow.props.children;
+  assert.equal(statePill.props.text,expectedState);
+  assert.equal(personalRow.props.style.flexWrap,'wrap');
+  assert.equal(personalRow.props.style.height,undefined);
+  const publicLine=nodes(rendered).find(n=>n.type?.name==='PublicRating');
+  const parent=nodes(rendered).find(n=>n.props.children.includes(personalRow));
+  assert.equal(parent.props.children[parent.props.children.indexOf(personalRow)+1],publicLine);
+  for(const scheme of ['light','dark']) for(const palette of APPEARANCE_PALETTE_IDS){
+   theme=resolveTheme(scheme,palette);
+   const visualBadge=host(()=>badge.type(badge.props),entry);
+   await visualBadge.flush();
+   if(personalRating===null){
+    assert.equal(visualBadge.tree,null);
+    continue;
+   }
+   assert.equal(text(visualBadge.tree),`★ Mi ${personalRating/10},0`);
+   const visualState=host(()=>statePill.type(statePill.props),entry);
+   await visualState.flush();
+   const [geometry,colors]=visualBadge.tree.props.style;
+   const {backgroundColor,borderColor,...neutralGeometry}=visualState.tree.props.style;
+   assert.deepEqual(geometry,neutralGeometry);
+   assert.equal(colors.borderColor,borderColor);
+   const badgeText=nodes(visualBadge.tree).find(n=>n.type==='Text');
+   const stateText=nodes(visualState.tree).find(n=>n.type==='Text');
+   assert.deepEqual(badgeText.props.style,stateText.props.style);
+   const tint=colors.backgroundColor;
+   const alpha=parseInt(tint.slice(7),16)/255;
+   assert.ok(alpha>0&&alpha<0.25);
+   const composite='#'+[1,3,5].map(i=>Math.round(
+    parseInt(tint.slice(i,i+2),16)*alpha+
+    parseInt(theme.global.surface.slice(i,i+2),16)*(1-alpha)
+   ).toString(16).padStart(2,'0')).join('');
+   assert.ok(contrastRatio(theme.global.textPrimary,composite)>=4.5);
+   assert.ok(contrastRatio(theme.global.textPrimary,backgroundColor)>=4.5);
+  }
+  const noPublic=host(()=>publicLine.type({value:null}),entry);
+  await noPublic.flush();
+  assert.equal(noPublic.tree,null);
+ }
+ nodes(row).find(n=>n.props.accessibilityLabel==='Fijar en Biblioteca').props.onPress();
+ await library.flush();
+ assert.deepEqual(pins[0].slice(0,2),[raw.id,{contextType:'library',contextKey:''}]);
+ const originalWindow=global.window;
+ try {
+  const remove=nodes(row).find(n=>n.props.accessibilityLabel==='Borrar English Kitsu').props.onPress;
+  global.window={confirm:()=>false};
+  await remove();
+  assert.deepEqual(deletions,[]);
+  global.window={confirm:()=>true};
+  await remove();
+  assert.deepEqual(deletions,[raw.id]);
+ } finally {
+  if(originalWindow===undefined)delete global.window;else global.window=originalWindow;
+ }
+ await nodes(row).find(n=>n.props.accessibilityLabel==='Marcar English Kitsu como terminado').props.onPress();await library.flush();
  assert.equal(written.title,'Kitsu Canon','personal status write never persists translated presentation title');assert.equal(written.resolvedTitle,undefined);assert.equal(written.status,'done');stopHost(library);
- console.log('PASS S4 UI hook-host: actual source selector -> mounted detail invalidation, live language switch and dirty notes preserved, source personals intact, hydration race/unsubscribe, settings reorder/save/duplicate validation. Mock UI/storage binding, no visual acceptance.');
+ console.log('PASS UI hook-host: detail source invalidation, language/draft preservation, settings and library filters, preference writes, grid navigation and personal status write. Mock UI/storage binding, no visual acceptance.');
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>{Module._load=originalLoad;});

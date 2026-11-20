@@ -9,6 +9,7 @@ import {
 
 import type { PersonalRating } from "../../core/personalRating";
 import { useAppTheme } from "../../theme/AppThemeProvider";
+import { metadataPill } from "../../theme/presentation";
 import {
   getPersonalRatingPresentation,
   type PersonalRatingTone,
@@ -16,11 +17,13 @@ import {
 
 export type PersonalRatingBadgeProps = {
   value: PersonalRating;
+  showPersonalLabel?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
 export function PersonalRatingBadge({
   value,
+  showPersonalLabel = false,
   style,
 }: PersonalRatingBadgeProps) {
   const { theme } = useAppTheme();
@@ -51,16 +54,21 @@ export function PersonalRatingBadge({
       importantForAccessibility="no-hide-descendants"
       pointerEvents="none"
       style={[
-        styles.badge,
-        { backgroundColor: visualColors.backgroundColor },
+        showPersonalLabel ? metadataPill.container : styles.badge,
+        showPersonalLabel
+          ? { backgroundColor: `${visualColors.backgroundColor}24`, borderColor: theme.global.borderStrong }
+          : { backgroundColor: visualColors.backgroundColor },
         style,
       ]}
     >
       <Text
         accessible={false}
-        style={[styles.text, { color: visualColors.color }]}
+        style={[
+          showPersonalLabel ? metadataPill.text : styles.text,
+          { color: showPersonalLabel ? theme.global.textPrimary : visualColors.color },
+        ]}
       >
-        {presentation.text}
+        {showPersonalLabel ? `★ Mi ${presentation.text.replace(".", ",")}` : presentation.text}
       </Text>
     </View>
   );

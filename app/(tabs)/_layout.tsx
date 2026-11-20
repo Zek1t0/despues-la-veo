@@ -9,7 +9,7 @@ import { useAppTheme } from "../../src/theme/AppThemeProvider";
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const { width, fontScale=1 } = useWindowDimensions();
-  const labelLines=Math.ceil(15*7*fontScale/Math.max(32,width/5-12));
+  const labelLines=Math.ceil(10*7*fontScale/Math.max(32,width/5-12));
   const { theme } = useAppTheme();
 
   return (
@@ -37,7 +37,7 @@ export default function TabsLayout() {
             case "buscar":
               return "Buscar";
             case "libreria":
-              return "Librería";
+              return "Biblioteca";
             case "etiquetas":
               return "Etiquetas";
             case "actualizaciones":
@@ -54,7 +54,7 @@ export default function TabsLayout() {
           headerTintColor: theme.global.textPrimary,
 
           tabBarAccessibilityLabel: label,
-          tabBarLabel: ({color}) => <Text style={{color,fontSize:12,fontWeight:"700",textAlign:"center",width:"100%"}}>{label}</Text>,
+          tabBarLabel: ({color}) => <Text style={{color,fontSize:12,fontWeight:"700",textAlign:"center",width:"100%"}}>{route.name === "actualizaciones" ? "Actividad" : label}</Text>,
           tabBarLabelStyle: { fontSize: 12, fontWeight: "700" },
 
           tabBarActiveTintColor: theme.global.accent,
@@ -89,7 +89,7 @@ export default function TabsLayout() {
       }}
     >
       {/* Opcional: orden fijo */}
-      <Tabs.Screen name="libreria" options={{ title: "Librería" }} />
+      <Tabs.Screen name="libreria" options={{ title: "Biblioteca" }} />
       <Tabs.Screen name="buscar" options={{ title: "Buscar" }} />
       <Tabs.Screen name="etiquetas" options={{ title: "Etiquetas" }} />
       <Tabs.Screen name="actualizaciones" options={{ title: "Actualizaciones" }} />

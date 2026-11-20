@@ -1,4 +1,4 @@
-import { gridItemKey, titleGridColumns } from "../../src/theme/presentation";
+import { controlTarget, gridItemKey, metadataPill, pressedFeedback, radius, space, titleGridColumns, type } from "../../src/theme/presentation";
 import { savedContentVisible } from "../../src/core/sensitiveContent";
 import { SensitiveFilterStatus } from "../../src/components/browsing/SensitiveContentNotice";
 import { useMediaLanguages, type MediaLanguageServices } from "../../src/components/browsing/useMediaLanguages";
@@ -100,17 +100,14 @@ function Pill({
   return (
     <View
       style={{
-        paddingVertical: 6,
-        paddingHorizontal: 10,
-        borderRadius: 999,
+        ...metadataPill.container,
         backgroundColor: theme.global.surfaceSecondary,
-        borderWidth: 1,
         borderColor: theme.global.borderStrong,
       }}
     >
       <Text
         accessibilityLabel={accessibilityLabel}
-        style={{ color: theme.global.textPrimary, fontWeight: "800" }}
+        style={[metadataPill.text, { color: theme.global.textPrimary }]}
       >
         {text}
       </Text>
@@ -398,8 +395,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
       console.error("No se pudo cargar la Biblioteca.", error);
       const message = "No se pudo cargar la Biblioteca. Podés volver a intentar.";
       setSnapshotError(message);
-      if (Platform.OS === "web") window.alert(message);
-      else Alert.alert("Error al cargar", message);
+
     } finally {
       if (generation === libraryReadGeneration.current) setLoading(false);
     }
@@ -531,6 +527,39 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
     setIsSearchActive(false);
   };
 
+  const clearFilters = () => {
+    setQ("");
+    setStatusFilter("all");
+    setClassificationFilter("all");
+  };
+  const activeFilters = [
+    q.trim() && `“${q.trim()}”`,
+    statusFilter !== "all" && titleStatusLabel(statusFilter),
+    classificationFilter !== "all" &&
+      LIBRARY_CLASSIFICATION_FILTERS.find(({ value }) => value === classificationFilter)?.label,
+  ].filter(Boolean);
+  const sortLabel = optionSections.find(section => section.id === "sort")
+    ?.options.find(option => option.id === sort)?.title;
+
+  const addManual = () => router.push("/manual-entry");
+  const manualAction = (iconOnly: boolean) => (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Agregar manualmente"
+      focusable
+      onPress={addManual}
+      style={({ pressed }) => [{
+        alignItems: "center", justifyContent: "center",
+        minHeight: controlTarget, minWidth: controlTarget,
+        borderRadius: radius.control, paddingHorizontal: space.sm,
+        backgroundColor: theme.global.surfaceSecondary,
+      }, pressed && pressedFeedback]}
+    >
+      {iconOnly ? <Ionicons name="add" size={22} color={theme.global.textPrimary} /> :
+        <Text style={[type.control, { color: theme.global.textPrimary }]}>Agregar manualmente</Text>}
+    </Pressable>
+  );
+
   const renderMobileOptionsButton = () => (
     <Pressable
       accessibilityLabel="Abrir opciones de Biblioteca"
@@ -621,6 +650,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                   </Pressable>
                 ) : null}
                 {renderMobileOptionsButton()}
+                {!isSearchActive && manualAction(true)}
               </View>
             ),
           }}
@@ -632,16 +662,13 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
           alignSelf: "center",
           backgroundColor: theme.global.background,
           flex: 1,
-          gap: 12,
+          gap: space.sm,
           maxWidth: 1200,
-          padding: 16,
+          paddingHorizontal: space.lg,
+          paddingVertical: space.sm,
           width: "100%",
         }}
       >
-      {!bindings && <Pressable accessibilityRole="button" onPress={() => router.push("/manual-entry")}
-        style={{ minHeight: 44, justifyContent: "center", padding: 12, borderRadius: 12, backgroundColor: theme.global.surfaceSecondary }}>
-        <Text style={{ color: theme.global.textPrimary, fontWeight: "700" }}>Agregar manualmente</Text>
-      </Pressable>}
       {bindings || Platform.OS === "web" ? (
         <View style={{ gap: 10 }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
@@ -700,6 +727,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                 Opciones
               </Text>
             </Pressable>
+            {!bindings && manualAction(windowWidth < 640)}
           </View>
 
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -716,9 +744,6 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
             ))}
           </View>
 
-          <Text style={{ color: theme.global.textMuted, fontWeight: "700" }}>
-            Mostrando {visibleItems.length} de {items.length}
-          </Text>
         </View>
       ) : null}
 
@@ -736,14 +761,30 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
             <Chip label="Terminados" active={statusFilter === "done"} onPress={() => setStatusFilter("done")} />
             <Chip label="Abandonados" active={statusFilter === "dropped"} onPress={() => setStatusFilter("dropped")} />
           </ScrollView>
-          <Text style={{ color: theme.global.textMuted, fontWeight: "700" }}>
-            Mostrando {visibleItems.length} de {items.length}
-          </Text>
         </View>
       ) : null}
 
+      <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.sm }}>
+        <View style={{ flexGrow: 1, flexShrink: 1, gap: space.xs }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "baseline", columnGap: space.md, rowGap: space.xs }}>
+            {snapshotReady && mediaReady && !mediaError && (
+              <Text style={[type.control, { color: theme.global.textPrimary }]}>
+                {visibleItems.length} {visibleItems.length === 1 ? "resultado" : "resultados"}
+              </Text>
+            )}
+            {preferencesReady && <Text style={[type.caption, { color: theme.global.textSecondary }]}>Orden: {sortLabel}</Text>}
+          </View>
+          {activeFilters.length > 0 && (
+            <Text style={[type.caption, { color: theme.global.textSecondary }]}>
+              Filtros: {activeFilters.join(" · ")}
+            </Text>
+          )}
+        </View>
+        {activeFilters.length > 0 && <Chip label="Limpiar filtros" active={false} onPress={clearFilters} />}
+      </View>
+
       <SensitiveFilterStatus active={preference.value.hideSensitive} ready={mediaReady} error={mediaError} onRetry={retryMedia}/>
-      {loading ? (
+      {loading || (!mediaReady && !mediaError) ? (
         <View style={{ alignItems: "center", gap: 10, paddingVertical: 32 }}>
           <ActivityIndicator color={theme.global.textPrimary} />
           <Text style={{ color: theme.global.textSecondary }}>Cargando Biblioteca…</Text>
@@ -777,7 +818,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
             <Text style={{ color: theme.global.textPrimary, fontWeight: "900" }}>Reintentar</Text>
           </Pressable>
         </View>
-      ) : (
+      ) : mediaError ? null : (
         <FlatList
           columnWrapperStyle={
             gridColumns > 1 ? { gap: gridGap } : undefined
@@ -815,12 +856,12 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
             return (
               <View
                 style={{
-                  padding: 12,
-                  borderRadius: 16,
+                  padding: space.md,
+                  borderRadius: radius.card,
                   borderWidth: 1,
                   borderColor: theme.global.border,
                   backgroundColor: theme.global.surface,
-                  gap: 10,
+                  gap: space.sm,
                 }}
               >
                 <Pressable
@@ -845,27 +886,27 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                   >
                     <MediaPoster context="list" identity={item.id} posterUrl={item.posterUrl} imageProvider={savedMediaPresentation(item).imageProvider} metadata={savedMediaPresentation(item).metadata} style={{ width: 70, height: 105, borderRadius: 12 }} />
 
-                    <View style={{ flex: 1, gap: 6 }}>
-                      <Text style={{ fontSize: 16, fontWeight: "900", color: theme.global.textPrimary }}>
+                    <View style={{ flex: 1, minWidth: 0, gap: space.xs }}>
+                      <Text numberOfLines={2} ellipsizeMode="tail" style={[type.title, { color: theme.global.textPrimary }]}>
                         {item.title}
                         {item.year ? ` (${item.year})` : ""}
                       </Text>
 
-                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                        <Pill text={mediaClassificationLabel(item)} />
-                        <Pill text={`Estado: ${titleStatusLabel(item.status, item.medium)}`} />
-                        <PublicRating value={savedMediaPresentation(item).rating} />
-                        <PersonalRatingBadge value={item.personalRating} />
+                      <Text style={[type.caption, { color: theme.global.textSecondary }]}>{mediaClassificationLabel(item)}</Text>
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.xs }}>
+                        <Pill text={titleStatusLabel(item.status, item.medium)} />
+                        <PersonalRatingBadge value={item.personalRating} showPersonalLabel />
                       </View>
+                      <PublicRating value={savedMediaPresentation(item).rating} />
 
                       {!!overview && (
-                        <Text style={{ color: theme.global.textSecondary }} numberOfLines={3}>
+                        <Text style={[type.caption, { color: theme.global.textSecondary }]} numberOfLines={2} ellipsizeMode="tail">
                           {overview}
                         </Text>
                       )}
 
                       {tagsPreview.length > 0 && (
-                        <Text style={{ color: theme.global.textMuted }} numberOfLines={1}>
+                        <Text style={[type.caption, { color: theme.global.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
                           Etiquetas: {tagsPreview.join(", ")}
                           {item.tags.length > 3 ? "…" : ""}
                         </Text>
@@ -874,7 +915,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                   </View>
                 </Pressable>
 
-                <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
+                <View style={{ flexDirection: "row", gap: space.sm, flexWrap: "wrap", alignItems: "center" }}>
                   <Pressable
                     accessibilityLabel={
                       item.status === "done"
@@ -884,8 +925,8 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                     accessibilityRole="button"
                     focusable
                     onPress={() => toggleDone(item)}
-                    style={{
-                      minHeight: 44,
+                    style={({ pressed }) => [{
+                      minHeight: controlTarget,
                       justifyContent: "center",
                       paddingVertical: 8,
                       paddingHorizontal: 10,
@@ -893,7 +934,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                       backgroundColor: theme.global.surfaceSecondary,
                       borderWidth: 1,
                       borderColor: theme.global.borderStrong,
-                    }}
+                    }, pressed && pressedFeedback]}
                   >
                     <Text style={{ color: theme.global.textPrimary, fontWeight: "800" }}>
                       {item.status === "done"
@@ -940,33 +981,35 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                     accessibilityRole="button"
                     focusable
                     onPress={() => remove(item.id)}
-                    style={{
-                      minHeight: 44,
+                    style={({ pressed }) => [{
+                      alignItems: "center",
+                      minHeight: controlTarget,
+                      minWidth: controlTarget,
                       justifyContent: "center",
-                      paddingVertical: 8,
-                      paddingHorizontal: 10,
-                      borderRadius: 12,
-                      backgroundColor: theme.semantic.dangerSurface,
-                      borderWidth: 1,
-                      borderColor: theme.semantic.dangerBorder,
-                    }}
+                      borderRadius: radius.control,
+                      marginLeft: "auto",
+                    }, pressed && pressedFeedback]}
                   >
-                    <Text style={{ color: theme.semantic.onDangerSurface, fontWeight: "800" }}>Borrar</Text>
+                    <Ionicons name="trash-outline" size={20} color={theme.global.textSecondary} />
                   </Pressable>
                 </View>
               </View>
             );
           }}
           ListEmptyComponent={
-            <View style={{ paddingVertical: 20, gap: 8 }}>
-              <Text style={{ color: theme.global.textPrimary, fontWeight: "900" }}>
-                {items.length === 0 ? "Tu Biblioteca está vacía" : "No hay resultados"}
+            <View style={{ paddingVertical: space.xl, gap: space.sm, alignItems: "flex-start" }}>
+              <Text accessibilityRole="header" style={[type.heading, { color: theme.global.textPrimary }]}>
+                {items.length === 0 ? "Tu Biblioteca está vacía" :
+                  activeFilters.length ? "No hay coincidencias" : "No hay títulos visibles"}
               </Text>
-              <Text style={{ color: theme.global.textSecondary }}>
-                {items.length === 0
-                  ? "Los títulos que guardes aparecerán acá."
-                  : "Probá cambiar la búsqueda o los filtros."}
-              </Text>
+              {items.length === 0 && !bindings && (
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
+                  <Chip label="Buscar" active={false} onPress={() => router.push("/buscar")} />
+                  {manualAction(false)}
+                </View>
+              )}
+              {items.length > 0 && activeFilters.length > 0 &&
+                <Chip label="Limpiar filtros" active={false} onPress={clearFilters} />}
             </View>
           }
         />
