@@ -44,7 +44,7 @@ export function ArtReview() {
       </View>
       <View style={{ flexDirection: "row", gap: 8 }}>
         <TitleGridCard identity={`card-${identity}`} title="TEST Cowboy Bebop" kindLabel="Anime · Kitsu" imageProvider="kitsu" metadata={metadata}
-          publicRating={rating} personalRating={90} onPress={() => {}} accessibilityLabel="TEST card Kitsu" style={{ width: 150 }} />
+          personalRating={90} onPress={() => {}} accessibilityLabel="TEST card Kitsu" style={{ width: 150 }} />
         <MediaPoster identity="missing" imageProvider="kitsu" style={{ width: 70, height: 105 }} />
         <MediaPoster identity="rejected" imageProvider="kitsu" posterUrl="https://127.0.0.1/rejected" style={{ width: 70, height: 105 }} />
       </View>

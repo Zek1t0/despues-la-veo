@@ -1,3 +1,4 @@
+import { gridItemKey, titleGridColumns } from "../../src/theme/presentation";
 import { savedContentVisible } from "../../src/core/sensitiveContent";
 import { SensitiveFilterStatus } from "../../src/components/browsing/SensitiveContentNotice";
 import { useMediaLanguages, type MediaLanguageServices } from "../../src/components/browsing/useMediaLanguages";
@@ -142,7 +143,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
   const router = useRouter();
   const { theme } = useAppTheme();
   const { languages,preference,ready:mediaReady,error:mediaError,retry:retryMedia } = useMediaLanguages(!bindings || !!bindings.languagePreferences, bindings?.languagePreferences);
-  const { width: windowWidth } = useWindowDimensions();
+  const { width: windowWidth, fontScale } = useWindowDimensions();
 
   const [items, setItems] = useState<SavedTitleWithProviderReferences[]>([]);
   const [pinnedAtById, setPinnedAtById] = useState<Map<string, number>>(new Map());
@@ -435,10 +436,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
   const availableListWidth = Math.max(0, Math.min(windowWidth - 32, 1168));
   const gridColumns =
     viewMode === "grid"
-      ? Math.max(
-          1,
-          Math.min(6, Math.floor((availableListWidth + gridGap) / (150 + gridGap)))
-        )
+      ? titleGridColumns(availableListWidth, gridGap, fontScale)
       : 1;
   const gridCardWidth = Math.floor(
     (availableListWidth - gridGap * (gridColumns - 1)) / gridColumns
@@ -786,7 +784,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
           }
           data={visibleItems}
           key={listLayoutKey}
-          keyExtractor={(x) => x.id}
+          keyExtractor={(x) => gridItemKey(x.id)}
           numColumns={gridColumns}
           contentContainerStyle={{ gap: viewMode === "grid" ? gridGap : 10, paddingBottom: 24 }}
           renderItem={({ item }) => {
@@ -802,13 +800,11 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                       params: { id: item.id, pinContext: "library" },
                     })
                   }
-                  publicRating={savedMediaPresentation(item).rating}
                   posterUrl={item.posterUrl} imageProvider={savedMediaPresentation(item).imageProvider} metadata={savedMediaPresentation(item).metadata}
                   personalRating={item.personalRating}
                   style={{ width: gridCardWidth }}
                   title={item.title}
                   kindLabel={mediaClassificationLabel(item)}
-                  statusLabel={titleStatusLabel(item.status, item.medium)}
                 />
               );
             }

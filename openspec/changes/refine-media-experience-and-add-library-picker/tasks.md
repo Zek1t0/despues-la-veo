@@ -1,7 +1,7 @@
 ## 1. Fundamentos visuales y componentes compartidos
 
-- [ ] 1.1 Registrar un recorrido breve de la UI vigente en Web y Android con datos de prueba. Incorporar escalas de tipografía, espaciado y radios y aplicar patrones comunes de acción, sección y feedback. Comprobar foco, contraste, texto grande y tema sistema, claro y oscuro.
-- [ ] 1.2 Afinar Mosaico compartido y panel de opciones. Verificar título, clasificación, pin, puntuación personal, apertura en una sola acción y arte ausente/bloqueado/fallido. Recorrer las siete paletas sobre estas superficies, con una comprobación representativa de ambos esquemas efectivos y sin repetir toda la matriz por paleta.
+- [x] 1.1 Registrar un recorrido breve de la UI vigente en Web y Android con datos de prueba. Incorporar escalas de tipografía, espaciado y radios y aplicar patrones comunes de acción, sección y feedback. Comprobar foco, contraste, texto grande y tema sistema, claro y oscuro.
+- [x] 1.2 Afinar Mosaico compartido y panel de opciones. Verificar título, clasificación, pin, puntuación personal, apertura en una sola acción y arte ausente/bloqueado/fallido. Recorrer las siete paletas sobre estas superficies, con una comprobación representativa de ambos esquemas efectivos y sin repetir toda la matriz por paleta.
 
 ## 2. Pantallas y experiencia visual
 

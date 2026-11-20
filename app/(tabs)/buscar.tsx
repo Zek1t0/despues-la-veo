@@ -1,3 +1,4 @@
+import { gridItemKey, titleGridColumns } from "../../src/theme/presentation";
 import { remoteContentVisible } from "../../src/core/sensitiveContent";
 import { SensitiveFilterStatus } from "../../src/components/browsing/SensitiveContentNotice";
 import { useMediaLanguages, type MediaLanguageServices } from "../../src/components/browsing/useMediaLanguages";
@@ -69,7 +70,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
   const [categoryId, setCategoryId] = useState<SearchCategoryId>(initialCategory);
   const selected = resolveCategory(categoryId);
   const isTmdb = selected?.category.source === "tmdb";
-  const { width: windowWidth } = useWindowDimensions();
+  const { width: windowWidth, fontScale } = useWindowDimensions();
   const [q, setQ] = useState("");
   const [searchRetry, setSearchRetry] = useState(0);
   const [viewMode, setViewMode] = useState<SearchViewMode>(
@@ -185,10 +186,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
 
   const gridGap = 12;
   const availableWidth = Math.max(0, Math.min(windowWidth - 32, 1168));
-  const responsiveGridColumns = Math.max(
-    1,
-    Math.min(6, Math.floor((availableWidth + gridGap) / (150 + gridGap)))
-  );
+  const responsiveGridColumns = titleGridColumns(availableWidth, gridGap, fontScale);
   const listColumns = viewMode === "grid" ? responsiveGridColumns : 1;
   const gridCardWidth = Math.floor(
     (availableWidth - gridGap * (listColumns - 1)) / listColumns
@@ -341,7 +339,9 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
         columnWrapperStyle={listColumns > 1 ? { gap: gridGap } : undefined}
         data={visibleItems.map(item => presentRemoteTitle(item, languages))}
         key={listLayoutKey}
-        keyExtractor={(item) => `${item.reference.provider}/${item.reference.resourceNamespace}/${item.reference.externalId}`}
+        keyExtractor={({ reference }) => gridItemKey(JSON.stringify([
+          reference.provider, reference.resourceNamespace, reference.externalId,
+        ]))}
         numColumns={listColumns}
         contentContainerStyle={{
           flexGrow: visibleItems.length === 0 ? 1 : undefined,
@@ -359,7 +359,6 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
                 identity={JSON.stringify(item.reference)}
                 accessibilityLabel={`Abrir ${item.kindLabel} ${item.displayTitle}`}
                 onPress={() => bindings ? bindings.openResult(route) : router.push(route)}
-                publicRating={resolvePublicRating(item.reference.provider, item.metadata)}
                 posterUrl={item.posterUrl} imageProvider={item.reference.provider} metadata={item.metadata}
                 style={{ width: gridCardWidth }}
                 title={item.displayTitle}

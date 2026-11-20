@@ -1,34 +1,21 @@
-import { PublicRating } from "./PublicRating";
-import { publicRatingLabel } from "../../core/mediaPresentation";
-import type { PublicRating as PublicRatingValue } from "../../core/publicRating";
-import { MediaPoster } from "./MediaPoster";
-import type { EnrichedMediaMetadata } from "../../core/enrichedMediaMetadata";
-import React from "react";
+import React, { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 
-
+import type { EnrichedMediaMetadata } from "../../core/enrichedMediaMetadata";
 import type { PersonalRating } from "../../core/personalRating";
-
 import { useAppTheme } from "../../theme/AppThemeProvider";
+import { pressedFeedback, radius, space, type } from "../../theme/presentation";
+import { MediaPoster } from "./MediaPoster";
 import { PersonalRatingBadge } from "./PersonalRatingBadge";
 import { getPersonalRatingPresentation } from "./personalRatingPresentation";
 
 export type TitleGridCardProps = {
-  publicRating?: PublicRatingValue | null;
   identity?: string;
   imageProvider?: string | null;
   metadata?: EnrichedMediaMetadata;
   title: string;
   kindLabel: string;
-  statusLabel?: string;
   posterUrl?: string | null;
   onPress: () => void;
   accessibilityLabel: string;
@@ -39,12 +26,10 @@ export type TitleGridCardProps = {
 
 export function TitleGridCard({
   identity,
-  publicRating,
   imageProvider = "tmdb",
   metadata,
   title,
   kindLabel,
-  statusLabel,
   posterUrl,
   onPress,
   accessibilityLabel,
@@ -53,92 +38,85 @@ export function TitleGridCard({
   style,
 }: TitleGridCardProps) {
   const { theme } = useAppTheme();
-
-
-
-  const personalRatingPresentation = getPersonalRatingPresentation(personalRating);
-  const composedAccessibilityLabel = [
-    accessibilityLabel,
-    publicRatingLabel(publicRating),
-    isPinned ? "fijado" : null,
-    personalRatingPresentation?.accessibilityLabel ?? null,
-  ]
-    .filter((part): part is string => part !== null)
+  const [focused, setFocused] = useState(false);
+  const ratingLabel = getPersonalRatingPresentation(personalRating)?.accessibilityLabel;
+  const label = [accessibilityLabel, isPinned ? "fijado" : null, ratingLabel]
+    .filter(Boolean)
     .join(". ");
 
   return (
     <Pressable
       accessible
-      accessibilityLabel={composedAccessibilityLabel}
+      accessibilityLabel={label}
       accessibilityRole="button"
       focusable
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,
         {
-          backgroundColor: theme.global.surfaceSecondary,
-          borderColor: theme.global.border,
+          backgroundColor: theme.global.surface,
+          borderColor: focused ? theme.global.accent : theme.global.border,
         },
         style,
-        pressed && styles.pressed,
+        pressed && pressedFeedback,
       ]}
     >
-      <MediaPoster identity={identity ?? accessibilityLabel} imageProvider={imageProvider} metadata={metadata}
-        posterUrl={posterUrl} context="card" style={styles.poster} />
-
       <View
-        accessible={false}
         aria-hidden
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
         pointerEvents="none"
-        style={[styles.badge, { backgroundColor: theme.structural.imageOverlayMedium }]}
+        style={styles.art}
       >
-        <Text style={[styles.badgeText, { color: theme.structural.onImageOverlay }]}>
-          {kindLabel}
-        </Text>
-      </View>
-
-      {isPinned ? (
-        <View
-          accessible={false}
-          aria-hidden
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-          pointerEvents="none"
-          style={[
-            styles.pinBadge,
-            {
-              backgroundColor: theme.structural.imageOverlayStrong,
-              borderColor: theme.structural.imageOverlayBorder,
-            },
-          ]}
-        >
-          <Ionicons color={theme.structural.onImageOverlay} name="diamond-outline" size={14} />
+        <MediaPoster
+          identity={identity ?? accessibilityLabel}
+          imageProvider={imageProvider}
+          metadata={metadata}
+          posterUrl={posterUrl}
+          context="card"
+          style={styles.poster}
+        />
+        <View style={styles.indicators}>
+          <Text
+            numberOfLines={1}
+            style={[
+              type.caption,
+              styles.kind,
+              {
+                backgroundColor: theme.structural.imageOverlayLabel,
+                color: theme.structural.onImageOverlay,
+              },
+            ]}
+          >
+            {kindLabel}
+          </Text>
+          {isPinned && (
+            <View style={[
+              styles.pin,
+              {
+                backgroundColor: theme.structural.imageOverlayStrong,
+                borderColor: theme.structural.imageOverlayBorder,
+              },
+            ]}>
+              <Ionicons color={theme.structural.onImageOverlay} name="diamond-outline" size={14} />
+            </View>
+          )}
         </View>
-      ) : null}
 
-      <View
-        accessible={false}
-        aria-hidden
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        pointerEvents="none"
-        style={[
-          styles.titleOverlay,
-          { backgroundColor: theme.structural.imageOverlay },
-        ]}
-      >
-        <PublicRating value={publicRating} style={{ color: theme.structural.onImageOverlaySecondary, fontSize: 10 }} />
-        <PersonalRatingBadge value={personalRating} style={styles.ratingBadge} />
-        {statusLabel ? <Text style={{ color: theme.structural.onImageOverlaySecondary, fontSize: 11, fontWeight: "700" }}>{statusLabel}</Text> : null}
-        <Text
-          ellipsizeMode="tail"
-          numberOfLines={2}
-          style={[styles.title, { color: theme.structural.onImageOverlay }]}
-        >
-          {title}
-        </Text>
+        <View>
+          <PersonalRatingBadge value={personalRating} style={styles.rating} />
+          <View style={[styles.caption, { backgroundColor: theme.structural.imageOverlayLabel }]}>
+            {/* Let the platform measure two scaled lines using the real title metrics. */}
+            <Text style={[styles.titleText, styles.captionMeasure]}>
+              {"M\nM"}
+            </Text>
+            <Text numberOfLines={2} style={[styles.titleText, styles.captionContent, { color: theme.structural.onImageOverlay }]}>
+              {title}
+            </Text>
+          </View>
+        </View>
       </View>
     </Pressable>
   );
@@ -146,57 +124,60 @@ export function TitleGridCard({
 
 const styles = StyleSheet.create({
   card: {
-    aspectRatio: 2 / 3,
-    borderRadius: 14,
+    borderRadius: radius.card,
     borderWidth: 1,
     overflow: "hidden",
-    position: "relative",
   },
-  pressed: {
-    opacity: 0.82,
+  art: {
+    aspectRatio: 2 / 3,
+    justifyContent: "space-between",
   },
   poster: {
     ...StyleSheet.absoluteFillObject,
     borderWidth: 0,
   },
-  badge: {
-    borderRadius: 999,
-    left: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    position: "absolute",
-    top: 8,
+  indicators: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: space.xs,
+    justifyContent: "space-between",
+    padding: space.sm,
   },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: "800",
+  kind: {
+    flexShrink: 1,
+    borderRadius: radius.control,
+    overflow: "hidden",
+    paddingHorizontal: space.sm,
+    paddingVertical: 2,
   },
-  pinBadge: {
+  pin: {
     alignItems: "center",
-    borderRadius: 999,
+    borderRadius: radius.round,
     borderWidth: StyleSheet.hairlineWidth,
-    justifyContent: "center",
-    padding: 6,
+    padding: space.xs + 2,
+  },
+  caption: {
+    position: "relative",
+    paddingVertical: space.xs,
+  },
+  captionMeasure: {
+    opacity: 0,
+  },
+  captionContent: {
     position: "absolute",
-    right: 8,
-    top: 8,
+    left: space.sm,
+    right: space.sm,
+    top: space.xs,
   },
-  titleOverlay: {
-    bottom: 0,
-    left: 0,
-    minHeight: 58,
-    paddingHorizontal: 10,
-    paddingVertical: 9,
-    position: "absolute",
-    right: 0,
-    justifyContent: "flex-end",
+  titleText: {
+    ...type.title,
+    includeFontPadding: false,
   },
-  ratingBadge: {
-    marginBottom: 5,
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: "900",
-    lineHeight: 19,
+  rating: {
+    alignSelf: "flex-end",
+    marginRight: space.sm,
+    marginBottom: space.xs,
+    paddingHorizontal: space.xs,
+    paddingVertical: 0,
   },
 });

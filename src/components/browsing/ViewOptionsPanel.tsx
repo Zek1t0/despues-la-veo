@@ -1,5 +1,6 @@
-import React, { useEffect, type ReactNode } from "react";
+import React, { useEffect, useState, type ReactNode } from "react";
 import {
+  AccessibilityInfo,
   Modal,
   Platform,
   Pressable,
@@ -10,6 +11,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 
+import { controlTarget, pressedFeedback, radius, space, type } from "../../theme/presentation";
 import { useAppTheme } from "../../theme/AppThemeProvider";
 import { LayoutOption } from "./LayoutOption";
 
@@ -83,7 +85,7 @@ function CompactOption({
             ? theme.global.selectedBorder
             : theme.global.borderStrong,
         },
-        pressed && styles.pressed,
+        pressed && pressedFeedback,
       ]}
     >
       {indicator ? (
@@ -114,9 +116,28 @@ export function ViewOptionsPanel({
   title = "Opciones",
 }: ViewOptionsPanelProps) {
   const { theme } = useAppTheme();
-  const { width } = useWindowDimensions();
-  const compactWeb = Platform.OS === "web" && width >= 640;
+  const { width, fontScale } = useWindowDimensions();
+  const compactWeb = Platform.OS === "web" && width >= 640 * Math.max(1, fontScale);
   const populatedSections = sections.filter((section) => section.options.length > 0);
+  const [reduceMotion, setReduceMotion] = useState(true);
+
+  useEffect(() => {
+    let current = true;
+    let receivedUpdate = false;
+    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", (enabled) => {
+      receivedUpdate = true;
+      setReduceMotion(enabled);
+    });
+    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      if (current && !receivedUpdate) setReduceMotion(enabled);
+    }).catch(() => {
+      // Keep the conservative initial setting if the platform cannot report it.
+    });
+    return () => {
+      current = false;
+      subscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (!visible || Platform.OS !== "web" || typeof document === "undefined") return;
@@ -131,7 +152,7 @@ export function ViewOptionsPanel({
 
   return (
     <Modal
-      animationType="fade"
+      animationType={reduceMotion ? "none" : "fade"}
       onRequestClose={onClose}
       transparent
       visible={visible}
@@ -170,7 +191,7 @@ export function ViewOptionsPanel({
               style={({ pressed }) => [
                 styles.closeButton,
                 { borderColor: theme.global.borderStrong },
-                pressed && styles.pressed,
+                pressed && pressedFeedback,
               ]}
             >
               <Text style={[styles.closeText, { color: theme.global.textPrimary }]}>Cerrar</Text>
@@ -186,7 +207,7 @@ export function ViewOptionsPanel({
                 >
                   {section.title}
                 </Text>
-                <View style={styles.options}>
+                <View style={[styles.options, fontScale >= 1.4 && styles.stackedOptions]}>
                   {section.presentation === "layout"
                     ? section.options.map((option) => (
                         <LayoutOption
@@ -227,7 +248,7 @@ const styles = StyleSheet.create({
   backdropWeb: {
     alignItems: "center",
     justifyContent: "center",
-    padding: 16,
+    padding: space.lg,
   },
   backdropMobile: {
     justifyContent: "flex-end",
@@ -239,67 +260,65 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   panelWeb: {
-    borderRadius: 18,
+    borderRadius: radius.panel,
     maxWidth: 480,
   },
   panelMobile: {
     borderBottomWidth: 0,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: radius.panel,
+    borderTopRightRadius: radius.panel,
     maxHeight: "88%",
   },
   header: {
     alignItems: "center",
     borderBottomWidth: 1,
     flexDirection: "row",
-    gap: 12,
+    gap: space.md,
     justifyContent: "space-between",
-    padding: 16,
+    padding: space.lg,
   },
   panelTitle: {
     flex: 1,
-    fontSize: 18,
-    fontWeight: "900",
+    ...type.heading,
   },
   closeButton: {
     alignItems: "center",
-    borderRadius: 10,
+    borderRadius: radius.control,
     borderWidth: 1,
     justifyContent: "center",
-    minHeight: 44,
-    paddingHorizontal: 12,
+    minHeight: controlTarget,
+    paddingHorizontal: space.md,
   },
   closeText: {
-    fontWeight: "800",
-  },
-  pressed: {
-    opacity: 0.78,
+    ...type.control,
   },
   content: {
-    gap: 20,
-    padding: 16,
+    gap: space.xl,
+    padding: space.lg,
   },
   section: {
-    gap: 10,
+    gap: space.sm,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: "800",
+    ...type.control,
   },
   options: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: space.sm,
+  },
+  stackedOptions: {
+    flexDirection: "column",
   },
   compactOption: {
     alignItems: "center",
-    borderRadius: 10,
+    borderRadius: radius.control,
     borderWidth: 1,
     flexDirection: "row",
-    gap: 8,
-    minHeight: 44,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    gap: space.sm,
+    minHeight: controlTarget,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
     width: "100%",
   },
   compactIndicator: {
@@ -308,6 +327,6 @@ const styles = StyleSheet.create({
   },
   compactTitle: {
     flex: 1,
-    fontWeight: "800",
+    ...type.control,
   },
 });

@@ -1,3 +1,4 @@
+import { gridItemKey, titleGridColumns } from "../../src/theme/presentation";
 import { savedContentVisible } from "../../src/core/sensitiveContent";
 import { SensitiveFilterStatus } from "../../src/components/browsing/SensitiveContentNotice";
 import { matchesLocalMediaQuery } from "../../src/core/mediaViewProjection";
@@ -256,7 +257,7 @@ export default function EtiquetasScreen() {
   const router = useRouter();
   const { theme } = useAppTheme();
   const { languages,preference,ready:mediaReady,error:mediaError,retry:retryMedia } = useMediaLanguages();
-  const { width: windowWidth } = useWindowDimensions();
+  const { width: windowWidth, fontScale } = useWindowDimensions();
   const [items, setItems] = useState<SavedTitle[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -557,11 +558,8 @@ export default function EtiquetasScreen() {
   const tagColumns = viewMode === "grid" ? tagGridColumns : 1;
   const tagCardWidth = Math.floor((availableWidth - gap * (tagColumns - 1)) / tagColumns);
   const tagListKey = `${viewMode}-${tagColumns}`;
-  const titleGridColumns = Math.max(
-    1,
-    Math.min(6, Math.floor((availableWidth + gap) / (150 + gap)))
-  );
-  const titleColumns = libraryViewMode === "grid" ? titleGridColumns : 1;
+  const responsiveTitleColumns = titleGridColumns(availableWidth, gap, fontScale);
+  const titleColumns = libraryViewMode === "grid" ? responsiveTitleColumns : 1;
   const titleCardWidth = Math.floor(
     (availableWidth - gap * (titleColumns - 1)) / titleColumns
   );
@@ -840,7 +838,7 @@ export default function EtiquetasScreen() {
             contentContainerStyle={{ gap, paddingBottom: 32 }}
             data={selectedItems}
             key={titleListKey}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => gridItemKey(item.id)}
             numColumns={titleColumns}
             renderItem={({ item }) =>
               libraryViewMode === "grid" ? (
@@ -853,13 +851,11 @@ export default function EtiquetasScreen() {
                       params: { id: item.id, pinContext: "tag", tag: selectedTag },
                     })
                   }
-                  publicRating={savedMediaPresentation(item).rating}
                   posterUrl={item.posterUrl} imageProvider={savedMediaPresentation(item).imageProvider} metadata={savedMediaPresentation(item).metadata}
                   personalRating={item.personalRating}
                   style={{ width: titleCardWidth }}
                   title={item.title}
                   kindLabel={mediaClassificationLabel(item)}
-                  statusLabel={titleStatusLabel(item.status, item.medium)}
                 />
               ) : (
                 <DetailTitleRow
@@ -896,7 +892,7 @@ export default function EtiquetasScreen() {
             contentContainerStyle={{ gap, paddingBottom: 32 }}
             data={visibleTags}
             key={tagListKey}
-            keyExtractor={(info) => info.tag}
+            keyExtractor={(info) => gridItemKey(info.tag)}
             numColumns={tagColumns}
             renderItem={({ item }) =>
               viewMode === "grid" ? (

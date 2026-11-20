@@ -6,6 +6,7 @@ import {
   View,
 } from "react-native";
 
+import { controlTarget, pressedFeedback, radius, space, type } from "../../theme/presentation";
 import { useAppTheme } from "../../theme/AppThemeProvider";
 
 export type LayoutOptionProps = {
@@ -44,7 +45,7 @@ export function LayoutOption({
             ? theme.global.selectedBorder
             : theme.global.borderStrong,
         },
-        pressed && styles.pressed,
+        pressed && pressedFeedback,
       ]}
     >
       <View accessible={false} pointerEvents="none" style={styles.indicator}>
@@ -69,18 +70,15 @@ export function LayoutOption({
 const styles = StyleSheet.create({
   option: {
     alignItems: "center",
-    borderRadius: 12,
+    borderRadius: radius.control,
     borderWidth: 1,
     flex: 1,
-    gap: 8,
+    gap: space.sm,
     justifyContent: "center",
     minHeight: 72,
     minWidth: 96,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  pressed: {
-    opacity: 0.78,
+    paddingHorizontal: space.md,
+    paddingVertical: space.md,
   },
   indicator: {
     alignItems: "center",
@@ -88,7 +86,7 @@ const styles = StyleSheet.create({
     minHeight: 24,
   },
   title: {
-    fontWeight: "800",
+    ...type.control,
     textAlign: "center",
   },
 });
