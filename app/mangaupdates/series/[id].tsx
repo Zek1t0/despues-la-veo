@@ -1,3 +1,5 @@
+import { incorporateProviderRecommendation } from "../../../src/storage/recommendationIncorporation";
+import { OrganizationButton } from "../../../src/components/organization/OrganizationUI";
 import { radius, space, type } from "../../../src/theme/presentation";
 import { admittedImageUrl, providerImagePolicy } from "../../../src/core/mediaImagePresentation";
 import React, { useEffect, useRef, useState } from "react";
@@ -24,7 +26,7 @@ function localId() {
 }
 
 export default function MangaUpdatesDetailScreen() {
-  const { id: parameter } = useLocalSearchParams<{ id?: string | string[] }>();
+  const { id: parameter, recommendationId } = useLocalSearchParams<{ id?: string | string[]; recommendationId?: string }>();
   const router = useRouter();
   const { theme } = useAppTheme();
   let id: string | null = null;
@@ -82,11 +84,12 @@ export default function MangaUpdatesDetailScreen() {
     const current = generation.current;
     saveInFlight.current = true; setSaving(true); setSaveError(null);
     try {
-      const savedId = await saveProviderTitle(input, localId);
+      const savedId = recommendationId ? await incorporateProviderRecommendation(recommendationId,input,localId,()=>mangaUpdatesAvailability(Platform.OS).productionEnabled) : await saveProviderTitle(input, localId);
       if (current !== generation.current) return;
       setState(previous => previous?.id === id ? { ...previous, savedId } : previous);
       Alert.alert("Listo", "Guardado en tu biblioteca.");
-      if (!visible?.savedId) router.push(`/title/${savedId}`);
+      if(recommendationId)router.replace({pathname:"/organize/recommendations/[id]",params:{id:recommendationId}});
+      else if (!visible?.savedId) router.push(`/title/${savedId}`);
     } catch {
       if (current === generation.current) setSaveError("No se pudo guardar o actualizar la obra. Tu biblioteca conserva sus datos anteriores.");
     } finally {
@@ -96,6 +99,7 @@ export default function MangaUpdatesDetailScreen() {
   }
 
   return <>
+    {recommendationId&&<OrganizationButton label="Volver a la recomendación" onPress={()=>router.replace({pathname:"/organize/recommendations/[id]",params:{id:recommendationId}})}/>}
     <Stack.Screen options={{ title: snapshot?.title ?? "MangaUpdates" }} />
     <ScrollView style={{ backgroundColor: theme.global.background }} contentContainerStyle={{
       alignSelf: "center", maxWidth: 800, width: "100%", padding: space.lg, gap: space.md, paddingBottom: 32,
@@ -119,7 +123,7 @@ export default function MangaUpdatesDetailScreen() {
               <Text style={{ color: theme.global.textSecondary }}>{mediaYearLabel(snapshot.medium)}: {snapshot.year ?? "Sin año"}</Text>
             </View>
           </View>
-          {button(saving ? "Guardando…" : visible?.savedId ? "Actualizar guardado" : "Guardar en Biblioteca", () => void save(), saving)}
+          {button(saving ? "Guardando…" : recommendationId ? visible?.savedId ? "Vincular recomendación" : "Guardar e incorporar recomendación" : visible?.savedId ? "Actualizar guardado" : "Guardar en Biblioteca", () => void save(), saving)}
           {visible?.savedId && button("Abrir en Biblioteca", () => router.push(`/title/${visible.savedId}`))}
           <Text style={{ color: theme.global.textSecondary, lineHeight: 22 }}>{snapshot.overview ?? "Sin descripción."}</Text>
           <Text style={{ color: theme.global.textSecondary }}>{snapshot.genres.join(" · ") || "Sin géneros."}</Text>

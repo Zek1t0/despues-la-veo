@@ -12,6 +12,7 @@ type Services = {
   list(): Promise<SavedTitleWithProviderReferences[]>;
   save(input: ManualContentInput, id?: string): Promise<string>;
   inspect(id: string): void; done(id: string): void; cancel(): void;
+  linkExisting?(id: string): Promise<void>;
 };
 const media: [MediaMedium, string][] = [["audiovisual", "Película, serie o video"], ["comic", "Cómic"], ["literature", "Literatura"]];
 const families: [MediaContentFamily, string][] = [[null, "Sin especificar"], ["anime", "Anime"], ["manga", "Manga"], ["manhwa", "Manhwa"], ["manhua", "Manhua"]];
@@ -57,6 +58,13 @@ export function ManualEntryForm({ id, services }: { id?: string; services: Servi
   }, [id, retry]);
 
   const changed = () => { setCandidates(null); setError(null); };
+  async function linkExisting(itemId: string) {
+    if (lock.current || !services.linkExisting) return;
+    lock.current=true;setBusy(true);setError(null);
+    try { await services.linkExisting(itemId); services.done(itemId); }
+    catch(e) { setError(e instanceof Error ? e.message : "No se pudo vincular. Tu borrador sigue acá."); }
+    finally { lock.current=false;setBusy(false); }
+  }
   const save = async (separate = false) => {
     if (lock.current) return;
     lock.current = true; setBusy(true); setError(null);
@@ -108,6 +116,7 @@ export function ManualEntryForm({ id, services }: { id?: string; services: Servi
       {candidates && <View style={{ gap: 8 }}>
         <Text accessibilityRole="alert" style={text}>Ya hay títulos parecidos en tu biblioteca. Podés revisarlos y volver con este borrador, o guardar por separado.</Text>
         {candidates.map(item => button(`Ver ${item.title}${item.year == null ? "" : ` (${item.year})`}`, () => services.inspect(item.id), false, item.id))}
+        {services.linkExisting && candidates.map(item => button(`Vincular con ${item.title}${item.year == null ? "" : ` (${item.year})`}`, () => { void linkExisting(item.id); }, false, `link-${item.id}`))}
         {button(id ? "Guardar cambios igualmente" : "Crear por separado", () => { void save(true); })}
       </View>}
       {button(busy ? "Guardando…" : confirmedId.current ? "Abrir título guardado" : "Guardar", () => { void save(); })}

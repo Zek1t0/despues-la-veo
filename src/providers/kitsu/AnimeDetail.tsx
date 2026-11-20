@@ -1,3 +1,4 @@
+import {sensitiveSignal} from "../../core/sensitiveContent";
 import { radius, space, type } from "../../theme/presentation";
 import { useMediaLanguages, type MediaLanguageServices } from "../../components/browsing/useMediaLanguages";
 import { resolveMediaTitle, titleFallbackLabel } from "../../core/mediaTitlePresentation";
@@ -18,6 +19,7 @@ import { kitsuMaterializationInput } from "./mapping";
 import { presentKitsuError } from "./errors";
 
 export type AnimeDetailServices = {
+  recommendation?: boolean;
   languagePreferences?: MediaLanguageServices;
   available: boolean;
   load(id: string, signal: AbortSignal): Promise<KitsuAnime>;
@@ -29,7 +31,7 @@ export type AnimeDetailServices = {
 /** Same component for production route and explicitly injected disposable review. */
 export function KitsuAnimeDetail({ id: parameter, services }: { id: unknown; services: AnimeDetailServices }) {
   const { theme } = useAppTheme();
-  const { languages } = useMediaLanguages(services.available && !!services.languagePreferences, services.languagePreferences);
+  const { languages,preference,ready:preferencesReady,error:preferenceError,retry:retryPreferences } = useMediaLanguages(services.available && !!services.languagePreferences, services.languagePreferences);
   let id: string | null = null;
   try { id = canonicalAnimeId(parameter); } catch { /* No load for malformed routes. */ }
   const [retry, setRetry] = useState(0);
@@ -68,17 +70,19 @@ export function KitsuAnimeDetail({ id: parameter, services }: { id: unknown; ser
     <Text style={{ color: theme.global.textPrimary }}>{label}</Text>
   </Pressable>;
   async function save() {
-    if (!input || !services.available || writeLock.current) return;
+    if (!input || !services.available || writeLock.current || services.recommendation && (!preferencesReady || preference.value.hideSensitive && sensitiveSignal(input.metadata)===true)) return;
     writeLock.current = true; setSaving(true); setWriteError(null);
     const current = generation.current;
     try {
       const savedId = await services.save(input);
       if (current !== generation.current) return;
       setState(value => value?.id === id ? { ...value, savedId } : value);
-      if (!visible?.savedId) services.open(savedId);
+      if (!visible?.savedId && !services.recommendation) services.open(savedId);
     } catch { if (current === generation.current) setWriteError("No se pudo guardar. Tu biblioteca conserva sus datos anteriores."); }
     finally { writeLock.current = false; if (current === generation.current) setSaving(false); }
   }
+  if(services.recommendation && !preferencesReady)return <View style={{padding:space.lg,gap:space.sm}}><Text style={{color:theme.global.textPrimary}}>{preferenceError??"Comprobando visibilidad…"}</Text>{preferenceError&&button("Reintentar preferencias",retryPreferences)}</View>;
+  if(services.recommendation && preference.value.hideSensitive && sensitiveSignal(input?.metadata)===true)return <Text style={{color:theme.global.textPrimary,padding:space.lg}}>Este contenido está oculto por tu preferencia. Volvé a la recomendación para conservarla pendiente.</Text>;
   return <ScrollView style={{ backgroundColor: theme.global.background }} contentContainerStyle={{ width: "100%", maxWidth: 800, alignSelf: "center", padding: space.lg, gap: space.md, paddingBottom: 32 }}>
     {!id ? <Text accessibilityRole="alert" style={{ color: theme.semantic.dangerText }}>El identificador de Kitsu no es válido.</Text>
       : !services.available ? <Text style={{ color: theme.global.textPrimary }}>Kitsu aún no está habilitado. Tu biblioteca local sigue disponible.</Text>
@@ -91,7 +95,7 @@ export function KitsuAnimeDetail({ id: parameter, services }: { id: unknown; ser
           <View style={{ flex: 1, gap: 8 }}><Text accessibilityRole="header" style={[type.heading, { color: theme.global.textPrimary }]}>{displayTitle.title}</Text>
             <Text style={{ color: theme.global.textSecondary }}>{mediaClassificationLabel(snapshot)} · {snapshot.year ?? "Sin año"}</Text></View></View>
         {titleFallbackLabel(displayTitle) && <Text style={{ color: theme.global.textMuted }}>{titleFallbackLabel(displayTitle)}</Text>}
-        {button(saving ? "Guardando…" : visible.savedId ? "Actualizar guardado" : "Guardar en Biblioteca", () => { void save(); })}
+        {button(saving ? "Guardando…" : services.recommendation ? visible.savedId ? "Vincular recomendación" : "Guardar e incorporar recomendación" : visible.savedId ? "Actualizar guardado" : "Guardar en Biblioteca", () => { void save(); })}
         {visible.savedId && button("Abrir en Biblioteca", () => services.open(visible.savedId!))}
         <PublicRating value={resolvePublicRating("kitsu", input?.metadata)} />
         <EditorialDetails rows={editorialRows(input?.metadata, snapshot, "Kitsu · snapshot de la misma consulta")} />

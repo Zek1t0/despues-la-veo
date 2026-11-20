@@ -1,3 +1,5 @@
+import { incorporateProviderRecommendation } from "../../../src/storage/recommendationIncorporation";
+import { OrganizationButton } from "../../../src/components/organization/OrganizationUI";
 import { space, type as typography } from "../../../src/theme/presentation";
 import { useMediaLanguages } from "../../../src/components/browsing/useMediaLanguages";
 import { resolveMediaTitle } from "../../../src/core/mediaTitlePresentation";
@@ -136,12 +138,16 @@ export default function TmdbDetailScreen() {
   const { languages } = useMediaLanguages();
   const router = useRouter();
   const { snapshot, retryInitialization } = useTmdbCredential();
-  const { type, id } = useLocalSearchParams<{ type: "movie" | "tv"; id: string }>();
+  const { type, id, recommendationId } = useLocalSearchParams<{ type: "movie" | "tv"; id: string; recommendationId?: string }>();
+  const recommendationContext=useRef({status:snapshot.status,generation:snapshot.generation,type,id,recommendationId});
+  recommendationContext.current={status:snapshot.status,generation:snapshot.generation,type,id,recommendationId};
 
   const [data, setData] = useState<TmdbDetails | null>(null);
   const [credits, setCredits] = useState<TmdbCreditsResponse | null>(null);
   const [watch, setWatch] = useState<TmdbWatchProvidersCountry | null>(null);
 
+  const [recommendationError,setRecommendationError]=useState<string|null>(null);
+  const recommendationSaveLock=useRef(false);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [overviewExpanded, setOverviewExpanded] = useState(false);
@@ -313,7 +319,10 @@ export default function TmdbDetailScreen() {
   async function saveToLibrary() {
     if (!hasCurrentData || !data || !type || !id) return;
 
+    if(recommendationId && recommendationSaveLock.current)return;
+    if(recommendationId){recommendationSaveLock.current=true;setRecommendationError(null);}
     const wasSaved = savedId !== null;
+    const saveContext=recommendationContext.current;
 
     try {
       setSaving(true);
@@ -322,14 +331,20 @@ export default function TmdbDetailScreen() {
         ? mapTmdbMovieDetails(data as TmdbMovieDetails)
         : mapTmdbTvDetails(data as TmdbTvDetails);
       const input = createTmdbMaterializationInput(details, tmdbInitialTags(data));
-      const newSavedId = await saveProviderTitle(input, uuid);
+      const newSavedId = recommendationId ? await incorporateProviderRecommendation(recommendationId,input,uuid,()=>mounted.current && recommendationContext.current.generation===saveContext.generation && recommendationContext.current.type===type && recommendationContext.current.id===id && recommendationContext.current.recommendationId===recommendationId && recommendationContext.current.status==="configured") : await saveProviderTitle(input, uuid);
+      if(recommendationId && (!mounted.current || recommendationContext.current.type!==type || recommendationContext.current.id!==id || recommendationContext.current.recommendationId!==recommendationId))return;
       setSavedId(newSavedId);
 
       if (Platform.OS === "web") alert("Guardado ✅");
       else Alert.alert("Listo", "Guardado en tu biblioteca ✅");
 
-      if (!wasSaved) router.push(`/title/${newSavedId}`);
+      if (recommendationId) router.replace({pathname:"/organize/recommendations/[id]",params:{id:recommendationId}});
+      else if (!wasSaved) router.push(`/title/${newSavedId}`);
+    } catch(error) {
+      if(!recommendationId)throw error;
+      setRecommendationError(error instanceof Error?error.message:"No se pudo incorporar. Podés reintentar sin duplicar títulos.");
     } finally {
+      recommendationSaveLock.current=false;
       setSaving(false);
     }
   }
@@ -391,6 +406,8 @@ export default function TmdbDetailScreen() {
 
   return (
     <>
+      {recommendationId && <OrganizationButton label="Volver a la recomendación" onPress={()=>router.replace({pathname:"/organize/recommendations/[id]",params:{id:recommendationId}})}/>}
+      {recommendationError&&<Text accessibilityLiveRegion="assertive" style={{color:theme.semantic.dangerText}}>{recommendationError}</Text>}
       <Stack.Screen
         options={{
           title: headerTitle,
@@ -496,7 +513,7 @@ export default function TmdbDetailScreen() {
               }}
             >
               <Text style={{ color: saving ? theme.semantic.disabledText : theme.global.onAccent, fontWeight: "900" }}>
-                {saving ? "Guardando…" : savedId ? "Actualizar en Biblioteca" : "Guardar en Biblioteca"}
+                {saving ? "Guardando…" : recommendationId ? savedId ? "Vincular recomendación" : "Guardar e incorporar recomendación" : savedId ? "Actualizar en Biblioteca" : "Guardar en Biblioteca"}
               </Text>
             </Pressable>
 

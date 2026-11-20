@@ -16,7 +16,7 @@ const databases=[];
 const fresh=()=>{const f=fixture();databases.push(f);return f;};
 async function v7(f){createV6(f);await f.db.withTransactionAsync(async()=>{await createMetadataSchemaWithDb(f.db);await backfillMetadataBaselinesWithDb(f.db);await f.db.execAsync('PRAGMA user_version=7;');});}
 function snapshot(f){return Object.fromEntries(f.sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map(({name})=>[name,f.sqlite.prepare(`SELECT * FROM ${name} ORDER BY 1,2`).all()]));}
-async function exportV9(f){const d=await getLibraryBackupExportDataWithDb(f.db,{status:'unavailable'});return createLibraryBackupV9(d.items,d.pins,d.appearanceAvailability,undefined,{preferences:d.preferences,activity:d.activity,collections:d.collections,collectionMemberships:d.collectionMemberships});}
+async function exportV9(f){const d=await getLibraryBackupExportDataWithDb(f.db,{status:'unavailable'});return createLibraryBackupV9(d.items,d.pins,d.appearanceAvailability,undefined,{preferences:d.preferences,activity:d.activity,collections:d.collections,collectionMemberships:d.collectionMemberships,recommendations:d.recommendations});}
 const parsed=b=>{const r=parseLibraryBackup(JSON.stringify(b));assert.equal(r.ok,true,JSON.stringify(r));assert.equal(r.payload.invalid.length,0);return r.payload;};
 (async()=>{
  const source=fresh();await v7(source);const before=snapshot(source);
@@ -48,7 +48,7 @@ const parsed=b=>{const r=parseLibraryBackup(JSON.stringify(b));assert.equal(r.ok
  assert.deepEqual(snapshot(source),stable);assert.equal(changes,notified);
  await assert.rejects(repo.mutateCollections(db=>repo.setCollectionMemberWithDb(db,'c1','missing',true),source.db));
  // Two independently identified recommendations share the same strong reference and link.
- for(const id of ['r1','r2'])await source.db.runAsync(`INSERT INTO recommendation_inbox (id,original_capture_json,capture_kind,name,provider,resource_namespace,external_id,person,comment,status,linked_saved_title_id,created_at,updated_at) VALUES (?,?,'reference','TEST','kitsu','anime','1',?,?,'incorporated','kitsu',1,2)`,id,JSON.stringify({id}),id,'TEST comment');
+ for(const id of ['r1','r2'])await source.db.runAsync(`INSERT INTO recommendation_inbox (id,original_capture_json,capture_kind,name,provider,resource_namespace,external_id,person,comment,status,linked_saved_title_id,created_at,updated_at) VALUES (?,?,'reference','TEST','kitsu','anime','1',?,?,'incorporated','kitsu',1,2)`,id,JSON.stringify({name:'TEST',reference:{provider:'kitsu',resourceNamespace:'anime',externalId:'1'},person:id,comment:'TEST comment'}),id,'TEST comment');
  const cloned=source.sqlite.prepare("SELECT * FROM recommendation_inbox ORDER BY id").all();
  await assert.rejects(source.db.runAsync("UPDATE recommendation_inbox SET original_capture_json='{}' WHERE id='r1'"));
  await assert.rejects(source.db.runAsync("UPDATE recommendation_inbox SET linked_saved_title_id=NULL WHERE id='r1'"));
@@ -56,8 +56,8 @@ const parsed=b=>{const r=parseLibraryBackup(JSON.stringify(b));assert.equal(r.ok
  const reopened=source.sqlite.prepare('SELECT * FROM recommendation_inbox ORDER BY id').all();
  for(let i=0;i<2;i++){assert.equal(reopened[i].status,'pending');assert.equal(reopened[i].linked_saved_title_id,null);for(const field of ['name','person','comment','original_capture_json','provider','external_id'])assert.equal(reopened[i][field],cloned[i][field]);}
  assert.equal(source.sqlite.prepare("SELECT count(*) n FROM collection_memberships WHERE saved_title_id='kitsu'").get().n,0);
- // Inbox is a schema-only fixture in S1, not exported as a functional feature.
- const backup=await exportV9(source),payload=parsed(backup);assert.equal(backup.version,9);assert.ok(!('recommendations' in backup));
+ // S2 now exports valid Inbox records while preserving the S1 collections regression.
+ const backup=await exportV9(source),payload=parsed(backup);assert.equal(backup.version,9);assert.equal(backup.recommendations.length,2);
  assert.ok(backup.collections.some(c=>c.id==='empty'));assert.equal(payload.collectionMemberships.length,1);
  const dest=fresh();await schema.evolveDatabaseSchema(dest.db,0);
  let result;await dest.db.withTransactionAsync(async()=>{result=await mergeLibraryBackupWithDb(dest.db,payload,()=> 'remapped');});
@@ -82,7 +82,7 @@ const parsed=b=>{const r=parseLibraryBackup(JSON.stringify(b));assert.equal(r.ok
  await dest.db.withTransactionAsync(()=>mergeLibraryBackupWithDb(dest.db,parsed(absent),()=> 'unused'));assert.deepEqual(snapshot(dest),retained);
  const invalid=structuredClone(backup);invalid.collections.push({id:'bad',name:' ',createdAt:1,updatedAt:2});invalid.collectionMemberships.push({collectionId:'c1',itemId:'missing',addedAt:1,updatedAt:2});
  const ip=parsed(invalid);assert.ok(ip.organizationIssues.length);await dest.db.withTransactionAsync(async()=>{result=await mergeLibraryBackupWithDb(dest.db,ip,()=> 'unused');});assert.ok(result.organization.memberships.issues.length);
- for(const bad of [{...backup,version:100},{...backup,collections:{}},{...backup,recommendations:[{}]}])assert.equal(parseLibraryBackup(JSON.stringify(bad)).ok,false);
+ for(const bad of [{...backup,version:100},{...backup,collections:{}},{...backup,recommendations:{}}])assert.equal(parseLibraryBackup(JSON.stringify(bad)).ok,false);
  // Historical v8 remains fully operational and ignores organization fields.
  const d=await getLibraryBackupExportDataWithDb(source.db,{status:'unavailable'});
  const historical=createLibraryBackupV8(d.items,d.pins,d.appearanceAvailability,undefined,{preferences:d.preferences,activity:d.activity});

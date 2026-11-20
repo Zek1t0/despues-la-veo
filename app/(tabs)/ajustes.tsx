@@ -298,11 +298,11 @@ export default function SettingsScreen() {
 
 
 
-      const { items, pins, appearanceAvailability, preferences, activity, collections, collectionMemberships } =
+      const { items, pins, appearanceAvailability, preferences, activity, collections, collectionMemberships, recommendations } =
 
         await getLibraryBackupExportData(backupAvailability);
 
-      const payload = createLibraryBackupV9(items, pins, appearanceAvailability, undefined, { preferences, activity, collections, collectionMemberships });
+      const payload = createLibraryBackupV9(items, pins, appearanceAvailability, undefined, { preferences, activity, collections, collectionMemberships, recommendations });
 
 
 
@@ -334,7 +334,7 @@ export default function SettingsScreen() {
 
         setLastMsg(
 
-          `Export v9 listo: ${items.length} títulos, ${pins.length} pins y ${collections.length} colecciones.` +
+          `Export v9 listo: ${items.length} títulos, ${pins.length} pins y ${collections.length} colecciones y ${recommendations.length} recomendaciones.` +
 
           (payload.appearance ? " Apariencia incluida." : " Apariencia omitida por no estar confirmada.")
 
@@ -378,7 +378,7 @@ export default function SettingsScreen() {
 
       setLastMsg(
 
-        `Export v9 listo: ${items.length} títulos, ${pins.length} pins y ${collections.length} colecciones.` +
+        `Export v9 listo: ${items.length} títulos, ${pins.length} pins y ${collections.length} colecciones y ${recommendations.length} recomendaciones.` +
 
         (payload.appearance ? " Apariencia incluida." : " Apariencia omitida por no estar confirmada.")
 
@@ -459,7 +459,7 @@ export default function SettingsScreen() {
       "",
 
       "La importación hace merge: no borra datos locales ausentes. Puede recuperar colecciones o membresías eliminadas.",
-        ...(payload.version === 9 ? [`Colecciones válidas: ${payload.collections.length}. Membresías: ${payload.collectionMemberships.length}.`] : []),
+        ...(payload.version === 9 ? [`Colecciones válidas: ${payload.collections.length}. Membresías: ${payload.collectionMemberships.length}. Recomendaciones: ${payload.recommendations?.length ?? 0}.`] : []),
 
       "Sólo actualiza coincidencias del mismo medio cuando el backup es más reciente; conserva los cambios locales iguales o más recientes.",
 
@@ -581,7 +581,7 @@ export default function SettingsScreen() {
 
       };
 
-      const organizationCounts = result.organization ? [result.organization.collections, result.organization.memberships] : [];
+      const organizationCounts = result.organization ? [result.organization.collections, result.organization.memberships, result.organization.recommendations] : [];
       const persistedCount = finalResult.inserted + finalResult.updated + finalResult.pinsInserted + organizationCounts.reduce((n, value) => n + value.inserted + value.updated, 0);
 
       const nonAppliedCount =
@@ -696,7 +696,8 @@ export default function SettingsScreen() {
           ...(result.organization ? [
             `Colecciones: ${result.organization.collections.inserted} nuevas, ${result.organization.collections.updated} actualizadas, ${result.organization.collections.preserved} conservadas.`,
             `Membresías: ${result.organization.memberships.inserted} nuevas, ${result.organization.memberships.updated} actualizadas, ${result.organization.memberships.preserved} conservadas.`,
-            ...result.organization.collections.issues, ...result.organization.memberships.issues,
+            `Recomendaciones: ${result.organization.recommendations.inserted} nuevas, ${result.organization.recommendations.updated} actualizadas, ${result.organization.recommendations.preserved} conservadas, ${result.organization.recommendations.degraded} recuperadas como Pendientes.`,
+            ...result.organization.collections.issues, ...result.organization.memberships.issues, ...result.organization.recommendations.issues,
           ] : []),
 
         ...(detailSections.length > 0 ? ["", ...detailSections] : []),
@@ -721,7 +722,8 @@ export default function SettingsScreen() {
           ...(result.organization ? [
             `Colecciones: ${result.organization.collections.inserted} nuevas, ${result.organization.collections.updated} actualizadas, ${result.organization.collections.preserved} conservadas.`,
             `Membresías: ${result.organization.memberships.inserted} nuevas, ${result.organization.memberships.updated} actualizadas, ${result.organization.memberships.preserved} conservadas.`,
-            ...result.organization.collections.issues, ...result.organization.memberships.issues,
+            `Recomendaciones: ${result.organization.recommendations.inserted} nuevas, ${result.organization.recommendations.updated} actualizadas, ${result.organization.recommendations.preserved} conservadas, ${result.organization.recommendations.degraded} recuperadas como Pendientes.`,
+            ...result.organization.collections.issues, ...result.organization.memberships.issues, ...result.organization.recommendations.issues,
           ] : []),
 
           "",

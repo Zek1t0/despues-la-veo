@@ -1,11 +1,13 @@
+import { getRecommendationWithDb, insertRecommendationWithDb } from "./recommendationInboxRepo";
 import type { ParsedLibraryBackupV9 } from "../core/libraryBackupV9";
 import { listCollectionsWithDb, listMembershipsWithDb, type CollectionsDb } from "./collectionsRepo";
 
 export type OrganizationImportCount = { inserted: number; updated: number; preserved: number; issues: string[] };
-export type OrganizationImportResult = { collections: OrganizationImportCount; memberships: OrganizationImportCount };
+export type OrganizationImportResult = { collections: OrganizationImportCount; memberships: OrganizationImportCount; recommendations: OrganizationImportCount & { degraded: number } };
 export async function mergeOrganizationWithDb(db: CollectionsDb, payload: ParsedLibraryBackupV9, mapping: Map<string,string>): Promise<OrganizationImportResult> {
   const count = (): OrganizationImportCount => ({ inserted: 0, updated: 0, preserved: 0, issues: [] });
-  const result = { collections: count(), memberships: count() };
+  const result = { collections: count(), memberships: count(), recommendations: { ...count(), degraded: 0 } };
+  result.recommendations.issues.push(...payload.recommendationIssues);
   result.collections.issues.push(...payload.organizationIssues);
   const eligible = new Set<string>();
   async function unit(target: OrganizationImportCount, label: string, action: () => Promise<"inserted" | "updated" | "preserved">): Promise<boolean> {
@@ -41,6 +43,25 @@ export async function mergeOrganizationWithDb(db: CollectionsDb, payload: Parsed
       memberships.set(key,{...entry,itemId});
       return old ? "updated" : "inserted";
     });
+  }
+  for (const incoming of payload.recommendations ?? []) {
+    let degraded = false;
+    const applied = await unit(result.recommendations,incoming.id,async()=>{
+      const old=await getRecommendationWithDb(db,incoming.id);
+      if(old && JSON.stringify(old.originalCapture)!==JSON.stringify(incoming.originalCapture)) throw new Error("Conflicto de captura original para el mismo ID de recomendación.");
+      if(old && incoming.updatedAt<=old.updatedAt)return "preserved";
+      const linkedItemId=incoming.linkedItemId ? mapping.get(incoming.linkedItemId)??null : null;
+      degraded=incoming.status==="incorporated"&&!linkedItemId;
+      const value={...incoming,linkedItemId,status:degraded?"pending" as const:incoming.status};
+      if(!old)await insertRecommendationWithDb(db,value);
+      else {
+        const ref=value.reference;
+        await db.runAsync(`UPDATE recommendation_inbox SET name=?,url=?,provider=?,resource_namespace=?,external_id=?,person=?,origin=?,comment=?,status=?,linked_saved_title_id=?,updated_at=? WHERE id=?;`,
+          value.name,value.url,ref?.provider??null,ref?.resourceNamespace??null,ref?.externalId??null,value.person,value.origin,value.comment,value.status,value.linkedItemId,value.updatedAt,value.id);
+      }
+      return old?"updated":"inserted";
+    });
+    if(applied && degraded){result.recommendations.degraded++;result.recommendations.issues.push(`${incoming.id}: conservada Pendiente porque su título no pudo resolverse.`);}
   }
   return result;
 }

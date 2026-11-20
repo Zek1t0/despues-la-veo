@@ -53,7 +53,18 @@ function identityAndNavigation() {
   assert.notEqual(key(movie), key(tv));
   assert.equal(route(movie), "/tmdb/movie/77");
   assert.equal(route(tv), "/tmdb/tv/77");
-  assert.match(search, /keyExtractor=\{\(item\) => `\$\{item\.reference\.provider\}\/\$\{item\.reference\.resourceNamespace\}\/\$\{item\.reference\.externalId\}`\}/);
+  // Execute the current extractor: full identity, with FlatList-safe keys rather than slash concatenation.
+  const { gridItemKey } = require('../../../src/theme/presentation.ts');
+  const extractor = search.match(/keyExtractor=\{(\(\{ reference \}\) => gridItemKey\(JSON.stringify\(\[[\s\S]*?\]\)\))\}/);
+  assert.ok(extractor, 'Buscar must key results by the complete reference through gridItemKey');
+  const actualKey = new Function('gridItemKey', `return (${extractor[1]});`)(gridItemKey);
+  assert.equal(actualKey({reference:movie}), gridItemKey(JSON.stringify(['tmdb','movie','77'])));
+  assert.notEqual(actualKey({reference:movie}), actualKey({reference:tv}));
+  assert.notEqual(actualKey({reference:movie}), actualKey({reference:{...movie,provider:'other'}}));
+  assert.notEqual(actualKey({reference:movie}), actualKey({reference:{...movie,externalId:'78'}}));
+  const unusual = {provider:'a:b',resourceNamespace:'c/d',externalId:'e:f'};
+  assert.ok(!actualKey({reference:unusual}).includes(':'), 'FlatList delimiter cannot leak into keys');
+  assert.notEqual(actualKey({reference:unusual}), actualKey({reference:{provider:'a',resourceNamespace:'b:c/d',externalId:'e:f'}}));
   assert.match(search, /selected\?\.destination\(item\)/);
   assert.equal(route({ ...movie, provider: "arbitrary" }), null);
 }

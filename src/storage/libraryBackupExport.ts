@@ -1,3 +1,5 @@
+import { listRecommendationsWithDb } from "./recommendationInboxRepo";
+import type { Recommendation } from "../core/recommendationInbox";
 import { listCollectionsWithDb, listMembershipsWithDb } from "./collectionsRepo";
 import type { PersonalCollection, CollectionMembership } from "../core/personalCollection";
 import { readMediaPreferencesWithDb } from "./mediaPreferencesRepo";
@@ -18,6 +20,7 @@ import {
 export type LibraryBackupExportData = {
   items: Array<SavedTitleWithProviderReferences & { legacyIdentity?: BackupLegacyIdentityV7 }>;
   pins: BackupPinV7[];
+  recommendations: Recommendation[];
   collections: PersonalCollection[];
   collectionMemberships: CollectionMembership[];
   preferences?: PortableMediaPreferences;
@@ -49,15 +52,16 @@ export async function getLibraryBackupExportDataWithDb(
   const hasOrganization = await db.getFirstAsync("SELECT name FROM sqlite_master WHERE type='table' AND name='personal_collections';");
   const collections = hasOrganization ? await listCollectionsWithDb(db) : [];
   const collectionMemberships = hasOrganization ? await listMembershipsWithDb(db) : [];
+  const recommendations = hasOrganization ? await listRecommendationsWithDb(db) : [];
   const pins = await listAllPinsForBackupV5WithDb(db);
   if (await hasMetadataSchemaWithDb(db)) {
     const activityRows = await db.getAllAsync<Record<string, unknown>>(
       "SELECT * FROM library_activity_events WHERE occurred_at>=? ORDER BY occurred_at DESC,id DESC LIMIT 2000;", Date.now() - 90 * 86400000);
     const activity = activityRows.map(row => parsePortableActivity({ id: row.id, itemId: row.saved_title_id, occurredAt: row.occurred_at,
       kind: row.kind, origin: row.origin, fields: JSON.parse(String(row.fields_json)), operationKey: row.operation_key }));
-    return { items, pins, collections, collectionMemberships, appearanceAvailability, preferences: await readMediaPreferencesWithDb(db), activity };
+    return { items, pins, recommendations, collections, collectionMemberships, appearanceAvailability, preferences: await readMediaPreferencesWithDb(db), activity };
   }
-  return { items, pins, collections, collectionMemberships, appearanceAvailability };
+  return { items, pins, recommendations, collections, collectionMemberships, appearanceAvailability };
 }
 
 export async function getLibraryBackupExportData(

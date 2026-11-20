@@ -55,11 +55,12 @@ export default function ExploreScreen() {
 }
 
 /** Application search UI; test-only bindings need no credential provider. */
-export function SearchScreen({ categories, resolveCategory, tmdb, initialCategory = "movie", bindings }: Readonly<{
+export function SearchScreen({ categories, resolveCategory, tmdb, initialCategory = "movie", bindings, recommendationId }: Readonly<{
   categories: readonly SearchCategory[];
   resolveCategory: (id: SearchCategoryId) => ResolvedSearchCategory | null;
   tmdb?: TmdbSearchConfiguration;
   initialCategory?: SearchCategoryId;
+  recommendationId?: string;
   bindings?: Readonly<{ languagePreferences?: MediaLanguageServices; getViewPreference: typeof getViewPreference; setViewPreference: typeof setViewPreference;
     openResult: (destination: NonNullable<ReturnType<ResolvedSearchCategory["destination"]>>) => void }>;
 }>) {
@@ -72,6 +73,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
   const isTmdb = selected?.category.source === "tmdb";
   const { width: windowWidth, fontScale } = useWindowDimensions();
   const [q, setQ] = useState("");
+  const [submitted,setSubmitted] = useState<{query:string;category:SearchCategoryId}|null>(null);
   const [searchRetry, setSearchRetry] = useState(0);
   const [viewMode, setViewMode] = useState<SearchViewMode>(
     VIEW_PREFERENCE_DEFAULTS["search.viewMode"]
@@ -194,7 +196,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
   const listLayoutKey = `${viewMode}-${listColumns}`;
 
   const search = useCategorySearch({
-    query: q, selected, retry: searchRetry,
+    query: recommendationId ? submitted?.query === q && submitted.category === categoryId ? q : "" : q, selected, retry: searchRetry,
     ready: Boolean(selected && (!isTmdb || snapshot?.status === "configured")),
     tmdbGeneration: isTmdb ? snapshot?.generation : undefined,
   });
@@ -230,10 +232,12 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
       : snapshot?.status === "storage-error"
         ? { title: "No pudimos acceder a la configuración de TMDB", message: "La Biblioteca local sigue disponible. Podés reintentar el acceso." }
         : null;
-  const actionButton = (label: string, onPress: () => void) => (
+  const actionButton = (label: string, onPress: () => void, disabled = false) => (
     <Pressable
       accessibilityLabel={label}
       accessibilityRole="button"
+      disabled={disabled}
+      accessibilityState={{disabled}}
       onPress={onPress}
       style={({ pressed }) => ({
         alignItems: "center",
@@ -243,7 +247,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
         borderWidth: 1,
         justifyContent: "center",
         minHeight: 44,
-        opacity: pressed ? 0.78 : 1,
+        opacity: disabled ? 0.5 : pressed ? 0.78 : 1,
         paddingHorizontal: 14,
       })}
     >
@@ -273,7 +277,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
             accessibilityState={{ selected: categoryId === category.id }}
             aria-pressed={categoryId === category.id}
             focusable
-            onPress={() => setCategoryId(category.id)}
+            onPress={() => { setCategoryId(category.id); if(recommendationId)setSubmitted(null); }}
             style={({ pressed }) => ({
               minHeight: 44, paddingHorizontal: 16, justifyContent: "center",
               borderWidth: 1, borderRadius: 12, opacity: pressed ? 0.78 : 1,
@@ -290,7 +294,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
         <TextInput
           accessibilityLabel={`Buscar en ${selected?.category.label ?? "la categoría"}`}
           value={q}
-          onChangeText={setQ}
+          onChangeText={value=>{setQ(value);if(recommendationId)setSubmitted(null);}}
           placeholder={categoryId === "movie" ? "Buscar película…" : categoryId === "tv" ? "Buscar serie…" : "Buscar título…"}
           placeholderTextColor={theme.global.textMuted}
           style={{
@@ -328,6 +332,14 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
         </Pressable>
       </View>
 
+      {recommendationId && <View style={{flexDirection:"row",flexWrap:"wrap",gap:8}}>
+        {actionButton("Buscar en catálogo",()=>{setSubmitted({query:q,category:categoryId});setSearchRetry(n=>n+1);},!selected || !q.trim() || isTmdb && snapshot?.status!=="configured")}
+        {actionButton("Volver a la recomendación",()=>router.replace({pathname:"/organize/recommendations/[id]",params:{id:recommendationId}}))}
+        {credentialState&&<Text style={{color:theme.global.textSecondary}}>{credentialState.title}. {credentialState.message}</Text>}
+        <Text style={{color:theme.global.textSecondary}}>Solo se ofrecen fuentes habilitadas en esta plataforma. Escribí la consulta y pulsá Buscar en catálogo.</Text>
+        {!categories.length && <Text style={{color:theme.global.textSecondary}}>No hay catálogos habilitados en esta plataforma.</Text>}
+      </View>}
+
       {visibleLoading && (
         <View accessible accessibilityRole="progressbar" accessibilityLabel={`Buscando en ${selected?.category.label ?? "la categoría"}`} accessibilityLiveRegion="polite" style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
           <ActivityIndicator accessible={false} color={theme.global.textPrimary} />
@@ -358,7 +370,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
               <TitleGridCard
                 identity={JSON.stringify(item.reference)}
                 accessibilityLabel={`Abrir ${item.kindLabel} ${item.displayTitle}`}
-                onPress={() => bindings ? bindings.openResult(route) : router.push(route)}
+                onPress={() => bindings ? bindings.openResult(route) : router.push(recommendationId ? `${route}?recommendationId=${encodeURIComponent(recommendationId)}` : route)}
                 posterUrl={item.posterUrl} imageProvider={item.reference.provider} metadata={item.metadata}
                 style={{ width: gridCardWidth }}
                 title={item.displayTitle}
@@ -373,7 +385,7 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
               accessibilityLabel={[`Abrir ${item.kindLabel} ${item.displayTitle}`, publicRatingLabel(resolvePublicRating(item.reference.provider, item.metadata))].filter(Boolean).join(". ")}
               accessibilityRole="button"
               focusable
-              onPress={() => bindings ? bindings.openResult(route) : router.push(route)}
+              onPress={() => bindings ? bindings.openResult(route) : router.push(recommendationId ? `${route}?recommendationId=${encodeURIComponent(recommendationId)}` : route)}
               style={{
                 flexDirection: "row",
                 gap: 12,
@@ -453,4 +465,10 @@ export function SearchScreen({ categories, resolveCategory, tmdb, initialCategor
       />
     </View>
   );
+}
+
+/** Inbox deliberately submits queries; normal Buscar keeps its existing behavior. */
+export function RecommendationCatalogSearch({recommendationId}:{recommendationId:string}) {
+  const tmdb=useTmdbCredential();
+  return <SearchScreen categories={productionSearchCategories(Platform.OS)} resolveCategory={resolveProductionCategory} tmdb={tmdb} recommendationId={recommendationId}/>;
 }
