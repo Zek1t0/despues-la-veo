@@ -31,10 +31,18 @@ export async function mergeOrganizationWithDb(db: CollectionsDb, payload: Parsed
     })) eligible.add(entry.id);
   }
   const memberships = new Map((await listMembershipsWithDb(db)).map(v => [JSON.stringify([v.collectionId,v.itemId]),v]));
+  const effectiveMemberships = new Map<string, { entry: ParsedLibraryBackupV9["collectionMemberships"][number]; conflict: boolean }>();
   for (const entry of payload.collectionMemberships) {
     const itemId = mapping.get(entry.itemId);
     if (!eligible.has(entry.collectionId) || !itemId) { result.memberships.issues.push(`Membresía ${entry.collectionId}/${entry.itemId}: destino no restaurable.`); continue; }
     const key = JSON.stringify([entry.collectionId,itemId]);
+    const resolved = {...entry,itemId}, previous = effectiveMemberships.get(key);
+    if (!previous || resolved.updatedAt > previous.entry.updatedAt) effectiveMemberships.set(key,{entry:resolved,conflict:false});
+    else if (resolved.updatedAt === previous.entry.updatedAt && resolved.addedAt !== previous.entry.addedAt) previous.conflict=true;
+  }
+  for (const [key,{entry,conflict}] of effectiveMemberships) {
+    if(conflict){result.memberships.issues.push(`Membresía ${key}: datos contradictorios con igual fecha después del remapeo.`);continue;}
+    const itemId=entry.itemId;
     await unit(result.memberships, key, async () => {
       const old = memberships.get(key);
       if (old && entry.updatedAt <= old.updatedAt) return "preserved";

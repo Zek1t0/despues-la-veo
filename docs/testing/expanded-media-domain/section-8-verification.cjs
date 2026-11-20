@@ -117,11 +117,17 @@ async function main() {
     const parsed = parseLibraryBackup(JSON.stringify(backup)); assert.equal(parsed.ok,true);
     await restored.withTransactionAsync(() => mergeLibraryBackupWithDb(restored,parsed.payload,()=>'restored-opaque'));
     const roundTrip = await getLibraryBackupExportDataWithDb(restored,{status:'unavailable',reason:'pending'});
-    assert.deepEqual(roundTrip.items,data.items); assert.deepEqual(roundTrip.pins,data.pins);
+    // v6 restores its complete snapshot/personal/identity contract, not the v8 editorial sidecar.
+    assert.ok(parsed.payload.items.every(item => item.metadataState === undefined));
+    const v6Fields = items => items.map(({metadataState:_,localAliases:__,...item}) => item);
+    assert.deepEqual(v6Fields(roundTrip.items),v6Fields(data.items)); assert.deepEqual(roundTrip.pins,data.pins);
     const restoredNullable = await storage.getSavedTitleWithReferencesByIdWithDb(restored,nullableId);
     assert.equal(restoredNullable.primaryFormat,null); assert.equal(restoredNullable.medium,'comic'); assert.equal(restoredNullable.contentFamily,'manga');
     assert.equal(restoredNullable.providerReferences[0].resourceNamespace,'series');
-    for (const handle of [db,restored]) assert.equal(handle.sqlite.prepare('PRAGMA user_version').get().user_version,6);
+    for (const handle of [db,restored]) {
+      assert.equal(handle.sqlite.prepare('PRAGMA user_version').get().user_version,require('../../../src/storage/databaseSchema.ts').DATABASE_SCHEMA_VERSION);
+      assert.deepEqual(handle.sqlite.prepare('PRAGMA foreign_key_check').all(),[]);
+    }
     assert.equal(http,0,'Local save/provenance/backup/offline reads perform no HTTP');
   } finally { db.sqlite.close(); restored.sqlite.close(); }
   console.log('Section 8 contracts: finite platform gates, destinations, provider errors, unsupported Novel, real SQLite generic save/re-save/personal preservation/null refresh/rating ownership and backup v6 passed. No native claim.');

@@ -60,7 +60,7 @@ const Layout=require('../../../app/(tabs)/_layout.tsx').default;
 for(const width of [320,390,800])for(const fontScale of [1,1.6,2]){
  dimensions={width,height:700,fontScale};const tree=Layout();const names=nodes(tree).filter(n=>n.type==='Tabs.Screen').map(n=>n.props.name);
  assert.deepEqual(names,['libreria','buscar','etiquetas','actualizaciones','ajustes']);
- const options=tree.props.screenOptions({route:{name:'actualizaciones'}});assert.equal(options.tabBarAccessibilityLabel,'Actualizaciones');assert.ok(options.tabBarStyle.height>=58);const label=options.tabBarLabel({color:'theme-token'});assert.equal(text(label),'Actualizaciones');assert.equal(label.props.style.color,'theme-token');assert.equal(label.props.numberOfLines,undefined);assert.equal(label.props.maxFontSizeMultiplier,undefined);
+ const options=tree.props.screenOptions({route:{name:'actualizaciones'}});assert.equal(options.tabBarAccessibilityLabel,'Actualizaciones');assert.ok(options.tabBarStyle.height>=58);const label=options.tabBarLabel({color:'theme-token'});assert.equal(text(label),'Actividad');assert.equal(label.props.style.color,'theme-token');assert.equal(label.props.numberOfLines,undefined);assert.equal(label.props.maxFontSizeMultiplier,undefined);
  const icon=options.tabBarIcon({color:'theme-token',focused:true,size:22});assert.equal(icon.props.name,'refresh-circle');
 }
 console.log('PASS S6.3 actual tabs component: Library first, fifth tab between Tags/Settings, visible accessible labels, themed Ionicons, 320/390/800 widths and 1/1.6/2 font scale without shrinking/capping fonts. Hook-host, no visual acceptance.');

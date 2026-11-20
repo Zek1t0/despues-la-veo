@@ -1,0 +1,116 @@
+[
+  {
+    "test": "personal-collections-recommendation-inbox/s3-portability.cjs",
+    "exitCode": 0,
+    "durationMs": 2349,
+    "output": "PASS S3 portability: fresh/mixed v7→v8, repeated opens/future rejection/migration failures; full semantic v9 round trip and 3 reimports; v1–v8 actual restores/newer locals; S1 absent Inbox; portable/manual/multi-provider remap and local-ID collisions; invalid identities/orphans/envelopes; secrets excluded; FK+integrity_check. TEST only.\n(node:24612) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "test": "personal-collections-recommendation-inbox/s3-conflicts.cjs",
+    "exitCode": 0,
+    "durationMs": 2085,
+    "output": "PASS S3 conflict matrix: all clocks/ties/createdAt, states/context, duplicates and contradictory units, absence/deleted recovery, reference-sharing Inbox, effective post-remap membership merge independent of array order. TEST only.\n(node:30812) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "test": "personal-collections-recommendation-inbox/s3-failures.cjs",
+    "exitCode": 0,
+    "durationMs": 1450,
+    "output": "PASS S3 failures: SQL injected creation/member/link/incorporation/delete/commit rollback; per-record title/collection/member/recommendation savepoints and exact counters; no precommit/failed invalidations; public serialization/concurrent retries without nested transactions; CHECKs/PKs/indexes/triggers/FKs. TEST only.\n(node:25720) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "test": "personal-collections-recommendation-inbox/s1-verification.cjs",
+    "exitCode": 0,
+    "durationMs": 2072,
+    "output": "PASS S1: migration v7→v8 preservation/rollback/reopen/future version; CRUD/idempotence/FKs/cascades; shared Inbox references/schema only; v9 real round trip empty/conflicting DB; remap/freshness/ties/absence/reimport; v1–v8 focused imports; sensitive full backup; partial errors and commit rollback; post-commit invalidation. TEST databases only.\n(node:11580) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "test": "personal-collections-recommendation-inbox/s2-verification.cjs",
+    "exitCode": 0,
+    "durationMs": 1953,
+    "output": "PASS S2 SQLite TEST: offline capture/URL allowlist/immutable context; states and duplicate references; manual-confirmed candidates; exact preservation on existing links; provider gates; atomic new/manual incorporation, serialized double submission and retries; injected link/commit rollback and postcommit notification; all linked recommendations reopen on title deletion; v9 collections+Inbox round trip, S1 compatibility, stable-ID conflicts, portable remap, orphan recovery and idempotence; FK integrity and reopen. No personal DB or network.\n(node:32948) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "test": "personal-collections-recommendation-inbox/s1-ui.cjs",
+    "exitCode": 0,
+    "durationMs": 1526,
+    "output": "PASS S1 UI: navigation tiles/active S2 Inbox; compact visible creation action above grid; whole horizontal collection cards, 2-column/1-column layouts; descriptions 2 lines; contextual delete confirmation; grouped actions and sort; real poster rows and selector membership indicator; independent Quitar/open events; checkbox memberships; drafts/errors; 320/1280px and 100/200% typography properties across all light/dark palettes. Popover: outside/Escape/cancel/back close, focus return/trap, arrows/Tab/Home/End, no deletion before confirmation, 320/400px and desktop in light/dark. No personal DB. Component harness, not real-browser/Android acceptance.\n"
+  },
+  {
+    "test": "personal-collections-recommendation-inbox/s2-ui.cjs",
+    "exitCode": 0,
+    "durationMs": 2279,
+    "output": "PASS S2 UI hook-host: filters/counts/text-first rows, no hidden/invented art; explicit local suggestions/link and catalog/manual return context; capture validation/duplicate warnings/stable intent/errors/disabled controls; all light/dark palettes at 320/360/400/1280px and 100/200% layout properties; real search hook requires deliberate submission, clears stale authorization, respects credentials and retains recommendation ID; manual save/link bindings and error retry. No personal DB/network. Component harness only, not browser or physical Android acceptance.\n"
+  },
+  {
+    "test": "universal-media-identity/section-4-backup-v5-verification.cjs",
+    "exitCode": 0,
+    "durationMs": 1671,
+    "output": "Section 4 backup v5 and historical import verification passed.\n(node:32512) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "test": "enriched-media-metadata/section-2-backups.cjs",
+    "exitCode": 0,
+    "durationMs": 1927,
+    "output": "PASS 2.5/2.6/2.7: v8 round-trip, v7 preservation, per-source clocks, same-time conflict, remap, repeat, savepoints, preferences and commit rollback.\n(node:33044) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "test": "expanded-media-domain/section-8-verification.cjs",
+    "exitCode": 0,
+    "durationMs": 1549,
+    "output": "Section 8 contracts: finite platform gates, destinations, provider errors, unsupported Novel, real SQLite generic save/re-save/personal preservation/null refresh/rating ownership and backup v6 passed. No native claim.\n(node:19716) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n",
+    "previousAttempt": {
+      "test": "expanded-media-domain/section-8-verification.cjs",
+      "exitCode": 1,
+      "durationMs": 2234,
+      "output": "(node:24664) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\nAssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n+ actual - expected\n... Skipped lines\n\n  [\n    {\n      contentFamily: 'manga',\n      createdAt: 1795214531830,\n      genres: [\n...\n        baseline: {\n+         reference: null,\n-         reference: {\n-           externalId: '30535847369',\n-           provider: 'mangaupdates',\n-           resourceNamespace: 'series'\n-         },\n          snapshot: {\n            contentFamily: 'manga',\n            genres: [\n              'Action',\n              'Sci-fi'\n...\n        selection: {\n+         reference: null,\n-         reference: {\n-           externalId: '30535847369',\n-           provider: 'mangaupdates',\n-           resourceNamespace: 'series'\n-         },\n          updatedAt: 0\n        },\n        version: 1\n      },\n      notes: null,\n...\n            genres: [\n+             'Drama'\n-             'Action',\n-             'Sci-fi'\n            ],\n            medium: 'comic',\n            overview: 'Descripción original de prueba & texto legible.\\n' +\n              '\\n' +\n              'Sin datos de un catálogo real.',\n            posterUrl: null,\n            primaryFormat: 'one-shot',\n+           title: 'TEST refreshed',\n-           title: 'Cuaderno sintético de los faros',\n            voteAverage: 7.9,\n            year: 2021\n          },\n          updatedAt: 1795214531810\n        },\n+       documents: [],\n-       documents: [\n-         {\n-           changedAt: 1795214531813,\n-           metadata: {\n-             fields: {\n-               canonicalTitle: 'TEST refreshed',\n-               genres: [\n-                 'Drama'\n-               ],\n-               synopsis: {\n-                 language: null,\n-                 text: 'Descripción original de prueba & texto legible.\\n' +\n-                   '\\n' +\n-                   'Sin datos de un catálogo real.'\n-               }\n-             },\n-             provenance: {\n-               checkedAt: null,\n-               fetchedAt: null,\n-               normalizerVersion: 1,\n-               reference: {\n-                 externalId: '9876543210123',\n-                 provider: 'mangaupdates',\n-                 resourceNamespace: 'series'\n-               },\n-               sourceUpdatedAt: null\n-             },\n-             version: 1\n-           },\n-           snapshot: {\n-             contentFamily: 'manhua',\n-             genres: [\n-               'Drama'\n-             ],\n-             medium: 'comic',\n-             overview: 'Descripción original de prueba & texto legible.\\n' +\n-               '\\n' +\n-               'Sin datos de un catálogo real.',\n-             posterUrl: null,\n-             primaryFormat: null,\n-             title: 'TEST refreshed',\n-             voteAverage: null,\n-             year: 2021\n-           }\n-         }\n-       ],\n        selection: {\n          reference: {\n            externalId: '9876543210123',\n            provider: 'mangaupdates',\n            resourceNamespace: 'series'\n...\n            genres: [\n+             'Drama'\n-             'Action',\n-             'Sci-fi'\n            ],\n            medium: 'comic',\n            overview: 'Descripción original de prueba & texto legible.\\n' +\n              '\\n' +\n              'Sin datos de un catálogo real.',\n            posterUrl: null,\n            primaryFormat: 'webtoon',\n+           title: 'TEST refreshed',\n-           title: 'Cuaderno sintético de los faros',\n            voteAverage: 7.9,\n            year: 2021\n          },\n          updatedAt: 1795214531762\n        },\n+       documents: [],\n-       documents: [\n-         {\n-           changedAt: 1795214531765,\n-           metadata: {\n-             fields: {\n-               canonicalTitle: 'TEST refreshed',\n-               genres: [\n-                 'Drama'\n-               ],\n-               synopsis: {\n-                 language: null,\n-                 text: 'Descripción original de prueba & texto legible.\\n' +\n-                   '\\n' +\n-                   'Sin datos de un catálogo real.'\n-               }\n-             },\n-             provenance: {\n-               checkedAt: null,\n-               fetchedAt: null,\n-               normalizerVersion: 1,\n-               reference: {\n-                 externalId: '15180124327',\n-                 provider: 'mangaupdates',\n-                 resourceNamespace: 'series'\n-               },\n-               sourceUpdatedAt: null\n-             },\n-             version: 1\n-           },\n-           snapshot: {\n-             contentFamily: 'manhwa',\n-             genres: [\n-               'Drama'\n-             ],\n-             medium: 'comic',\n-             overview: 'Descripción original de prueba & texto legible.\\n' +\n-               '\\n' +\n-               'Sin datos de un catálogo real.',\n-             posterUrl: null,\n-             primaryFormat: null,\n-             title: 'TEST refreshed',\n-             voteAverage: null,\n-             year: 2021\n-           }\n-         }\n-       ],\n        selection: {\n          reference: {\n            externalId: '15180124327',\n            provider: 'mangaupdates',\n            resourceNamespace: 'series'\n...\n            genres: [\n+             'Drama'\n-             'Action',\n-             'Sci-fi'\n            ],\n            medium: 'comic',\n            overview: 'Descripción original de prueba & texto legible.\\n' +\n              '\\n' +\n              'Sin datos de un catálogo real.',\n            posterUrl: null,\n            primaryFormat: 'one-shot',\n+           title: 'TEST refreshed',\n-           title: 'Cuaderno sintético de los faros',\n            voteAverage: 7.9,\n            year: 2021\n          },\n          updatedAt: 1795214531717\n        },\n+       documents: [],\n-       documents: [\n-         {\n-           changedAt: 1795214531728,\n-           metadata: {\n-             fields: {\n-               canonicalTitle: 'TEST refreshed',\n-               genres: [\n-                 'Drama'\n-               ],\n-               synopsis: {\n-                 language: null,\n-                 text: 'Descripción original de prueba & texto legible.\\n' +\n-                   '\\n' +\n-                   'Sin datos de un catálogo real.'\n-               }\n-             },\n-             provenance: {\n-               checkedAt: null,\n-               fetchedAt: null,\n-               normalizerVersion: 1,\n-               reference: {\n-                 externalId: '51239621230',\n-                 provider: 'mangaupdates',\n-                 resourceNamespace: 'series'\n-               },\n-               sourceUpdatedAt: null\n-             },\n-             version: 1\n-           },\n-           snapshot: {\n-             contentFamily: 'manga',\n-             genres: [\n-               'Drama'\n-             ],\n-             medium: 'comic',\n-             overview: 'Descripción original de prueba & texto legible.\\n' +\n-               '\\n' +\n-               'Sin datos de un catálogo real.',\n-             posterUrl: null,\n-             primaryFormat: null,\n-             title: 'TEST refreshed',\n-             voteAverage: null,\n-             year: 2021\n-           }\n-         }\n-       ],\n        selection: {\n          reference: {\n            externalId: '51239621230',\n            provider: 'mangaupdates',\n            resourceNamespace: 'series'\n\n    at main (D:\\dev\\despues-la-veo\\docs\\testing\\expanded-media-domain\\section-8-verification.cjs:120:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: [Array],\n  expected: [Array],\n  operator: 'deepStrictEqual'\n}\n"
+    }
+  },
+  {
+    "test": "enriched-media-metadata/section-6-activity.cjs",
+    "exitCode": 0,
+    "durationMs": 2647,
+    "output": "PASS S6.1: real SQLite additions/manual/combined personals/rating/pins, no-op/idempotent replay, rollback and poscommit signals, single initial addition, metadata semantic fields/no-op, private values omitted, FK cascade.\n(node:31224) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  },
+  {
+    "test": "enriched-media-metadata/section-6-feed.cjs",
+    "exitCode": 0,
+    "durationMs": 2693,
+    "output": "PASS S6.5 actual FlatList: paged/virtual rows, local day/timezone grouping, filters, deterministic IDs/dedup, no render reads/global start, confirmed-change subscriptions, safe navigation/deleted item, error/retry and cleanup. Hook-host only.\n"
+  },
+  {
+    "test": "enriched-media-metadata/section-6-tabs.cjs",
+    "exitCode": 0,
+    "durationMs": 438,
+    "output": "PASS S6.3 actual tabs component: Library first, fifth tab between Tags/Settings, visible accessible labels, themed Ionicons, 320/390/800 widths and 1/1.6/2 font scale without shrinking/capping fonts. Hook-host, no visual acceptance.\n",
+    "previousAttempt": {
+      "test": "enriched-media-metadata/section-6-tabs.cjs",
+      "exitCode": 1,
+      "durationMs": 1158,
+      "output": "node:assert:95\r\n  throw new AssertionError(obj);\r\n  ^\r\n\r\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\r\n+ actual - expected\r\n\r\n+ 'Actividad'\r\n- 'Actualizaciones'\r\n      ^\r\n\r\n    at Object.<anonymous> (D:\\dev\\despues-la-veo\\docs\\testing\\enriched-media-metadata\\section-6-tabs.cjs:63:244)\r\n    at Module._compile (node:internal/modules/cjs/loader:1688:14)\r\n    at Object..js (node:internal/modules/cjs/loader:1820:10)\r\n    at Module.load (node:internal/modules/cjs/loader:1423:32)\r\n    at Function.<anonymous> (node:internal/modules/cjs/loader:1246:12)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)\r\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)\r\n    at node:internal/main/run_main_module:36:49 {\r\n  generatedMessage: true,\r\n  code: 'ERR_ASSERTION',\r\n  actual: 'Actividad',\r\n  expected: 'Actualizaciones',\r\n  operator: 'strictEqual'\r\n}\r\n\r\nNode.js v22.18.0\r\n"
+    }
+  },
+  {
+    "test": "enriched-media-metadata/section-7-ui.cjs",
+    "exitCode": 0,
+    "durationMs": 5287,
+    "output": "PASS S7 UI: actual Library detail/grid, Tags grid/list and collections, real search debounce/request once across toggles, settings, pending/deep-link gate with no art/auto panel, reveal/back/remount, identity/source/metadata/preference invalidation, draft preserved, no filter HTTP/private mutations. Hook-host only, no visual acceptance.\n"
+  },
+  {
+    "test": "provider-abstraction/section-3-buscar-verification.cjs",
+    "exitCode": 0,
+    "durationMs": 1995,
+    "output": "Section 3 Buscar verification passed.\n"
+  },
+  {
+    "test": "library-picker.cjs",
+    "exitCode": 0,
+    "durationMs": 1770,
+    "output": "PASS motor local: elegibilidad, fechas, duraciones, visibilidad, muestra y sorpresa sin mutaciones\n"
+  },
+  {
+    "test": "personal-collections-recommendation-inbox/s3-settings.cjs",
+    "exitCode": 0,
+    "durationMs": 1413,
+    "output": "PASS S3 Settings actual handlers + isolated SQLite TEST: export v9 full semantic equivalence, import confirmation/cancel, real import/merge/repeat counts, malformed rejection and unresolved-link recovery/report. DOM/File APIs mocked; not real browser acceptance.\n(node:28364) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+  }
+]

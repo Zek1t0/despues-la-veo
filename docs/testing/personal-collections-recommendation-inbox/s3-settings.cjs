@@ -1,0 +1,30 @@
+const {assert,snapshot,empty,representative,exported,semantic,integrity,close}=require('./s3-fixtures.cjs');
+const fs=require('node:fs'),Module=require('node:module'),ts=require('typescript');
+require.extensions['.tsx']=(m,f)=>m._compile(ts.transpileModule(fs.readFileSync(f,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.React,esModuleInterop:true},fileName:f}).outputText,f);
+let slots=[],cursor=0,db,blob,confirmation='',accept=true,alerts=[];
+const react={createElement:(type,props,...children)=>({type,props:{...props,children}}),useState:initial=>{const i=cursor++;if(!(i in slots))slots[i]=initial;return[slots[i],v=>slots[i]=typeof v==='function'?v(slots[i]):v]},useRef:initial=>{const i=cursor++;return slots[i]??={current:initial}},useEffect(){}};
+const originalLoad=Module._load,dbModule=require('../../../src/storage/db.ts'),originalInit=dbModule.initDb;dbModule.initDb=async()=>{assert.ok(db,'Only isolated TEST db is allowed');return db};
+Module._load=function(r,p,m){
+ if(r==='react')return react;
+ if(r==='react-native')return{Platform:{OS:'web'},Alert:{alert:(...args)=>alerts.push(args)},Text:'Text',View:'View',Pressable:'Pressable',ScrollView:'ScrollView',ActivityIndicator:'ActivityIndicator'};
+ if(r==='expo-router')return{router:{push(){throw Error('Unexpected navigation')}}};
+ if(['expo-file-system','expo-sharing','expo-document-picker'].includes(r))return{};
+ if(r.endsWith('/AppThemeProvider'))return{useAppTheme:()=>({theme:require('../../../src/theme/resolver.ts').resolveTheme('dark','original'),backupAvailability:{status:'confirmed',preference:{scheme:'dark',palette:'original'}},reserveDeferred:preference=>({preference}),activateDeferred:async()=>({status:'applied'}),discardDeferred(){}})};
+ if(r.endsWith('/TmdbCredentialProvider'))return{useTmdbCredential:()=>({snapshot:{status:'not-configured',generation:1},retryInitialization:async()=>{throw Error('No credential access')}})};
+ return originalLoad.call(this,r,p,m);
+};
+global.window={confirm:msg=>{confirmation=msg;return accept}};
+global.document={body:{appendChild(){}},createElement:tag=>{assert.equal(tag,'a');return{click(){},remove(){}}}};
+const oldCreate=URL.createObjectURL,oldRevoke=URL.revokeObjectURL;URL.createObjectURL=value=>{blob=value;return'blob:TEST'};URL.revokeObjectURL=()=>{};
+const Settings=require('../../../app/(tabs)/ajustes.tsx').default;
+const nodes=(v,r=[])=>{if(Array.isArray(v))v.forEach(x=>nodes(x,r));else if(v?.props){r.push(v);nodes(v.props.children,r)}return r};
+const text=v=>Array.isArray(v)?v.map(text).join(' '):v?.props?text(v.props.children):typeof v==='string'?v:'';
+const render=()=>{cursor=0;return Settings()};const loadFile=async(tree,value)=>nodes(tree).find(v=>v.type==='input').props.onChange({target:{value:'TEST.json',files:[{text:async()=>typeof value==='string'?value:JSON.stringify(value)}]}});
+(async()=>{
+ const source=await representative();db=source.db;let tree=render();await nodes(tree).find(v=>v.props.label==='Exportar biblioteca').props.onPress();const backup=JSON.parse(await blob.text());assert.deepEqual(semantic(backup),semantic(await exported(source)));assert.ok(text(render()).includes('Export v9 listo'));
+ const target=await empty();db=target.db;slots=[];tree=render();accept=false;const before=snapshot(target);await loadFile(tree,backup);assert.deepEqual(snapshot(target),before,'cancel confirmation writes nothing');assert.ok(confirmation.includes('no borra datos locales ausentes'));assert.ok(confirmation.includes('Recomendaciones: 5'));
+ accept=true;await loadFile(render(),backup);assert.deepEqual(semantic(await exported(target)),semantic(backup));assert.ok(text(render()).includes('Recomendaciones: 5 nuevas'));assert.ok(text(render()).includes('Colecciones: 3 nuevas'));await loadFile(render(),backup);assert.ok(text(render()).includes('5 conservadas'));
+ const malformedBefore=snapshot(target);alerts=[];await loadFile(render(),'{');assert.deepEqual(snapshot(target),malformedBefore);assert.ok(alerts.length,'globally malformed file reports error without writes');
+ const badLink=structuredClone(backup);badLink.recommendations=[{...backup.recommendations[0],id:'TEST unresolved',status:'incorporated',linkedItemId:'TEST missing'}];await loadFile(render(),badLink);assert.ok(text(render()).includes('1 recuperadas como Pendientes'));assert.ok(text(render()).includes('no pudo resolverse'));
+ await integrity();console.log('PASS S3 Settings actual handlers + isolated SQLite TEST: export v9 full semantic equivalence, import confirmation/cancel, real import/merge/repeat counts, malformed rejection and unresolved-link recovery/report. DOM/File APIs mocked; not real browser acceptance.');
+})().catch(e=>{console.error(e);process.exitCode=1}).finally(()=>{Module._load=originalLoad;dbModule.initDb=originalInit;URL.createObjectURL=oldCreate;URL.revokeObjectURL=oldRevoke;close()});
