@@ -22,16 +22,16 @@ export function OrganizationCard({ children, style }: React.PropsWithChildren<{ 
 export function OrganizationButton({ label, accessibilityLabel, onPress, disabled = false, selected, variant = "secondary", icon, iconOnly = false, expanded, buttonRef }: {
   label: string; accessibilityLabel?: string; onPress: () => void; disabled?: boolean; selected?: boolean;
   buttonRef?: React.Ref<View>;
-  variant?: "primary" | "secondary" | "quiet" | "danger"; icon?: IconName; iconOnly?: boolean; expanded?: boolean;
+  variant?: "primary" | "secondary" | "quiet" | "danger" | "link"; icon?: IconName; iconOnly?: boolean; expanded?: boolean;
 }) {
   const { theme } = useAppTheme();
   const [focused, setFocused] = useState(false);
-  const color = variant === "primary" ? theme.global.onAccent : variant === "danger" ? theme.semantic.dangerText : selected ? theme.global.selectedForeground : theme.global.textPrimary;
+  const color = variant === "primary" ? theme.global.onAccent : variant === "danger" ? theme.semantic.dangerText : selected ? theme.global.selectedForeground : variant === "link" ? theme.global.textSecondary : theme.global.textPrimary;
   return <Pressable ref={buttonRef} accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? label} accessibilityState={{ disabled, ...(selected === undefined ? {} : { selected }), ...(expanded === undefined ? {} : { expanded }) }} focusable disabled={disabled} onPress={onPress} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-    style={({ pressed }) => ({ alignSelf: "flex-start", maxWidth: "100%", minWidth: controlTarget, minHeight: controlTarget, paddingHorizontal: space.md, paddingVertical: space.sm, gap: space.sm, flexDirection: "row", alignItems: "center", justifyContent: "center",
-      borderRadius: selected === undefined ? radius.control : radius.round, borderWidth: focused ? 2 : 1,
+    style={({ pressed }) => ({ alignSelf: "flex-start", maxWidth: "100%", minWidth: controlTarget, minHeight: controlTarget, paddingHorizontal: variant === "link" ? space.xs : space.md, paddingVertical: space.sm, gap: space.sm, flexDirection: "row", alignItems: "center", justifyContent: "center",
+      borderRadius: selected === undefined ? radius.control : radius.round, borderWidth: focused ? 2 : variant === "link" ? 0 : 1,
       borderColor: focused ? (variant === "primary" ? theme.global.onAccent : theme.global.accent) : variant === "danger" ? theme.semantic.dangerBorder : selected ? theme.global.selectedBorder : theme.global.borderStrong,
-      backgroundColor: variant === "primary" ? theme.global.accent : variant === "danger" ? theme.semantic.dangerSurface : selected ? theme.global.selectedSurface : variant === "quiet" ? theme.global.surface : theme.global.surfaceSecondary,
+      backgroundColor: variant === "primary" ? theme.global.accent : variant === "danger" ? theme.semantic.dangerSurface : selected ? theme.global.selectedSurface : variant === "quiet" || variant === "link" ? theme.global.surface : theme.global.surfaceSecondary,
       opacity: disabled ? 0.6 : pressed ? 0.8 : 1 })}>
     {icon && <Ionicons name={icon} size={18} color={color} accessible={false} />}
     {!iconOnly && <Text style={[type.control, { color, flexShrink: 1 }]}>{label}</Text>}

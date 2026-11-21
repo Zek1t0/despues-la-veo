@@ -1,4 +1,7 @@
 import { OrganizationButton } from "../../src/components/organization/OrganizationUI";
+import { PersonalProgressSection } from "../../src/components/progress/PersonalProgressSection";
+import type { ProgressIntent } from "../../src/storage/personalProgressRepo";
+import type { PersonalProgress } from "../../src/core/personalProgress";
 import { radius, space, type } from "../../src/theme/presentation";
 import { savedContentVisible } from "../../src/core/sensitiveContent";
 import { activeMetadataDocument } from "../../src/core/mediaMetadataState";
@@ -194,8 +197,10 @@ function Card({ children }: { children: React.ReactNode }) {
   );
 }
 
+const savePersonalProgress = async (intent: ProgressIntent) => (await import("../../src/storage/personalProgressRepo")).setPersonalProgress(intent);
 type DetailParams = { id?: string | string[]; pinContext?: string | string[]; tag?: string | string[] };
 export type TitleDetailServices = Readonly<{
+  setPersonalProgress?: typeof savePersonalProgress;
   metadataRefreshService?: SavedMetadataRefreshService;
   languagePreferences?: MediaLanguageServices;
   selectMetadataSource?: typeof selectMetadataSource;
@@ -225,6 +230,8 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
   const { id, pinContext, tag } = useParams();
 
   const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState<PersonalProgress | null>(null);
+  const [progressError, setProgressError] = useState<unknown | null>(null);
   const [item, setItem] = useState<SavedTitleWithProviderReferences | null>(null);
   const [revealed,setRevealed]=useState<string|null>(null);
   // Hiding/revealing the same navigation must not create another automatic opening.
@@ -294,6 +301,8 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
       if (generation !== loadGeneration.current) return;
       setManualEditable(!!editable);
       setItem(snapshot.item);
+      if (!snapshot.progressReadError) setProgress(snapshot.progress ?? null);
+      setProgressError(snapshot.progressReadError ?? null);
       if (snapshot.item) {
         const ratingQueue = ratingIntentQueues.current.get(savedTitleId);
         const confirmed = {
@@ -357,6 +366,8 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
     }, snapshot => {
       loadGeneration.current++;
       setItem(snapshot.item);
+      if (!snapshot.progressReadError) setProgress(snapshot.progress ?? null);
+      setProgressError(snapshot.progressReadError ?? null);
       setLoading(false);
       if (snapshot.item) ratingIntentQueues.current.get(id)?.reconcileConfirmed({ value: snapshot.item.personalRating, updatedAt: snapshot.item.updatedAt });
       if (!notesDraftDirty.current) {
@@ -598,7 +609,7 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
       else router.back();
     }} onRetry={retryMedia}/>
   </>;
-  if (loading || !!item && item.id !== id) {
+  if ((loading && !item) || (!!item && item.id !== id)) {
     return (
       <>
       {!bindings&&<Stack.Screen options={{title:"Título",headerRight:()=>null}}/>}
@@ -724,6 +735,17 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
           </View>
           <Text style={{ color: theme.global.textMuted }}>Se guarda automáticamente.</Text>
         </Card>
+
+        <PersonalProgressSection key={item.id} itemId={item.id} classification={item} progress={progress?.itemId === item.id ? progress : null} loading={loading} readError={progressError}
+          save={bindings ? (intent => bindings.setPersonalProgress ? bindings.setPersonalProgress(intent) : Promise.reject(new Error("Guardado de progreso TEST no configurado."))) : savePersonalProgress}
+          onConfirmed={setProgress} onRetry={() => {
+            const generation = ++loadGeneration.current;
+            void getTitleDetailPinSnapshot(item.id, { pinContext, tag }).then(snapshot => {
+              if (generation !== loadGeneration.current) return;
+              if (!snapshot.progressReadError) setProgress(snapshot.progress ?? null);
+              setProgressError(snapshot.progressReadError ?? null); setItem(snapshot.item); setLoading(false);
+            }).catch(error => { if (generation === loadGeneration.current) { setProgressError(error); setLoading(false); } });
+          }} />
 
         <Card>
           {pinReady ? (

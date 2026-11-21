@@ -18,7 +18,7 @@ import { createReviewKitsuClient } from "./kitsuFixture";
 function useReviewFocusEffect(effect: () => void | (() => void)) { useEffect(effect, [effect]); }
 
 export function MediaReview({ session, onReset }: { session: ReviewSession; onReset(): Promise<void> }) {
-  const { theme } = useAppTheme();
+  const { theme, setScheme } = useAppTheme();
   const [page, setPage] = useState<"discover" | "remote" | "library" | "local" | "manual" | "anime-search" | "anime-detail" | "art">("discover");
   const [animeId, setAnimeId] = useState("1");
   const [manualDraft, setManualDraft] = useState<{ id?: string; key: number; target: "primary" | "restore" } | null>(null);
@@ -105,6 +105,8 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
       <Text style={{ color: theme.global.textSecondary }}>Base activa: {target}. Fuente sintética: {offline ? "desconectada" : "disponible"}. La DB personal no participa.</Text>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, padding: 8 }}>
       {button("Fixtures", () => setPage("discover"))}
+      {button("Tema claro TEST", () => void setScheme("light"))}
+      {button("Tema oscuro TEST", () => void setScheme("dark"))}
       {button("Anime Kitsu TEST · sin red real", () => setPage("anime-search"))}
       {button("Biblioteca de prueba", () => { setTarget("primary"); setPage("library"); })}
       {button("Agregar manual TEST", () => { setManualDraft({ key: Date.now(), target }); setPage("manual"); }, !!manualDraft)}

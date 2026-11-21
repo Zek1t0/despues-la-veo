@@ -1,4 +1,8 @@
 import { controlTarget, gridItemKey, metadataPill, pressedFeedback, radius, space, titleGridColumns, type } from "../../src/theme/presentation";
+import type { PersonalProgress } from "../../src/core/personalProgress";
+import { progressPositionCompatible } from "../../src/core/personalProgress";
+import { progressPositionLabel } from "../../src/core/personalProgressPresentation";
+import { PersonalProgressSummary } from "../../src/components/progress/PersonalProgressSummary";
 import { savedContentVisible } from "../../src/core/sensitiveContent";
 import { SensitiveFilterStatus } from "../../src/components/browsing/SensitiveContentNotice";
 import { useMediaLanguages, type MediaLanguageServices } from "../../src/components/browsing/useMediaLanguages";
@@ -146,6 +150,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
   const [pinnedAtById, setPinnedAtById] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
   const [snapshotReady, setSnapshotReady] = useState(false);
+  const [progressById, setProgressById] = useState<Record<string, PersonalProgress>>({});
   const [snapshotError, setSnapshotError] = useState<string | null>(null);
 
   const [q, setQ] = useState("");
@@ -378,6 +383,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
       const snapshot = await getLibraryScreenSnapshot();
       if (generation !== libraryReadGeneration.current) return;
       setItems(snapshot.items);
+      if (snapshot.progressById) setProgressById(snapshot.progressById);
       const loadedPinnedAtById = new Map(
         snapshot.pins.map((pin) => [pin.savedTitleId, pin.pinnedAt] as const)
       );
@@ -413,6 +419,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
   }, snapshot => {
     libraryReadGeneration.current++;
     setItems(snapshot.items);
+    if (snapshot.progressById) setProgressById(snapshot.progressById);
     setPinnedAtById(new Map(snapshot.pins.map(pin => [pin.savedTitleId, pin.pinnedAt])));
     setSnapshotReady(true); setSnapshotError(null); setLoading(false);
   }), []);
@@ -873,6 +880,8 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                   }
                   posterUrl={item.posterUrl} imageProvider={savedMediaPresentation(item).imageProvider} metadata={savedMediaPresentation(item).metadata}
                   personalRating={item.personalRating}
+                  progress={progressById[item.id]}
+                  progressIncompatible={!!progressById[item.id]?.position && !progressPositionCompatible(item, progressById[item.id].position)}
                   style={{ width: gridCardWidth }}
                   title={item.title}
                   kindLabel={mediaClassificationLabel(item)}
@@ -896,7 +905,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
               >
                 <Pressable
                   accessible
-                  accessibilityLabel={savedTitleOpenAccessibilityLabel(item, true)}
+                  accessibilityLabel={[savedTitleOpenAccessibilityLabel(item, true), progressById[item.id]?.position ? `Mi progreso: ${progressPositionLabel(progressById[item.id].position!)}` : null].filter(Boolean).join(". ")}
                   accessibilityRole="button"
                   focusable
                   onPress={() =>
@@ -923,6 +932,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                       </Text>
 
                       <Text style={[type.caption, { color: theme.global.textSecondary }]}>{mediaClassificationLabel(item)}</Text>
+                      <PersonalProgressSummary progress={progressById[item.id]} incompatible={!!progressById[item.id]?.position && !progressPositionCompatible(item, progressById[item.id].position)} />
                       <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.xs }}>
                         <Pill text={titleStatusLabel(item.status, item.medium)} />
                         <PersonalRatingBadge value={item.personalRating} showPersonalLabel />

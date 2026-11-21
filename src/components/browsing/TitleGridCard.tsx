@@ -9,6 +9,9 @@ import { pressedFeedback, radius, space, type } from "../../theme/presentation";
 import { MediaPoster } from "./MediaPoster";
 import { PersonalRatingBadge } from "./PersonalRatingBadge";
 import { getPersonalRatingPresentation } from "./personalRatingPresentation";
+import type { PersonalProgress } from "../../core/personalProgress";
+import { progressPositionLabel } from "../../core/personalProgressPresentation";
+import { PersonalProgressSummary } from "../progress/PersonalProgressSummary";
 
 export type TitleGridCardProps = {
   identity?: string;
@@ -21,6 +24,8 @@ export type TitleGridCardProps = {
   accessibilityLabel: string;
   isPinned?: boolean;
   personalRating?: PersonalRating;
+  progress?: PersonalProgress | null;
+  progressIncompatible?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -35,12 +40,15 @@ export function TitleGridCard({
   accessibilityLabel,
   isPinned = false,
   personalRating = null,
+  progress,
+  progressIncompatible = false,
   style,
 }: TitleGridCardProps) {
   const { theme } = useAppTheme();
   const [focused, setFocused] = useState(false);
   const ratingLabel = getPersonalRatingPresentation(personalRating)?.accessibilityLabel;
-  const label = [accessibilityLabel, isPinned ? "fijado" : null, ratingLabel]
+  const label = [accessibilityLabel, isPinned ? "fijado" : null, ratingLabel,
+    progress?.position ? `Mi progreso: ${progressPositionLabel(progress.position)}${progressIncompatible ? ". Revisar clasificación" : ""}` : null]
     .filter(Boolean)
     .join(". ");
 
@@ -118,6 +126,9 @@ export function TitleGridCard({
           </View>
         </View>
       </View>
+      {progress?.position && <View accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ paddingHorizontal: space.sm, paddingVertical: space.sm }}>
+        <PersonalProgressSummary progress={progress} incompatible={progressIncompatible} />
+      </View>}
     </Pressable>
   );
 }

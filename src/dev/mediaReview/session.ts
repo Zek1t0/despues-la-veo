@@ -1,4 +1,5 @@
 import { selectMetadataSource } from "../../storage/mediaMetadataRepo";
+import { setPersonalProgress } from "../../storage/personalProgressRepo";
 import { readMediaPreferencesWithDb, subscribeMediaPreferences, setMediaLanguages } from "../../storage/mediaPreferencesRepo";
 import * as SQLite from "expo-sqlite";
 import { enableAndVerifyForeignKeys, ensureLibrarySchema, type SchemaDatabase } from "../../storage/databaseSchema";
@@ -62,6 +63,7 @@ export async function createReviewSession(options: Readonly<{
     write: async preference => { appearance = preference; },
   };
   const repository = (db: ReviewDatabase) => ({
+    setPersonalProgress: (intent: Parameters<typeof setPersonalProgress>[0]) => { requireOpen(); return setPersonalProgress(intent, db); },
     setMediaLanguages: (languages: readonly string[]) => setMediaLanguages(languages,Date.now(),db),
     languagePreferences: { read: () => readMediaPreferencesWithDb(db), subscribe: subscribeMediaPreferences },
     selectMetadataSource: (id: string, reference: Parameters<typeof selectMetadataSource>[1]) => selectMetadataSource(id,reference,Date.now(),db),
