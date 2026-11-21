@@ -5,12 +5,13 @@ import { manualDuplicateCandidates, validateManualContent, type ManualContentInp
 import { isMediaClassification, type MediaContentFamily, type MediaMedium, type MediaPrimaryFormat } from "../core/mediaClassification";
 import type { SavedTitleWithProviderReferences } from "../core/savedTitle";
 import { useAppTheme } from "../theme/AppThemeProvider";
+import { ManualProgressDecisionRequired, type ManualProgressDecision } from "../storage/manualContentEntries";
 
 type Services = {
   get(id: string): Promise<SavedTitleWithProviderReferences | null>;
   eligible(id: string): Promise<boolean>;
   list(): Promise<SavedTitleWithProviderReferences[]>;
-  save(input: ManualContentInput, id?: string): Promise<string>;
+  save(input: ManualContentInput, id?: string, progressDecision?: ManualProgressDecision): Promise<string>;
   inspect(id: string): void; done(id: string): void; cancel(): void;
   linkExisting?(id: string): Promise<void>;
 };
@@ -34,6 +35,7 @@ export function ManualEntryForm({ id, services }: { id?: string; services: Servi
   const [busy, setBusy] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [candidates, setCandidates] = useState<SavedTitleWithProviderReferences[] | null>(null);
+  const [progressConflict, setProgressConflict] = useState<ManualProgressDecisionRequired | null>(null);
   const lock = useRef(false);
   const confirmedId = useRef<string | null>(null);
   // The screen stays mounted while a candidate detail is pushed, retaining the draft.
@@ -57,7 +59,7 @@ export function ManualEntryForm({ id, services }: { id?: string; services: Servi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, retry]);
 
-  const changed = () => { setCandidates(null); setError(null); };
+  const changed = () => { setCandidates(null); setError(null); setProgressConflict(null); };
   async function linkExisting(itemId: string) {
     if (lock.current || !services.linkExisting) return;
     lock.current=true;setBusy(true);setError(null);
@@ -65,7 +67,7 @@ export function ManualEntryForm({ id, services }: { id?: string; services: Servi
     catch(e) { setError(e instanceof Error ? e.message : "No se pudo vincular. Tu borrador sigue acá."); }
     finally { lock.current=false;setBusy(false); }
   }
-  const save = async (separate = false) => {
+  const save = async (separate = false, progressDecision?: ManualProgressDecision) => {
     if (lock.current) return;
     lock.current = true; setBusy(true); setError(null);
     try {
@@ -78,10 +80,13 @@ export function ManualEntryForm({ id, services }: { id?: string; services: Servi
         const matches = manualDuplicateCandidates(await services.list(), input.title, input.year, id);
         if (matches.length) { setCandidates(matches); return; }
       }
-      const savedId = await services.save(input, id);
+      const savedId = await services.save(input, id, progressDecision);
       confirmedId.current = savedId;
       services.done(savedId);
-    } catch (e) { setError(e instanceof Error ? e.message : "No se pudo guardar. Tu borrador sigue acá."); }
+    } catch (e) {
+      setProgressConflict(e instanceof ManualProgressDecisionRequired ? e : null);
+      setError(e instanceof Error ? e.message : "No se pudo guardar. Tu borrador sigue acá.");
+    }
     finally { lock.current = false; setBusy(false); }
   };
   const button = (label: string, action: () => void, selected = false, key = label) => <Pressable key={key}
@@ -120,6 +125,12 @@ export function ManualEntryForm({ id, services }: { id?: string; services: Servi
         {button(id ? "Guardar cambios igualmente" : "Crear por separado", () => { void save(true); })}
       </View>}
       {button(busy ? "Guardando…" : confirmedId.current ? "Abrir título guardado" : "Guardar", () => { void save(); })}
+      {progressConflict && <View style={{ gap: 8 }}>
+        <Text accessibilityRole="alert" style={text}>El progreso existente no corresponde a la nueva clasificación. Conservarlo mantiene su numeración original; restablecerlo lo deja sin posición. No cambia el estado personal.</Text>
+        {button("Cancelar decisión y seguir editando", () => { setProgressConflict(null); setError(null); })}
+        {button("Conservar progreso y guardar", () => { void save(true, { action: "preserve", expected: progressConflict.progress, expectedClassification: progressConflict.classification }); })}
+        {button("Restablecer progreso y guardar", () => { void save(true, { action: "reset", expected: progressConflict.progress, expectedClassification: progressConflict.classification }); })}
+      </View>}
     </>}
     {error && <Text accessibilityRole="alert" style={text}>{error}</Text>}
     {loadError && button("Reintentar carga", () => setRetry(v => v + 1))}

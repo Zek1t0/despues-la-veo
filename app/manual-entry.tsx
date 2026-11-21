@@ -14,7 +14,7 @@ export default function ManualEntryScreen() {
   return <>
     <Stack.Screen options={{ title: id ? "Editar título" : "Agregar manualmente", headerBackVisible: false, gestureEnabled: false }} />
     <ManualEntryForm key={id ?? "new"} id={id} services={{ get: getSavedTitleById, list: recommendationId ? async()=>{const p=await getMediaPreferences();return (await listSavedTitles()).filter(v=>savedContentVisible(v,p.value.hideSensitive));} : listSavedTitles,
-      eligible: isManualContentEditable, save: recommendationId ? input=>incorporateManualRecommendation(recommendationId,input) : saveManualContent,
+      eligible: isManualContentEditable, save: recommendationId ? input=>incorporateManualRecommendation(recommendationId,input) : (input, itemId, decision) => saveManualContent(input, itemId, undefined, decision),
       linkExisting: recommendationId ? itemId=>linkRecommendation(recommendationId,itemId) : undefined,
       inspect: itemId => router.push({ pathname: "/title/[id]", params: { id: itemId } }),
       done: itemId => recommendationId ? router.replace({pathname:"/organize/recommendations/[id]",params:{id:recommendationId}}) : router.replace({ pathname: "/title/[id]", params: { id: itemId } }),

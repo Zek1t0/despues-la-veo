@@ -8,6 +8,18 @@ import { assignManualIdentityWithDb } from "./manualEntryIdentities";
 import { getSavedTitleWithReferencesByIdWithDb, type SavedTitleStorageReadDatabase } from "./savedTitleStorage";
 import type { SavedTitlesMutationDatabase } from "./savedTitlesRepo";
 import { runSerializedStorageMutation } from "./storageMutationQueue";
+import { getPersonalProgressWithDb, setPersonalProgressWithDb, ProgressConflict, progressClassificationsEqual } from "./personalProgressRepo";
+import { parsePersonalProgress, progressPositionCompatible, progressVersionsEqual, type PersonalProgress } from "../core/personalProgress";
+import { assertMediaClassification, type MediaClassification } from "../core/mediaClassification";
+import { publishLibraryInvalidation } from "./libraryInvalidation";
+
+export type ManualProgressDecision = { action: "preserve" | "reset" | "cancel"; expected: PersonalProgress | null; expectedClassification: MediaClassification };
+export class ManualProgressDecisionRequired extends Error {
+  constructor(public readonly progress: PersonalProgress, public readonly classification: MediaClassification) {
+    super("La clasificación elegida no es compatible con el progreso. Elegí conservarlo o restablecerlo.");
+    this.name = "ManualProgressDecisionRequired";
+  }
+}
 
 export async function isManualContentEditableWithDb(db: SavedTitleStorageReadDatabase, id: string): Promise<boolean> {
   const item = await getSavedTitleWithReferencesByIdWithDb(db, id);
@@ -42,11 +54,28 @@ export async function createManualContentWithDb(db: SavedTitlesMutationDatabase,
   throw new Error("No se pudo generar un ID local libre después de 25 intentos.");
 }
 
-export async function editManualContentWithDb(db: SavedTitlesMutationDatabase, id: string, input: ManualContentInput, now = Date.now()): Promise<string> {
+export async function editManualContentWithDb(db: SavedTitlesMutationDatabase, id: string, input: ManualContentInput, now = Date.now(), progressDecision?: ManualProgressDecision): Promise<string> {
   const value = validateManualContent(input);
   if (!await isManualContentEditableWithDb(db, id)) throw new Error("Este título no permite edición manual.");
   const current = await getSavedTitleWithReferencesByIdWithDb(db, id);
   if (!current) throw new Error("El título dejó de existir.");
+  // Historical injected schemas retain their old contract; production initializes v9.
+  const hasProgress = await db.getFirstAsync("SELECT name FROM sqlite_master WHERE type='table' AND name='personal_title_progress';");
+  if (hasProgress) {
+    const progress = await getPersonalProgressWithDb(db, id);
+    if (progressDecision) {
+      if (!["preserve", "reset", "cancel"].includes(progressDecision.action)) throw new Error("Decisión de progreso inválida.");
+      assertMediaClassification(progressDecision.expectedClassification);
+      if (progressDecision.expected !== null) parsePersonalProgress(progressDecision.expected);
+      if (progressDecision.action === "cancel") throw new Error("Edición cancelada; no se guardaron cambios.");
+      if (!progressVersionsEqual(progress, progressDecision.expected) || !progressClassificationsEqual(current, progressDecision.expectedClassification)) throw new ProgressConflict();
+    }
+    if (progress?.position && !progressPositionCompatible(value, progress.position)) {
+      if (!progressDecision && !progressClassificationsEqual(current, value))
+        throw new ManualProgressDecisionRequired(progress, { medium: current.medium, contentFamily: current.contentFamily, primaryFormat: current.primaryFormat });
+      if (progressDecision?.action === "reset") await setPersonalProgressWithDb(db, { itemId: id, expected: progress, expectedClassification: current, position: null }, now);
+    }
+  }
   const result = await db.runAsync(`UPDATE saved_titles SET title = ?, medium = ?, content_family = ?, primary_format = ?,
     year = ?, overview = ?, updated_at = ? WHERE id = ?;`, value.title, value.medium, value.contentFamily,
     value.primaryFormat, value.year, value.overview, nextSavedTitleUpdatedAt(current.updatedAt, now), id);
@@ -60,14 +89,15 @@ export async function editManualContentWithDb(db: SavedTitlesMutationDatabase, i
   return id;
 }
 
-export async function saveManualContent(input: ManualContentInput, id?: string, database?: SavedTitlesMutationDatabase): Promise<string> {
+export async function saveManualContent(input: ManualContentInput, id?: string, database?: SavedTitlesMutationDatabase, progressDecision?: ManualProgressDecision): Promise<string> {
   const db = database ?? await initDb();
   return runSerializedStorageMutation(async () => {
     let result: string | undefined;
     await db.withTransactionAsync(async () => {
-      result = id ? await editManualContentWithDb(db, id, input) : await createManualContentWithDb(db, input);
+      result = id ? await editManualContentWithDb(db, id, input, Date.now(), progressDecision) : await createManualContentWithDb(db, input);
     });
     if (!result) throw new Error("No se pudo confirmar el guardado.");
+    publishLibraryInvalidation([result]);
     return result;
   });
 }

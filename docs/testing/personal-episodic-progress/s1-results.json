@@ -1,0 +1,53 @@
+{
+  "status": "PASS",
+  "sqlite": "3.50.2",
+  "node": "v22.18.0",
+  "testRoot": "C:\\Users\\elias\\AppData\\Local\\Packages\\openai.codex_2p2nqsd0c76g0\\AC\\#!sandbox.{92935d15-52a7-411c-a81f-76d1b5f3b4ea}\\Temp\\TEST-dlv-progress-S1-0P4n91",
+  "results": [
+    {
+      "name": "domain: variants, exact decimals, bounds, Unicode and invalid shapes",
+      "status": "PASS"
+    },
+    {
+      "name": "isolated v8 backup",
+      "file": "C:\\Users\\elias\\AppData\\Local\\Packages\\openai.codex_2p2nqsd0c76g0\\AC\\#!sandbox.{92935d15-52a7-411c-a81f-76d1b5f3b4ea}\\Temp\\TEST-dlv-progress-S1-0P4n91\\TEST-v8-before-migration.sqlite",
+      "sha256": "09e13158abd40c7f8e1279d09b2da9ab30e5be270c63aa2ccf4cf369ef4a1723"
+    },
+    {
+      "name": "migration: actual mixed v8 backup copy, v9 preservation and reopen",
+      "status": "PASS"
+    },
+    {
+      "name": "migration: empty, v3/v4/v6 chain, future and corrupted schema",
+      "status": "PASS"
+    },
+    {
+      "name": "migration: all v9 failure hooks and final commit roll back exact data/schema",
+      "status": "PASS"
+    },
+    {
+      "name": "repository: corrections, reset, zero, own clock and no incidental changes",
+      "status": "PASS"
+    },
+    {
+      "name": "concurrency: same intent twice, competing targets, stale bases/classification, clocks",
+      "status": "PASS"
+    },
+    {
+      "name": "snapshots: atomic read transaction, batch queries, unknown read distinguished",
+      "status": "PASS"
+    },
+    {
+      "name": "manual: compatible preserve, incompatible require/cancel/preserve/reset, stale/rollback",
+      "status": "PASS"
+    },
+    {
+      "name": "delete: progress/member cascade and Inbox original context survives; stale write fails",
+      "status": "PASS"
+    },
+    {
+      "name": "SQL defense: invalid union, range, orphan and corrupt canonical rows rejected",
+      "status": "PASS"
+    }
+  ]
+}

@@ -25,10 +25,10 @@ const parsed=b=>{const r=parseLibraryBackup(JSON.stringify(b));assert.equal(r.ok
   await assert.rejects(schema.evolveDatabaseSchema(failed.db,7,{[hook]:()=>{throw Error('TEST migration failure')}}));
   assert.deepEqual(snapshot(failed),old);assert.equal((await schema.readUserVersion(failed.db)),7);
  }
- await schema.evolveDatabaseSchema(source.db,7);assert.equal(await schema.readUserVersion(source.db),8);
+ await schema.evolveDatabaseSchema(source.db,7);assert.equal(await schema.readUserVersion(source.db),schema.DATABASE_SCHEMA_VERSION);
  const after=snapshot(source);for(const [name,rows] of Object.entries(before))assert.deepEqual(after[name],rows,name);
- await schema.evolveDatabaseSchema(source.db,8);assert.deepEqual(snapshot(source),after);
- await assert.rejects(schema.evolveDatabaseSchema(source.db,9));
+ await schema.evolveDatabaseSchema(source.db,schema.DATABASE_SCHEMA_VERSION);assert.deepEqual(snapshot(source),after);
+ await assert.rejects(schema.evolveDatabaseSchema(source.db,schema.DATABASE_SCHEMA_VERSION+1));
  let changes=0;const stop=subscribeOrganization(()=>changes++);
  await repo.mutateCollections(db=>repo.createCollectionWithDb(db,'c1','TEST larga colección 日本語','Descripción TEST',100),source.db);
  assert.equal(changes,1);

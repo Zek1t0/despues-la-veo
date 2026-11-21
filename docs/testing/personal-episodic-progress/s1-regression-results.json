@@ -1,0 +1,137 @@
+{
+  "status": "PASS",
+  "results": [
+    {
+      "name": "S1 domain + SQLite",
+      "args": [
+        "docs/testing/personal-episodic-progress/s1-verification.cjs"
+      ],
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "status": "PASS",
+      "output": "PASS domain: variants, exact decimals, bounds, Unicode and invalid shapes\nPASS migration: actual mixed v8 backup copy, v9 preservation and reopen\nPASS migration: empty, v3/v4/v6 chain, future and corrupted schema\nPASS migration: all v9 failure hooks and final commit roll back exact data/schema\nPASS repository: corrections, reset, zero, own clock and no incidental changes\nPASS concurrency: same intent twice, competing targets, stale bases/classification, clocks\nPASS snapshots: atomic read transaction, batch queries, unknown read distinguished\nPASS manual: compatible preserve, incompatible require/cancel/preserve/reset, stale/rollback\nPASS delete: progress/member cascade and Inbox original context survives; stale write fails\nPASS SQL defense: invalid union, range, orphan and corrupt canonical rows rejected\n(node:11560) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "name": "S1 manual decision UI TEST",
+      "args": [
+        "docs/testing/personal-episodic-progress/s1-manual-ui.cjs"
+      ],
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "status": "PASS",
+      "output": "PASS manual form hook-host + real TEST SQLite: incompatibility, cancel, preserve, reset and repeated unrelated edit; no tracking UI or personal DB/network.\n(node:31772) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "name": "Manual/identity historical",
+      "args": [
+        "docs/testing/anime-catalog-manual-entries/b3-verification.cjs"
+      ],
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "status": "PASS",
+      "output": "PASS B3/B4 actual SQLite6: manual/TMDB movie+tv/MangaUpdates/Kitsu coexistence, exact large references, save/re-save preservation, mixed v7 remap/reimport/edit/delete isolation, offline reopen and no network/personal DB.\n(node:32076) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "name": "Existing search/detail hook-host",
+      "args": [
+        "docs/testing/anime-catalog-manual-entries/b3-ui-verification.cjs"
+      ],
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "status": "PASS",
+      "output": "PASS B3 real search/detail hook-host: Anime category, loading/empty/Kitsu errors/retry, list/grid navigation, source/query/retry/credential/route/unmount races and aborts, no art, saved detection/double save/failure, closed detail without personal DB/network.\n"
+    },
+    {
+      "name": "Collections/Inbox S1",
+      "args": [
+        "docs/testing/personal-collections-recommendation-inbox/s1-verification.cjs"
+      ],
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "status": "PASS",
+      "output": "PASS S1: migration v7→v8 preservation/rollback/reopen/future version; CRUD/idempotence/FKs/cascades; shared Inbox references/schema only; v9 real round trip empty/conflicting DB; remap/freshness/ties/absence/reimport; v1–v8 focused imports; sensitive full backup; partial errors and commit rollback; post-commit invalidation. TEST databases only.\n(node:25400) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "name": "Collections/Inbox S2",
+      "args": [
+        "docs/testing/personal-collections-recommendation-inbox/s2-verification.cjs"
+      ],
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "status": "PASS",
+      "output": "PASS S2 SQLite TEST: offline capture/URL allowlist/immutable context; states and duplicate references; manual-confirmed candidates; exact preservation on existing links; provider gates; atomic new/manual incorporation, serialized double submission and retries; injected link/commit rollback and postcommit notification; all linked recommendations reopen on title deletion; v9 collections+Inbox round trip, S1 compatibility, stable-ID conflicts, portable remap, orphan recovery and idempotence; FK integrity and reopen. No personal DB or network.\n(node:33372) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "name": "Historical backup v1-v9",
+      "args": [
+        "docs/testing/personal-collections-recommendation-inbox/s3-portability.cjs"
+      ],
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "status": "PASS",
+      "output": "PASS S3 portability: fresh/mixed v7→v8, repeated opens/future rejection/migration failures; full semantic v9 round trip and 3 reimports; v1–v8 actual restores/newer locals; S1 absent Inbox; portable/manual/multi-provider remap and local-ID collisions; invalid identities/orphans/envelopes; secrets excluded; FK+integrity_check. TEST only.\n(node:28540) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "name": "Backup conflicts",
+      "args": [
+        "docs/testing/personal-collections-recommendation-inbox/s3-conflicts.cjs"
+      ],
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "status": "PASS",
+      "output": "PASS S3 conflict matrix: all clocks/ties/createdAt, states/context, duplicates and contradictory units, absence/deleted recovery, reference-sharing Inbox, effective post-remap membership merge independent of array order. TEST only.\n(node:24784) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "name": "Backup failures",
+      "args": [
+        "docs/testing/personal-collections-recommendation-inbox/s3-failures.cjs"
+      ],
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "status": "PASS",
+      "output": "PASS S3 failures: SQL injected creation/member/link/incorporation/delete/commit rollback; per-record title/collection/member/recommendation savepoints and exact counters; no precommit/failed invalidations; public serialization/concurrent retries without nested transactions; CHECKs/PKs/indexes/triggers/FKs. TEST only.\n(node:24900) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "name": "Local picker",
+      "args": [
+        "docs/testing/library-picker.cjs"
+      ],
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "status": "PASS",
+      "output": "PASS motor local: elegibilidad, fechas, duraciones, visibilidad, muestra y sorpresa sin mutaciones\n"
+    },
+    {
+      "name": "Known activity retention assertion reproduced on HEAD (expected failure)",
+      "args": [
+        "-e",
+        "require('./docs/testing/enriched-media-metadata/sqlite-fixtures.cjs');\nconst fs=require('node:fs'),path=require('node:path'),ts=require('typescript'),{spawnSync}=require('node:child_process');\nrequire.extensions['.ts']=(m,f)=>{const p=path.relative(process.cwd(),f).replaceAll('\\\\','/');const r=spawnSync('git',['show','HEAD:'+p],{encoding:'utf8'});if(r.status!==0)throw Error('Cannot read baseline '+p);m._compile(ts.transpileModule(r.stdout,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,f)};\nrequire(\"./docs/testing/enriched-media-metadata/section-2-storage.cjs\");"
+      ],
+      "exitCode": 1,
+      "expectedExitCode": 1,
+      "status": "PASS",
+      "output": "(node:30212) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n0 !== 1\n\n    at D:\\dev\\despues-la-veo\\docs\\testing\\enriched-media-metadata\\section-2-storage.cjs:24:49\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: 0,\n  expected: 1,\n  operator: 'strictEqual'\n}\n"
+    },
+    {
+      "name": "Metadata storage with deterministic TEST clock",
+      "args": [
+        "-e",
+        "Date.now=()=>1000;require(\"./docs/testing/enriched-media-metadata/section-2-storage.cjs\")"
+      ],
+      "exitCode": 0,
+      "expectedExitCode": 0,
+      "status": "PASS",
+      "output": "PASS 2.3/2.4/2.8 storage: patches, authority, no-op, commit/rollback, tokens, delete, personal races, multi-source, re-save, aliases and observers.\n(node:29132) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "name": "Known obsolete rating source assertion (expected failure)",
+      "args": [
+        "docs/testing/personal-title-rating/section-2-integration-verification.cjs"
+      ],
+      "exitCode": 1,
+      "expectedExitCode": 1,
+      "status": "PASS",
+      "output": "node:assert:800\r\n    throw err;\r\n    ^\r\n\r\nAssertionError [ERR_ASSERTION]: The input did not match the regular expression /personalRatingPresentation\\?\\.accessibilityLabel/. Input:\r\n\r\n'import React, { useState } from \"react\";\\r\\n' +\r\n  'import { Ionicons } from \"@expo/vector-icons\";\\r\\n' +\r\n  'import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from \"react-native\";\\r\\n' +\r\n  '\\r\\n' +\r\n  'import type { EnrichedMediaMetadata } from \"../../core/enrichedMediaMetadata\";\\r\\n' +\r\n  'import type { PersonalRating } from \"../../core/personalRating\";\\r\\n' +\r\n  'import { useAppTheme } from \"../../theme/AppThemeProvider\";\\r\\n' +\r\n  'import { pressedFeedback, radius, space, type } from \"../../theme/presentation\";\\r\\n' +\r\n  'import { MediaPoster } from \"./MediaPoster\";\\r\\n' +\r\n  'import { PersonalRatingBadge } from \"./PersonalRatingBadge\";\\r\\n' +\r\n  'import { getPersonalRatingPresentation } from \"./personalRatingPresentation\";\\r\\n' +\r\n  '\\r\\n' +\r\n  'export type TitleGridCardProps = {\\r\\n' +\r\n  '  identity?: string;\\r\\n' +\r\n  '  imageProvider?: string | null;\\r\\n' +\r\n  '  metadata?: EnrichedMediaMetadata;\\r\\n' +\r\n  '  title: string;\\r\\n' +\r\n  '  kindLabel: string;\\r\\n' +\r\n  '  posterUrl?: string | null;\\r\\n' +\r\n  '  onPress: () => void;\\r\\n' +\r\n  '  accessibilityLabel: string;\\r\\n' +\r\n  '  isPinned?: boolean;\\r\\n' +\r\n  '  personalRating?: PersonalRating;\\r\\n' +\r\n  '  style?: StyleProp<ViewStyle>;\\r\\n' +\r\n  '};\\r\\n' +\r\n  '\\r\\n' +\r\n  'export function TitleGridCard({\\r\\n' +\r\n  '  identity,\\r\\n' +\r\n  '  imageProvider = \"tmdb\",\\r\\n' +\r\n  '  metadata,\\r\\n' +\r\n  '  title,\\r\\n' +\r\n  '  kindLabel,\\r\\n' +\r\n  '  posterUrl,\\r\\n' +\r\n  '  onPress,\\r\\n' +\r\n  '  accessibilityLabel,\\r\\n' +\r\n  '  isPinned = false,\\r\\n' +\r\n  '  personalRating = null,\\r\\n' +\r\n  '  style,\\r\\n' +\r\n  '}: TitleGridCardProps) {\\r\\n' +\r\n  '  const { theme } = useAppTheme();\\r\\n' +\r\n  '  const [focused, setFocused] = useState(false);\\r\\n' +\r\n  '  const ratingLabel = getPersonalRatingPresentation(personalRating)?.accessibilityLabel;\\r\\n' +\r\n  '  const label = [accessibilityLabel, isPinned ? \"fijado\" : null, ratingLabel]\\r\\n' +\r\n  '    .filter(Boolean)\\r\\n' +\r\n  '    .join(\". \");\\r\\n' +\r\n  '\\r\\n' +\r\n  '  return (\\r\\n' +\r\n  '    <Pressable\\r\\n' +\r\n  '      accessible\\r\\n' +\r\n  '      accessibilityLabel={label}\\r\\n' +\r\n  '      accessibilityRole=\"button\"\\r\\n' +\r\n  '      focusable\\r\\n' +\r\n  '      onFocus={() => setFocused(true)}\\r\\n' +\r\n  '      onBlur={() => setFocused(false)}\\r\\n' +\r\n  '      onPress={onPress}\\r\\n' +\r\n  '      style={({ pressed }) => [\\r\\n' +\r\n  '        styles.card,\\r\\n' +\r\n  '        {\\r\\n' +\r\n  '          backgroundColor: theme.global.surface,\\r\\n' +\r\n  '          borderColor: focused ? theme.global.accent : theme.global.border,\\r\\n' +\r\n  '        },\\r\\n' +\r\n  '        style,\\r\\n' +\r\n  '        pressed && pressedFeedback,\\r\\n' +\r\n  '      ]}\\r\\n' +\r\n  '    >\\r\\n' +\r\n  '      <View\\r\\n' +\r\n  '        aria-hidden\\r\\n' +\r\n  '        accessibilityElementsHidden\\r\\n' +\r\n  '        importantForAccessibility=\"no-hide-descendants\"\\r\\n' +\r\n  '        pointerEvents=\"none\"\\r\\n' +\r\n  '        style={styles.art}\\r\\n' +\r\n  '      >\\r\\n' +\r\n  '        <MediaPoster\\r\\n' +\r\n  '          identity={identity ?? accessibilityLabel}\\r\\n' +\r\n  '          imageProvider={imageProvider}\\r\\n' +\r\n  '          metadata={metadata}\\r\\n' +\r\n  '          posterUrl={posterUrl}\\r\\n' +\r\n  '          context=\"card\"\\r\\n' +\r\n  '          style={styles.poster}\\r\\n' +\r\n  '        />\\r\\n' +\r\n  '        <View style={styles.indicators}>\\r\\n' +\r\n  '          <Text\\r\\n' +\r\n  '            numberOfLines={1}\\r\\n' +\r\n  '            style={[\\r\\n' +\r\n  '              type.caption,\\r\\n' +\r\n  '              styles.kind,\\r\\n' +\r\n  '              {\\r\\n' +\r\n  '                backgroundColor: theme.structural.imageOverlayLabel,\\r\\n' +\r\n  '                color: theme.structural.onImageOverlay,\\r\\n' +\r\n  '              },\\r\\n' +\r\n  '            ]}\\r\\n' +\r\n  '          >\\r\\n' +\r\n  '            {kindLabel}\\r\\n' +\r\n  '          </Text>\\r\\n' +\r\n  '          {isPinned && (\\r\\n' +\r\n  '            <View style={[\\r\\n' +\r\n  '              styles.pin,\\r\\n' +\r\n  '              {\\r\\n' +\r\n  '                backgroundColor: theme.structural.imageOverlayStrong,\\r\\n' +\r\n  '                borderColor: theme.structural.imageOverlayBorder,\\r\\n' +\r\n  '              },\\r\\n' +\r\n  '            ]}>\\r\\n' +\r\n  '              <Ionicons color={theme.structural.onImageOverlay} name=\"diamond-outline\" size={14} />\\r\\n' +\r\n  '            </View>\\r\\n' +\r\n  '          )}\\r\\n' +\r\n  '        </View>\\r\\n' +\r\n  '\\r\\n' +\r\n  '        <View>\\r\\n' +\r\n  '          <PersonalRatingBadge value={personalRating} style={styles.rating} />\\r\\n' +\r\n  '          <View style={[styles.caption, { backgroundColor: theme.structural.imageOverlayLabel }]}>\\r\\n' +\r\n  '            {/* Let the platform measure two scaled lines using the real title metrics. */}\\r\\n' +\r\n  '            <Text style={[styles.titleText, styles.captionMeasure]}>\\r\\n' +\r\n  '              {\"M\\\\nM\"}\\r\\n' +\r\n  '            </Text>\\r\\n' +\r\n  '            <Text numberOfLines={2} style={[styles.titleText, styles.captionContent, { color: theme.structural.onImageOverlay }]}>\\r\\n' +\r\n  '              {title}\\r\\n' +\r\n  '            </Text>\\r\\n' +\r\n  '          </View>\\r\\n' +\r\n  '        </View>\\r\\n' +\r\n  '      </View>\\r\\n' +\r\n  '    </Pressable>\\r\\n' +\r\n  '  );\\r\\n' +\r\n  '}\\r\\n' +\r\n  '\\r\\n' +\r\n  'const styles = StyleSheet.create({\\r\\n' +\r\n  '  card: {\\r\\n' +\r\n  '    borderRadius: radius.card,\\r\\n' +\r\n  '    borderWidth: 1,\\r\\n' +\r\n  '    overflow: \"hidden\",\\r\\n' +\r\n  '  },\\r\\n' +\r\n  '  art: {\\r\\n' +\r\n  '    aspectRatio: 2 / 3,\\r\\n' +\r\n  '    justifyContent: \"space-between\",\\r\\n' +\r\n  '  },\\r\\n' +\r\n  '  poster: {\\r\\n' +\r\n  '    ...StyleSheet.absoluteFillObject,\\r\\n' +\r\n  '    borderWidth: 0,\\r\\n' +\r\n  '  },\\r\\n' +\r\n  '  indicators: {\\r\\n' +\r\n  '    alignItems: \"flex-start\",\\r\\n' +\r\n  '    flexDirection: \"row\",\\r\\n' +\r\n  '    gap: space.xs,\\r\\n' +\r\n  '    justifyContent: \"space-between\",\\r\\n' +\r\n  '    padding: space.sm,\\r\\n' +\r\n  '  },\\r\\n' +\r\n  '  kind: {\\r\\n' +\r\n  '    flexShrink: 1,\\r\\n' +\r\n  '    borderRadius: radius.control,\\r\\n' +\r\n  '    overflow: \"hidden\",\\r\\n' +\r\n  '    paddingHorizontal: space.sm,\\r\\n' +\r\n  '    paddingVertical: 2,\\r\\n' +\r\n  '  },\\r\\n' +\r\n  '  pin: {\\r\\n' +\r\n  '    alignItems: \"center\",\\r\\n' +\r\n  '    borderRadius: radius.round,\\r\\n' +\r\n  '    borderWidth: StyleSheet.hairlineWidth,\\r\\n' +\r\n  '    padding: space.xs + 2,\\r\\n' +\r\n  '  },\\r\\n' +\r\n  '  caption: {\\r\\n' +\r\n  '    position: \"relative\",\\r\\n' +\r\n  '    paddingVertical: space.xs,\\r\\n' +\r\n  '  },\\r\\n' +\r\n  '  captionMeasure: {\\r\\n' +\r\n  '    opacity: 0,\\r\\n' +\r\n  '  },\\r\\n' +\r\n  '  captionContent: {\\r\\n' +\r\n  '    position: \"absolute\",\\r\\n' +\r\n  '    left: space.sm,\\r\\n' +\r\n  '    right: space.sm,\\r\\n' +\r\n  '    top: space.xs,\\r\\n' +\r\n  '  },\\r\\n' +\r\n  '  titleText: {\\r\\n' +\r\n  '    ...type.title,\\r\\n' +\r\n  '    includeFontPadding: false,\\r\\n' +\r\n  '  },\\r\\n' +\r\n  '  rating: {\\r\\n' +\r\n  '    alignSelf: \"flex-end\",\\r\\n' +\r\n  '    marginRight: space.sm,\\r\\n' +\r\n  '    marginBottom: space.xs,\\r\\n' +\r\n  '    paddingHorizontal: space.xs,\\r\\n' +\r\n  '    paddingVertical: 0,\\r\\n' +\r\n  '  },\\r\\n' +\r\n  '});\\r\\n'\r\n\r\n    at Object.<anonymous> (D:\\dev\\despues-la-veo\\docs\\testing\\personal-title-rating\\section-2-integration-verification.cjs:22:8)\r\n    at Module._compile (node:internal/modules/cjs/loader:1688:14)\r\n    at Object..js (node:internal/modules/cjs/loader:1820:10)\r\n    at Module.load (node:internal/modules/cjs/loader:1423:32)\r\n    at Function._load (node:internal/modules/cjs/loader:1246:12)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)\r\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)\r\n    at node:internal/main/run_main_module:36:49 {\r\n  generatedMessage: true,\r\n  code: 'ERR_ASSERTION',\r\n  actual: 'import React, { useState } from \"react\";\\r\\n' +\r\n    'import { Ionicons } from \"@expo/vector-icons\";\\r\\n' +\r\n    'import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from \"react-native\";\\r\\n' +\r\n    '\\r\\n' +\r\n    'import type { EnrichedMediaMetadata } from \"../../core/enrichedMediaMetadata\";\\r\\n' +\r\n    'import type { PersonalRating } from \"../../core/personalRating\";\\r\\n' +\r\n    'import { useAppTheme } from \"../../theme/AppThemeProvider\";\\r\\n' +\r\n    'import { pressedFeedback, radius, space, type } from \"../../theme/presentation\";\\r\\n' +\r\n    'import { MediaPoster } from \"./MediaPoster\";\\r\\n' +\r\n    'import { PersonalRatingBadge } from \"./PersonalRatingBadge\";\\r\\n' +\r\n    'import { getPersonalRatingPresentation } from \"./personalRatingPresentation\";\\r\\n' +\r\n    '\\r\\n' +\r\n    'export type TitleGridCardProps = {\\r\\n' +\r\n    '  identity?: string;\\r\\n' +\r\n    '  imageProvider?: string | null;\\r\\n' +\r\n    '  metadata?: EnrichedMediaMetadata;\\r\\n' +\r\n    '  title: string;\\r\\n' +\r\n    '  kindLabel: string;\\r\\n' +\r\n    '  posterUrl?: string | null;\\r\\n' +\r\n    '  onPress: () => void;\\r\\n' +\r\n    '  accessibilityLabel: string;\\r\\n' +\r\n    '  isPinned?: boolean;\\r\\n' +\r\n    '  personalRating?: PersonalRating;\\r\\n' +\r\n    '  style?: StyleProp<ViewStyle>;\\r\\n' +\r\n    '};\\r\\n' +\r\n    '\\r\\n' +\r\n    'export function TitleGridCard({\\r\\n' +\r\n    '  identity,\\r\\n' +\r\n    '  imageProvider = \"tmdb\",\\r\\n' +\r\n    '  metadata,\\r\\n' +\r\n    '  title,\\r\\n' +\r\n    '  kindLabel,\\r\\n' +\r\n    '  posterUrl,\\r\\n' +\r\n    '  onPress,\\r\\n' +\r\n    '  accessibilityLabel,\\r\\n' +\r\n    '  isPinned = false,\\r\\n' +\r\n    '  personalRating = null,\\r\\n' +\r\n    '  style,\\r\\n' +\r\n    '}: TitleGridCardProps) {\\r\\n' +\r\n    '  const { theme } = useAppTheme();\\r\\n' +\r\n    '  const [focused, setFocused] = useState(false);\\r\\n' +\r\n    '  const ratingLabel = getPersonalRatingPresentation(personalRating)?.accessibilityLabel;\\r\\n' +\r\n    '  const label = [accessibilityLabel, isPinned ? \"fijado\" : null, ratingLabel]\\r\\n' +\r\n    '    .filter(Boolean)\\r\\n' +\r\n    '    .join(\". \");\\r\\n' +\r\n    '\\r\\n' +\r\n    '  return (\\r\\n' +\r\n    '    <Pressable\\r\\n' +\r\n    '      accessible\\r\\n' +\r\n    '      accessibilityLabel={label}\\r\\n' +\r\n    '      accessibilityRole=\"button\"\\r\\n' +\r\n    '      focusable\\r\\n' +\r\n    '      onFocus={() => setFocused(true)}\\r\\n' +\r\n    '      onBlur={() => setFocused(false)}\\r\\n' +\r\n    '      onPress={onPress}\\r\\n' +\r\n    '      style={({ pressed }) => [\\r\\n' +\r\n    '        styles.card,\\r\\n' +\r\n    '        {\\r\\n' +\r\n    '          backgroundColor: theme.global.surface,\\r\\n' +\r\n    '          borderColor: focused ? theme.global.accent : theme.global.border,\\r\\n' +\r\n    '        },\\r\\n' +\r\n    '        style,\\r\\n' +\r\n    '        pressed && pressedFeedback,\\r\\n' +\r\n    '      ]}\\r\\n' +\r\n    '    >\\r\\n' +\r\n    '      <View\\r\\n' +\r\n    '        aria-hidden\\r\\n' +\r\n    '        accessibilityElementsHidden\\r\\n' +\r\n    '        importantForAccessibility=\"no-hide-descendants\"\\r\\n' +\r\n    '        pointerEvents=\"none\"\\r\\n' +\r\n    '        style={styles.art}\\r\\n' +\r\n    '      >\\r\\n' +\r\n    '        <MediaPoster\\r\\n' +\r\n    '          identity={identity ?? accessibilityLabel}\\r\\n' +\r\n    '          imageProvider={imageProvider}\\r\\n' +\r\n    '          metadata={metadata}\\r\\n' +\r\n    '          posterUrl={posterUrl}\\r\\n' +\r\n    '          context=\"card\"\\r\\n' +\r\n    '          style={styles.poster}\\r\\n' +\r\n    '        />\\r\\n' +\r\n    '        <View style={styles.indicators}>\\r\\n' +\r\n    '          <Text\\r\\n' +\r\n    '            numberOfLines={1}\\r\\n' +\r\n    '            style={[\\r\\n' +\r\n    '              type.caption,\\r\\n' +\r\n    '              styles.kind,\\r\\n' +\r\n    '              {\\r\\n' +\r\n    '                backgroundColor: theme.structural.imageOverlayLabel,\\r\\n' +\r\n    '                color: theme.structural.onImageOverlay,\\r\\n' +\r\n    '              },\\r\\n' +\r\n    '            ]}\\r\\n' +\r\n    '          >\\r\\n' +\r\n    '            {kindLabel}\\r\\n' +\r\n    '          </Text>\\r\\n' +\r\n    '          {isPinned && (\\r\\n' +\r\n    '            <View style={[\\r\\n' +\r\n    '              styles.pin,\\r\\n' +\r\n    '              {\\r\\n' +\r\n    '                backgroundColor: theme.structural.imageOverlayStrong,\\r\\n' +\r\n    '                borderColor: theme.structural.imageOverlayBorder,\\r\\n' +\r\n    '              },\\r\\n' +\r\n    '            ]}>\\r\\n' +\r\n    '              <Ionicons color={theme.structural.onImageOverlay} name=\"diamond-outline\" size={14} />\\r\\n' +\r\n    '            </View>\\r\\n' +\r\n    '          )}\\r\\n' +\r\n    '        </View>\\r\\n' +\r\n    '\\r\\n' +\r\n    '        <View>\\r\\n' +\r\n    '          <PersonalRatingBadge value={personalRating} style={styles.rating} />\\r\\n' +\r\n    '          <View style={[styles.caption, { backgroundColor: theme.structural.imageOverlayLabel }]}>\\r\\n' +\r\n    '            {/* Let the platform measure two scaled lines using the real title metrics. */}\\r\\n' +\r\n    '            <Text style={[styles.titleText, styles.captionMeasure]}>\\r\\n' +\r\n    '              {\"M\\\\nM\"}\\r\\n' +\r\n    '            </Text>\\r\\n' +\r\n    '            <Text numberOfLines={2} style={[styles.titleText, styles.captionContent, { color: theme.structural.onImageOverlay }]}>\\r\\n' +\r\n    '              {title}\\r\\n' +\r\n    '            </Text>\\r\\n' +\r\n    '          </View>\\r\\n' +\r\n    '        </View>\\r\\n' +\r\n    '      </View>\\r\\n' +\r\n    '    </Pressable>\\r\\n' +\r\n    '  );\\r\\n' +\r\n    '}\\r\\n' +\r\n    '\\r\\n' +\r\n    'const styles = StyleSheet.create({\\r\\n' +\r\n    '  card: {\\r\\n' +\r\n    '    borderRadius: radius.card,\\r\\n' +\r\n    '    borderWidth: 1,\\r\\n' +\r\n    '    overflow: \"hidden\",\\r\\n' +\r\n    '  },\\r\\n' +\r\n    '  art: {\\r\\n' +\r\n    '    aspectRatio: 2 / 3,\\r\\n' +\r\n    '    justifyContent: \"space-between\",\\r\\n' +\r\n    '  },\\r\\n' +\r\n    '  poster: {\\r\\n' +\r\n    '    ...StyleSheet.absoluteFillObject,\\r\\n' +\r\n    '    borderWidth: 0,\\r\\n' +\r\n    '  },\\r\\n' +\r\n    '  indicators: {\\r\\n' +\r\n    '    alignItems: \"flex-start\",\\r\\n' +\r\n    '    flexDirection: \"row\",\\r\\n' +\r\n    '    gap: space.xs,\\r\\n' +\r\n    '    justifyContent: \"space-between\",\\r\\n' +\r\n    '    padding: space.sm,\\r\\n' +\r\n    '  },\\r\\n' +\r\n    '  kind: {\\r\\n' +\r\n    '    flexShrink: 1,\\r\\n' +\r\n    '    borderRadius: radius.control,\\r\\n' +\r\n    '    overflow: \"hidden\",\\r\\n' +\r\n    '    paddingHorizontal: space.sm,\\r\\n' +\r\n    '    paddingVertical: 2,\\r\\n' +\r\n    '  },\\r\\n' +\r\n    '  pin: {\\r\\n' +\r\n    '    alignItems: \"center\",\\r\\n' +\r\n    '    borderRadius: radius.round,\\r\\n' +\r\n    '    borderWidth: StyleSheet.hairlineWidth,\\r\\n' +\r\n    '    padding: space.xs + 2,\\r\\n' +\r\n    '  },\\r\\n' +\r\n    '  caption: {\\r\\n' +\r\n    '    position: \"relative\",\\r\\n' +\r\n    '    paddingVertical: space.xs,\\r\\n' +\r\n    '  },\\r\\n' +\r\n    '  captionMeasure: {\\r\\n' +\r\n    '    opacity: 0,\\r\\n' +\r\n    '  },\\r\\n' +\r\n    '  captionContent: {\\r\\n' +\r\n    '    position: \"absolute\",\\r\\n' +\r\n    '    left: space.sm,\\r\\n' +\r\n    '    right: space.sm,\\r\\n' +\r\n    '    top: space.xs,\\r\\n' +\r\n    '  },\\r\\n' +\r\n    '  titleText: {\\r\\n' +\r\n    '    ...type.title,\\r\\n' +\r\n    '    includeFontPadding: false,\\r\\n' +\r\n    '  },\\r\\n' +\r\n    '  rating: {\\r\\n' +\r\n    '    alignSelf: \"flex-end\",\\r\\n' +\r\n    '    marginRight: space.sm,\\r\\n' +\r\n    '    marginBottom: space.xs,\\r\\n' +\r\n    '    paddingHorizontal: space.xs,\\r\\n' +\r\n    '    paddingVertical: 0,\\r\\n' +\r\n    '  },\\r\\n' +\r\n    '});\\r\\n',\r\n  expected: /personalRatingPresentation\\?\\.accessibilityLabel/,\r\n  operator: 'match'\r\n}\r\n\r\nNode.js v22.18.0\r\n"
+    }
+  ]
+}
