@@ -2,10 +2,13 @@ const {assert,snapshot,empty,representative,exported,semantic,integrity,close}=r
 const fs=require('node:fs'),Module=require('node:module'),ts=require('typescript');
 require.extensions['.tsx']=(m,f)=>m._compile(ts.transpileModule(fs.readFileSync(f,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.React,esModuleInterop:true},fileName:f}).outputText,f);
 let slots=[],cursor=0,db,blob,confirmation='',accept=true,alerts=[];
-const react={createElement:(type,props,...children)=>({type,props:{...props,children}}),useState:initial=>{const i=cursor++;if(!(i in slots))slots[i]=initial;return[slots[i],v=>slots[i]=typeof v==='function'?v(slots[i]):v]},useRef:initial=>{const i=cursor++;return slots[i]??={current:initial}},useEffect(){}};
+const react={createElement:(type,props,...children)=>({type,props:{...props,children}}),useCallback:fn=>fn,useState:initial=>{const i=cursor++;if(!(i in slots))slots[i]=initial;return[slots[i],v=>slots[i]=typeof v==='function'?v(slots[i]):v]},useRef:initial=>{const i=cursor++;return slots[i]??={current:initial}},useEffect(){}};
 const originalLoad=Module._load,dbModule=require('../../../src/storage/db.ts'),originalInit=dbModule.initDb;dbModule.initDb=async()=>{assert.ok(db,'Only isolated TEST db is allowed');return db};
 Module._load=function(r,p,m){
  if(r==='react')return react;
+ if(r==='@react-navigation/native')return{useFocusEffect:effect=>effect()};
+ if(r.endsWith('/ProgressImportReview'))return{ProgressImportReview:'Review'};
+ if(r.endsWith('/exportProgressReport'))return{exportProgressReport:async()=>{throw Error('Unexpected report export')}};
  if(r==='react-native')return{Platform:{OS:'web'},Alert:{alert:(...args)=>alerts.push(args)},Text:'Text',View:'View',Pressable:'Pressable',ScrollView:'ScrollView',ActivityIndicator:'ActivityIndicator'};
  if(r==='expo-router')return{router:{push(){throw Error('Unexpected navigation')}}};
  if(['expo-file-system','expo-sharing','expo-document-picker'].includes(r))return{};
@@ -21,10 +24,10 @@ const nodes=(v,r=[])=>{if(Array.isArray(v))v.forEach(x=>nodes(x,r));else if(v?.p
 const text=v=>Array.isArray(v)?v.map(text).join(' '):v?.props?text(v.props.children):typeof v==='string'?v:'';
 const render=()=>{cursor=0;return Settings()};const loadFile=async(tree,value)=>nodes(tree).find(v=>v.type==='input').props.onChange({target:{value:'TEST.json',files:[{text:async()=>typeof value==='string'?value:JSON.stringify(value)}]}});
 (async()=>{
- const source=await representative();db=source.db;let tree=render();await nodes(tree).find(v=>v.props.label==='Exportar biblioteca').props.onPress();const backup=JSON.parse(await blob.text());assert.deepEqual(semantic(backup),semantic(await exported(source)));assert.ok(text(render()).includes('Export v9 listo'));
+ const source=await representative();db=source.db;let tree=render();await nodes(tree).find(v=>v.props.label==='Exportar biblioteca').props.onPress();const backup=JSON.parse(await blob.text());assert.deepEqual(semantic(backup),semantic({...await exported(source),version:10,progress:[]}));assert.ok(text(render()).includes('Export v10 listo'));
  const target=await empty();db=target.db;slots=[];tree=render();accept=false;const before=snapshot(target);await loadFile(tree,backup);assert.deepEqual(snapshot(target),before,'cancel confirmation writes nothing');assert.ok(confirmation.includes('no borra datos locales ausentes'));assert.ok(confirmation.includes('Recomendaciones: 5'));
- accept=true;await loadFile(render(),backup);assert.deepEqual(semantic(await exported(target)),semantic(backup));assert.ok(text(render()).includes('Recomendaciones: 5 nuevas'));assert.ok(text(render()).includes('Colecciones: 3 nuevas'));await loadFile(render(),backup);assert.ok(text(render()).includes('5 conservadas'));
+ accept=true;await loadFile(render(),backup);assert.deepEqual(semantic({...await exported(target),version:10,progress:[]}),semantic(backup));assert.ok(text(render()).includes('Recomendaciones: 5 nuevas'));assert.ok(text(render()).includes('Colecciones: 3 nuevas'));await loadFile(render(),backup);assert.ok(text(render()).includes('5 conservadas'));
  const malformedBefore=snapshot(target);alerts=[];await loadFile(render(),'{');assert.deepEqual(snapshot(target),malformedBefore);assert.ok(alerts.length,'globally malformed file reports error without writes');
  const badLink=structuredClone(backup);badLink.recommendations=[{...backup.recommendations[0],id:'TEST unresolved',status:'incorporated',linkedItemId:'TEST missing'}];await loadFile(render(),badLink);assert.ok(text(render()).includes('1 recuperadas como Pendientes'));assert.ok(text(render()).includes('no pudo resolverse'));
- await integrity();console.log('PASS S3 Settings actual handlers + isolated SQLite TEST: export v9 full semantic equivalence, import confirmation/cancel, real import/merge/repeat counts, malformed rejection and unresolved-link recovery/report. DOM/File APIs mocked; not real browser acceptance.');
+ await integrity();console.log('PASS Settings actual handlers + isolated SQLite TEST: export v10 with historical v9 semantic equivalence, import confirmation/cancel, real import/merge/repeat counts, malformed rejection and unresolved-link recovery/report. DOM/File APIs mocked; not real browser acceptance.');
 })().catch(e=>{console.error(e);process.exitCode=1}).finally(()=>{Module._load=originalLoad;dbModule.initDb=originalInit;URL.createObjectURL=oldCreate;URL.revokeObjectURL=oldRevoke;close()});

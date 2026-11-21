@@ -1,0 +1,203 @@
+{
+  "status": "PASS",
+  "results": [
+    {
+      "suite": "personal-episodic-progress/s1-verification.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS domain: variants, exact decimals, bounds, Unicode and invalid shapes\nPASS migration: actual mixed v8 backup copy, v9 preservation and reopen\nPASS migration: empty, v3/v4/v6 chain, future and corrupted schema\nPASS migration: all v9 failure hooks and final commit roll back exact data/schema\nPASS repository: corrections, reset, zero, own clock and no incidental changes\nPASS concurrency: same intent twice, competing targets, stale bases/classification, clocks\nPASS snapshots: atomic read transaction, batch queries, unknown read distinguished\nPASS manual: compatible preserve, incompatible require/cancel/preserve/reset, stale/rollback\nPASS delete: progress/member cascade and Inbox original context survives; stale write fails\nPASS SQL defense: invalid union, range, orphan and corrupt canonical rows rejected\n(node:19160) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "personal-episodic-progress/s1-manual-ui.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS manual form hook-host + real TEST SQLite: incompatibility, cancel, preserve, reset and repeated unrelated edit; no tracking UI or personal DB/network.\n(node:17316) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "personal-episodic-progress/s2-ui.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS four variant labels and compact summaries; no percentages\nPASS position composition: split seasons, exact decimals, Unicode and contextual reset\nPASS empty/register exact value; confirmed update and double click lock\nPASS editor error retains draft; retry and season within same season\nPASS obsolete base preserves draft and requires refresh/review\nPASS reset, Escape/cancel preserve and decimal/special editing offline\nPASS ordinary movie absent; preserved incompatible, max, loading and read failure\nPASS accredited scale only, source/scope/total/mode boundaries\nPASS Library/grid/collection composition and personal fields preserved\nPASS session draft recovery and Escape capture before TextInput bubbling\nPASS real grid and collection trees receive shared progress at narrow/large font layouts\nPASS manual manga/manhwa/manhua create -> local detail -> decimal chapter\nPASS search platform/development matrix remains unchanged and never requests network\n(node:33304) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "personal-episodic-progress/s3-verification.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS v10 parser, strict payloads, mandatory envelope and duplicate origins\nPASS full SQLite A -> v10 -> empty B -> v10 semantic round trip, reimport and offline reopen\nPASS local corrections/reset preserved for older/equal/newer timestamps; equality preserves exact local clock\nPASS portable remap for manual/providers, ID collision and fresher local title; no casual-owner fallback\nPASS post-remap contradictory destinations excluded, exact aliases idempotent and identity conflicts isolated\nPASS explicit resolution CAS, clocks, rollback and reimport equality without other personal writes\nPASS per-record failure isolation and full mixed import rollback, postcommit invalidation and safe retries\nPASS historical v9 is untouched by injected progress; export failure leaves SQLite unchanged\nPASS v1-v8 imports ignore injected progress; identity failure and exhausted clocks do not overwrite\nPASS title restore failure isolates its progress; incompatible cursor exports without coercion\n(node:14972) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "personal-episodic-progress/s3-ui.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS S3 review hook-host: 12 conflicts, pagination, confirmation/cancel, double send, stale failure, local decisions, complete export, disposal and local Web/Android transports. No physical acceptance.\n"
+    },
+    {
+      "suite": "personal-episodic-progress/s3-settings.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS actual Settings hook-host with SQLite TEST: v10 import/export, deferred appearance postcommit/rollback, conflict messaging, cancel and report cleanup.\n(node:16892) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "personal-episodic-progress/s4-boundaries.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS S4 dates, uncertainty boundaries and sensitive-title round trip.\n(node:28024) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "personal-collections-recommendation-inbox/s3-portability.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS S3 portability: fresh/mixed v7→v8, repeated opens/future rejection/migration failures; full semantic v9 round trip and 3 reimports; v1–v8 actual restores/newer locals; S1 absent Inbox; portable/manual/multi-provider remap and local-ID collisions; invalid identities/orphans/envelopes; secrets excluded; FK+integrity_check. TEST only.\n(node:29252) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "personal-collections-recommendation-inbox/s3-conflicts.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS S3 conflict matrix: all clocks/ties/createdAt, states/context, duplicates and contradictory units, absence/deleted recovery, reference-sharing Inbox, effective post-remap membership merge independent of array order. TEST only.\n(node:23632) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "personal-collections-recommendation-inbox/s3-failures.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS S3 failures: SQL injected creation/member/link/incorporation/delete/commit rollback; per-record title/collection/member/recommendation savepoints and exact counters; no precommit/failed invalidations; public serialization/concurrent retries without nested transactions; CHECKs/PKs/indexes/triggers/FKs. TEST only.\n(node:12032) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "personal-collections-recommendation-inbox/s3-settings.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS S3 Settings actual handlers + isolated SQLite TEST: export v9 full semantic equivalence, import confirmation/cancel, real import/merge/repeat counts, malformed rejection and unresolved-link recovery/report. DOM/File APIs mocked; not real browser acceptance.\n(node:13804) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "personal-collections-recommendation-inbox/s1-verification.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS S1: migration v7→v8 preservation/rollback/reopen/future version; CRUD/idempotence/FKs/cascades; shared Inbox references/schema only; v9 real round trip empty/conflicting DB; remap/freshness/ties/absence/reimport; v1–v8 focused imports; sensitive full backup; partial errors and commit rollback; post-commit invalidation. TEST databases only.\n(node:1108) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "personal-collections-recommendation-inbox/s2-verification.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS S2 SQLite TEST: offline capture/URL allowlist/immutable context; states and duplicate references; manual-confirmed candidates; exact preservation on existing links; provider gates; atomic new/manual incorporation, serialized double submission and retries; injected link/commit rollback and postcommit notification; all linked recommendations reopen on title deletion; v9 collections+Inbox round trip, S1 compatibility, stable-ID conflicts, portable remap, orphan recovery and idempotence; FK integrity and reopen. No personal DB or network.\n(node:30948) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "personal-collections-recommendation-inbox/s1-ui.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS S1 UI: navigation tiles/active S2 Inbox; compact visible creation action above grid; whole horizontal collection cards, 2-column/1-column layouts; descriptions 2 lines; contextual delete confirmation; grouped actions and sort; real poster rows and selector membership indicator; independent Quitar/open events; checkbox memberships; drafts/errors; 320/1280px and 100/200% typography properties across all light/dark palettes. Popover: outside/Escape/cancel/back close, focus return/trap, arrows/Tab/Home/End, no deletion before confirmation, 320/400px and desktop in light/dark. No personal DB. Component harness, not real-browser/Android acceptance.\n"
+    },
+    {
+      "suite": "personal-collections-recommendation-inbox/s2-ui.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS S2 UI hook-host: filters/counts/text-first rows, no hidden/invented art; explicit local suggestions/link and catalog/manual return context; capture validation/duplicate warnings/stable intent/errors/disabled controls; all light/dark palettes at 320/360/400/1280px and 100/200% layout properties; real search hook requires deliberate submission, clears stale authorization, respects credentials and retains recommendation ID; manual save/link bindings and error retry. No personal DB/network. Component harness only, not browser or physical Android acceptance.\n"
+    },
+    {
+      "suite": "universal-media-identity/section-1-verification.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "Section 1 universal media identity contracts verification passed.\n"
+    },
+    {
+      "suite": "universal-media-identity/section-2-sqlite-v4-verification.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "Section 2 SQLite v4 schema, migration, and rollback verification passed.\n(node:7752) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "universal-media-identity/section-3-persistence-verification.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "Section 3 v3 migration to v4 runtime integration verification passed.\n(node:14020) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "universal-media-identity/section-4-backup-v5-verification.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "Section 4 backup v5 and historical import verification passed.\n(node:33104) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "universal-media-identity/section-5-runtime-consumers-verification.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "Section 5 runtime consumer integration verification passed.\n(node:29848) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "anime-catalog-manual-entries/b3-verification.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS B3/B4 actual SQLite6: manual/TMDB movie+tv/MangaUpdates/Kitsu coexistence, exact large references, save/re-save preservation, mixed v7 remap/reimport/edit/delete isolation, offline reopen and no network/personal DB.\n(node:16700) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "anime-catalog-manual-entries/b3-ui-verification.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS B3 real search/detail hook-host: Anime category, loading/empty/Kitsu errors/retry, list/grid navigation, source/query/retry/credential/route/unmount races and aborts, no art, saved detection/double save/failure, closed detail without personal DB/network.\n"
+    },
+    {
+      "suite": "enriched-media-metadata/section-2-storage.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS 2.3/2.4/2.8 storage: patches, authority, no-op, commit/rollback, tokens, delete, personal races, multi-source, re-save, aliases, observers and exact retention boundary.\n(node:1308) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "enriched-media-metadata/section-2-backups.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS 2.5/2.6/2.7: v8 round-trip, v7 preservation, per-source clocks, same-time conflict, remap, repeat, savepoints, preferences and commit rollback.\n(node:14956) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "enriched-media-metadata/section-3-backups.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS section 3 backup v8 SQLite round-trip: active images and score, original scale, notes/tags/personal rating, retained unreviewed host -> placeholder, private document -> existing partial import rejection, legacy renderer rejection.\n(node:32012) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "enriched-media-metadata/section-6-activity.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS S6.1: real SQLite additions/manual/combined personals/rating/pins, no-op/idempotent replay, rollback and poscommit signals, single initial addition, metadata semantic fields/no-op, private values omitted, FK cascade.\n(node:13804) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "enriched-media-metadata/section-6-feed.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS S6.5 actual FlatList: paged/virtual rows, local day/timezone grouping, filters, deterministic IDs/dedup, no render reads/global start, confirmed-change subscriptions, safe navigation/deleted item, error/retry and cleanup. Hook-host only.\n"
+    },
+    {
+      "suite": "enriched-media-metadata/section-6-tabs.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS S6.3 actual tabs component: Library first, fifth tab between Tags/Settings, visible accessible labels, themed Ionicons, 320/390/800 widths and 1/1.6/2 font scale without shrinking/capping fonts. Hook-host, no visual acceptance.\n"
+    },
+    {
+      "suite": "enriched-media-metadata/section-7-ui.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS S7 UI: actual Library detail/grid, Tags grid/list and collections, real search debounce/request once across toggles, settings, pending/deep-link gate with no art/auto panel, reveal/back/remount, identity/source/metadata/preference invalidation, draft preserved, no filter HTTP/private mutations. Hook-host only, no visual acceptance.\n"
+    },
+    {
+      "suite": "expanded-media-domain/section-8-verification.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "Section 8 contracts: finite platform gates, destinations, provider errors, unsupported Novel, real SQLite generic save/re-save/personal preservation/null refresh/rating ownership and backup v6 passed. No native claim.\n(node:25328) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "suite": "personal-title-rating/section-2-integration-verification.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "Section 2 personal rating integration verification passed.\n"
+    },
+    {
+      "suite": "provider-abstraction/section-3-buscar-verification.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "Section 3 Buscar verification passed.\n"
+    },
+    {
+      "suite": "library-picker.cjs",
+      "exitCode": 0,
+      "status": "PASS",
+      "output": "PASS motor local: elegibilidad, fechas, duraciones, visibilidad, muestra y sorpresa sin mutaciones\n"
+    }
+  ]
+}

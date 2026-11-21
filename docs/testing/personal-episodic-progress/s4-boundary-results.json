@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "networkRequests": 0,
+  "checks": [
+    "local date formatter",
+    "invalid dates/Intl failure",
+    "24 is one cursor, no units",
+    "reset is not cycle",
+    "editorial renumbering leaves cursor",
+    "sensitive hidden title exports",
+    "round trip and three reimports",
+    "no future schemas/consumption columns"
+  ]
+}

@@ -83,7 +83,17 @@ Al guardar contenido desde TMDB, los géneros también se transforman en tags au
 ### Export / Import versionado
 La app soporta exportar e importar la biblioteca en JSON versionado para facilitar backups y futuras migraciones de datos.
 
-El formato vigente sigue siendo JSON `version: 1`. La importación hace merge: no borra títulos locales ausentes del backup y sólo actualiza una coincidencia del mismo tipo cuando su `updatedAt` entrante es posterior. Los campos opcionales ausentes conservan el valor local y una coincidencia de `provider + externalId` con distinto `type` se informa como conflicto sin sobrescribirla. Adoptar definitivamente la identidad `provider + type + externalId` requerirá una migración SQLite futura y explícita.
+La persistencia vigente es **SQLite v9** y la exportación es **backup JSON v10**, con importación histórica v1–v9 y actual v10. Incluye títulos, identidades, datos personales, metadata, pins, preferencias portables, actividad, Colecciones, Inbox y progreso personal. No incluye credenciales ni imágenes binarias.
+
+La importación hace merge: no borra datos locales ausentes y resuelve identidades antes de restaurar relaciones. Los campos personales históricos conservan sus reglas de frescura; el progreso tiene una política independiente: ante cualquier diferencia conserva local y ofrece aplicar el candidato del backup mediante confirmación explícita y comprobación de versión. La ausencia de progreso en backups históricos nunca lo borra. Un restablecimiento fechado sí representa una decisión personal explícita.
+
+«Mi progreso» registra una última posición manual offline: episodio continuo, temporada/episodio, capítulo decimal o especial textual. No cambia estado, rating, notas, etiquetas ni el reloj histórico del título. Episodios admiten 0–999999, temporadas 0–9999 y capítulos hasta 999999.999999, con seis decimales almacenados como texto canónico; el editor acepta coma o punto. Especiales admiten hasta 120 puntos de código Unicode, sin saltos ni controles. Sumar episodio incrementa uno dentro de la misma temporada; capítulos y especiales requieren edición manual.
+
+La última posición no acredita unidades anteriores vistas/leídas, cobertura ni fechas de consumo. Los proveedores actuales no acreditan una escala de numeración compatible, por lo que no se muestran barras. Seguimiento granular, rewatch/relectura e historial durable quedan para otro change.
+
+Los conflictos de progreso se revisan en Ajustes con fecha/hora local, conservación local por defecto y rechazo de decisiones obsoletas. El informe es temporal: al salir o cerrarlo se pierde; puede exportarse completo como JSON. No hay tombstones generales de borrado: restaurar un backup antiguo puede recuperar títulos, colecciones o relaciones eliminadas. El reset de progreso no es un registro general de eliminación.
+
+No se promete downgrade: una aplicación anterior puede rechazar SQLite v9 o backup v10. Conservar copias antes de migrar; para volver a una versión previa, usar una copia compatible en un entorno separado sin borrar tablas ni convertir silenciosamente el backup. La aceptación Android, accesibilidad y revisión externa pendiente se detalla en [el informe final S4](docs/testing/personal-episodic-progress/s4-validation.md).
 
 La guía reproducible y los backups totalmente sintéticos están en [`docs/testing/library-backup-integrity/`](docs/testing/library-backup-integrity/manual-verification.md).
 

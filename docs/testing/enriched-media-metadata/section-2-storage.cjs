@@ -10,6 +10,9 @@ const { subscribeLibraryInvalidation, observeLibraryProjection } = require('../.
 const ref = { provider: 'kitsu', resourceNamespace: 'anime', externalId: '1' };
 const doc = (fields, reference = ref, verifiedAt = null) => ({ version: 1, provenance: { reference, normalizerVersion: 1, fetchedAt: verifiedAt, checkedAt: verifiedAt, sourceUpdatedAt: null }, fields });
 const tick = () => new Promise(resolve => setImmediate(resolve));
+// Fixture event clocks start at 100 ms. Keep retention deterministic, then test its boundary explicitly.
+const originalNow = Date.now;
+Date.now = () => 1000;
 (async () => {
   const f = fixture(); createV6(f); await evolveDatabaseSchema(f.db, 6);
   const manualBefore=await read(f.db,'manual');
@@ -60,5 +63,12 @@ const tick = () => new Promise(resolve => setImmediate(resolve));
   await metadata.updateMediaMetadata('multi',doc({canonicalTitle:'Visible remotely'},multiB),130,undefined,f.db); await tick(); await tick();
   assert.equal(visible.title,'Visible remotely'); assert.equal(draft,'unsaved personal'); assert.equal(visible.updatedAt,20);
   const count=reads; stop(); await metadata.updateMediaMetadata('multi',doc({canonicalTitle:'After unmount'},multiB),131,undefined,f.db); await tick(); assert.equal(reads,count);
-  unsubscribe(); f.close(); console.log('PASS 2.3/2.4/2.8 storage: patches, authority, no-op, commit/rollback, tokens, delete, personal races, multi-source, re-save, aliases and observers.');
-})().catch(e=>{console.error(e);process.exitCode=1;});
+  const { pruneLibraryActivityWithDb, ACTIVITY_RETENTION_MS } = require('../../../src/storage/libraryActivityRepo.ts');
+  const atBoundary = f.sqlite.prepare('SELECT min(occurred_at) time FROM library_activity_events').get().time;
+  assert.notEqual(atBoundary, null);
+  await pruneLibraryActivityWithDb(f.db, atBoundary + ACTIVITY_RETENTION_MS);
+  assert.ok(f.sqlite.prepare('SELECT 1 FROM library_activity_events WHERE occurred_at=?').get(atBoundary));
+  await pruneLibraryActivityWithDb(f.db, atBoundary + ACTIVITY_RETENTION_MS + 1);
+  assert.equal(f.sqlite.prepare('SELECT 1 FROM library_activity_events WHERE occurred_at=?').get(atBoundary),undefined);
+  unsubscribe(); f.close(); console.log('PASS 2.3/2.4/2.8 storage: patches, authority, no-op, commit/rollback, tokens, delete, personal races, multi-source, re-save, aliases, observers and exact retention boundary.');
+})().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>{Date.now=originalNow;});

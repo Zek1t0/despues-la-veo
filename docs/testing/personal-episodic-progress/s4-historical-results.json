@@ -1,0 +1,18 @@
+{
+  "results": [
+    {
+      "baseline": "d724f1a",
+      "test": "docs/testing/enriched-media-metadata/section-2-storage.cjs",
+      "exitCode": 1,
+      "reproduced": true,
+      "assertion": "activity rows 0 !== 1, 100 ms event expired"
+    },
+    {
+      "baseline": "d724f1a",
+      "test": "docs/testing/personal-title-rating/section-2-integration-verification.cjs",
+      "exitCode": 1,
+      "reproduced": true,
+      "assertion": "obsolete personalRatingPresentation accessibility regex"
+    }
+  ]
+}

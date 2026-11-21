@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Text, View } from "react-native";
 import { progressPositionLabel } from "../../core/personalProgressPresentation";
+import { formatProgressConflictDate } from "../../core/progressConflictDate";
 import type { PersonalProgress } from "../../core/personalProgress";
 import type { ProgressImportConflict, ProgressImportResult } from "../../storage/personalProgressBackupImport";
 import { useAppTheme } from "../../theme/AppThemeProvider";
@@ -36,7 +37,7 @@ export function ProgressImportReview({ report, apply, exportReport, close }: {
       const index = page * 10 + offset, resolution = resolutions[index];
       return <View key={index} style={{ gap: space.sm, borderTopWidth: 1, borderColor: theme.global.border, paddingTop: space.md }}>
         <Text style={[type.title, { color: theme.global.textPrimary }]}>{entry.title}</Text>
-        <Text style={{ color: theme.global.textSecondary }}>Local: {label(entry.local)} · reloj {entry.local.updatedAt}{"\n"}Backup importado: {label(entry.incoming)} · reloj {entry.incoming.updatedAt}</Text>
+        <Text style={{ color: theme.global.textSecondary }}>Local: {label(entry.local)} · {formatProgressConflictDate(entry.local.updatedAt)}{"\n"}Backup importado: {label(entry.incoming)} · {formatProgressConflictDate(entry.incoming.updatedAt)}</Text>
         {resolution ? <Text accessibilityLiveRegion="polite" style={{ color: theme.global.textPrimary }}>{resolution.status === "local" ? "Se conservó la versión local sin modificarla." : "Se aplicó la posición del backup como una nueva decisión local."}</Text> : <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
           <OrganizationButton label="Conservar local" disabled={busy || confirm !== null} onPress={() => setResolutions(old => ({ ...old, [index]: { status: "local" } }))} />
           <OrganizationButton label="Aplicar posición del backup" disabled={busy || confirm !== null} onPress={() => ask(index)} />

@@ -13,25 +13,28 @@ const tags = read("app/(tabs)/etiquetas.tsx");
 const search = read("app/(tabs)/buscar.tsx");
 const collage = read("src/components/browsing/TagCollage.tsx");
 const accessibility = read("src/components/browsing/savedTitleAccessibility.ts");
+const poster = read("src/components/browsing/MediaPoster.tsx");
+const detailPoster = read("src/components/browsing/DetailPoster.tsx");
 
 assert.equal((grid.match(/<Pressable\b/g) ?? []).length, 1);
 assert.equal((grid.match(/<\/Pressable>/g) ?? []).length, 1);
 assert.match(grid, /personalRating\?: PersonalRating/);
 assert.match(grid, /personalRating = null/);
 assert.match(grid, /getPersonalRatingPresentation\(personalRating\)/);
-assert.match(grid, /personalRatingPresentation\?\.accessibilityLabel/);
-assert.match(grid, /accessibilityLabel=\{composedAccessibilityLabel\}/);
+assert.match(grid, /const ratingLabel = getPersonalRatingPresentation\(personalRating\)\?\.accessibilityLabel/);
+assert.match(grid, /const label = \[accessibilityLabel,[\s\S]*?ratingLabel/);
+assert.match(grid, /accessibilityLabel=\{label\}/);
 assert.match(grid, /isPinned \? "fijado" : null/);
-assert.match(grid, /<PersonalRatingBadge[\s\S]*?value=\{personalRating\}[\s\S]*?style=\{styles\.ratingBadge\}[\s\S]*?\/>/);
-assert.match(grid, /<PersonalRatingBadge[\s\S]*?<Text[\s\S]*?ellipsizeMode="tail"[\s\S]*?numberOfLines=\{2\}/);
-assert.match(grid, /marginBottom: 5/);
-// Error ownership moved to the identity/URL-aware hook in cover Section 3.
-// Keep checking the complete image/error/placeholder wiring, not the old inline setter.
-assert.match(grid, /const \{ imageFailed, onImageError \} = usePosterImageError\(identity \?\? accessibilityLabel, posterUrl\)/);
-assert.match(grid, /const showImage = Boolean\(posterUrl\) && !imageFailed/);
-assert.match(grid, /showImage \? \([\s\S]*?<Image[\s\S]*?onError=\{onImageError\}[\s\S]*?: \([\s\S]*?<PosterPlaceholder/);
-assert.match(grid, /<View[\s\S]*?accessible=\{false\}[\s\S]*?pointerEvents="none"[\s\S]*?styles\.badge[\s\S]*?>/);
-assert.match(grid, /<View[\s\S]*?accessible=\{false\}[\s\S]*?pointerEvents="none"[\s\S]*?styles\.pinBadge[\s\S]*?>/);
+assert.match(grid, /<PersonalRatingBadge[\s\S]*?value=\{personalRating\}[\s\S]*?style=\{styles\.rating\}[\s\S]*?\/>/);
+assert.match(grid, /<PersonalRatingBadge[\s\S]*?<Text numberOfLines=\{2\}/);
+assert.match(grid, /rating: \{[\s\S]*?marginBottom: space\.xs/);
+// Current ownership: card -> policy-aware MediaPoster -> identity/URL-aware DetailPoster.
+assert.match(grid, /<MediaPoster[\s\S]*?identity=\{identity \?\? accessibilityLabel\}[\s\S]*?posterUrl=\{posterUrl\}/);
+assert.match(poster, /<DetailPoster[\s\S]*?posterUrl=\{imageUrl\}/);
+assert.match(detailPoster, /usePosterImageError\(identity, posterUrl\)/);
+assert.match(detailPoster, /posterUrl && !imageFailed[\s\S]*?<Image[\s\S]*?onError=\{onImageError\}[\s\S]*?<PosterPlaceholder/);
+assert.match(grid, /<View[\s\S]*?aria-hidden[\s\S]*?accessibilityElementsHidden[\s\S]*?pointerEvents="none"[\s\S]*?styles\.art/);
+assert.match(grid, /isPinned && \([\s\S]*?styles\.pin[\s\S]*?diamond-outline/);
 assert.doesNotMatch(grid, /library|tags|search|voteAverage/);
 
 assert.doesNotMatch(badge, /Pressable|accessibilityLabel/);
@@ -64,9 +67,9 @@ assert.match(grid, /isPinned[\s\S]*?<PersonalRatingBadge/);
 assert.doesNotMatch(search, /personalRating|PersonalRatingBadge|getPersonalRatingPresentation/);
 assert.doesNotMatch(collage, /personalRating|PersonalRatingBadge|getPersonalRatingPresentation/);
 assert.match(collage, /posterUrl\?: string \| null/);
-assert.match(collage, /const \{ imageFailed, onImageError \} = usePosterImageError\(item\?\.id, item\?\.posterUrl\)/);
-assert.match(collage, /const showImage = isValidPosterUrl\(posterUrl\) && !imageFailed/);
-assert.match(collage, /onError=\{onImageError\}/);
-assert.match(collage, /<PosterPlaceholder/);
+assert.match(collage, /<MediaPoster identity=\{item\?\.id \?\? "empty"\}/);
+assert.match(collage, /posterUrl=\{posterUrl\} context="card"/);
+assert.match(poster, /admittedImageUrl\(posterUrl, policy/);
+assert.match(detailPoster, /<PosterPlaceholder/);
 
 console.log("Section 2 personal rating integration verification passed.");

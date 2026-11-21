@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "conflicts": 12,
+  "networkRequests": 0,
+  "checks": [
+    "pagination",
+    "cancel",
+    "double-send",
+    "confirmed-only",
+    "stale error",
+    "keep local",
+    "full JSON",
+    "close",
+    "replacement notice",
+    "focus cleanup",
+    "Web download",
+    "Android share/cache cleanup"
+  ]
+}
