@@ -1,3 +1,4 @@
+import { parseLibraryBackupV10, type ParsedLibraryBackupV10 } from "./libraryBackupV10";
 import { parseLibraryBackupV9, type ParsedLibraryBackupV9 } from "./libraryBackupV9";
 import { parseLibraryBackupV8, type ParsedLibraryBackupV8 } from "./libraryBackupV8";
 import { parseLibraryBackupV7, type ParsedLibraryBackupV7 } from "./libraryBackupV7";
@@ -22,7 +23,8 @@ export type ParsedLibraryBackup =
   | ParsedLibraryBackupV6
   | ParsedLibraryBackupV7
   | ParsedLibraryBackupV8
-  | ParsedLibraryBackupV9;
+  | ParsedLibraryBackupV9
+  | ParsedLibraryBackupV10;
 export type LibraryBackupParseResult =
   | { ok: true; payload: ParsedLibraryBackup }
   | { ok: false; error: BackupValidationError };
@@ -38,6 +40,7 @@ export function parseLibraryBackup(jsonText: string): LibraryBackupParseResult {
     return { ok: false, error: { field: "root", message: "El JSON debe ser un objeto." } };
   }
   const version = (parsed as Record<string, unknown>).version;
+  if (version === 10) return parseLibraryBackupV10(jsonText);
   if (version === 9) return parseLibraryBackupV9(jsonText);
   if (version === 8) return parseLibraryBackupV8(jsonText);
   if (version === 1) return parseLibraryBackupV1(jsonText);

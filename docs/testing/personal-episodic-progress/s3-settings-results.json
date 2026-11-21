@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "checks": [
+    "real Settings v10 import",
+    "appearance activation after commit",
+    "rollback discards deferred appearance",
+    "conservative conflict outcome",
+    "export v10",
+    "cancel",
+    "focus cleanup"
+  ]
+}

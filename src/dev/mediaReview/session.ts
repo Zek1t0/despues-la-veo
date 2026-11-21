@@ -1,4 +1,9 @@
 import { selectMetadataSource } from "../../storage/mediaMetadataRepo";
+import { createLibraryBackupV10 } from "../../core/libraryBackupV10";
+import { getLibraryBackupExportData } from "../../storage/libraryBackupExport";
+import { mergeLibraryBackup } from "../../storage/savedTitlesRepo";
+import { applyProgressImportConflict } from "../../storage/personalProgressBackupImport";
+import { getPersonalProgressWithDb } from "../../storage/personalProgressRepo";
 import { setPersonalProgress } from "../../storage/personalProgressRepo";
 import { readMediaPreferencesWithDb, subscribeMediaPreferences, setMediaLanguages } from "../../storage/mediaPreferencesRepo";
 import * as SQLite from "expo-sqlite";
@@ -126,7 +131,31 @@ export async function createReviewSession(options: Readonly<{
       await remove(name);
     }
   };
+  const exportProgressTest = async () => {
+    requireOpen();
+    const availability = { status: "confirmed" as const, preference: appearance };
+    const data = await getLibraryBackupExportData(availability, restoreDb);
+    return createLibraryBackupV10(data.items, data.pins, availability, undefined, data);
+  };
+  const prepareProgressReviewTest = async () => {
+    requireOpen();
+    const id = await source.save({ title: "TEST S3 · Serie portable", medium: "audiovisual", contentFamily: null, primaryFormat: "tv", year: null, overview: null });
+    const title = (await source.get(id))!;
+    await source.setPersonalProgress({ itemId: id, expected: null, expectedClassification: title, position: { mode: "season-episode", season: 3, episode: 10 } });
+    const availability = { status: "confirmed" as const, preference: appearance };
+    const data = await getLibraryBackupExportData(availability, sourceDb);
+    const raw = createLibraryBackupV10(data.items, data.pins, availability, undefined, data);
+    const parsed = parseLibraryBackup(JSON.stringify(raw)); if (!parsed.ok) throw new Error(parsed.error.message);
+    await mergeLibraryBackup(parsed.payload, generateId, restoreDb);
+    const destination = (await restored.list()).find(item => item.manualIdentity === title.manualIdentity)!;
+    await restored.setPersonalProgress({ itemId: destination.id, expected: await getPersonalProgressWithDb(restoreDb, destination.id), expectedClassification: destination, position: { mode: "season-episode", season: 3, episode: 7 } });
+    const result = await mergeLibraryBackup(parsed.payload, generateId, restoreDb);
+    if (!result.progress) throw new Error("TEST no produjo informe de progreso.");
+    return { importedAt: new Date().toISOString(), result: result.progress };
+  };
   return { identity, names: Object.freeze({ primary: primaryName, restore: restoreName }),
+    exportProgressTest, prepareProgressReviewTest,
+    applyProgressTest: (candidate: Parameters<typeof applyProgressImportConflict>[0]) => applyProgressImportConflict(candidate, restoreDb),
     source, restored, themePersistence, save, seed, exportTest, importTest, close, reset };
 }
 

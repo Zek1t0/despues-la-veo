@@ -1,0 +1,58 @@
+{
+  "status": "PASS",
+  "networkRequests": 0,
+  "results": [
+    {
+      "name": "four variant labels and compact summaries; no percentages",
+      "status": "PASS"
+    },
+    {
+      "name": "position composition: split seasons, exact decimals, Unicode and contextual reset",
+      "status": "PASS"
+    },
+    {
+      "name": "empty/register exact value; confirmed update and double click lock",
+      "status": "PASS"
+    },
+    {
+      "name": "editor error retains draft; retry and season within same season",
+      "status": "PASS"
+    },
+    {
+      "name": "obsolete base preserves draft and requires refresh/review",
+      "status": "PASS"
+    },
+    {
+      "name": "reset, Escape/cancel preserve and decimal/special editing offline",
+      "status": "PASS"
+    },
+    {
+      "name": "ordinary movie absent; preserved incompatible, max, loading and read failure",
+      "status": "PASS"
+    },
+    {
+      "name": "accredited scale only, source/scope/total/mode boundaries",
+      "status": "PASS"
+    },
+    {
+      "name": "Library/grid/collection composition and personal fields preserved",
+      "status": "PASS"
+    },
+    {
+      "name": "session draft recovery and Escape capture before TextInput bubbling",
+      "status": "PASS"
+    },
+    {
+      "name": "real grid and collection trees receive shared progress at narrow/large font layouts",
+      "status": "PASS"
+    },
+    {
+      "name": "manual manga/manhwa/manhua create -> local detail -> decimal chapter",
+      "status": "PASS"
+    },
+    {
+      "name": "search platform/development matrix remains unchanged and never requests network",
+      "status": "PASS"
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+import { listPersonalProgressWithDb } from "./personalProgressRepo";
+import type { PersonalProgress } from "../core/personalProgress";
 import { listRecommendationsWithDb } from "./recommendationInboxRepo";
 import type { Recommendation } from "../core/recommendationInbox";
 import { listCollectionsWithDb, listMembershipsWithDb } from "./collectionsRepo";
@@ -20,6 +22,7 @@ import {
 export type LibraryBackupExportData = {
   items: Array<SavedTitleWithProviderReferences & { legacyIdentity?: BackupLegacyIdentityV7 }>;
   pins: BackupPinV7[];
+  progress: PersonalProgress[];
   recommendations: Recommendation[];
   collections: PersonalCollection[];
   collectionMemberships: CollectionMembership[];
@@ -53,15 +56,17 @@ export async function getLibraryBackupExportDataWithDb(
   const collections = hasOrganization ? await listCollectionsWithDb(db) : [];
   const collectionMemberships = hasOrganization ? await listMembershipsWithDb(db) : [];
   const recommendations = hasOrganization ? await listRecommendationsWithDb(db) : [];
+  const hasProgress = await db.getFirstAsync("SELECT name FROM sqlite_master WHERE type='table' AND name='personal_title_progress';");
+  const progress = hasProgress ? Object.values(await listPersonalProgressWithDb(db, items.map(item => item.id))) : [];
   const pins = await listAllPinsForBackupV5WithDb(db);
   if (await hasMetadataSchemaWithDb(db)) {
     const activityRows = await db.getAllAsync<Record<string, unknown>>(
       "SELECT * FROM library_activity_events WHERE occurred_at>=? ORDER BY occurred_at DESC,id DESC LIMIT 2000;", Date.now() - 90 * 86400000);
     const activity = activityRows.map(row => parsePortableActivity({ id: row.id, itemId: row.saved_title_id, occurredAt: row.occurred_at,
       kind: row.kind, origin: row.origin, fields: JSON.parse(String(row.fields_json)), operationKey: row.operation_key }));
-    return { items, pins, recommendations, collections, collectionMemberships, appearanceAvailability, preferences: await readMediaPreferencesWithDb(db), activity };
+    return { items, pins, progress, recommendations, collections, collectionMemberships, appearanceAvailability, preferences: await readMediaPreferencesWithDb(db), activity };
   }
-  return { items, pins, recommendations, collections, collectionMemberships, appearanceAvailability };
+  return { items, pins, progress, recommendations, collections, collectionMemberships, appearanceAvailability };
 }
 
 export async function getLibraryBackupExportData(

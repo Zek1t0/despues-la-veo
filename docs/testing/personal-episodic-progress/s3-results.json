@@ -1,0 +1,46 @@
+{
+  "status": "PASS",
+  "networkRequests": 0,
+  "results": [
+    {
+      "name": "v10 parser, strict payloads, mandatory envelope and duplicate origins",
+      "status": "PASS"
+    },
+    {
+      "name": "full SQLite A -> v10 -> empty B -> v10 semantic round trip, reimport and offline reopen",
+      "status": "PASS"
+    },
+    {
+      "name": "local corrections/reset preserved for older/equal/newer timestamps; equality preserves exact local clock",
+      "status": "PASS"
+    },
+    {
+      "name": "portable remap for manual/providers, ID collision and fresher local title; no casual-owner fallback",
+      "status": "PASS"
+    },
+    {
+      "name": "post-remap contradictory destinations excluded, exact aliases idempotent and identity conflicts isolated",
+      "status": "PASS"
+    },
+    {
+      "name": "explicit resolution CAS, clocks, rollback and reimport equality without other personal writes",
+      "status": "PASS"
+    },
+    {
+      "name": "per-record failure isolation and full mixed import rollback, postcommit invalidation and safe retries",
+      "status": "PASS"
+    },
+    {
+      "name": "historical v9 is untouched by injected progress; export failure leaves SQLite unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "v1-v8 imports ignore injected progress; identity failure and exhausted clocks do not overwrite",
+      "status": "PASS"
+    },
+    {
+      "name": "title restore failure isolates its progress; incompatible cursor exports without coercion",
+      "status": "PASS"
+    }
+  ]
+}

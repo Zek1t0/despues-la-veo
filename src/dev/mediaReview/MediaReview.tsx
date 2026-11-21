@@ -1,4 +1,6 @@
 import { ArtReview } from "./ArtReview";
+import { ProgressImportReview, type ProgressReviewReport } from "../../components/progress/ProgressImportReview";
+import { exportProgressReport } from "../../components/progress/exportProgressReport";
 import React, { useEffect, useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import LibraryScreen, { type LibraryScreenServices } from "../../../app/(tabs)/libreria";
@@ -32,6 +34,7 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
   const [busy, setBusy] = useState(false);
   const [offline, setOffline] = useState(false);
   const [json, setJson] = useState<string | null>(null);
+  const [progressReport, setProgressReport] = useState<ProgressReviewReport | null>(null);
   const repository = target === "primary" ? session.source : session.restored;
   const animeClient = useMemo(() => createReviewKitsuClient(offline), [offline]);
   const animeCategory = SEARCH_CATEGORIES.find(category => category.id === "anime")!;
@@ -111,11 +114,13 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
       {button("Biblioteca de prueba", () => { setTarget("primary"); setPage("library"); })}
       {button("Agregar manual TEST", () => { setManualDraft({ key: Date.now(), target }); setPage("manual"); }, !!manualDraft)}
       {manualDraft && button("Volver al borrador TEST", () => setPage("manual"))}
-      {page === "local" && manualEligible && button("Editar manual TEST", () => { setManualDraft({ id: localId, key: Date.now(), target }); setPage("manual"); }, !!manualDraft)}
+      {!progressReport && page === "local" && manualEligible && button("Editar manual TEST", () => { setManualDraft({ id: localId, key: Date.now(), target }); setPage("manual"); }, !!manualDraft)}
       {button("Biblioteca restaurada", () => { setTarget("restore"); setPage("library"); })}
       {button("Sembrar / resembrar corpus", () => void action(async () => { await session.seed(); return "20 fixtures guardadas por el pipeline real."; }), offline)}
       {button(offline ? "Reconectar fuente sintética" : "Simular sin red", () => setOffline(value => !value))}
       {button("Exportar TEST v7", () => void action(download))}
+      {button("Preparar importación v10 TEST", () => void action(async () => { setProgressReport(await session.prepareProgressReviewTest()); return "TEST: v10 importado; local T3/E07 conservado frente a backup T3/E10."; }))}
+      {button("Reexportar progreso v10 TEST", () => void action(async () => { await exportProgressReport(await session.exportProgressTest()); return "TEST: reexportación v10 completa desde segunda base."; }))}
       {button("Restaurar TEST en segunda DB", () => void action(async () => {
         if (!json) throw new Error("Exportá TEST primero.");
         const result = await session.importTest(json); setTarget("restore"); setPage("library");
@@ -127,24 +132,25 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
       {button("Reset SOLO estas DBs de revisión", () => void action(onReset))}
     </View>
     </ScrollView>
-    {page === "art" && <ArtReview />}
-    {page === "anime-search" && <SearchScreen categories={[animeCategory]} initialCategory="anime" resolveCategory={() => animeSearch}
+    {progressReport && <ScrollView><ProgressImportReview key={progressReport.importedAt} report={progressReport} apply={session.applyProgressTest} exportReport={exportProgressReport} close={() => setProgressReport(null)} /></ScrollView>}
+    {!progressReport && page === "art" && <ArtReview />}
+    {!progressReport && page === "anime-search" && <SearchScreen categories={[animeCategory]} initialCategory="anime" resolveCategory={() => animeSearch}
       bindings={{ ...repository, openResult: destination => {
         const match = /^\/kitsu\/anime\/([1-9][0-9]*)$/.exec(destination);
         if (!match) throw new Error("Destino TEST inválido.");
         setAnimeId(match[1]); setPage("anime-detail");
       } }} />}
-    {page === "anime-detail" && <KitsuAnimeDetail key={`${target}-${animeId}-${offline}`} id={animeId} services={{
+    {!progressReport && page === "anime-detail" && <KitsuAnimeDetail key={`${target}-${animeId}-${offline}`} id={animeId} services={{
       languagePreferences: repository.languagePreferences, available: true, load: (id, signal) => animeClient.getAnime(id, signal), saved: repository.savedProvider, save: repository.saveProvider,
       open: id => { setLocalId(id); setPage("local"); }, source: async () => { setMessage("TEST: no se abre la fuente real Kitsu."); },
     }} />}
-    {manualDraft && <View style={{ flex: page === "manual" ? 1 : 0, display: page === "manual" ? "flex" : "none" }}>
+    {!progressReport && manualDraft && <View style={{ flex: page === "manual" ? 1 : 0, display: page === "manual" ? "flex" : "none" }}>
       <ManualEntryForm key={manualDraft.key} id={manualDraft.id} services={{ ...(manualDraft.target === "primary" ? session.source : session.restored),
         inspect: id => { setTarget(manualDraft.target); setLocalId(id); setPage("local"); },
         done: id => { setTarget(manualDraft.target); setLocalId(id); setManualDraft(null); setPage("local"); setRevision(v => v + 1); },
         cancel: () => { setManualDraft(null); setPage("library"); } }} />
     </View>}
-    {page === "discover" && <ScrollView contentContainerStyle={{ padding: 12, gap: 10 }}>
+    {!progressReport && page === "discover" && <ScrollView contentContainerStyle={{ padding: 12, gap: 10 }}>
       <TextInput accessibilityLabel="Buscar fixtures originales" value={query} onChangeText={setQuery} placeholder="Buscar corpus TEST…"
         style={{ color: theme.global.textPrimary, borderColor: theme.global.border, borderWidth: 1, padding: 12 }} />
       {fixtureSearch(query).map(result => {
@@ -156,7 +162,7 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
           }} />;
       })}
     </ScrollView>}
-    {page === "remote" && <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
+    {!progressReport && page === "remote" && <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
       <Text accessibilityRole="header" style={{ color: theme.global.textPrimary, fontSize: 22 }}>{details.snapshot.title}</Text>
       <Text style={{ color: theme.global.textSecondary }}>{mediaClassificationLabel(details.snapshot)} · {details.snapshot.year ?? "Sin fecha"}</Text>
       <Text style={{ color: theme.global.textPrimary }}>{details.snapshot.overview ?? "Sin descripción."}</Text>
@@ -181,7 +187,7 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
         setLocalId(id); setTarget("primary"); return `Refresh real ${pair.key}: ${id}. Revisar clasificación y datos personales.`;
       }), offline))}
     </ScrollView>}
-    {page === "library" && <LibraryScreen key={`${target}-${revision}`} bindings={libraryBindings} />}
-    {page === "local" && <TitleDetailScreen key={`${target}-${localId}-${revision}`} bindings={detailBindings} />}
+    {!progressReport && page === "library" && <LibraryScreen key={`${target}-${revision}`} bindings={libraryBindings} />}
+    {!progressReport && page === "local" && <TitleDetailScreen key={`${target}-${localId}-${revision}`} bindings={detailBindings} />}
   </View>;
 }
