@@ -17,7 +17,7 @@ type DecisionIntent = { unitId: string; expectedRevision: number | null; marked:
 
 function conflict(): never { throw new Error("La identidad o revisión granular cambió. Revisá los datos antes de continuar."); }
 
-function mutation<T>(owner: string, db: ProgressDatabase | undefined, work: (db: ProgressWriteDb) => Promise<{ value: T; changed: boolean }>): Promise<T> {
+export function mutation<T>(owner: string, db: ProgressDatabase | undefined, work: (db: ProgressWriteDb) => Promise<{ value: T; changed: boolean }>): Promise<T> {
   return runSerializedStorageMutation(async () => {
     const connection = db ?? await initDb();
     let result!: { value: T; changed: boolean };
@@ -27,11 +27,11 @@ function mutation<T>(owner: string, db: ProgressDatabase | undefined, work: (db:
   });
 }
 
-async function state(db: ProgressWriteDb, owner: string) {
+export async function state(db: ProgressWriteDb, owner: string) {
   return await db.getFirstAsync<{ revision: number; enabled: number }>(
     "SELECT revision,enabled FROM granular_title_state WHERE owner_id=?", owner) ?? { revision: 0, enabled: 0 };
 }
-async function touch(db: ProgressWriteDb, owner: string) {
+export async function touch(db: ProgressWriteDb, owner: string) {
   const previous = await state(db, owner);
   await db.runAsync(`INSERT INTO granular_title_state VALUES(?,?,?)
     ON CONFLICT(owner_id) DO UPDATE SET revision=excluded.revision`,
@@ -51,7 +51,7 @@ export function setGranularEnabled(owner: string, expectedRevision: number, enab
   });
 }
 
-async function resolveIdentity(db: ProgressWriteDb, kind: "unit" | "group", input: Identity) {
+export async function resolveIdentity(db: ProgressWriteDb, kind: "unit" | "group", input: Identity) {
   const { ownerId, reference } = input;
   const requested = input.id === undefined ? null : granularUuid(input.id);
   const table = `granular_${kind}s`;
@@ -80,7 +80,7 @@ async function resolveIdentity(db: ProgressWriteDb, kind: "unit" | "group", inpu
   return { id: requested, attach: key };
 }
 
-async function attachReference(db: ProgressWriteDb, kind: "unit" | "group", owner: string, id: string, key: string[] | null) {
+export async function attachReference(db: ProgressWriteDb, kind: "unit" | "group", owner: string, id: string, key: string[] | null) {
   if (key) await db.runAsync(`INSERT INTO granular_${kind}_references VALUES (?,?,?,?,?,?,?)`, owner, id, ...key);
 }
 

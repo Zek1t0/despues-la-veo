@@ -4,14 +4,14 @@
 - [x] 1.2 Implementar validación de identidad, propietario, grupos, referencias, retiro y coordenadas. Probar colisiones, temporada cero y orden/paginación exactos con capítulos 12, 12.5 y 15.
 - [x] 1.3 Implementar decisiones positivas y negativas, fecha opcional, reloj y revisión. Probar escrituras repetidas, concurrencia, rollback y publicación solo tras commit.
 - [x] 1.4 Probar migración sin consumo inventado, huecos, desmarcado, aislamiento de posición y datos personales y persistencia tras reapertura.
-- [ ] 1.5 Registrar resultados TEST y someter el diff S1 a revisión externa antes del checkpoint manual.
+- [x] 1.5 Registrar resultados TEST y someter el diff S1 a revisión externa antes del checkpoint manual.
 
 ## 2. S2 — Inventario editorial y manual
 
-- [ ] 2.1 Implementar adaptador TMDB de guías con fixtures de temporada y T0, opcionales ausentes, pertenencia, IDs inválidos, error 429, cancelación y presupuesto de peticiones bajo gates existentes.
-- [ ] 2.2 Implementar snapshots de inventario y evidencia, refresco transaccional, caché y retiro no destructivo. Probar contador contradictorio, páginas incompletas, mudanza, renumeración, cambio de fuente, reloj anterior a la consulta y vencimiento sin pérdida ni bloqueo offline.
+- [x] 2.1 Implementar adaptador TMDB de guías con fixtures de temporada y T0, opcionales ausentes, pertenencia, IDs inválidos, error 429, cancelación y presupuesto de peticiones bajo gates existentes.
+- [x] 2.2 Implementar snapshots de inventario y evidencia, refresco transaccional, caché y retiro no destructivo. Probar contador contradictorio, páginas incompletas, mudanza, renumeración, cambio de fuente, reloj anterior a la consulta y vencimiento sin pérdida ni bloqueo offline.
 - [ ] 2.3 Verificar con entorno TEST autorizado contratos desplegados de TMDB, forma y significado de los conteos, CORS y comportamiento Web/Android. Registrar por separado plataformas y condiciones no probadas; conservar parcialidad sin evidencia.
-- [ ] 2.4 Implementar alta y edición manual, retiro reversible y rangos confirmados. Probar duplicados, unidades retiradas, vista previa obsoleta, creación sin marcas y rollback atómico.
+- [x] 2.4 Implementar alta y edición manual, retiro reversible y rangos confirmados. Probar duplicados, unidades retiradas, vista previa obsoleta, creación sin marcas y rollback atómico.
 - [ ] 2.5 Registrar fixtures, resultados y pendientes de runtime y someter diff S2 a revisión externa antes del checkpoint manual.
 
 ## 3. S3 — Interfaz granular y cobertura

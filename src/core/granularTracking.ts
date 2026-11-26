@@ -38,3 +38,12 @@ export function civilConsumptionDate(value: string | null, now?: Date): string |
   }
   return value;
 }
+
+export function newGranularUuid() {
+  if (typeof globalThis.crypto?.randomUUID === "function") return globalThis.crypto.randomUUID();
+  // Portable identity, not a credential. Unique SQL keys reject any collision.
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, digit => {
+    const random = Math.floor(Math.random() * 16);
+    return (digit === "x" ? random : (random & 3) | 8).toString(16);
+  });
+}

@@ -129,7 +129,7 @@ Ambos fallaban usando producción de HEAD S2 antes de la corrección; el probe e
 | Comando/control | Resultado |
 | --- | --- |
 | `npx tsc --noEmit` | PASS |
-| `EXPO_NO_DOTENV=1 EXPO_OFFLINE=1 npx expo export --platform web --output-dir s3-web-review` (variables PowerShell; EXPO_PUBLIC_TMDB_TOKEN quitada del proceso hijo) | PASS: 1022 módulos, bundle Web completo. Artefactos trasladados a `dist/s3-reviewed-build`, ignorado por Git |
+| `EXPO_NO_DOTENV=1 EXPO_OFFLINE=1 npx expo export --platform web --output-dir s3-web-review` (variables PowerShell; <VARIABLE_TMDB_LEGACY> quitada del proceso hijo) | PASS: 1022 módulos, bundle Web completo. Artefactos trasladados a `dist/s3-reviewed-build`, ignorado por Git |
 | `npx openspec validate add-personal-collections-and-recommendation-inbox --strict` | PASS |
 | `git diff --check`, incluyendo cada nuevo con `git diff --no-index --check NUL archivo` | PASS; sin staging, normalizando únicamente finales de línea de archivos S3 cuando fue necesario |
 | package.json/lockfiles/dependencias/providers/gates/schema | Sin cambios |

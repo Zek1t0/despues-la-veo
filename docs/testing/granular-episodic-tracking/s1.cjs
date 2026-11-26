@@ -133,7 +133,7 @@ async function main() {
   const f = historical;
   f.sqlite.exec(`DROP TABLE granular_decisions; DROP TABLE granular_unit_references;
     DROP TABLE granular_group_references; DROP TABLE granular_units; DROP TABLE granular_groups;
-    DROP TABLE granular_title_state; PRAGMA user_version=9;`);
+    DROP TABLE granular_title_state; DROP TABLE granular_guide_indices; DROP TABLE granular_guide_snapshots; PRAGMA user_version=9;`);
   await f.db.runAsync("INSERT INTO personal_collections VALUES ('TEST-c','TEST','TEST summary',1,2)");
   await f.db.runAsync("INSERT INTO collection_memberships VALUES ('TEST-c','tmdb',3,4)");
   await f.db.runAsync(`INSERT INTO recommendation_inbox (id,original_capture_json,capture_kind,name,status,linked_saved_title_id,created_at,updated_at)

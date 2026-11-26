@@ -56,6 +56,20 @@ CREATE TABLE granular_title_state (
   revision INTEGER NOT NULL ${natural("revision",Number.MAX_SAFE_INTEGER)},
   enabled INTEGER NOT NULL CHECK(enabled IN (0,1))
 );
+CREATE TABLE granular_guide_indices (
+  owner_id TEXT NOT NULL REFERENCES saved_titles(id) ON DELETE CASCADE,
+  series_id TEXT NOT NULL, language TEXT NOT NULL, checked_at INTEGER NOT NULL,
+  payload TEXT NOT NULL,
+  PRIMARY KEY(owner_id,series_id,language)
+);
+CREATE TABLE granular_guide_snapshots (
+  owner_id TEXT NOT NULL REFERENCES saved_titles(id) ON DELETE CASCADE,
+  series_id TEXT NOT NULL, language TEXT NOT NULL, season INTEGER NOT NULL,
+  revision INTEGER NOT NULL, checked_at INTEGER NOT NULL,
+  status TEXT NOT NULL CHECK(status IN ('accredited','partial','stale')),
+  payload TEXT NOT NULL, issues TEXT NOT NULL,
+  PRIMARY KEY(owner_id,series_id,language,season)
+);
 `;
 
 export async function verifyGranularSchema(db: SchemaDatabase): Promise<void> {
@@ -67,7 +81,7 @@ export async function verifyGranularSchema(db: SchemaDatabase): Promise<void> {
   if (actual.size !== expected.length || expected.some(sql => !actual.has(normalize(sql)))) {
     throw new Error("El esquema de seguimiento granular no coincide con SQLite v10.");
   }
-  for (const table of ["groups", "units", "group_references", "unit_references", "decisions", "title_state"]) {
+  for (const table of ["groups", "units", "group_references", "unit_references", "decisions", "title_state", "guide_indices", "guide_snapshots"]) {
     if ((await db.getAllAsync(`PRAGMA foreign_key_check(granular_${table});`)).length) {
       throw new Error("El seguimiento granular contiene referencias inválidas.");
     }
