@@ -1,9 +1,9 @@
 ## 1. S1 — Dominio, identidad, persistencia y migración
 
-- [ ] 1.1 Implementar SQLite v10 aditivo y verificar en bases TEST apertura nueva, migración histórica, reapertura, índices, FK, cascadas y rollback inyectado con filas y versión originales.
-- [ ] 1.2 Implementar validación de identidad, propietario, grupos, referencias, retiro y coordenadas. Probar colisiones, temporada cero y orden/paginación exactos con capítulos 12, 12.5 y 15.
-- [ ] 1.3 Implementar decisiones positivas y negativas, fecha opcional, reloj y revisión. Probar escrituras repetidas, concurrencia, rollback y publicación solo tras commit.
-- [ ] 1.4 Probar migración sin consumo inventado, huecos, desmarcado, aislamiento de posición y datos personales y persistencia tras reapertura.
+- [x] 1.1 Implementar SQLite v10 aditivo y verificar en bases TEST apertura nueva, migración histórica, reapertura, índices, FK, cascadas y rollback inyectado con filas y versión originales.
+- [x] 1.2 Implementar validación de identidad, propietario, grupos, referencias, retiro y coordenadas. Probar colisiones, temporada cero y orden/paginación exactos con capítulos 12, 12.5 y 15.
+- [x] 1.3 Implementar decisiones positivas y negativas, fecha opcional, reloj y revisión. Probar escrituras repetidas, concurrencia, rollback y publicación solo tras commit.
+- [x] 1.4 Probar migración sin consumo inventado, huecos, desmarcado, aislamiento de posición y datos personales y persistencia tras reapertura.
 - [ ] 1.5 Registrar resultados TEST y someter el diff S1 a revisión externa antes del checkpoint manual.
 
 ## 2. S2 — Inventario editorial y manual

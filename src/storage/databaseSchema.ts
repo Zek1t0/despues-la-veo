@@ -1,3 +1,4 @@
+import { GRANULAR_SCHEMA_SQL, verifyGranularSchema } from "./granularSchema";
 import { createOrganizationSchemaWithDb, verifyOrganizationSchemaWithDb } from "./organizationSchema";
 import { PERSONAL_PROGRESS_TABLE_SQL, verifyPersonalProgressSchemaWithDb } from "./personalProgressSchema";
 import { createMetadataSchemaWithDb, backfillMetadataBaselinesWithDb, verifyMetadataSchemaWithDb } from "./mediaMetadataSchema";
@@ -6,7 +7,7 @@ import { createTmdbProviderReference } from "../core/tmdbSavedTitle";
 import { parseManualEntryIdentity } from "../core/manualEntryIdentity";
 import { assignManualIdentityWithDb } from "./manualEntryIdentities";
 
-export const DATABASE_SCHEMA_VERSION = 9;
+export const DATABASE_SCHEMA_VERSION = 10;
 export const MANUAL_ENTRY_IDENTITIES_TABLE_SQL = `CREATE TABLE manual_entry_identities (
   portable_id TEXT PRIMARY KEY NOT NULL,
   saved_title_id TEXT NOT NULL UNIQUE,
@@ -150,6 +151,7 @@ export type DatabaseMigrationHooks = {
   afterV9TableCreated?: () => void | Promise<void>;
   beforeVersion9Published?: () => void | Promise<void>;
   afterVersion9Published?: () => void | Promise<void>;
+  afterVersion10Published?: () => void | Promise<void>;
   afterV8TablesCreated?: () => void | Promise<void>;
   beforeVersion8Published?: () => void | Promise<void>;
   afterVersion8Published?: () => void | Promise<void>;
@@ -716,6 +718,7 @@ export async function evolveDatabaseSchema(
       await verifyMetadataSchemaWithDb(db);
       await verifyOrganizationSchemaWithDb(db);
       await verifyPersonalProgressSchemaWithDb(db);
+      await verifyGranularSchema(db);
       return;
     }
     const hasSavedTitles = await tableExists(db, "saved_titles");
@@ -765,12 +768,18 @@ export async function evolveDatabaseSchema(
       await db.execAsync("PRAGMA user_version = 8;");
       await hooks.afterVersion8Published?.();
     } else await verifyOrganizationSchemaWithDb(db);
-    await db.execAsync(PERSONAL_PROGRESS_TABLE_SQL);
-    await hooks.afterV9TableCreated?.();
-    await verifyPersonalProgressSchemaWithDb(db);
-    await hooks.beforeVersion9Published?.();
-    await db.execAsync("PRAGMA user_version = 9;");
-    await hooks.afterVersion9Published?.();
+    if (currentVersion < 9) {
+      await db.execAsync(PERSONAL_PROGRESS_TABLE_SQL);
+      await hooks.afterV9TableCreated?.();
+      await verifyPersonalProgressSchemaWithDb(db);
+      await hooks.beforeVersion9Published?.();
+      await db.execAsync("PRAGMA user_version = 9;");
+      await hooks.afterVersion9Published?.();
+    } else await verifyPersonalProgressSchemaWithDb(db);
+    await db.execAsync(GRANULAR_SCHEMA_SQL);
+    await verifyGranularSchema(db);
+    await db.execAsync("PRAGMA user_version = 10;");
+    await hooks.afterVersion10Published?.();
     if (await readUserVersion(db) !== DATABASE_SCHEMA_VERSION) {
       throw new Error(`La evolución SQLite no alcanzó la versión ${DATABASE_SCHEMA_VERSION}.`);
     }

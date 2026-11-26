@@ -20,7 +20,7 @@ const root = fs.mkdtempSync(path.join(os.tmpdir(), 'TEST-dlv-progress-S1-'));
 const files = [], results = []; let serial = 0;
 function fresh(file = path.join(root, `TEST-${++serial}.sqlite`)) { const f=fixture(file);files.push(f);return f; }
 function snapshot(f) { return Object.fromEntries(f.sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map(({name})=>[name,f.sqlite.prepare(`SELECT * FROM ${name} ORDER BY 1,2`).all()])); }
-const withoutProgress = f => { const value=snapshot(f);delete value.personal_title_progress;return value; };
+const withoutProgress = f => { const value=snapshot(f);delete value.personal_title_progress; for(const name of Object.keys(value)) if(name.startsWith("granular_")) { assert.deepEqual(value[name],[]); delete value[name]; } return value; };
 const classification = title => ({medium:title.medium,contentFamily:title.contentFamily,primaryFormat:title.primaryFormat});
 async function intent(f,id,position) { return {itemId:id,expected:await repo.getPersonalProgressWithDb(f.db,id),expectedClassification:classification(await readTitle(f.db,id)),position}; }
 async function set(f,id,position,now=100) { return repo.setPersonalProgress(await intent(f,id,position),f.db,now); }
@@ -53,13 +53,13 @@ function failCommit(f) { const tx=f.db.withTransactionAsync; f.db.withTransactio
     for(const [c,expected] of [[{medium:'audiovisual',contentFamily:null,primaryFormat:'tv'},'offered'],[{medium:'audiovisual',contentFamily:'anime',primaryFormat:'ova'},'explicit'],[{medium:'audiovisual',contentFamily:'anime',primaryFormat:'movie'},'none'],[{medium:'comic',contentFamily:'manga',primaryFormat:null},'explicit'],[{medium:'comic',contentFamily:'manhwa',primaryFormat:'webtoon'},'offered'],[{medium:'comic',contentFamily:'manhua',primaryFormat:'one-shot'},'none'],[{medium:'literature',contentFamily:null,primaryFormat:'novel'},'none']])assert.equal(domain.progressEligibility(c),expected);
   });
   let copied;
-  await test('migration: actual mixed v8 backup copy, v9 preservation and reopen',async()=>{
+  await test('migration: actual mixed v8 backup copy, v10 preservation and reopen',async()=>{
     const source=fresh();await v8(source);const before=snapshot(source);
     source.sqlite.exec('PRAGMA wal_checkpoint(TRUNCATE)');source.close();source.closed=true;
     copied=path.join(root,'TEST-v8-before-migration.sqlite');fs.copyFileSync(source.file,copied);
     results.push({name:'isolated v8 backup',file:copied,sha256:crypto.createHash('sha256').update(fs.readFileSync(copied)).digest('hex')});
     const f=fresh(source.file);await schema.evolveDatabaseSchema(f.db,8);
-    assert.equal(await schema.readUserVersion(f.db),9);assert.deepEqual(withoutProgress(f),before);
+    assert.equal(await schema.readUserVersion(f.db),10);assert.deepEqual(withoutProgress(f),before);
     assert.deepEqual(snapshot(f).personal_title_progress,[]);
     const stable=snapshot(f);await schema.evolveDatabaseSchema(f.db,9);assert.deepEqual(snapshot(f),stable);
     const saved=await set(f,'mu',{mode:'chapter',chapter:'42.5'});f.close();f.closed=true;
@@ -67,7 +67,7 @@ function failCommit(f) { const tx=f.db.withTransactionAsync; f.db.withTransactio
     assert.deepEqual(withoutProgress(reopened),before);
   });
   await test('migration: empty, v3/v4/v6 chain, future and corrupted schema',async()=>{
-    const empty=fresh();await schema.evolveDatabaseSchema(empty.db,0);assert.equal(await schema.readUserVersion(empty.db),9);
+    const empty=fresh();await schema.evolveDatabaseSchema(empty.db,0);assert.equal(await schema.readUserVersion(empty.db),10);
     const six=fresh();createV6(six);const before=snapshot(six);await schema.evolveDatabaseSchema(six.db,6);for(const [name,rows]of Object.entries(before))assert.deepEqual(snapshot(six)[name],rows,name);
     for(const version of [3,4]) {
       const old=fresh();
@@ -80,7 +80,7 @@ function failCommit(f) { const tx=f.db.withTransactionAsync; f.db.withTransactio
       old.sqlite.exec(`PRAGMA user_version=${version}`);await schema.evolveDatabaseSchema(old.db,version);
       const title=await readTitle(old.db,'TEST-old');assert.equal(title.notes,'TEST notes');assert.equal(title.updatedAt,20);assert.equal(title.status,'watching');assert.equal(title.personalRating,85);assert.equal(title.providerReferences[0].externalId,'23');assert.equal(await repo.getPersonalProgressWithDb(old.db,'TEST-old'),null);
     }
-    const future=fresh();future.sqlite.exec('PRAGMA user_version=10');const beforeFuture=snapshot(future);await assert.rejects(schema.evolveDatabaseSchema(future.db,10));assert.deepEqual(snapshot(future),beforeFuture);assert.equal(await schema.readUserVersion(future.db),10);
+    const future=fresh();future.sqlite.exec('PRAGMA user_version=11');const beforeFuture=snapshot(future);await assert.rejects(schema.evolveDatabaseSchema(future.db,11));assert.deepEqual(snapshot(future),beforeFuture);assert.equal(await schema.readUserVersion(future.db),11);
     empty.sqlite.exec('DROP TABLE personal_title_progress');await assert.rejects(schema.evolveDatabaseSchema(empty.db,9));
   });
   await test('migration: all v9 failure hooks and final commit roll back exact data/schema',async()=>{

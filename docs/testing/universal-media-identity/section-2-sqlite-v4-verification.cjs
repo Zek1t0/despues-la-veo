@@ -171,7 +171,7 @@ async function testFreshV4AndReopen() {
   const fixture = createDatabase("fresh");
   try {
     await initialize(fixture, 0);
-    assert.equal(DATABASE_SCHEMA_VERSION, 9);
+    assert.equal(DATABASE_SCHEMA_VERSION, 10);
     assert.equal(await readUserVersion(fixture.db), DATABASE_SCHEMA_VERSION);
     await verifyV5Schema(fixture.db);
     const columns = fixture.sqlite.prepare("PRAGMA table_info(saved_titles)").all().map((row) => row.name);
