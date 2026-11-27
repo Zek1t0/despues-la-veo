@@ -45,11 +45,13 @@ export function partitionGranularSelection<T>(items: readonly T[]) {
   return Array.from({length:Math.ceil(items.length/500)},(_,index)=>items.slice(index*500,(index+1)*500));
 }
 
+type GuideCoverageMember = { number: number; marked: boolean; retired: boolean; airDate: string | null };
 export function visibleGuideCoverage(guide: { structuralMode: "partial" | "stale" | "accredited"; checkedAt: number | null;
-  members: readonly { number: number; marked: boolean; retired: boolean; airDate: string | null }[] }, season: number,
+  members: readonly GuideCoverageMember[]; accreditedMembers?: readonly GuideCoverageMember[] }, season: number,
   clock: Pick<ReturnType<typeof editorialClock>, "day" | "current">) {
   const mode=guide.checkedAt!=null && !clock.current ? "stale" : guide.structuralMode;
-  return scopeCoverage(guide.members.map(member=>({
+  const members=mode==="accredited" ? guide.accreditedMembers??guide.members : guide.members;
+  return scopeCoverage(members.map(member=>({
     marked:member.marked, special:season===0 || member.number===0,
     availability:unitAvailability(member.airDate,member.retired,clock.day),
   })),mode);

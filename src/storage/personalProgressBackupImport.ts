@@ -11,7 +11,7 @@ export type ProgressImportConflict = Readonly<{ itemId: string; title: string; l
 export type ProgressImportResult = { inserted: number; preservedEqual: number; conflicts: ProgressImportConflict[]; invalid: ProgressBackupIssue[]; failed: ProgressBackupIssue[]; warnings: ProgressBackupIssue[]; changedIds: string[] };
 
 /** Includes classification and every local identity, but no personal/editorial clocks. */
-async function identityWithDb(db: ProgressWriteDb, itemId: string): Promise<{ key: string; title: string; classification: MediaClassification }> {
+export async function identityWithDb(db: ProgressWriteDb, itemId: string): Promise<{ key: string; title: string; classification: MediaClassification }> {
   const item = await getSavedTitleWithReferencesByIdWithDb(db, itemId);
   if (!item) throw new ProgressConflict();
   const legacy = await db.getAllAsync<{ legacy_format: string; legacy_provider: string; legacy_external_id: string }>(
@@ -30,7 +30,7 @@ export async function writeImportedProgressWithDb(db: ProgressWriteDb, value: Pe
     p?.mode === "chapter" ? p.chapter : null, p?.mode === "special" ? p.label : null, progress.updatedAt);
   if (result.changes !== 1) throw new Error("No se pudo confirmar el progreso importado.");
 }
-export async function mergeProgressWithDb(db: ProgressWriteDb, payload: ParsedLibraryBackupV10, mapping: Map<string, string>): Promise<ProgressImportResult> {
+export async function mergeProgressWithDb(db: ProgressWriteDb, payload: Pick<ParsedLibraryBackupV10,"progress"|"progressIssues">, mapping: Map<string, string>): Promise<ProgressImportResult> {
   const result: ProgressImportResult = { inserted: 0, preservedEqual: 0, conflicts: [], invalid: [...payload.progressIssues], failed: [], warnings: [], changedIds: [] };
   const candidates = new Map<string, PersonalProgress>(), blocked = new Set<string>();
   for (const incoming of payload.progress) {

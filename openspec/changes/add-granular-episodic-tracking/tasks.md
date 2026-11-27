@@ -21,14 +21,14 @@
 - [x] 3.3 Implementar cobertura y disponibilidad con reloj inyectable. Probar 4/12, parcial, vacío, lista manual, especiales, fechas civiles, zonas, nuevos estrenos, antigüedad y marcas externas.
 - [x] 3.4 Compartir resúmenes de snapshots en Biblioteca y Colecciones y rotular posición manual. Verificar independencia y ausencia de consultas por tarjeta o solicitudes remotas al abrir ambas pantallas.
 - [x] 3.5 Medir consultas, filas montadas y comportamiento con 12, 100, 1000 y 5000 unidades. Registrar condiciones y resultados sin umbrales especulativos.
-- [ ] 3.6 Registrar resultados de interfaz y someter diff S3 a revisión externa antes del checkpoint manual.
+- [x] 3.6 Registrar resultados de interfaz y someter diff S3 a revisión externa antes del checkpoint manual.
 
 ## 4. S4 — Backup y restauración
 
-- [ ] 4.1 Implementar exportación v11 de snapshot íntegro, validación de contrato y compatibilidad con fixtures v1–v10, ignorando campos granulares artificiales. Verificar bloque v11 obligatorio incluso vacío, rechazo de versión futura y exportación íntegra sin ofrecer formatos anteriores. Comprobar omisión de credenciales y caché extensa.
-- [ ] 4.2 Implementar mapa efectivo de grupos y unidades y restauración de decisiones. Probar colisiones, candidatos contradictorios, omisiones dependientes, rollback y degradación de métricas tras restaurar. Comprobar que los cambios relevantes invalidan evidencia que pierde sustento y los imports equivalentes conservan evidencia local válida.
-- [ ] 4.3 Implementar revisión accesible de conflictos y exportación de informe en Ajustes. Probar negativos frente a marcas antiguas, conflictos de fecha, candidato obsoleto y aplicación explícita.
-- [ ] 4.4 Completar round trip v11 sobre bases TEST vacía y poblada, reimportaciones, equivalencia durable y regresión de posición, organización y otros datos históricos. Mantener bloqueada distribución hasta completar portabilidad.
+- [x] 4.1 Implementar exportación v11 de snapshot íntegro, validación de contrato y compatibilidad con fixtures v1–v10, ignorando campos granulares artificiales. Verificar bloque v11 obligatorio incluso vacío, rechazo de versión futura y exportación íntegra sin ofrecer formatos anteriores. Comprobar omisión de credenciales y caché extensa.
+- [x] 4.2 Implementar mapa efectivo de grupos y unidades y restauración de decisiones. Probar colisiones, candidatos contradictorios, omisiones dependientes, rollback y degradación de métricas tras restaurar. Comprobar que los cambios relevantes invalidan evidencia que pierde sustento y los imports equivalentes conservan evidencia local válida.
+- [x] 4.3 Implementar revisión accesible de conflictos y exportación de informe en Ajustes. Probar negativos frente a marcas antiguas, conflictos de fecha, candidato obsoleto y aplicación explícita.
+- [x] 4.4 Completar round trip v11 sobre bases TEST vacía y poblada, reimportaciones, equivalencia durable y regresión de posición, organización y otros datos históricos. Mantener bloqueada distribución hasta completar portabilidad.
 - [ ] 4.5 Registrar resultados de restauración y someter diff S4 a revisión externa antes del checkpoint manual.
 
 ## 5. S5 — Regresión integral y aceptación

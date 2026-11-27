@@ -40,6 +40,7 @@ Module._load=function(request,parent,isMain){
   if(request.endsWith("titleDetailPinSnapshot"))return {getTitleDetailPinSnapshot:async()=>{active.reads++;return {item:active.item,context:null,pinnedAt:null};}};
   if(request.endsWith("savedTitlesRepo"))return {deleteSavedTitle:async()=>{},setPersonalRating:async()=>{},updateSavedTitleMetadata:async(id,patch)=>{active.patches.push(patch);active.item={...active.item,...patch};return active.item;}};
   if(request.endsWith("manualContentEntries"))return {isManualContentEditable:async()=>false};
+  if(request.endsWith("/GranularPreview"))return {GranularPreview:"GranularPreview"};
   if(request === "expo-sqlite" || request.endsWith("/db"))throw Error("Personal DB forbidden in local detail UI fixtures");
   if(request.endsWith("titlePinsRepo"))return {setTitlePinState:async()=>{}};
   if(request.includes("tmdbApi"))throw Error("Local detail must never import a provider API");

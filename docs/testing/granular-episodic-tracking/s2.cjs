@@ -249,7 +249,9 @@ async function main() {
       ...options, uuid:()=>a
     }),/identidad o revisión/);
     assert.deepEqual(query('SELECT * FROM granular_units ORDER BY id'),priorUnits);
-    assert.equal(await read(fixtureCollision),null);
+    const fallback=await read(fixtureCollision);
+    assert.equal(fallback.snapshot,null);assert.equal(fallback.indexCheckedAt,null);assert.equal(fallback.status,"partial");
+    assert.ok(fallback.index.every(entry=>entry.count===null));
     one=oldOne;
 
     // A cached guide can be read and marked after expiry without a remote call.

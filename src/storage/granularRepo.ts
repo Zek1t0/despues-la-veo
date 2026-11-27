@@ -143,7 +143,7 @@ export function retireGranularUnit(owner: string, id: string, retired: boolean, 
 }
 
 export type PageCursor = { owner: string; revision: number; order: [number, number, number, string, string] };
-export type UnitFilter = { unitIds?: readonly string[]; group?: string | null; source?: "manual" | "tmdb"; seriesId?: string; status?: "marked" | "pending" | "retired" | "active" };
+export type UnitFilter = { unitIds?: readonly string[]; group?: string | null; source?: "manual" | "tmdb"; seriesId?: string; season?: number; status?: "marked" | "pending" | "retired" | "active" };
 export type GranularRow = UnitRow & Partial<DecisionRow>;
 export function listGranularUnits(owner: string, limit: number, cursor: PageCursor | null = null, db?: ProgressDatabase, filter: UnitFilter = {}) {
   return runSerializedStorageMutation(async () => {
@@ -154,12 +154,13 @@ export function listGranularUnits(owner: string, limit: number, cursor: PageCurs
       const { revision } = await state(connection, owner);
       if (cursor && (cursor.owner !== owner || cursor.revision !== revision)) conflict();
       const order = "sort_kind,sort_group,sort_whole,sort_fraction,id";
-      const predicates: string[] = [], parameters: (string | null)[] = [];
+      const predicates: string[] = [], parameters: (string | number | null)[] = [];
       if (filter.group !== undefined) { predicates.push("u.group_id IS ?"); parameters.push(filter.group); }
       if (filter.unitIds !== undefined) { predicates.push("u.id IN (SELECT value FROM json_each(?))"); parameters.push(JSON.stringify(filter.unitIds)); }
       const remote = "SELECT 1 FROM granular_unit_references r WHERE r.entity_id=u.id AND r.owner_id=u.owner_id";
       if (filter.source === "manual") predicates.push(`NOT EXISTS(${remote})`);
-      if (filter.source === "tmdb") { predicates.push(`EXISTS(${remote} AND r.provider='tmdb' AND r.parent_namespace='tv' AND r.parent_id=?)`); parameters.push(filter.seriesId ?? ""); }
+      if (filter.source === "tmdb") { predicates.push(`EXISTS(${remote} AND r.provider='tmdb' AND r.parent_namespace='tv' AND r.namespace='episode' AND r.parent_id=?)`); parameters.push(filter.seriesId ?? ""); }
+      if (filter.season !== undefined) { predicates.push("u.sort_kind=1 AND u.sort_group=?"); parameters.push(filter.season); }
       if (filter.status === "marked") predicates.push("u.retired=0 AND d.marked=1");
       if (filter.status === "pending") predicates.push("u.retired=0 AND COALESCE(d.marked,0)=0");
       if (filter.status === "retired") predicates.push("u.retired=1");

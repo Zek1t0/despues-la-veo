@@ -19,6 +19,7 @@ const load=Module._load;Module._load=function(name,parent,main){
  if(name.endsWith('storage/libraryBackupExport'))return{getLibraryBackupExportData:availability=>exportsRepo.getLibraryBackupExportData(availability,db)};
  if(name.endsWith('storage/savedTitlesRepo'))return{mergeLibraryBackup:(payload,gen)=>titlesRepo.mergeLibraryBackup(payload,gen,db)};
  if(name.endsWith('progress/ProgressImportReview'))return{ProgressImportReview:'Review'};
+ if(name.endsWith('granular/GranularImportReview'))return{GranularImportReview:'GranularReview'};
  if(name.endsWith('progress/exportProgressReport'))return{exportProgressReport:async()=>{}};
  return load.call(this,name,parent,main);
 };
@@ -35,10 +36,10 @@ function host(){return{slots:[],cursor:0,dirty:true,effects:[],cleanups:[],async
  const h=host();await h.flush();await h.import(raw);assert.equal(activations,1);assert.equal(reserves,1);assert.ok(nodes(h.tree).some(n=>n.type==='Review'));assert.ok(text(h.tree).includes('Progreso: 1 insertados'));
  await repo.setPersonalProgress({itemId:'tmdb',expected:await repo.getPersonalProgressWithDb(db,'tmdb'),expectedClassification:title,position:{mode:'episode',episode:7}},db,200);
  await h.import(raw);assert.equal(activations,2);assert.ok(text(h.tree).includes('conflictos de progreso pendientes'));assert.equal(nodes(h.tree).find(n=>n.type==='Review').props.report.result.conflicts.length,1);
- await h.export();assert.equal(JSON.parse(await download.text()).version,10);assert.equal(JSON.parse(await download.text()).progress[0].position.episode,7);
+ await h.export();assert.equal(JSON.parse(await download.text()).version,11);assert.deepEqual(JSON.parse(await download.text()).granular,{enabled:[],groups:[],units:[],decisions:[]});assert.equal(JSON.parse(await download.text()).progress[0].position.episode,7);
  confirmed=false;const before=reserves;await h.import(raw);assert.equal(reserves,before);confirmed=true;
  const transaction=db.withTransactionAsync;db.withTransactionAsync=fn=>transaction(async()=>{await fn();throw Error('TEST rollback')});await h.import(raw);db.withTransactionAsync=transaction;assert.equal(activations,2);assert.ok(discards>0);assert.ok(alerts.length>0);assert.equal((await repo.getPersonalProgressWithDb(db,'tmdb')).position.episode,7);
  h.cleanups.forEach(fn=>fn());await h.flush();assert.ok(!nodes(h.tree).some(n=>n.type==='Review'));
  URL.createObjectURL=create;URL.revokeObjectURL=revoke;delete global.window;delete global.document;
- fs.writeFileSync(__dirname+'/s3-settings-results.json',JSON.stringify({status:'PASS',checks:['real Settings v10 import','appearance activation after commit','rollback discards deferred appearance','conservative conflict outcome','export v10','cancel','focus cleanup']},null,2)+'\n');console.log('PASS actual Settings hook-host with SQLite TEST: v10 import/export, deferred appearance postcommit/rollback, conflict messaging, cancel and report cleanup.');
+ fs.writeFileSync(__dirname+'/s3-settings-results.json',JSON.stringify({status:'PASS',checks:['real Settings v10 import','appearance activation after commit','rollback discards deferred appearance','conservative conflict outcome','export v11','cancel','focus cleanup']},null,2)+'\n');console.log('PASS actual Settings hook-host with SQLite TEST: v10 import and v11 export, deferred appearance postcommit/rollback, conflict messaging, cancel and report cleanup.');
 }finally{a.close();b.close()}})().catch(error=>{console.error(error);process.exitCode=1});

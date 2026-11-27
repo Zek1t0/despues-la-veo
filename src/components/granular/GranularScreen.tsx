@@ -75,9 +75,9 @@ export function GranularScreen({item,database,fixtureGuide,initialSource,initial
   const enabled=eligible && (!explicit || !!screen?.enabled);
   const memberById=useMemo(()=>new Map(screen?.guide?.members.map(member=>[member.unitId,member])??[]),[screen]);
   const filtersFor = useCallback((view:Screen|null):UnitFilter=>({
-    source:scope?"tmdb":"manual",seriesId:scope?.seriesId,group:scope?view?.guide?.group??null:group,
+    source:scope?"tmdb":"manual",seriesId:scope?.seriesId,season:scope?.season,group:scope?view?.guide?.group??null:group,
     status:filter==="announced"?"active":filter,
-    unitIds:filter==="announced" ? (view?.guide?.members??[])
+    unitIds:scope&&!view?.guide?.group?[]:filter==="announced" ? (view?.guide?.members??[])
       .filter(member=>unitAvailability(member.airDate,member.retired,today)==="Anunciado").map(member=>member.unitId) : undefined,
   }),[scope,group,filter,today]);
   const listFilter=useMemo(()=>filtersFor(screen),[filtersFor,screen]);
@@ -266,7 +266,8 @@ export function GranularScreen({item,database,fixtureGuide,initialSource,initial
         {busy&&controller.current&&<Button label="Cancelar descarga" onPress={()=>controller.current?.abort()}/>}
       </View><View style={wrap}>{guide?.index.map(entry=><Button key={entry.id} label={entry.number===0?"Especiales":`T${entry.number}`}
         selected={entry.number===season} disabled={busy} onPress={()=>switchScope(source,entry.number)}/>)}</View>
-      <GranularCoveragePanel scope={season===0?"TMDB · Especiales":`TMDB · Temporada ${season}`} marked={coverage?.counted??0} denominator={coverage?.denominator} caption={screen?.guide?.checkedAt!=null?coverage?.label??"Guía parcial":loading?"Cargando guía…":"Guía aún no descargada"} percent={coverage?.percent}/>
+      {!!guide?.seasonConflicts.length&&<Label muted>Referencias de temporada incompatibles. Se muestran los alcances identificados.</Label>}
+      <GranularCoveragePanel scope={season===0?"TMDB · Especiales":`TMDB · Temporada ${season}`} marked={coverage?.counted??0} denominator={coverage?.denominator} caption={(screen?.guide?.checkedAt!=null||!!screen?.guide?.members.length)?coverage?.label??"Guía parcial":loading?"Cargando guía…":"Guía aún no descargada"} percent={coverage?.percent}/>
       {screen?.guide?.checkedAt!=null&&<Label muted>TMDB · Consulta {new Date(screen.guide.checkedAt).toLocaleDateString("es-AR")} · {season===0?"Especiales":`Temporada ${season}`}</Label>}
       {!!screen?.guide?.members.some(member=>unitAvailability(member.airDate,member.retired,today)==="Anunciado") && <Label muted>Próximos: {screen.guide.members.filter(member=>unitAvailability(member.airDate,member.retired,today)==="Anunciado").slice(0,3).map(member=>`E${member.number} · ${civilDateLabel(member.airDate!)}`).join(", ")}</Label>}
       </>:<><GranularCoveragePanel scope={screen?.groups.find(entry=>entry.id===group)?.label??"Lista manual"}

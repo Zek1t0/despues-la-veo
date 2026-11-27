@@ -1,3 +1,4 @@
+import { durableSeasons, navigableSeasons } from "./granularDurableGuide";
 import { granularOrder, newGranularUuid } from "../core/granularTracking";
 import { createTmdbGuideAdapter, type GuideFetch, type GuideEpisode, type SeasonGuide, type SeasonIndexEntry } from "../providers/tmdb/tmdbGuide";
 import { TmdbError } from "../providers/tmdb/tmdbErrors";
@@ -36,7 +37,7 @@ async function assertGuideOwner(db: ProgressWriteDb, scope: GuideScope) {
   return JSON.stringify(classification);
 }
 
-export type GranularGuideView = { index: SeasonIndexEntry[]; indexCheckedAt: number | null; snapshot: Payload | null; revision: number | null; checkedAt: number | null; issues: string[]; status: Snapshot["status"] };
+export type GranularGuideView = { seasonConflicts: number[]; index: SeasonIndexEntry[]; indexCheckedAt: number | null; snapshot: Payload | null; revision: number | null; checkedAt: number | null; issues: string[]; status: Snapshot["status"] };
 export function readGranularGuide(scope: GuideScope, db?: ProgressDatabase, now = Date.now()): Promise<GranularGuideView | null> {
   return runSerializedStorageMutation<GranularGuideView | null>(async () => {
     const connection = db ?? await initDb();
@@ -44,16 +45,19 @@ export function readGranularGuide(scope: GuideScope, db?: ProgressDatabase, now 
     await connection.withTransactionAsync(async () => {
       const row = await readSnapshot(connection, scope);
       const index = await readIndex(connection, scope);
-      if (!row && !index) return;
+      const durable = await durableSeasons(connection,scope.ownerId,scope.seriesId);
+      if (!row && !index && !durable.length) return;
       const valid = await assertGuideOwner(connection, scope).then(() => true, () => false);
       const indexCurrent = !!index && guideEvidenceCurrent(index.checked_at, now);
       const indexEntries: SeasonIndexEntry[] = index ? JSON.parse(index.payload) : [];
+      const navigation = navigableSeasons(indexEntries,durable);
       const payload: Payload | null = row ? JSON.parse(row.payload) : null;
       const indexed = indexEntries.find(item => item.number === scope.season);
       const matching = !!indexed && indexed.id === payload?.guide.id && indexed.count === payload.members.length;
-      result = { index: indexEntries, indexCheckedAt: index?.checked_at ?? null, snapshot: payload, revision: row?.revision ?? null,
-        checkedAt: row?.checked_at ?? null, issues: row ? JSON.parse(row.issues) as string[] : [],
-        status: !valid || !indexCurrent || (row && (!guideEvidenceCurrent(row.checked_at, now) || (row.status === "accredited" && !matching)))
+      result = { seasonConflicts: [...navigation.conflicts], index: navigation.index, indexCheckedAt: index?.checked_at ?? null, snapshot: payload, revision: row?.revision ?? null,
+        checkedAt: row?.checked_at ?? null, issues: [...(row ? JSON.parse(row.issues) as string[] : []),
+          ...[...navigation.conflicts].map(number=>`Referencias de temporada incompatibles · T${number}`)],
+        status: !valid || (!!row && !indexCurrent) || (row && (!guideEvidenceCurrent(row.checked_at, now) || (row.status === "accredited" && (!matching || navigation.conflicts.has(scope.season)))))
           ? "stale" as const : row?.status ?? "partial" };
     });
     return result;

@@ -7,6 +7,10 @@ export default function RootLayout() {
   if (mediaReviewEnabled()) {
     const ReviewRoot = require("../src/dev/mediaReview/ReviewRoot").default;
     if (typeof window !== "undefined" && window.location.pathname === "/dev/granular-review") {
+      if (new URLSearchParams(window.location.search).get("backup")==="1") {
+        const BackupReview = require("../src/dev/mediaReview/GranularBackupReview").default;
+        return <ReviewRoot><BackupReview /></ReviewRoot>;
+      }
       const GranularReview = require("../src/dev/mediaReview/GranularReview").default;
       return <ReviewRoot><GranularReview /></ReviewRoot>;
     }

@@ -50,7 +50,7 @@ export function GranularPreview({ item, isolated = false, database, onOpen, fixt
     return observeLibraryProjection(async()=>{
       const [screen,guide]=await Promise.all([readGranularScreen(item.id,scope,database),scope?readGranularGuide(scope,database):null]);
       const page=await listGranularUnits(item.id,3,null,database,{status:"active",source:scope?"tmdb":"manual",
-        ...(scope?{seriesId:scope.seriesId,group:screen.guide?.group??null}:{})});
+        ...(scope?{seriesId:scope.seriesId,season:scope.season,unitIds:screen.guide?.group?undefined:[],group:screen.guide?.group??null}:{})});
       if(screen.revision!==page.revision)throw Error("El inventario cambió durante la lectura.");
       return {rows:page.rows,screen,guide};
     },data=>{setRead({key,data});setFailure(null);},ids=>ids.includes(item.id),
@@ -88,11 +88,12 @@ export function GranularPreview({ item, isolated = false, database, onOpen, fixt
       {index.map(entry=><Button key={entry.id} label={entry.number===0?"Especiales":`T${entry.number}`} disabled={busy}
         selected={season===entry.number} onPress={()=>setSeason(entry.number)}/>)}
     </View>}
+    {!!data?.guide?.seasonConflicts.length&&<OrganizationText muted>Referencias de temporada incompatibles. Se muestran los alcances identificados.</OrganizationText>}
     {busy&&<OrganizationText muted>Consultando TMDB…</OrganizationText>}
     <OrganizationError error={failed} retry={()=>setRefresh(value=>value+1)}/>
     {data&&<GranularCoveragePanel scope={scopeLabel} marked={series?coverage?.counted??0:data.screen.manual.marked}
       denominator={coverage?.denominator} outside={Math.max(0,data.screen.marked-(series?coverage?.counted??0:data.screen.manual.marked))}
-      caption={series?(editorial?.checkedAt!=null?coverage?.label??"Guía parcial":"Guía aún no descargada"):`${data.screen.manual.marked} de ${data.screen.manual.total} en tu lista`}
+      caption={series?((editorial?.checkedAt!=null||!!editorial?.members.length)?coverage?.label??"Guía parcial":"Guía aún no descargada"):`${data.screen.manual.marked} de ${data.screen.manual.total} en tu lista`}
       percent={series?coverage?.percent:null}/>}
     {!!series&&editorial?.checkedAt!=null&&<OrganizationText muted>Consulta del {new Date(editorial.checkedAt).toLocaleDateString("es-AR")}</OrganizationText>}
     <View style={{gap:space.xs}}>
