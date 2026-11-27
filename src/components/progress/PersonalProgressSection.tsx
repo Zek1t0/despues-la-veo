@@ -88,7 +88,7 @@ export function PersonalProgressSection({ itemId, classification, progress, load
   } } : {};
   return <View {...escape} onAccessibilityEscape={cancelAction} style={{ padding: space.lg, gap: space.md, borderRadius: radius.card, borderWidth: 1, borderColor: theme.global.border, backgroundColor: theme.global.surface, overflow: "hidden" }}>
     <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
-      <Text accessibilityRole="header" style={[type.title, text]}>Mi progreso</Text>
+      <Text accessibilityRole="header" style={[type.title, text]}>Última posición manual</Text>
       {!editor && !confirmation && progress?.position && <OrganizationButton label="Más opciones de progreso" icon="ellipsis-horizontal" iconOnly variant="link" expanded={options} disabled={blocked} onPress={() => setOptions(value => !value)} />}
     </View>
     {options && !editor && !confirmation && <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: space.sm, borderBottomWidth: 1, borderColor: theme.global.border, paddingBottom: space.sm }}>

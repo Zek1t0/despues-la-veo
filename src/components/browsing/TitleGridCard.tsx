@@ -25,7 +25,7 @@ export type TitleGridCardProps = {
   isPinned?: boolean;
   personalRating?: PersonalRating;
   progress?: PersonalProgress | null;
-  progressIncompatible?: boolean;
+  progressIncompatible?: boolean; granularMarked?: number;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -41,14 +41,14 @@ export function TitleGridCard({
   isPinned = false,
   personalRating = null,
   progress,
-  progressIncompatible = false,
+  progressIncompatible = false, granularMarked = 0,
   style,
 }: TitleGridCardProps) {
   const { theme } = useAppTheme();
   const [focused, setFocused] = useState(false);
   const ratingLabel = getPersonalRatingPresentation(personalRating)?.accessibilityLabel;
   const label = [accessibilityLabel, isPinned ? "fijado" : null, ratingLabel,
-    progress?.position ? `Mi progreso: ${progressPositionLabel(progress.position)}${progressIncompatible ? ". Revisar clasificación" : ""}` : null]
+    progress?.position ? `Última posición manual: ${progressPositionLabel(progress.position)}${progressIncompatible ? ". Revisar clasificación" : ""}` : null, granularMarked ? `${granularMarked} unidades marcadas` : null]
     .filter(Boolean)
     .join(". ");
 
@@ -126,8 +126,8 @@ export function TitleGridCard({
           </View>
         </View>
       </View>
-      {progress?.position && <View accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ paddingHorizontal: space.sm, paddingVertical: space.sm }}>
-        <PersonalProgressSummary progress={progress} incompatible={progressIncompatible} />
+      {(!!progress?.position || granularMarked > 0) && <View accessible={false} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ paddingHorizontal: space.sm, paddingVertical: space.sm }}>
+        <PersonalProgressSummary marked={granularMarked} progress={progress} incompatible={progressIncompatible} />
       </View>}
     </Pressable>
   );

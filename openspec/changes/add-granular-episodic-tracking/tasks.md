@@ -12,15 +12,15 @@
 - [x] 2.2 Implementar snapshots de inventario y evidencia, refresco transaccional, caché y retiro no destructivo. Probar contador contradictorio, páginas incompletas, mudanza, renumeración, cambio de fuente, reloj anterior a la consulta y vencimiento sin pérdida ni bloqueo offline.
 - [ ] 2.3 Verificar con entorno TEST autorizado contratos desplegados de TMDB, forma y significado de los conteos, CORS y comportamiento Web/Android. Registrar por separado plataformas y condiciones no probadas; conservar parcialidad sin evidencia.
 - [x] 2.4 Implementar alta y edición manual, retiro reversible y rangos confirmados. Probar duplicados, unidades retiradas, vista previa obsoleta, creación sin marcas y rollback atómico.
-- [ ] 2.5 Registrar fixtures, resultados y pendientes de runtime y someter diff S2 a revisión externa antes del checkpoint manual.
+- [x] 2.5 Registrar fixtures, resultados y pendientes de runtime y someter diff S2 a revisión externa antes del checkpoint manual.
 
 ## 3. S3 — Interfaz granular y cobertura
 
-- [ ] 3.1 Integrar vista previa, ruta virtualizada, filtros, grupos, estados de guía, edición manual y confirmación de rangos. Comprobar acceso explícito a sinopsis/imágenes. Si se ofrece cuadrícula, verificar virtualización, huecos y selección por ID compartida.
-- [ ] 3.2 Integrar marcar/desmarcar, fecha opcional y Hoy, advertencia de futuros y operaciones masivas con selección cerrada. Probar doble pulsación, lote cambiado, rollback por confirmación y particiones visibles e independientes para más de 500 IDs.
-- [ ] 3.3 Implementar cobertura y disponibilidad con reloj inyectable. Probar 4/12, parcial, vacío, lista manual, especiales, fechas civiles, zonas, nuevos estrenos, antigüedad y marcas externas.
-- [ ] 3.4 Compartir resúmenes de snapshots en Biblioteca y Colecciones y rotular posición manual. Verificar independencia y ausencia de consultas por tarjeta o solicitudes remotas al abrir ambas pantallas.
-- [ ] 3.5 Medir consultas, filas montadas y comportamiento con 12, 100, 1000 y 5000 unidades. Registrar condiciones y resultados sin umbrales especulativos.
+- [x] 3.1 Integrar vista previa, ruta virtualizada, filtros, grupos, estados de guía, edición manual y confirmación de rangos. Comprobar acceso explícito a sinopsis/imágenes. Si se ofrece cuadrícula, verificar virtualización, huecos y selección por ID compartida.
+- [x] 3.2 Integrar marcar/desmarcar, fecha opcional y Hoy, advertencia de futuros y operaciones masivas con selección cerrada. Probar doble pulsación, lote cambiado, rollback por confirmación y particiones visibles e independientes para más de 500 IDs.
+- [x] 3.3 Implementar cobertura y disponibilidad con reloj inyectable. Probar 4/12, parcial, vacío, lista manual, especiales, fechas civiles, zonas, nuevos estrenos, antigüedad y marcas externas.
+- [x] 3.4 Compartir resúmenes de snapshots en Biblioteca y Colecciones y rotular posición manual. Verificar independencia y ausencia de consultas por tarjeta o solicitudes remotas al abrir ambas pantallas.
+- [x] 3.5 Medir consultas, filas montadas y comportamiento con 12, 100, 1000 y 5000 unidades. Registrar condiciones y resultados sin umbrales especulativos.
 - [ ] 3.6 Registrar resultados de interfaz y someter diff S3 a revisión externa antes del checkpoint manual.
 
 ## 4. S4 — Backup y restauración

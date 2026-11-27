@@ -150,6 +150,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
   const [pinnedAtById, setPinnedAtById] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
   const [snapshotReady, setSnapshotReady] = useState(false);
+  const [granularCounts,setGranularCounts] = useState<Record<string,number>>({});
   const [progressById, setProgressById] = useState<Record<string, PersonalProgress>>({});
   const [snapshotError, setSnapshotError] = useState<string | null>(null);
 
@@ -383,7 +384,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
       const snapshot = await getLibraryScreenSnapshot();
       if (generation !== libraryReadGeneration.current) return;
       setItems(snapshot.items);
-      if (snapshot.progressById) setProgressById(snapshot.progressById);
+      if (snapshot.progressById) setProgressById(snapshot.progressById); if (snapshot.granularCounts) setGranularCounts(snapshot.granularCounts);
       const loadedPinnedAtById = new Map(
         snapshot.pins.map((pin) => [pin.savedTitleId, pin.pinnedAt] as const)
       );
@@ -419,7 +420,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
   }, snapshot => {
     libraryReadGeneration.current++;
     setItems(snapshot.items);
-    if (snapshot.progressById) setProgressById(snapshot.progressById);
+    if (snapshot.progressById) setProgressById(snapshot.progressById); if (snapshot.granularCounts) setGranularCounts(snapshot.granularCounts);
     setPinnedAtById(new Map(snapshot.pins.map(pin => [pin.savedTitleId, pin.pinnedAt])));
     setSnapshotReady(true); setSnapshotError(null); setLoading(false);
   }), []);
@@ -880,7 +881,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                   }
                   posterUrl={item.posterUrl} imageProvider={savedMediaPresentation(item).imageProvider} metadata={savedMediaPresentation(item).metadata}
                   personalRating={item.personalRating}
-                  progress={progressById[item.id]}
+                  progress={progressById[item.id]} granularMarked={granularCounts[item.id]}
                   progressIncompatible={!!progressById[item.id]?.position && !progressPositionCompatible(item, progressById[item.id].position)}
                   style={{ width: gridCardWidth }}
                   title={item.title}
@@ -905,7 +906,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
               >
                 <Pressable
                   accessible
-                  accessibilityLabel={[savedTitleOpenAccessibilityLabel(item, true), progressById[item.id]?.position ? `Mi progreso: ${progressPositionLabel(progressById[item.id].position!)}` : null].filter(Boolean).join(". ")}
+                  accessibilityLabel={[savedTitleOpenAccessibilityLabel(item, true), progressById[item.id]?.position ? `Última posición manual: ${progressPositionLabel(progressById[item.id].position!)}` : null, granularCounts[item.id] ? `${granularCounts[item.id]} unidades marcadas` : null].filter(Boolean).join(". ")}
                   accessibilityRole="button"
                   focusable
                   onPress={() =>
@@ -932,7 +933,7 @@ export default function LibraryScreen({ bindings }: { bindings?: LibraryScreenSe
                       </Text>
 
                       <Text style={[type.caption, { color: theme.global.textSecondary }]}>{mediaClassificationLabel(item)}</Text>
-                      <PersonalProgressSummary progress={progressById[item.id]} incompatible={!!progressById[item.id]?.position && !progressPositionCompatible(item, progressById[item.id].position)} />
+                      <PersonalProgressSummary marked={granularCounts[item.id]} progress={progressById[item.id]} incompatible={!!progressById[item.id]?.position && !progressPositionCompatible(item, progressById[item.id].position)} />
                       <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.xs }}>
                         <Pill text={titleStatusLabel(item.status, item.medium)} />
                         <PersonalRatingBadge value={item.personalRating} showPersonalLabel />

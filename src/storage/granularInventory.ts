@@ -6,8 +6,8 @@ import { attachReference, mutation, resolveIdentity, touch } from "./granularRep
 import { getProgressClassificationWithDb, type ProgressDatabase, type ProgressWriteDb } from "./personalProgressRepo";
 import { runSerializedStorageMutation } from "./storageMutationQueue";
 
-export const GUIDE_VALIDITY_MS = 7 * 24 * 60 * 60 * 1000;
-export const guideEvidenceCurrent = (checked: number, now: number) => now >= checked && now - checked < GUIDE_VALIDITY_MS;
+import { guideEvidenceCurrent } from "../core/granularCoverage";
+export { GUIDE_VALIDITY_MS, guideEvidenceCurrent } from "../core/granularCoverage";
 
 export type GuideScope = { ownerId: string; seriesId: string; language: string; season: number };
 type IndexRow = { checked_at: number; payload: string };
@@ -36,10 +36,11 @@ async function assertGuideOwner(db: ProgressWriteDb, scope: GuideScope) {
   return JSON.stringify(classification);
 }
 
-export function readGranularGuide(scope: GuideScope, db?: ProgressDatabase, now = Date.now()) {
-  return runSerializedStorageMutation(async () => {
+export type GranularGuideView = { index: SeasonIndexEntry[]; indexCheckedAt: number | null; snapshot: Payload | null; revision: number | null; checkedAt: number | null; issues: string[]; status: Snapshot["status"] };
+export function readGranularGuide(scope: GuideScope, db?: ProgressDatabase, now = Date.now()): Promise<GranularGuideView | null> {
+  return runSerializedStorageMutation<GranularGuideView | null>(async () => {
     const connection = db ?? await initDb();
-    let result: { index: SeasonIndexEntry[]; indexCheckedAt: number | null; snapshot: Payload | null; revision: number | null; checkedAt: number | null; issues: string[]; status: Snapshot["status"] } | null = null;
+    let result: GranularGuideView | null = null;
     await connection.withTransactionAsync(async () => {
       const row = await readSnapshot(connection, scope);
       const index = await readIndex(connection, scope);

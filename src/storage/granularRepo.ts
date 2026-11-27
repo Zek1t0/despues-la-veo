@@ -8,12 +8,12 @@ import { runSerializedStorageMutation } from "./storageMutationQueue";
 type Reference = { provider: string; parentNamespace: string; parentId: string; namespace: string; externalId: string };
 type Identity = { ownerId: string; id?: string; reference?: Reference };
 type UnitInput = Identity & { groupId: string | null; coordinate: ProgressPosition; label: string | null };
-type UnitRow = {
+export type UnitRow = {
   id: string; owner_id: string; group_id: string | null; coordinate: string; label: string | null;
   sort_kind: number; sort_group: number; sort_whole: number; sort_fraction: string; retired: number;
 };
-type DecisionRow = { marked: number; consumed_on: string | null; revision: number; updated_at: number };
-type DecisionIntent = { unitId: string; expectedRevision: number | null; marked: boolean; consumedOn: string | null };
+export type DecisionRow = { marked: number; consumed_on: string | null; revision: number; updated_at: number };
+export type DecisionIntent = { unitId: string; expectedRevision: number | null; marked: boolean; consumedOn: string | null };
 
 function conflict(): never { throw new Error("La identidad o revisión granular cambió. Revisá los datos antes de continuar."); }
 
@@ -142,8 +142,10 @@ export function retireGranularUnit(owner: string, id: string, retired: boolean, 
   });
 }
 
-type PageCursor = { owner: string; revision: number; order: [number, number, number, string, string] };
-export function listGranularUnits(owner: string, limit: number, cursor: PageCursor | null = null, db?: ProgressDatabase) {
+export type PageCursor = { owner: string; revision: number; order: [number, number, number, string, string] };
+export type UnitFilter = { unitIds?: readonly string[]; group?: string | null; source?: "manual" | "tmdb"; seriesId?: string; status?: "marked" | "pending" | "retired" | "active" };
+export type GranularRow = UnitRow & Partial<DecisionRow>;
+export function listGranularUnits(owner: string, limit: number, cursor: PageCursor | null = null, db?: ProgressDatabase, filter: UnitFilter = {}) {
   return runSerializedStorageMutation(async () => {
     if (!Number.isInteger(limit) || limit < 1 || limit > 500) throw new Error("Tamaño de página inválido.");
     const connection = db ?? await initDb();
@@ -152,10 +154,20 @@ export function listGranularUnits(owner: string, limit: number, cursor: PageCurs
       const { revision } = await state(connection, owner);
       if (cursor && (cursor.owner !== owner || cursor.revision !== revision)) conflict();
       const order = "sort_kind,sort_group,sort_whole,sort_fraction,id";
+      const predicates: string[] = [], parameters: (string | null)[] = [];
+      if (filter.group !== undefined) { predicates.push("u.group_id IS ?"); parameters.push(filter.group); }
+      if (filter.unitIds !== undefined) { predicates.push("u.id IN (SELECT value FROM json_each(?))"); parameters.push(JSON.stringify(filter.unitIds)); }
+      const remote = "SELECT 1 FROM granular_unit_references r WHERE r.entity_id=u.id AND r.owner_id=u.owner_id";
+      if (filter.source === "manual") predicates.push(`NOT EXISTS(${remote})`);
+      if (filter.source === "tmdb") { predicates.push(`EXISTS(${remote} AND r.provider='tmdb' AND r.parent_namespace='tv' AND r.parent_id=?)`); parameters.push(filter.seriesId ?? ""); }
+      if (filter.status === "marked") predicates.push("u.retired=0 AND d.marked=1");
+      if (filter.status === "pending") predicates.push("u.retired=0 AND COALESCE(d.marked,0)=0");
+      if (filter.status === "retired") predicates.push("u.retired=1");
+      if (filter.status === "active") predicates.push("u.retired=0");
       const rows = await connection.getAllAsync<UnitRow & Partial<DecisionRow>>(`SELECT u.*,d.marked,d.consumed_on,d.revision,d.updated_at
         FROM granular_units u LEFT JOIN granular_decisions d ON d.owner_id=u.owner_id AND d.unit_id=u.id
-        WHERE u.owner_id=? ${cursor ? `AND (${order}) > (?,?,?,?,?)` : ""} ORDER BY ${order} LIMIT ?`,
-        owner, ...(cursor?.order ?? []), limit + 1);
+        WHERE u.owner_id=? ${predicates.map(predicate=>`AND ${predicate}`).join(" ")} ${cursor ? `AND (${order}) > (?,?,?,?,?)` : ""} ORDER BY ${order} LIMIT ?`,
+        owner, ...parameters, ...(cursor?.order ?? []), limit + 1);
       const last = rows[limit - 1];
       const next: PageCursor | null = rows.length > limit ? {
         owner, revision, order: [last.sort_kind, last.sort_group, last.sort_whole, last.sort_fraction, last.id],
@@ -166,8 +178,9 @@ export function listGranularUnits(owner: string, limit: number, cursor: PageCurs
   });
 }
 
-export function setGranularDecisions(owner: string, expectedListRevision: number, intents: readonly DecisionIntent[], db?: ProgressDatabase, now = Date.now()) {
+export function setGranularDecisions(owner: string, expectedListRevision: number, intents: readonly DecisionIntent[], db?: ProgressDatabase, now = Date.now(), verify?: (db: ProgressWriteDb) => Promise<void>) {
   return mutation(owner, db, async connection => {
+    await verify?.(connection);
     const ids = intents.map(intent => granularUuid(intent.unitId));
     if (!ids.length || ids.length > 500 || new Set(ids).size !== ids.length) throw new Error("Selección inválida.");
     const classification = await getProgressClassificationWithDb(connection, owner);

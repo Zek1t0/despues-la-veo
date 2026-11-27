@@ -6,7 +6,7 @@ import { createReviewSession, type ReviewSession } from "./session";
 import { mediaReviewEnabled } from "./mode";
 import { MediaReview } from "./MediaReview";
 
-export default function ReviewRoot() {
+export default function ReviewRoot({children}:React.PropsWithChildren) {
   const [session, setSession] = useState<ReviewSession | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
@@ -24,9 +24,9 @@ export default function ReviewRoot() {
   if (!session) return <View><Text>TEST: abriendo dos bases aisladas…</Text></View>;
   return <SafeAreaProvider>
     <AppThemeProvider persistence={session.themePersistence} fallback={<Text>TEST: tema aislado…</Text>}>
-      <MediaReview session={session} onReset={async () => {
+      {children ?? <MediaReview session={session} onReset={async () => {
         await session.reset(); setSession(null); setRevision(value => value + 1);
-      }} />
+      }} />}
     </AppThemeProvider>
   </SafeAreaProvider>;
 }

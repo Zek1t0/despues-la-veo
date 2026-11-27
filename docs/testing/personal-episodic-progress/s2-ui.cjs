@@ -104,8 +104,22 @@ const results=[];async function test(name,fn){await fn();results.push({name,stat
   });
   await test('Library/grid/collection composition and personal fields preserved',async()=>{
    const library=fs.readFileSync('app/(tabs)/libreria.tsx','utf8'),grid=fs.readFileSync('src/components/browsing/TitleGridCard.tsx','utf8'),collection=fs.readFileSync('app/organize/collections/[id].tsx','utf8');
-   for(const code of [library,collection])assert.match(code,/<PersonalProgressSummary\b/);assert.match(library,/progress=\{progressById\[item.id\]\}/);assert.match(grid,/<\/View>\s*\{progress\?\.position && <View/);
-   assert.equal((grid.match(/<Pressable\b/g)||[]).length,1);assert.match(grid,/Mi progreso:/);
+   const p={version:1,itemId:id,position:{mode:"episode",episode:5},updatedAt:1};
+   for(const [progress,marked,incompatible,want] of [
+     [null,0,false,[]],[null,2,false,['2 unidades marcadas']],
+     [p,0,false,['Última posición manual']],[p,2,false,['Última posición manual','2 unidades marcadas']],
+     [p,0,true,['Revisar clasificación']],
+   ]){
+     const card=host({title:'TEST',kindLabel:'Serie',accessibilityLabel:'Abrir TEST',onPress(){},
+       progress,granularMarked:marked,progressIncompatible:incompatible},TitleGridCard);
+     await card.flush();
+     const label=nodes(card.tree).find(node=>node.props?.accessibilityRole==='button')?.props.accessibilityLabel;
+     for(const fragment of want)assert.ok(label?.includes(fragment),fragment);
+     if(!progress)assert.ok(!label?.includes('Última posición manual'));
+     if(!marked)assert.ok(!label?.includes('unidades marcadas'));
+   }
+   for(const code of [library,collection])assert.match(code,/<PersonalProgressSummary\b/);assert.match(library,/progress=\{progressById\[item.id\]\}/);assert.match(grid,/<\/View>\s*\{\(!!progress\?\.position \|\| granularMarked > 0\) && <View/);
+   assert.equal((grid.match(/<Pressable\b/g)||[]).length,1);assert.match(grid,/Última posición manual:/);
    const title=await readTitle(f.db,id);for(const key of ['status','personalRating','updatedAt','notes','tags'])assert.deepEqual(title[key],initialTitle[key]);assert.equal(requests,0);
   });
   await test('session draft recovery and Escape capture before TextInput bubbling',async()=>{
@@ -122,7 +136,7 @@ const results=[];async function test(name,fn){await fn();results.push({name,stat
    organizationState={snapshot:{items:[item],collections:[{id:'TEST-collection',name:'TEST collection'}],memberships:[{collectionId:'TEST-collection',itemId:id,addedAt:1}],progressById:{[id]:p},preferences:{value:{hideSensitive:false,languages:['es']}}},error:null,busy:false,refresh(){},run(){throw Error('No mutations in render')}};
    for(const width of [320,1280])for(const fontScale of [1,2]){
     dimensions={width,fontScale};const grid=host({title:item.title,kindLabel:'Serie',accessibilityLabel:'Abrir TEST',onPress(){},progress:p,personalRating:85},TitleGridCard);await grid.flush();
-    assert.ok(nodes(grid.tree).some(n=>n.type===Summary&&n.props.progress===p));assert.match(grid.tree.props.accessibilityLabel,/Mi progreso:/);assert.equal(nodes(grid.tree).filter(n=>n.type==='Pressable').length,1);
+    assert.ok(nodes(grid.tree).some(n=>n.type===Summary&&n.props.progress===p));assert.match(grid.tree.props.accessibilityLabel,/Última posición manual:/);assert.equal(nodes(grid.tree).filter(n=>n.type==='Pressable').length,1);
     const collection=host({},CollectionScreen);await collection.flush();assert.ok(nodes(collection.tree).some(n=>n.type===Summary&&n.props.progress===p));assert.ok(nodes(collection.tree).some(n=>n.type===Button&&n.props.label==='Quitar'));
    }
   });

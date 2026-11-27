@@ -15,7 +15,7 @@ export function publishLibraryInvalidation(ids: readonly string[]): void {
 
 /** Coalesces requests, closes the read/subscribe race, and ignores late/unmounted results. */
 export function observeLibraryProjection<T>(read: () => Promise<T>, apply: (value: T) => void,
-  affected: (ids: readonly string[]) => boolean = () => true, onError: (error: unknown) => void = () => {}): () => void {
+  affected: (ids: readonly string[]) => boolean = () => true, onError: (error: unknown) => void = () => {}, loadImmediately = false): () => void {
   let active = true, reading = false, dirty = false;
   let relevantRevision = revision;
   async function refresh() {
@@ -39,5 +39,6 @@ export function observeLibraryProjection<T>(read: () => Promise<T>, apply: (valu
   const unsubscribe = subscribeLibraryInvalidation(change => {
     if (affected(change.ids)) { relevantRevision = change.revision; void refresh(); }
   });
+  if (loadImmediately) void refresh();
   return () => { active = false; unsubscribe(); };
 }

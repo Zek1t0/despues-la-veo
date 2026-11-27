@@ -1,3 +1,4 @@
+import { GranularPreview } from "../../src/components/granular/GranularPreview";
 import { OrganizationButton } from "../../src/components/organization/OrganizationUI";
 import { PersonalProgressSection } from "../../src/components/progress/PersonalProgressSection";
 import type { ProgressIntent } from "../../src/storage/personalProgressRepo";
@@ -746,6 +747,8 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
               setProgressError(snapshot.progressReadError ?? null); setItem(snapshot.item); setLoading(false);
             }).catch(error => { if (generation === loadGeneration.current) { setProgressError(error); setLoading(false); } });
           }} />
+
+        <GranularPreview key={item.id} item={item} isolated={!!bindings} />
 
         <Card>
           {pinReady ? (
