@@ -35,4 +35,4 @@
 
 - [x] 5.1 Ejecutar regresiones focalizadas de SQLite, backup, identidad, Biblioteca, Colecciones, Inbox, entradas manuales, cursor y gates. Registrar comandos, fixtures y resultados.
 - [ ] 5.2 Comprobar aceptación Web y Android, teclado, lector de pantalla, TalkBack, fuente al 200 %, pantallas estrechas, temas, listas grandes, offline y reapertura incluida prueba de arranque del bundle. Mantener pendientes las aceptaciones sin evidencia y distinguir las excepciones de la fundación.
-- [ ] 5.3 Validar OpenSpec estricto, tipos, build y whitespace. Registrar evidencia, excepciones, cobertura de trazabilidad y recordatorio de actualizar la nota de formato vigente durante el futuro Sync, y someter diff S5 a revisión externa antes del checkpoint manual y la posterior sincronización y archivo.
+- [x] 5.3 Validar OpenSpec estricto, tipos, build y whitespace. Registrar evidencia, excepciones, cobertura de trazabilidad y recordatorio de actualizar la nota de formato vigente durante el futuro Sync, y someter diff S5 a revisión externa antes del checkpoint manual y la posterior sincronización y archivo.

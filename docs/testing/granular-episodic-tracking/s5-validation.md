@@ -31,7 +31,7 @@ La matriz cubre los requisitos de identidad y decisión de seguimiento granular,
 
 Chrome TEST recorrió escritorio y 320 px, claro y oscuro, foco y activación con Enter, edición por rango, huecos, selección compartida, menú de unidad, fecha opcional y futuro con confirmación explícita. Se comprobó el vencimiento con reloj TEST y evento de regreso de foco, la separación de marcas fuera del denominador y la ocultación inicial de sinopsis. Las pruebas de agregados ejercitan Biblioteca y Colecciones por lote.
 
-En Ajustes, al abrir la confirmación de un conflicto granular, el foco llegó a Cancelar. Escape dejó la confirmación abierta y no aplicó el candidato. La cancelación explícita siguió disponible. Se registra este límite de teclado junto con la aceptación pendiente. No se modificó lógica de producción durante S5.
+**Resultado anterior a la corrección de Escape.** En Ajustes, al abrir la confirmación de un conflicto granular, el foco llegó a Cancelar. Escape dejó la confirmación abierta y no aplicó el candidato. La cancelación explícita siguió disponible. Este resultado corresponde a la ejecución inicial de S5. La corrección y su nueva verificación constan a continuación.
 
 ### Revisión externa de accesibilidad
 
@@ -51,6 +51,8 @@ Sin credencial TMDB TEST autorizada ni runtime Android detectado. No se ejecutar
 Una temporada con referencia disputada y sin alcance inequívoco queda fuera del selector. Si el índice identifica un alcance, se conserva ese alcance con aviso y sin incorporar el grupo discrepante. La restauración no reconstruye evidencia editorial y los backups antiguos pueden recrear títulos eliminados porque el proyecto carece de tombstones generales.
 
 Durante el futuro Sync debe actualizarse a v11 la nota introductoria de formato vigente en `library-backup-integrity`. La distribución queda pendiente de aceptación y revisión.
+
+**Cierre administrativo del 27 de noviembre de 2026.** La revisión externa aprobó las correcciones de Escape, foco, escritura en curso y simulación tipográfica. Se verificó en origin el checkpoint S5 `8a3701410ecbf68b7ade5de11c9b1f81909c77a3`, se completó 5.3 y se actualizó la nota de formato vigente en la sincronización. Quedan 2.3 y 5.2 abiertas.
 
 ## Rendimiento medido
 

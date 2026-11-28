@@ -4,7 +4,7 @@
 TBD - created by archiving change protect-library-data-integrity. Update Purpose after archive.
 ## Requirements
 
-El formato vigente de exportación es v10. Los requisitos y escenarios que nombran explícitamente versiones v1–v9 describen sus contratos históricos de representación, importación o exportación; se conservan para compatibilidad y no obligan a usar esas versiones como formato vigente.
+El formato vigente de exportación es exclusivamente v11. Las versiones v1–v10 conservan sus contratos históricos de importación, incluidas sus reglas de representación y validación.
 
 ### Requirement: el backup versión 1 representa todos los datos persistidos
 
@@ -217,7 +217,7 @@ El sistema MUST procesar independientemente los elementos elegibles y describir 
 
 ### Requirement: rechazo seguro del archivo completo
 
-El sistema MUST evitar toda modificación persistente cuando la estructura principal del backup sea inválida o su versión no sea 1, 2, 3 ni 4. La invalidez aislada de Appearance dentro de un v4 cuya biblioteca y pins sean procesables MUST NOT convertir el archivo completo en inválido.
+El sistema MUST evitar toda modificación persistente cuando la estructura principal del backup sea inválida o su versión no sea un entero admitido entre 1 y 11. La invalidez aislada de Appearance dentro de un v4 cuya biblioteca y pins sean procesables MUST NOT convertir el archivo completo en inválido.
 
 #### Scenario: exportedAt ausente
 
@@ -241,7 +241,7 @@ El sistema MUST evitar toda modificación persistente cuando la estructura princ
 
 #### Scenario: versión no soportada
 
-- **GIVEN** un backup cuya versión no es 1, 2, 3 ni 4
+- **GIVEN** un backup cuya versión no es un entero admitido entre 1 y 11
 - **WHEN** el usuario intenta importarlo
 - **THEN** no se modifica la biblioteca, pins ni Appearance
 - **AND** se informan las versiones compatibles
@@ -274,7 +274,7 @@ El cambio MUST mantener compatibilidad de importación con JSON versión 1, MUST
 
 ### Requirement: el backup versión 2 representa títulos y pins deliberados
 
-El sistema MUST exportar JSON versión 2 con los títulos guardados y todos sus pins contextuales, MUST mantener las preferencias de vista fuera del backup y MUST identificar en cada pin su título por `provider + externalId` en vez del identificador local.
+El contrato histórico v2 MUST representar JSON con los títulos guardados y todos sus pins contextuales, MUST mantener las preferencias de vista fuera del backup y MUST identificar en cada pin su título por `provider + externalId` en vez del identificador local.
 
 #### Scenario: exportación con pins contextuales
 - **WHEN** el usuario exporta una biblioteca que contiene pins de Biblioteca y etiquetas
@@ -363,7 +363,7 @@ El sistema MUST separar en el resultado los pins insertados, conservados, invál
 - **AND** se informa un error comprensible
 
 ### Requirement: el backup versión 3 transporta puntuaciones personales y pins
-El sistema MUST exportar JSON versión 3 con `items` y `pins`, MUST incluir `personalRating` dentro de cada item, MUST identificar pins mediante `provider + externalId` y MUST mantener las preferencias locales fuera del backup.
+El contrato histórico v3 MUST representar JSON con `items` y `pins`, MUST incluir `personalRating` dentro de cada item, MUST identificar pins mediante `provider + externalId` y MUST mantener las preferencias locales fuera del backup.
 
 #### Scenario: exportación v3
 - **WHEN** el usuario exporta una biblioteca con títulos puntuados, sin calificar y pins contextuales
@@ -436,7 +436,7 @@ El sistema MUST procesar primero los items y después los pins v3, y MUST aplica
 
 ### Requirement: el backup versión 4 transporta Appearance portable cuando es confiable
 
-El sistema MUST exportar JSON versión 4 con `items`, `pins` y, cuando exista una intención local confiable, `appearance`. Appearance contiene únicamente la intención portable `scheme` + `palette`. Una row válida MUST aportar la última intención realmente confirmada como persistida; la ausencia válida de row MUST aportar el default contractual Dark + Original. Ante un error real de lectura sin `confirmedPersisted` confiable, el sistema MUST continuar exportando items/pins, MUST omitir Appearance y MUST NOT inventarla desde el fallback visual. El backup MUST NOT incluir effective scheme, scheme actual del sistema, colores resueltos ni la definición completa del theme, y MUST mantener fuera las preferencias Detalle/Mosaico y sorting.
+El contrato histórico v4 MUST representar JSON con `items`, `pins` y, cuando exista una intención local confiable, `appearance`. Appearance contiene únicamente la intención portable `scheme` + `palette`. Una row válida MUST aportar la última intención realmente confirmada como persistida; la ausencia válida de row MUST aportar el default contractual Dark + Original. Ante un error real de lectura sin `confirmedPersisted` confiable, el sistema MUST continuar exportando items/pins, MUST omitir Appearance y MUST NOT inventarla desde el fallback visual. El backup MUST NOT incluir effective scheme, scheme actual del sistema, colores resueltos ni la definición completa del theme, y MUST mantener fuera las preferencias Detalle/Mosaico y sorting.
 
 #### Scenario: exportación v4
 - **WHEN** el usuario exporta con scheme System y palette Lavanda
@@ -529,7 +529,7 @@ Si items y pins de un backup v4 son restaurables pero el scheme o palette de App
 - **AND** el problema se reporta sin presentarlo como fallo de los títulos
 
 ### Requirement: el backup vigente representa MediaItems y referencias externas por separado
-El sistema MUST conservar la interpretación histórica de backups versiones 1–7 y, una vez aprobada e implementada la evolución propuesta, MUST exportar un backup versión 8 donde cada item tenga una identidad local al backup, contenga su snapshot y datos personales, y declare por separado cero o más referencias externas completamente calificadas. El sistema MUST incluir ratings, tags, notas, estados, timestamps, pins y Appearance bajo sus contratos vigentes, incluyendo identidad manual portable separada, metadata básica enriquecida con referencias de imágenes y preferencias pertinentes, sin binarios ni credenciales. La metadata del proveedor MUST mantener procedencia y relojes independientes de los datos personales.
+El sistema MUST conservar la interpretación histórica de backups versiones 1–7. El contrato histórico v8 MUST representar un backup donde cada item tenga una identidad local al backup, contenga su snapshot y datos personales, y declare por separado cero o más referencias externas completamente calificadas. El sistema MUST incluir ratings, tags, notas, estados, timestamps, pins y Appearance bajo sus contratos vigentes, incluyendo identidad manual portable separada, metadata básica enriquecida con referencias de imágenes y preferencias pertinentes, sin binarios ni credenciales. La metadata del proveedor MUST mantener procedencia y relojes independientes de los datos personales.
 
 #### Scenario: exportación de recursos TMDB con ID numérico compartido
 - **GIVEN** una biblioteca que contiene `tmdb/movie/123` y `tmdb/tv/123` en MediaItems distintos
@@ -777,7 +777,7 @@ El sistema MUST procesar los títulos y pins elegibles dentro de una mutación S
 - **AND** el fallo de Appearance se informa por separado sin presentar el merge principal como revertido
 
 ### Requirement: backup v6 transporta clasificación y estado local completo
-El sistema MUST exportar version 6 con medium obligatorio y contentFamily/primaryFormat presentes y nullable, sin type como segunda autoridad, preservando snapshot, ID, referencias completas, identidad legacy cuando corresponda, estado, tags, notas, ratings, timestamps, pins y Appearance bajo contratos vigentes. MUST validar clasificación y referencias sin coerción, rechazar combinaciones inválidas y exigir personalRating válido. TMDB MUST tener referencia movie/TV canónica y medio audiovisual, sin exigir igualdad namespace/primaryFormat. MUST conservar el rechazo de exportar local-only sin identidad portable y la prohibición de fabricar ProviderReference manual.
+El contrato histórico v6 MUST representar un backup con medium obligatorio y contentFamily/primaryFormat presentes y nullable, sin type como segunda autoridad, preservando snapshot, ID, referencias completas, identidad legacy cuando corresponda, estado, tags, notas, ratings, timestamps, pins y Appearance bajo contratos vigentes. MUST validar clasificación y referencias sin coerción, rechazar combinaciones inválidas y exigir personalRating válido. TMDB MUST tener referencia movie/TV canónica y medio audiovisual, sin exigir igualdad namespace/primaryFormat. MUST conservar el rechazo de exportar local-only sin identidad portable y la prohibición de fabricar ProviderReference manual.
 
 #### Scenario: round-trip de distintos medios
 - **WHEN** se exportan y restauran anime, manga, manhwa, manhua, cómic y literatura con referencias válidas
@@ -853,7 +853,7 @@ En el contrato histórico de backups v6, la integración MangaUpdates MUST reuti
 - **THEN** se conserva el valor bajo el contrato vigente sin incluir binarios ni prometer portada offline
 
 ### Requirement: backup v7 representa identidad manual portable separada
-Una vez aprobada la evolución propuesta, el sistema MUST exportar v7 con clasificación/snapshot/datos personales vigentes, cero o varias referencias completas, identidad manual portable cuando exista y legacyIdentity histórica cuando exista. MUST conservar IDs de item internos al backup y pins por itemId, sin imágenes binarias. MUST rechazar identidades manuales inválidas o duplicadas entre items y MUST NOT convertirlas en referencias externas. MUST conservar la interpretación de v1–v6 y validar cada formato histórico antes de convertirlo, sin aceptar campos nuevos como autoridad en archivos antiguos.
+El contrato histórico v7 MUST representar un backup con clasificación/snapshot/datos personales vigentes, cero o varias referencias completas, identidad manual portable cuando exista y legacyIdentity histórica cuando exista. MUST conservar IDs de item internos al backup y pins por itemId, sin imágenes binarias. MUST rechazar identidades manuales inválidas o duplicadas entre items y MUST NOT convertirlas en referencias externas. MUST conservar la interpretación de v1–v6 y validar cada formato histórico antes de convertirlo, sin aceptar campos nuevos como autoridad en archivos antiguos.
 
 #### Scenario: round-trip manual sin proveedor
 - **WHEN** se exporta un manual nuevo y se importa v7 en una biblioteca vacía
@@ -951,11 +951,11 @@ El sistema MUST permitir restaurar los eventos retenidos incluidos en el backup 
 - **THEN** se reporta y omite sin crear una obra ni impedir restaurar los otros items
 
 ### Requirement: Backup v9 exporta organización desde su primera persistencia
-El contrato histórico v9 MUST incluir colecciones, membresías y recomendaciones, aun vacías, descartadas o con contenido filtrado. MUST conservar IDs estables, datos opcionales, captura original, estados, vínculos y timestamps; los títulos y todos los datos portables v8 MUST conservar sus contratos independientes. La exportación vigente v10 MUST conservar íntegramente esa organización y agregar progreso bajo su contrato propio; MUST NOT declarar v9 omitiendo progreso ya persistido. MUST obtener una instantánea coherente sin credenciales, binarios, estados de red ni preferencias locales de browsing. La sección de recomendaciones MUST ser opcional para aceptar archivos v9 anteriores que no incluían Inbox; ausencia y lista vacía MUST significar ninguna aportación, nunca borrado. MUST permitir exportar e importar todos esos datos persistidos; una versión de la aplicación que todavía no soporte una sección de recomendaciones no vacía MUST rechazarla antes de escribir, sin descartarla silenciosamente.
+El contrato histórico v9 MUST incluir colecciones, membresías y recomendaciones, aun vacías, descartadas o con contenido filtrado. MUST conservar IDs estables, datos opcionales, captura original, estados, vínculos y timestamps; los títulos y todos los datos portables v8 MUST conservar sus contratos independientes. El formato histórico v10 conserva la organización y agrega progreso manual. La exportación vigente v11 MUST conservar ambos y agregar los datos granulares. MUST obtener una instantánea coherente sin credenciales, binarios, estados de red ni preferencias locales de browsing. La sección de recomendaciones MUST ser opcional para aceptar archivos v9 anteriores que no incluían Inbox; ausencia y lista vacía MUST significar ninguna aportación, nunca borrado. MUST permitir exportar e importar todos esos datos persistidos; una versión de la aplicación que todavía no soporte una sección de recomendaciones no vacía MUST rechazarla antes de escribir, sin descartarla silenciosamente.
 
 #### Scenario: Exportar cada entrega
 - **WHEN** se exportan una colección vacía, otra poblada y recomendaciones en los tres estados desde la versión con progreso
-- **THEN** el archivo declara v10 y contiene toda la organización, progreso y datos portables previos, sin omitir datos persistidos
+- **THEN** el archivo declara v11 y contiene toda la organización, progreso manual, bloque granular obligatorio y datos portables previos, sin omitir datos persistidos
 
 #### Scenario: Filtrado o captura sin vínculo
 - **WHEN** se exporta con contenido sensible oculto y recomendaciones Pendientes
@@ -1003,7 +1003,11 @@ El sistema MUST conservar parsers, validaciones, presencia/null, resolución por
 - **THEN** conserva datos e identidades resolubles, contexto, fechas y personales sin consultas remotas y una segunda importación no genera duplicados
 
 ### Requirement: Backup v10 transporta progreso completo y mantiene historia
-La exportación vigente MUST declarar v10 e incluir la sección de progreso aun vacía, con referencia al item del archivo, variante, posición validada o restablecimiento explícito y timestamp propio. MUST incluir títulos filtrados y no perder decimales textuales, resets ni posiciones incompatibles conservadas. MUST conservar todos los datos portables v9. MUST aceptar v1–v9 bajo sus parsers/reglas históricas sin dar autoridad a campos de progreso añadidos a esas versiones; ausencia o lista vacía MUST NOT borrar progreso local. MUST rechazar JSON, versión o envoltorio inválido antes de escribir; registros inválidos MUST reportarse y aislarse sin afectar otros válidos.
+El formato histórico v10 y la exportación vigente v11 MUST incluir la sección de progreso aun vacía, con referencia al item del archivo, variante, posición validada o restablecimiento explícito y timestamp propio. MUST incluir títulos filtrados y no perder decimales textuales, resets ni posiciones incompatibles conservadas. MUST conservar todos los datos portables v9. MUST aceptar v1–v9 bajo sus parsers/reglas históricas sin dar autoridad a campos de progreso añadidos a esas versiones; ausencia o lista vacía MUST NOT borrar progreso local. MUST rechazar JSON, versión o envoltorio inválido antes de escribir; registros inválidos MUST reportarse y aislarse sin afectar otros válidos.
+
+#### Scenario: Bloque vacío obligatorio
+- **WHEN** se exporta sin datos granulares o se intenta importar v11 sin el bloque obligatorio
+- **THEN** se exporta el bloque vacío o se rechaza el archivo inválido antes de escribir, respectivamente
 
 #### Scenario: Round trip offline completo
 - **WHEN** se exportan manuales, títulos multirreferenciados, decimales y resets y se restaura sin conexión
@@ -1049,3 +1053,48 @@ El sistema MUST aislar cada unidad de progreso inválida o fallida, mantener la 
 #### Scenario: Segundo import y conflicto aplicado
 - **WHEN** se reimporta el mismo archivo después de aplicar explícitamente una posición entrante
 - **THEN** se reconoce igualdad semántica sin duplicar datos ni aplicar otra vez una modificación personal
+
+### Requirement: Backup v11 portable sin evidencia reconstruida
+La exportación vigente MUST declarar v11 y MUST conservar el contrato de datos v10 y agregar grupos, unidades, referencias, descriptor mínimo, retiro y decisiones explícitas con fecha opcional y reloj. Los descriptores entrantes MUST NOT acreditar una guía por sí solos. El bloque granular MUST existir incluso vacío. El sistema MUST NOT exportar un formato histórico como formato vigente ni omitir unidades o decisiones persistidas; no se exportan binarios, credenciales ni caché extensa. Los parsers v1–v10 MUST preservar su interpretación histórica y MUST NOT dar autoridad a campos granulares añadidos artificialmente. Un v11 sin bloque granular obligatorio es un envoltorio inválido.
+
+#### Scenario: Ausencia histórica
+- **WHEN** se restaura v10 o anterior sobre una base con unidades y decisiones, con o sin campos granulares artificiales
+- **THEN** no se crean ni borran unidades o decisiones y posición manual sigue su contrato histórico
+
+#### Scenario: Bloque vacío obligatorio
+- **WHEN** se exporta sin datos granulares o se intenta importar v11 sin el bloque obligatorio
+- **THEN** se exporta el bloque vacío o se rechaza el archivo inválido antes de escribir, respectivamente
+
+#### Scenario: Round trip
+- **WHEN** se exporta v11 y se importa sobre bases TEST vacía y poblada
+- **THEN** se preservan los datos portables, incluidos desmarcados, y los resultados de reimportación son semánticamente idempotentes
+
+### Requirement: Restauración granular por mapas efectivos
+El importador MUST resolver títulos, grupos, unidades y decisiones en ese orden, validando propietario, UUID, namespace y referencias. MUST reportar dependencias no resueltas y candidatos contradictorios por destino sin elegir por orden. MUST aislar fallos por registro dependiente y revertir todo ante fallo global sin invalidar antes del commit. MUST reevaluar la evidencia si una escritura cambia datos que la sustentan e invalidarla si deja de ser verificable. MUST conservar evidencia local aún válida ante importación equivalente.
+
+#### Scenario: Remapeo y colisión
+- **WHEN** un título cambia de ID local y otro candidato usa UUID o referencia contradictoria
+- **THEN** solo se aplica al propietario resuelto y el conflicto de identidad se reporta y omite
+
+#### Scenario: Fallo parcial o global
+- **WHEN** falla una unidad y su decisión dependiente o falla el commit global
+- **THEN** se informa la omisión dependiente o se revierte toda la importación respectivamente
+
+#### Scenario: Evidencia local y restauración equivalente
+- **WHEN** se importan cambios relevantes para un alcance editorial o se reimportan datos equivalentes
+- **THEN** se reevalúa el alcance afectado y se invalida si pierde sustento; los datos equivalentes conservan la evidencia local válida y los descriptores entrantes no acreditan completitud
+
+### Requirement: Conflictos granulares conservadores y revisables
+Sin decisión local MUST importar una válida. Igual estado y fecha normalizada MUST ser equivalentes sin cambiar reloj ni versión. Toda diferencia MUST preservar local por defecto y ofrecer revisión accesible, temporal y exportable completa en Ajustes, con omisiones y ambos candidatos. Aplicar entrante MUST revalidar identidad y versión y crear una nueva decisión local en transacción.
+
+#### Scenario: Marca antigua frente a negativo
+- **WHEN** el backup trae marca positiva para un desmarcado local
+- **THEN** se conserva el negativo y se informa el conflicto cualquiera sea el timestamp
+
+#### Scenario: Conflicto de fecha y candidato obsoleto
+- **WHEN** difieren fechas o decisiones y se intenta aplicar después de otra edición
+- **THEN** se informa la diferencia y se rechaza el candidato obsoleto
+
+#### Scenario: Reimportación tras resolución
+- **WHEN** se vuelve a importar después de aplicar el candidato
+- **THEN** se reconoce equivalencia sin volver a escribir
