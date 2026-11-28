@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AppState } from "react-native";
+import { AppState, Platform } from "react-native";
 import { editorialClock } from "../../core/granularCoverage";
 
 /** Sample the wall clock only. The UI recomputes from its cached evidence. */
@@ -18,13 +18,18 @@ export function useGranularDay(indexAt?: number | null, snapshotAt?: number | nu
       timer=setTimeout(refresh,current.delay);
     };
     refresh();
-    const state=AppState.addEventListener("change",value=>{if(value==="active")refresh();});
-    if(typeof window!=="undefined")window.addEventListener("focus",refresh);
-    if(typeof document!=="undefined")document.addEventListener("visibilitychange",refresh);
+    const web=Platform.OS==="web";
+    const state=web ? null : AppState.addEventListener("change",value=>{if(value==="active")refresh();});
+    const focusTarget=web && typeof window!=="undefined" &&
+      typeof window.addEventListener==="function" && typeof window.removeEventListener==="function" ? window : null;
+    const visibilityTarget=web && typeof document!=="undefined" &&
+      typeof document.addEventListener==="function" && typeof document.removeEventListener==="function" ? document : null;
+    focusTarget?.addEventListener("focus",refresh);
+    visibilityTarget?.addEventListener("visibilitychange",refresh);
     return ()=>{
-      clearTimeout(timer);state.remove();
-      if(typeof window!=="undefined")window.removeEventListener("focus",refresh);
-      if(typeof document!=="undefined")document.removeEventListener("visibilitychange",refresh);
+      clearTimeout(timer);state?.remove();
+      focusTarget?.removeEventListener("focus",refresh);
+      visibilityTarget?.removeEventListener("visibilitychange",refresh);
     };
   },[indexAt,snapshotAt]);
   return clock;

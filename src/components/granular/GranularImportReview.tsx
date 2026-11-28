@@ -36,7 +36,8 @@ export function GranularImportReview({ report, apply, exportReport, close }: {
       return;
     }
     cancel.current?.focus();
-    if(Platform.OS!=="web")return;
+    if(Platform.OS!=="web" || typeof document==="undefined" ||
+      typeof document.addEventListener!=="function" || typeof document.removeEventListener!=="function")return;
     const onKey=(event:KeyboardEvent)=>{
       if(event.key!=="Escape")return;
       event.preventDefault();event.stopPropagation();

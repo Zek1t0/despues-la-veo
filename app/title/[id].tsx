@@ -737,7 +737,7 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
           <Text style={{ color: theme.global.textMuted }}>Se guarda automáticamente.</Text>
         </Card>
 
-        <PersonalProgressSection key={item.id} itemId={item.id} classification={item} progress={progress?.itemId === item.id ? progress : null} loading={loading} readError={progressError}
+        <PersonalProgressSection key={`personal-progress:${item.id}`} itemId={item.id} classification={item} progress={progress?.itemId === item.id ? progress : null} loading={loading} readError={progressError}
           save={bindings ? (intent => bindings.setPersonalProgress ? bindings.setPersonalProgress(intent) : Promise.reject(new Error("Guardado de progreso TEST no configurado."))) : savePersonalProgress}
           onConfirmed={setProgress} onRetry={() => {
             const generation = ++loadGeneration.current;
@@ -748,7 +748,7 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
             }).catch(error => { if (generation === loadGeneration.current) { setProgressError(error); setLoading(false); } });
           }} />
 
-        <GranularPreview key={item.id} item={item} isolated={!!bindings} />
+        <GranularPreview key={`granular-preview:${item.id}`} item={item} isolated={!!bindings} />
 
         <Card>
           {pinReady ? (

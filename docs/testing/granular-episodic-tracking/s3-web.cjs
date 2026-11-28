@@ -30,7 +30,15 @@ function start(file,args,env){
  await new Promise((resolve,reject)=>{ws.addEventListener('open',resolve,{once:true});ws.addEventListener('error',reject,{once:true});});
  let serial=0;
  const pending=new Map();
- ws.addEventListener('message',event=>{const response=JSON.parse(event.data), done=pending.get(response.id);if(done){pending.delete(response.id);done(response);}});
+ const duplicateKeys=[];
+ ws.addEventListener('message',event=>{
+  const response=JSON.parse(event.data),done=pending.get(response.id);
+  if(done){pending.delete(response.id);done(response);}
+  if(response.method==='Runtime.consoleAPICalled'){
+   const message=response.params.args.map(arg=>arg.value??'').join(' ');
+   if(/same key|unique .?key.? prop/i.test(message))duplicateKeys.push(message);
+  }
+ });
  async function cdp(method,params={}){
   const id=++serial;
   const result=await new Promise(resolve=>{pending.set(id,resolve);ws.send(JSON.stringify({id,method,params}));});
@@ -52,6 +60,23 @@ function start(file,args,env){
  const navigate=async query=>{await cdp('Page.navigate',{url:'http://localhost:'+port+'/dev/granular-review?'+query});await has('Abrir lista TEST');};
  await cdp('Page.enable');
  await size(1100,950);
+ if(process.env.GRANULAR_RUNTIME_TEST==='1'){
+  await cdp('Runtime.enable');
+  await cdp('Page.navigate',{url:'http://localhost:'+port});
+  await has('TEST · revisión de medios · DBs aisladas');
+  for(const title of ['Mapa de una calle inventada','Cuaderno de estaciones falsas','Señal de vidrio','La biblioteca de las bisagras']){
+   await click('Abrir fixture '+title);
+   await click('Guardar en biblioteca de prueba');
+   await click('Abrir detalle local guardado');
+   await has('Notas');
+   assert.ok((await body()).includes(title));
+   await click('Fixtures');
+  }
+  assert.deepEqual(duplicateKeys,[]);
+  console.log('PASS Chrome TEST: cuatro fichas locales, sin avisos de claves duplicadas.');
+  ws.close();
+  return;
+ }
  for(const contract of ['accredited','partial']){
   await navigate('size=12&contract='+contract);
   await click('Tema claro TEST');await has('Tema TEST: claro');

@@ -90,6 +90,15 @@ const current=h.item,tmdb={provider:'tmdb',resourceNamespace:'movie',externalId:
 h.item={...h.item,metadataState:{...h.item.metadataState,selection:{reference:current.providerReferences[0],updatedAt:3}}};active=h;publishLibraryInvalidation([h.item.id]);await h.flush();assert.ok(notice(h));noArt(h);notice(h).props.onReveal();await h.flush();h.item={...h.item,metadataState:{...h.item.metadataState,documents:h.item.metadataState.documents.map(d=>({...d,changedAt:4}))}};active=h;publishLibraryInvalidation([h.item.id]);await h.flush();assert.ok(notice(h));noArt(h);
 notice(h).props.onBack();assert.equal(h.navigation.at(-1),'back');notice(h).props.onReveal();await h.flush();h.item=make('9',true);h.dirty=true;h.render();noArt(h);await h.flush();assert.ok(notice(h));noArt(h);stop(h);
 const reopened=host(()=>Detail(),raw[0]);await reopened.flush();assert.ok(notice(reopened));noArt(reopened);canGoBack=false;notice(reopened).props.onBack();assert.equal(reopened.navigation.at(-1),'/(tabs)/libreria');canGoBack=true;stop(reopened);
+// Exercise the real local route across formats. Each sibling key must be stable per title and distinct from the other.
+publish(false);
+for(const [id,medium,family,format] of [['film','audiovisual',null,'movie'],['series','audiovisual',null,'tv'],['anime','audiovisual','anime','tv'],['manga','comic','manga','webtoon']]){
+ const detail=host(()=>Detail(),{...item(medium,family,format),id});await detail.flush();
+ const keys=()=>nodes(detail.tree).filter(n=>n.type?.name==='PersonalProgressSection'||n.type==='GranularPreview').map(n=>n.props.key);
+ assert.deepEqual(keys(),['personal-progress:'+id,'granular-preview:'+id]);
+ detail.render();assert.deepEqual(keys(),['personal-progress:'+id,'granular-preview:'+id]);stop(detail);
+}
+publish(true);
 // Read failures remain guarded; retry hydrates the preference before revealing.
 let rejectRead;deferredPreference=new Promise((_,reject)=>rejectRead=reject);const failed=host(()=>Detail(),raw[0]);await failed.flush();rejectRead(Error('storage unavailable'));await failed.flush();assert.ok(notice(failed).props.error);noArt(failed);deferredPreference=null;notice(failed).props.onRetry();await failed.flush();assert.ok(notice(failed));assert.equal(notice(failed).props.error,null);noArt(failed);stop(failed);
 for(const scheme of ['light','dark']){theme=require('../../../src/theme/resolver.ts').resolveTheme(scheme,'original');const tree=SensitiveContentNotice({pending:false,error:null,onReveal(){},onBack(){},onRetry(){}});assert.equal(tree.props.style.backgroundColor,theme.global.background);for(const n of nodes(tree).filter(n=>n.type==='Text'))assert.ok(n.props.style.color);assert.equal(nodes(tree).filter(n=>n.props.accessibilityRole==='button').length,2);}
