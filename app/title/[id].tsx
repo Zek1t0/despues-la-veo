@@ -925,7 +925,8 @@ export default function TitleDetailScreen({ bindings }: { bindings?: TitleDetail
             </Text>
           ) : null}
           {ratingError ? (
-            <Text accessibilityLiveRegion="assertive" style={{ color: theme.semantic.personalRatingErrorText }}>
+            <Text accessibilityLiveRegion="assertive" style={{ color: theme.semantic.personalRatingErrorText,
+              backgroundColor: theme.global.background, padding: space.sm, borderRadius: radius.control }}>
               {ratingError}
             </Text>
           ) : null}

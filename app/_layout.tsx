@@ -7,6 +7,10 @@ export default function RootLayout() {
   // Select before importing/mounting personal theme, credentials, tabs or DB bootstrap.
   if (mediaReviewEnabled()) {
     const ReviewRoot = require("../src/dev/mediaReview/ReviewRoot").default;
+    if (Platform.OS === "web" && typeof window !== "undefined" && window.location?.pathname === "/dev/media-review"
+      && new URLSearchParams(window.location.search).get("gallery") === "s1") {
+      return <ReviewRoot initialGallery />;
+    }
     if (Platform.OS === "web" && typeof window !== "undefined" && window.location?.pathname === "/dev/granular-review") {
       if (new URLSearchParams(window.location.search).get("backup")==="1") {
         const BackupReview = require("../src/dev/mediaReview/GranularBackupReview").default;

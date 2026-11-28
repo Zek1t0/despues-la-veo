@@ -4,6 +4,7 @@ export const space = {
   md: 12,
   lg: 16,
   xl: 24,
+  xxl: 32,
 } as const;
 
 export const radius = {
@@ -14,6 +15,9 @@ export const radius = {
 } as const;
 
 export const type = {
+  editorial: { fontSize: 32, lineHeight: 38, fontWeight: "800" },
+  screen: { fontSize: 26, lineHeight: 32, fontWeight: "800" },
+  body: { fontSize: 16, lineHeight: 23, fontWeight: "400" },
   caption: { fontSize: 12, lineHeight: 17, fontWeight: "600" },
   control: { fontSize: 14, lineHeight: 20, fontWeight: "700" },
   title: { fontSize: 16, lineHeight: 21, fontWeight: "700" },
@@ -21,6 +25,7 @@ export const type = {
 } as const;
 
 export const controlTarget = 44;
+export const androidControlTarget = 48;
 export const metadataPill = {
   container: {
     alignSelf: "flex-start",

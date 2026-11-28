@@ -1,8 +1,8 @@
 ## 1. S1 · Sistema visual, tema e insets
 
-- [ ] 1.1 Aplicar los roles Base V2 a `original` y medir contraste en las 14 combinaciones. Verificar etiqueta visible «Original», bootstrap, previews, esquemas, otras paletas y restauración histórica con datos TEST.
-- [ ] 1.2 Consolidar contenedor, acción, campo, selector, menú, modal y estados compartidos. Verificar responsables por inset, scroll, teclado, Atrás, Escape y restauración de foco.
-- [ ] 1.3 Presentar capturas de superficies, controles y estados S1 contra V2. Registrar diferencias y revisión externa, y obtener aprobación antes de cerrar S1.
+- [x] 1.1 Aplicar los roles Base V2 a `original` y medir contraste en las 14 combinaciones. Verificar etiqueta visible «Original», bootstrap, previews, esquemas, otras paletas y restauración histórica con datos TEST.
+- [x] 1.2 Consolidar contenedor, acción, campo, selector, menú, modal y estados compartidos. Verificar responsables por inset, scroll, teclado, Atrás, Escape y restauración de foco.
+- [x] 1.3 Presentar capturas de superficies, controles y estados S1 contra V2. Registrar diferencias y revisión externa, y obtener aprobación antes de cerrar S1.
 
 ## 2. S2 · Navegación y Biblioteca
 

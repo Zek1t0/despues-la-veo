@@ -1,13 +1,13 @@
 /* Dark + Original bootstrap; React reemplaza estas variables después de hydration. */
 :root {
-  --app-background: #0b0b0b;
-  --app-foreground: #f2f2f2;
-  --app-surface: #101010;
-  --app-border: #242424;
-  --app-accent: #ffffff;
-  --app-scrollbar-track: #0f0f0f;
-  --app-scrollbar-thumb: #5c5c5c;
-  --app-scrollbar-thumb-hover: #646464;
+  --app-background: #14151b;
+  --app-foreground: #f3f2f8;
+  --app-surface: #22242e;
+  --app-border: #414451;
+  --app-accent: #c4afff;
+  --app-scrollbar-track: #14151b;
+  --app-scrollbar-thumb: #7a738d;
+  --app-scrollbar-thumb-hover: #817c94;
   color-scheme: dark;
 }
 

@@ -70,17 +70,15 @@ function testWebRuntimeAndBootstrap() {
   assert.match(sync, /root\.style\.colorScheme = theme\.effectiveScheme/);
   assert.match(sync, /typeof document === "undefined"/);
   assert.doesNotMatch(sync, /green-apple|midnight-twilight|lavender|obsidian/);
-  assert.match(css, /--app-background: #0b0b0b/);
-  assert.match(css, /--app-foreground: #f2f2f2/);
-  assert.match(css, /--app-scrollbar-track: #0f0f0f/);
+  assert.match(css, /--app-background: #14151b/);
+  assert.match(css, /--app-foreground: #f3f2f8/);
+  assert.match(css, /--app-scrollbar-track: #14151b/);
   const bootstrapThumb = DARK_ORIGINAL_BASELINE.bootstrap.scrollbarThumb;
   const bootstrapHover = DARK_ORIGINAL_BASELINE.bootstrap.scrollbarThumbHover;
   assert.equal(bootstrapThumb.value, "#2b2b2b");
   assert.equal(bootstrapThumb.finalAccessibleValue, "#5c5c5c");
   assert.equal(bootstrapHover.value, "#3a3a3a");
   assert.equal(bootstrapHover.finalAccessibleValue, "#646464");
-  assert.equal(cssVariable(css, "--app-scrollbar-thumb"), bootstrapThumb.finalAccessibleValue);
-  assert.equal(cssVariable(css, "--app-scrollbar-thumb-hover"), bootstrapHover.finalAccessibleValue);
   assert.match(css, /background: var\(--app-scrollbar-thumb-hover\)/);
   assert.doesNotMatch(css, /color-mix/);
   assert.match(css, /background: var\(--app-background\)/);
@@ -89,14 +87,14 @@ function testWebRuntimeAndBootstrap() {
   assert.doesNotMatch(css, /green-apple|midnight-twilight|lavender|obsidian/);
   const hydratedChrome = deriveBrowserChromeTheme(resolveTheme("dark", "original"));
   assert.deepEqual(hydratedChrome, {
-    background: "#0b0b0b",
-    foreground: "#f2f2f2",
-    surface: "#101010",
-    border: "#242424",
-    accent: "#ffffff",
-    scrollbarTrack: "#0f0f0f",
-    scrollbarThumb: "#5c5c5c",
-    scrollbarThumbHover: "#646464",
+    background: "#14151b",
+    foreground: "#f3f2f8",
+    surface: "#22242e",
+    border: "#414451",
+    accent: "#c4afff",
+    scrollbarTrack: "#14151b",
+    scrollbarThumb: "#7a738d",
+    scrollbarThumbHover: "#817c94",
   });
   assert.equal(cssVariable(css, "--app-scrollbar-thumb"), hydratedChrome.scrollbarThumb);
   assert.equal(cssVariable(css, "--app-scrollbar-thumb-hover"), hydratedChrome.scrollbarThumbHover);

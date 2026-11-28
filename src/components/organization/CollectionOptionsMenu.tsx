@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "../../theme/AppThemeProvider";
-import { controlTarget, radius, space, type } from "../../theme/presentation";
+import { controlTarget, radius, space } from "../../theme/presentation";
+import { OrganizationButton, OrganizationOption } from "./OrganizationUI";
 
 /** Same Modal/backdrop pattern as ViewOptionsPanel; no writes or navigation. */
 export function CollectionOptionsMenu({ triggerRef, disabled, onDelete }: {
@@ -15,7 +15,6 @@ export function CollectionOptionsMenu({ triggerRef, disabled, onDelete }: {
   const [visible, setVisible] = useState(false);
   const [anchor, setAnchor] = useState<{ x: number; y: number; width: number; height: number }>();
   const [menuHeight, setMenuHeight] = useState(2 * controlTarget + 2 * space.sm);
-  const [focused, setFocused] = useState<number | null>(null);
   const removeRef = useRef<View>(null), cancelRef = useRef<View>(null);
   const activeIndex = useRef(0), measurement = useRef(0);
   const focusItem = useCallback((index: number) => {
@@ -61,20 +60,9 @@ export function CollectionOptionsMenu({ triggerRef, disabled, onDelete }: {
       setVisible(true);
     });
   }
-  const rowStyle = (index: number) => ({ minHeight: controlTarget, flexDirection: "row" as const,
-    alignItems: "center" as const, gap: space.sm, padding: space.md, borderRadius: radius.control,
-    borderWidth: 1, borderColor: focused === index ? theme.global.accent : theme.global.surface,
-    backgroundColor: focused === index ? theme.global.surfaceSecondary : theme.global.surface });
   return <>
-    <Pressable ref={triggerRef} accessibilityRole="button" accessibilityLabel="Más opciones de colección"
-      accessibilityState={{ disabled, expanded: visible }} aria-haspopup="menu" focusable disabled={disabled}
-      onFocus={() => setFocused(2)} onBlur={() => setFocused(null)} onPress={open}
-      style={({ pressed }) => ({ minWidth: controlTarget, minHeight: controlTarget, flexShrink: 0,
-        alignItems: "center", justifyContent: "center", borderRadius: radius.control, borderWidth: 1,
-        borderColor: focused === 2 ? theme.global.accent : theme.global.borderStrong,
-        backgroundColor: theme.global.surfaceSecondary, opacity: disabled ? 0.6 : pressed ? 0.8 : 1 })}>
-      <Ionicons name="ellipsis-horizontal" size={20} color={theme.global.textPrimary} accessible={false} />
-    </Pressable>
+    <OrganizationButton buttonRef={triggerRef} label="Más opciones de colección" icon="ellipsis-horizontal"
+      iconOnly menuTrigger disabled={disabled} expanded={visible} onPress={open} />
     <Modal transparent visible={visible} animationType="none" onRequestClose={() => close()}
       onShow={() => focusItem(0)}>
       <View style={StyleSheet.absoluteFillObject}>
@@ -86,17 +74,10 @@ export function CollectionOptionsMenu({ triggerRef, disabled, onDelete }: {
             borderRadius: radius.card, borderWidth: 1, borderColor: theme.global.borderStrong,
             backgroundColor: theme.global.surface }}>
           <ScrollView keyboardShouldPersistTaps="handled">
-            <Pressable ref={removeRef} accessibilityRole="menuitem" accessibilityLabel="Eliminar colección" focusable
-              onFocus={() => { activeIndex.current = 0; setFocused(0); }} onBlur={() => setFocused(null)}
-              onPress={() => { close(false); onDelete(); }} style={rowStyle(0)}>
-              <Ionicons name="trash-outline" size={18} color={theme.semantic.dangerText} accessible={false} />
-              <Text style={[type.control, { color: theme.semantic.dangerText, flexShrink: 1 }]}>Eliminar colección</Text>
-            </Pressable>
-            <Pressable ref={cancelRef} accessibilityRole="menuitem" accessibilityLabel="Cancelar menú de colección" focusable
-              onFocus={() => { activeIndex.current = 1; setFocused(1); }} onBlur={() => setFocused(null)}
-              onPress={() => close()} style={rowStyle(1)}>
-              <Text style={[type.control, { color: theme.global.textPrimary, flexShrink: 1 }]}>Cancelar</Text>
-            </Pressable>
+            <OrganizationOption buttonRef={removeRef} menuItem destructive icon="trash-outline" label="Eliminar colección"
+              onFocus={() => { activeIndex.current = 0; }} onPress={() => { close(false); onDelete(); }} />
+            <OrganizationOption buttonRef={cancelRef} menuItem label="Cancelar"
+              onFocus={() => { activeIndex.current = 1; }} onPress={() => close()} />
           </ScrollView>
         </View>
       </View>

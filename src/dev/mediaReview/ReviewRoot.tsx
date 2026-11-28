@@ -5,11 +5,13 @@ import { AppThemeProvider } from "../../theme/AppThemeProvider";
 import { createReviewSession, type ReviewSession } from "./session";
 import { mediaReviewEnabled } from "./mode";
 import { MediaReview } from "./MediaReview";
+import { S1Gallery } from "./S1Gallery";
 
-export default function ReviewRoot({children}:React.PropsWithChildren) {
+export default function ReviewRoot({children, initialGallery = false}:React.PropsWithChildren<{ initialGallery?: boolean }>) {
   const [session, setSession] = useState<ReviewSession | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
+  const [gallery, setGallery] = useState(initialGallery);
   useEffect(() => {
     if (!mediaReviewEnabled()) return;
     let active = true, opened: ReviewSession | null = null;
@@ -24,9 +26,9 @@ export default function ReviewRoot({children}:React.PropsWithChildren) {
   if (!session) return <View><Text>TEST: abriendo dos bases aisladas…</Text></View>;
   return <SafeAreaProvider>
     <AppThemeProvider persistence={session.themePersistence} fallback={<Text>TEST: tema aislado…</Text>}>
-      {children ?? <MediaReview session={session} onReset={async () => {
+      {children ?? (gallery ? <S1Gallery onBack={() => setGallery(false)} /> : <MediaReview session={session} onOpenS1={() => setGallery(true)} onReset={async () => {
         await session.reset(); setSession(null); setRevision(value => value + 1);
-      }} />}
+      }} />)}
     </AppThemeProvider>
   </SafeAreaProvider>;
 }

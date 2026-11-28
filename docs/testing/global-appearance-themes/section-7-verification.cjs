@@ -75,9 +75,9 @@ function testThemeChangesAreChromaticOnly() {
   const darkOriginal = resolveTheme("dark", "original");
   const lightOriginal = resolveTheme("light", "original");
   const lightLavender = resolveTheme("light", "lavender");
-  assert.equal(darkOriginal.global.background, "#0b0b0b");
-  assert.equal(darkOriginal.global.inputBackground, "#0f0f0f");
-  assert.equal(darkOriginal.global.surface, "#101010");
+  assert.equal(darkOriginal.global.background, "#14151b");
+  assert.equal(darkOriginal.global.inputBackground, "#14151b");
+  assert.equal(darkOriginal.global.surface, "#22242e");
   assert.notEqual(darkOriginal.global.background, lightOriginal.global.background);
   assert.notEqual(lightOriginal.global.accent, lightLavender.global.accent);
   assert.strictEqual(lightOriginal.semantic, lightLavender.semantic);

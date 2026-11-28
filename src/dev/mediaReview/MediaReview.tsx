@@ -19,7 +19,7 @@ import { createReviewKitsuClient } from "./kitsuFixture";
 
 function useReviewFocusEffect(effect: () => void | (() => void)) { useEffect(effect, [effect]); }
 
-export function MediaReview({ session, onReset }: { session: ReviewSession; onReset(): Promise<void> }) {
+export function MediaReview({ session, onReset, onOpenS1 }: { session: ReviewSession; onReset(): Promise<void>; onOpenS1?: () => void }) {
   const { theme, setScheme } = useAppTheme();
   const [page, setPage] = useState<"discover" | "remote" | "library" | "local" | "manual" | "anime-search" | "anime-detail" | "art">("discover");
   const [animeId, setAnimeId] = useState("1");
@@ -100,6 +100,7 @@ export function MediaReview({ session, onReset }: { session: ReviewSession; onRe
   return <View style={{ flex: 1, backgroundColor: theme.global.background }}>
     <View style={{ padding: 12, gap: 4, borderBottomWidth: 2, borderColor: theme.global.accent }}>
       <Text accessibilityRole="header" style={{ color: theme.global.textPrimary, fontWeight: "900", fontSize: 18 }}>TEST · revisión de medios · DBs aisladas</Text>
+      {onOpenS1 && button("Abrir galería S1 TEST", onOpenS1)}
     </View>
     <ScrollView style={{ height: 240, maxHeight: 240, flexGrow: 0, flexShrink: 0 }} contentContainerStyle={{ padding: 12, gap: 4 }}>
       <Text selectable style={{ color: theme.global.textSecondary }}>Origen: {session.names.primary}</Text>

@@ -9,8 +9,9 @@ import { createNavigationTheme } from "../theme/navigationTheme";
 import { WebThemeSynchronizer } from "../theme/WebThemeSynchronizer";
 
 function ThemeBootstrapFallback() {
+  const { theme } = useAppTheme();
   return (
-    <View style={{ flex: 1, backgroundColor: "#0b0b0b" }}>
+    <View style={{ flex: 1, backgroundColor: theme.global.background }}>
       <StatusBar style="light" />
     </View>
   );
