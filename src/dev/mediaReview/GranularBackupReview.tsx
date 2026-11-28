@@ -1,4 +1,4 @@
-import { useEffect,useState } from "react";
+import { useEffect,useRef,useState } from "react";
 import { ScrollView } from "react-native";
 import * as SQLite from "expo-sqlite";
 import { ensureLibrarySchema,enableAndVerifyForeignKeys } from "../../storage/databaseSchema";
@@ -39,6 +39,8 @@ async function restore(db:SQLite.SQLiteDatabase,raw:Backup) {
 export default function GranularBackupReview() {
   const [fixture,setFixture]=useState<Fixture|null>(null), [raw,setRaw]=useState<Backup|null>(null);
   const [report,setReport]=useState<GranularImport|null>(null), [status,setStatus]=useState("Preparando dos bases SQLite TEST…");
+  const [holding,setHolding]=useState(false);
+  const release=useRef<(()=>void)|null>(null);
   const [busy,setBusy]=useState(false);
   const [item,setItem]=useState<SavedTitleWithProviderReferences|null>(null);
   const [page,setPage]=useState<{source:string;season:number}|null>(null);
@@ -48,12 +50,18 @@ export default function GranularBackupReview() {
     let active=true;
     const handles:SQLite.SQLiteDatabase[]=[];
     void(async()=>{
+      const reopen=typeof window!=="undefined" && new URLSearchParams(window.location.search).get("reopen")==="1";
       for(const name of ["media-review-granular-backup-a.db","media-review-granular-backup-b.db"]){
         const db=await SQLite.openDatabaseAsync(name);
         handles.push(db);await enableAndVerifyForeignKeys(db);await ensureLibrarySchema(db);
-        await db.runAsync("DELETE FROM saved_titles WHERE id=?",scope.ownerId);
+        if(!reopen)await db.runAsync("DELETE FROM saved_titles WHERE id=?",scope.ownerId);
       }
       const [a,b]=handles;
+      if(reopen){
+        const restored=await getSavedTitleWithReferencesByIdWithDb(b,scope.ownerId);
+        if(active){setFixture({a,b});setItem(restored);setStatus(restored?"Base B reabierta.":"Base B TEST vacía.");}
+        return;
+      }
       await a.withTransactionAsync(async()=>{
         await a.runAsync(`INSERT INTO saved_titles(id,medium,content_family,primary_format,title,status,tags_json,created_at,updated_at)
           VALUES(?,'audiovisual',NULL,'tv','TEST · Serie portable','watching','[]',1,1)`,scope.ownerId);
@@ -99,7 +107,14 @@ export default function GranularBackupReview() {
       await setGranularDecisions(scope.ownerId,page.revision,[{unitId:row.id,marked:true,consumedOn:"2024-03-01",expectedRevision:row.revision??null}],fixture.b);
       setStatus("Se editó E3 en B.");
     })}/>}
-    {fixture&&report&&<GranularImportReview report={report} apply={entry=>applyGranularConflict(entry,fixture.b)}
+    {holding&&<Button label="Liberar escritura TEST" onPress={()=>release.current?.()}/>}
+    {fixture&&report&&<GranularImportReview report={report} apply={async entry=>{
+      if(typeof window!=="undefined" && new URLSearchParams(window.location.search).get("hold") === "1" && entry.coordinate.mode==="season-episode" && entry.coordinate.episode===2){
+        await new Promise<void>(resolve=>{release.current=resolve;setHolding(true);});
+        release.current=null;setHolding(false);
+      }
+      return applyGranularConflict(entry,fixture.b);
+    }}
       exportReport={exportProgressReport} close={()=>setReport(null)}/>}
     {fixture&&raw&&!report&&!item&&<Button label="Restaurar sobre caché TEST" disabled={busy} onPress={()=>void run(async()=>{
       const {b}=fixture;

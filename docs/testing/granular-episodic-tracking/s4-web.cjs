@@ -49,11 +49,42 @@ function start(file,args,env){
  const fill=(label,value)=>evaluate(`(()=>{const input=[...document.querySelectorAll('input')].find(e=>e.getAttribute('aria-label')===${JSON.stringify(label)});if(!input)throw Error('Sin input'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
  const size=(width,height)=>cdp('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
  const screenshot=async name=>fs.writeFileSync(path.join(out,name+'.png'),Buffer.from((await cdp('Page.captureScreenshot',{format:'png'})).data,'base64'));
+ const escape=async()=>{for(const type of ['keyDown','keyUp'])await cdp('Input.dispatchKeyEvent',{type,key:'Escape',code:'Escape',windowsVirtualKeyCode:27});};
+ const focused=label=>wait(()=>evaluate(`document.activeElement?.getAttribute("aria-label")===${JSON.stringify(label)}`),'foco en '+label);
+ const absent=label=>wait(async()=>!(await body()).includes(label),'ausencia de '+label);
+ async function captureText(surface){
+  for(const [width,height] of [[1100,950],[320,850]]){
+   await size(width,height);
+   await screenshot(`s5-a11y-${surface}-${width}-100`);
+   await evaluate(`(() => {
+    const nodes=[...document.querySelectorAll('body *')].filter(node=>[...node.childNodes].some(child=>child.nodeType===3&&child.textContent.trim()));
+    const metrics=nodes.map(node=>{const style=getComputedStyle(node);return [parseFloat(style.fontSize),parseFloat(style.lineHeight)];});
+    window.restoreS5Text=nodes.map(node=>[node,node.getAttribute('style')]);
+    nodes.forEach((node,index)=>{
+     const [fontSize,lineHeight]=metrics[index];
+     node.style.setProperty('font-size',fontSize*2+'px','important');
+     if(Number.isFinite(lineHeight))node.style.setProperty('line-height',lineHeight*2+'px','important');
+    });
+   })()`);
+   assert.equal(await evaluate('document.documentElement.clientWidth'),width);
+   await screenshot(`s5-a11y-${surface}-${width}-200`);
+   if(surface!=='informe'){
+    assert.equal(await evaluate(`(() => {
+     const caption=[...document.querySelectorAll('body *')].find(node=>node.childElementCount===0&&node.textContent.includes('15 conocidos'));
+     caption?.scrollIntoView({block:'center'});
+     return Boolean(caption);
+    })()`),true);
+    await screenshot(`s5-a11y-cobertura-${surface}-${width}-200`);
+   }
+   await evaluate(`window.restoreS5Text.forEach(([node,style])=>style===null?node.removeAttribute('style'):node.setAttribute('style',style));delete window.restoreS5Text;`);
+  }
+  await size(1100,950);
+ }
  await cdp('Page.enable');
  const downloads=fs.mkdtempSync(path.join(out,"downloads-"));
  await cdp('Page.setDownloadBehavior',{behavior:'allow',downloadPath:downloads});
  await size(1100,950);
- await cdp('Page.navigate',{url:'http://localhost:'+port+'/dev/granular-review?backup=1'});
+ await cdp('Page.navigate',{url:'http://localhost:'+port+'/dev/granular-review?backup=1'+(process.env.S5_ACCEPTANCE==='1'?'&hold=1':'')});
  await has('Bases A y B listas.');
  await click('Exportar backup v11 TEST');await has('Exportado v11 de A.');
  const downloaded=await wait(()=>{
@@ -67,11 +98,45 @@ function start(file,args,env){
  const report=await wait(()=>fs.readdirSync(downloads).filter(name=>name.endsWith('.json')).map(name=>JSON.parse(fs.readFileSync(path.join(downloads,name)))).find(value=>value.granular?.conflicts),'informe de conflictos');
  assert.equal(report.granular.conflicts.length,3);
  await click('Conservar marca local');await has('Se conservó la decisión local.');
- await click('Aplicar marca del backup');await click('Confirmar decisión granular');await has('Se aplicó la decisión del backup.');
+ await click('Aplicar marca del backup');await click('Confirmar decisión granular');
+ if(process.env.S5_ACCEPTANCE==='1'){
+  await has('Liberar escritura TEST');
+  await escape();
+  assert.match(await body(),/Confirmar decisión granular/);
+  assert.match(await body(),/2 conflictos pendientes/);
+  assert.equal(await evaluate('document.querySelector(\'[aria-label="Cancelar aplicación granular"]\')?.getAttribute("aria-disabled")'),'true');
+  await click('Liberar escritura TEST');
+ }
+ await has('Se aplicó la decisión del backup.');
  await has('1 conflicto pendiente · 0 omisiones');
  await click('Cambiar base de E3 TEST');await has('Se editó E3 en B.');
- await click('Aplicar marca del backup');await click('Confirmar decisión granular');await has('La decisión o identidad cambió');await screenshot('s4-obsoleto');
+ await click('Aplicar marca del backup');
+ if(process.env.S5_ACCEPTANCE==='1'){
+  await focused('Cancelar aplicación granular');
+  await escape();
+  await absent('Confirmar decisión granular');
+  await focused('Aplicar marca del backup');
+  assert.match(await body(),/1 conflicto pendiente/);
+  await click('Aplicar marca del backup');
+  await click('Cancelar aplicación granular');
+  await absent('Confirmar decisión granular');
+  await focused('Aplicar marca del backup');
+  await click('Aplicar marca del backup');
+ }
+ await click('Confirmar decisión granular');await has('La decisión o identidad cambió');await screenshot('s4-obsoleto');
  await click('Cancelar aplicación granular');
+ if(process.env.S5_ACCEPTANCE==='1'){
+  await focused('Aplicar marca del backup');
+  await click('Cerrar informe granular');
+  await focused('Conservar informe granular');
+  await escape();
+  await absent('Descartar informe granular');
+  await focused('Cerrar informe granular');
+  await has('Revisión de marcas importadas');
+  await click('Cerrar informe granular');await click('Conservar informe granular');
+  await absent('Descartar informe granular');await focused('Cerrar informe granular');
+  await captureText('informe');
+ }
  await click('Cerrar informe granular');await click('Descartar informe granular');
  await wait(async()=>!(await body()).includes('Revisión de marcas importadas'),'cierre de revisión temporal');
  await click('Restaurar sobre caché TEST');await has('Restauración sobre caché lista.');
@@ -91,5 +156,27 @@ function start(file,args,env){
  await click('Lista');await has('15 conocidos');await has('Consumo: 29/02/2024');
  await click('Sin marcar');await has('T1 · E14');
  await wait(async()=>!(await body()).includes('T1 · E13'),'filtro de pendientes en lista');
+ if(process.env.S5_ACCEPTANCE==='1'){
+  await captureText('ruta');
+  const network={latency:0,downloadThroughput:0,uploadThroughput:0};
+  await cdp('Network.emulateNetworkConditions',{...network,offline:false});
+  const reopenUrl='http://localhost:'+port+'/dev/granular-review?backup=1&reopen=1';
+  const reopened=await cdp('Page.navigate',{url:reopenUrl});
+  assert.equal(reopened.errorText,undefined);
+  await has('Base B reabierta.');
+  await click('Guía TMDB');await click('T1');await has('15 conocidos');
+  await captureText('ficha');
+  await cdp('Page.navigate',{url:'about:blank'});
+  await cdp('Network.setCacheDisabled',{cacheDisabled:true});
+  await cdp('Network.emulateNetworkConditions',{...network,offline:true});
+  const cold=await cdp('Page.navigate',{url:reopenUrl});
+  if(cold.errorText==='net::ERR_INTERNET_DISCONNECTED'){
+   console.log('S5 Chrome TEST: arranque frío en Metro bloqueado por red desactivada.');
+  } else {
+   assert.equal(cold.errorText,undefined);
+   await has('Base B reabierta.');
+   console.log('S5 Chrome TEST: arranque frío de la ruta TEST completado.');
+  }
+ }
  console.log('PASS Chrome TEST v11: archivo, segunda base, parcialidad, fechas, decisiones, obsolescencia e informe.');ws.close();
 })().catch(error=>{console.error(error.message);process.exitCode=1;}).finally(()=>{for(const child of children)child.kill();});

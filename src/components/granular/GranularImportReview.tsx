@@ -1,5 +1,5 @@
-import { useRef,useState } from "react";
-import { Text,View } from "react-native";
+import { useCallback,useEffect,useRef,useState } from "react";
+import { Platform,Text,View } from "react-native";
 import { formatProgressConflictDate } from "../../core/progressConflictDate";
 import { progressPositionLabel } from "../../core/personalProgressPresentation";
 import { civilDateLabel } from "../../core/granularCoverage";
@@ -19,10 +19,32 @@ export function GranularImportReview({ report, apply, exportReport, close }: {
   const [resolved,setResolved]=useState<Record<number,"local"|BackupDecision>>({});
   const [busy,setBusy]=useState(false), [error,setError]=useState<string|null>(null);
   const locked=useRef(false),cancel=useRef<View>(null);
+  const openers=useRef(new Map<number,View>()),closeButton=useRef<View>(null);
+  const restoreFocus=useRef<View|null>(null);
   const entries=[...report.conflicts.map((entry,index)=>({entry,index})),...report.issues.map(issue=>({issue}))];
   const pending=report.conflicts.length-Object.keys(resolved).length;
   const omissions=report.issues.length;
-  function ask(value:number|"close"){setConfirm(value);requestAnimationFrame(()=>cancel.current?.focus());}
+  const dismiss=useCallback(()=>{
+    if(locked.current || confirm===null)return;
+    restoreFocus.current=confirm==="close"?closeButton.current:openers.current.get(confirm)??null;
+    setConfirm(null);setError(null);
+  },[confirm]);
+  useEffect(()=>{
+    if(confirm===null){
+      restoreFocus.current?.focus();
+      restoreFocus.current=null;
+      return;
+    }
+    cancel.current?.focus();
+    if(Platform.OS!=="web")return;
+    const onKey=(event:KeyboardEvent)=>{
+      if(event.key!=="Escape")return;
+      event.preventDefault();event.stopPropagation();
+      dismiss();
+    };
+    document.addEventListener("keydown",onKey,true);
+    return ()=>document.removeEventListener("keydown",onKey,true);
+  },[confirm,dismiss]);
   async function run(action:()=>Promise<void>){
     if(locked.current)return;
     locked.current=true;setBusy(true);setError(null);
@@ -53,11 +75,12 @@ export function GranularImportReview({ report, apply, exportReport, close }: {
         <Label>Backup · {describe(entry.incoming)}</Label>
         {resolved[index]?<Label>{resolved[index]==="local"?"Se conservó la decisión local.":"Se aplicó la decisión del backup."}</Label>:<View style={{flexDirection:"row",flexWrap:"wrap",gap:space.sm}}>
           <Button label="Conservar marca local" disabled={busy||confirm!==null} onPress={()=>setResolved(previous=>({...previous,[index]:"local"}))}/>
-          <Button label="Aplicar marca del backup" disabled={busy||confirm!==null} onPress={()=>ask(index)}/>
+          <Button label="Aplicar marca del backup" buttonRef={node=>{if(node)openers.current.set(index,node);else openers.current.delete(index);}}
+            disabled={busy||confirm!==null} onPress={()=>setConfirm(index)}/>
         </View>}
-        {confirm===index&&<View style={{gap:space.sm}}>
+        {confirm===index&&<View onAccessibilityEscape={dismiss} style={{gap:space.sm}}>
           <Label>¿Aplicar esta decisión del backup? Se comprobarán la identidad y la decisión local.</Label>
-          <Button label="Cancelar aplicación granular" buttonRef={cancel} disabled={busy} onPress={()=>{setConfirm(null);setError(null);}}/>
+          <Button label="Cancelar aplicación granular" buttonRef={cancel} disabled={busy} onPress={dismiss}/>
           <Button label="Confirmar decisión granular" variant="primary" disabled={busy} onPress={()=>void run(async()=>{
             const decision=await apply(entry);
             setResolved(previous=>({...previous,[index]:decision}));setConfirm(null);
@@ -69,12 +92,12 @@ export function GranularImportReview({ report, apply, exportReport, close }: {
     <View style={{flexDirection:"row",flexWrap:"wrap",gap:space.sm}}>
       {page>0&&<Button label="Página anterior de marcas" disabled={busy||confirm!==null} onPress={()=>setPage(p=>p-1)}/>}
       {(page+1)*PAGE_SIZE<entries.length&&<Button label="Página siguiente de marcas" disabled={busy||confirm!==null} onPress={()=>setPage(p=>p+1)}/>}
-      <Button label="Cerrar informe granular" disabled={busy} onPress={()=>ask("close")}/>
+      <Button label="Cerrar informe granular" buttonRef={closeButton} disabled={busy||confirm!==null} onPress={()=>setConfirm("close")}/>
     </View>
-    {confirm==="close"&&<View style={{gap:space.sm}}>
+    {confirm==="close"&&<View onAccessibilityEscape={dismiss} style={{gap:space.sm}}>
       <Label>¿Descartar el informe temporal? Los candidatos pendientes quedan sin aplicar.</Label>
-      <Button label="Conservar informe granular" buttonRef={cancel} onPress={()=>setConfirm(null)}/>
-      <Button label="Descartar informe granular" onPress={close}/>
+      <Button label="Conservar informe granular" buttonRef={cancel} disabled={busy} onPress={dismiss}/>
+      <Button label="Descartar informe granular" disabled={busy} onPress={close}/>
     </View>}
   </Card>;
 }

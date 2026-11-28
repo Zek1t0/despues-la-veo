@@ -29,10 +29,10 @@
 - [x] 4.2 Implementar mapa efectivo de grupos y unidades y restauración de decisiones. Probar colisiones, candidatos contradictorios, omisiones dependientes, rollback y degradación de métricas tras restaurar. Comprobar que los cambios relevantes invalidan evidencia que pierde sustento y los imports equivalentes conservan evidencia local válida.
 - [x] 4.3 Implementar revisión accesible de conflictos y exportación de informe en Ajustes. Probar negativos frente a marcas antiguas, conflictos de fecha, candidato obsoleto y aplicación explícita.
 - [x] 4.4 Completar round trip v11 sobre bases TEST vacía y poblada, reimportaciones, equivalencia durable y regresión de posición, organización y otros datos históricos. Mantener bloqueada distribución hasta completar portabilidad.
-- [ ] 4.5 Registrar resultados de restauración y someter diff S4 a revisión externa antes del checkpoint manual.
+- [x] 4.5 Registrar resultados de restauración y someter diff S4 a revisión externa antes del checkpoint manual.
 
 ## 5. S5 — Regresión integral y aceptación
 
-- [ ] 5.1 Ejecutar regresiones focalizadas de SQLite, backup, identidad, Biblioteca, Colecciones, Inbox, entradas manuales, cursor y gates. Registrar comandos, fixtures y resultados.
+- [x] 5.1 Ejecutar regresiones focalizadas de SQLite, backup, identidad, Biblioteca, Colecciones, Inbox, entradas manuales, cursor y gates. Registrar comandos, fixtures y resultados.
 - [ ] 5.2 Comprobar aceptación Web y Android, teclado, lector de pantalla, TalkBack, fuente al 200 %, pantallas estrechas, temas, listas grandes, offline y reapertura incluida prueba de arranque del bundle. Mantener pendientes las aceptaciones sin evidencia y distinguir las excepciones de la fundación.
 - [ ] 5.3 Validar OpenSpec estricto, tipos, build y whitespace. Registrar evidencia, excepciones, cobertura de trazabilidad y recordatorio de actualizar la nota de formato vigente durante el futuro Sync, y someter diff S5 a revisión externa antes del checkpoint manual y la posterior sincronización y archivo.

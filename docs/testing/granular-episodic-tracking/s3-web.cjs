@@ -143,11 +143,26 @@ function start(file,args,env){
   await wait(async()=>await mounted()>0,'filas montadas');
   await sleep(500);
   const list=await mounted();
-  await click('Cuadrícula');await sleep(500);
+  await click('Cuadrícula');
+  const gridAtFirstPaint=process.env.S5_ACCEPTANCE==='1'?await mounted():null;
+  await sleep(500);
   const grid=await mounted();
   assert.ok(list>0&&grid>0);
   if(total>=1000)assert.ok(list<total&&grid<total);
   counts.push({total,list,grid});
+  if(process.env.S5_ACCEPTANCE==='1'){
+   Object.assign(counts.at(-1),{gridAtFirstPaint,viewport:await evaluate('[innerWidth,innerHeight]')});
+   await click('Seleccionar varias');
+   await click('Seleccionar Cap. 2.5');
+   await has('1 seleccionada');
+   await click('Lista');
+   await has('1 seleccionada');
+   await click('Salir de selección');
+   await click('Marcadas');
+   await has('No hay unidades en este alcance.');
+   await click('Sin marcar');
+   await has('Cap. 2.5');
+  }
  }
  fs.writeFileSync(path.join(out,'s3-mounts.json'),JSON.stringify(counts,null,2)+'\n');
  console.log(JSON.stringify(counts));ws.close();
